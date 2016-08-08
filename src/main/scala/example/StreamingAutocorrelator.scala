@@ -10,7 +10,6 @@ import spire.algebra.Ring
 
 class StreamingAutocorrelator[T <: Data](inputGenerator: => T, outputGenerator: => T, delay: Int, windowSize: Int)
                                         (implicit ev : DspContext => Ring[T],
-
                                          val context: DspContext) extends Module {
   implicit val ev2 = ev(context)
   val io = new Bundle {

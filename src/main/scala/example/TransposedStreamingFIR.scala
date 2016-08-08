@@ -13,8 +13,8 @@ class ConstantTapTransposedStreamingFIR[T <: Data](inputGenerator: T, outputGene
                                                implicit val context: DspContext) extends Module {
   implicit val ev2 = ev(context)
   val io = new Bundle {
-    val input = inputGenerator
-    val output = outputGenerator
+    val input = inputGenerator.asInput
+    val output = outputGenerator.asOutput
   }
 
   val products: Seq[T] = taps.reverse.map { tap =>
@@ -37,9 +37,9 @@ class TransposedStreamingFIR[T <: Data](inputGenerator: => T, outputGenerator: =
                                         val context: DspContext) extends Module {
   implicit val ev2 = ev(context)
   val io = new Bundle {
-    val input = inputGenerator
-    val output = outputGenerator
-    val taps = Vec(numberOfTaps, tapGenerator).flip()
+    val input = inputGenerator.asInput                  // note, using as Input here, causes IntelliJ to not like '*'
+    val output = outputGenerator.asOutput
+    val taps = Vec(numberOfTaps, tapGenerator).asInput  // note, using as Input here, causes IntelliJ to not like '*'
   }
 
   val products: Seq[T] = io.taps.reverse.map { tap: T =>

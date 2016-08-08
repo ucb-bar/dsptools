@@ -2,31 +2,16 @@
 
 package examples.test
 
+//scalastyle:off magic.number
+
 import chisel3.core.SInt
 import chisel3.iotesters.{PeekPokeTester, Backend, runPeekPokeTester}
+import dsptools.numbers.SIntRing
 import dsptools.{Grow, DspContext}
 import org.scalatest.{Matchers, FlatSpec}
 
 import dsptools.example.{ConstantTapTransposedStreamingFIR, TransposedStreamingFIR}
 import spire.algebra.{Ring, Field}
-
-class SIntRing(implicit context: DspContext) extends Ring[SInt] {
-  def plus(f: SInt, g: SInt): SInt = {
-    if(context.overflowType == Grow) {
-      f +& g
-    }
-    else {
-      f +% g
-    }
-  }
-  def times(f: SInt, g: SInt): SInt = {
-    f * g
-  }
-  def one: SInt = SInt(value = BigInt(1))
-  def zero: SInt = SInt(value = BigInt(0))
-  def negate(f: SInt): SInt = zero - f
-
-}
 
 class ConstantTapTransposedStreamingTester(c: ConstantTapTransposedStreamingFIR[SInt], b: Option[Backend] = None)
   extends PeekPokeTester(c, _backend=b) {

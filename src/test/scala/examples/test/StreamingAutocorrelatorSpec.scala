@@ -2,8 +2,11 @@
 
 package examples.test
 
+//scalastyle:off magic.number
+
 import chisel3.core.SInt
 import chisel3.iotesters.{PeekPokeTester, Backend, runPeekPokeTester}
+import dsptools.numbers.SIntRing
 import dsptools.{Grow, DspContext}
 import example.StreamingAutocorrelator
 import org.scalatest.{Matchers, FlatSpec}
@@ -29,9 +32,7 @@ class StreamingAutocorrelatorSpec extends FlatSpec with Matchers {
     implicit val evidence = (context :DspContext) => new SIntRing()(context)
 
     runPeekPokeTester(
-      () => new StreamingAutocorrelator(SInt(width = 10).flip(), SInt(width = 16), 2, 3), "firrtl") {
-      (c, b) => new
-          StreamingAutocorrelatorTester(c, b)
-    } should be (true)
+      () => new StreamingAutocorrelator(SInt(width = 10), SInt(width = 16), 2, 3), "firrtl") {
+      (c, b) => new StreamingAutocorrelatorTester(c, b) } should be (true)
   }
 }
