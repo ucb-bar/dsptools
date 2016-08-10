@@ -1,6 +1,6 @@
 // See LICENSE for license details.
 
-package examples.test
+package examples
 
 //scalastyle:off magic.number
 
@@ -8,7 +8,7 @@ import chisel3.core.SInt
 import chisel3.iotesters.{PeekPokeTester, Backend, runPeekPokeTester}
 import dsptools.numbers.SIntRing
 import dsptools.{Grow, DspContext}
-import example.StreamingAutocorrelator
+import examples.StreamingAutocorrelator
 import org.scalatest.{Matchers, FlatSpec}
 
 import dsptools.example.TransposedStreamingFIR

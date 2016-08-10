@@ -1,6 +1,6 @@
 // See LICENSE for license details.
 
-package examples.test
+package examples
 
 //scalastyle:off magic.number
 

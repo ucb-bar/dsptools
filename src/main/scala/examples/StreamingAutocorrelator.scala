@@ -1,6 +1,6 @@
 // See LICENSE for license details.
 
-package example
+package examples
 
 import chisel3.{Bundle, Data}
 import chisel3.core.{Wire, Reg, Vec, Module}
