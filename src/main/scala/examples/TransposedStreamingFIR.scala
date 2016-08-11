@@ -1,6 +1,6 @@
 // See LICENSE for license details.
 
-package dsptools.example
+package dsptools.examples
 
 import chisel3.core.{Vec, Reg}
 import chisel3.{Data, Module, Bundle}

@@ -34,15 +34,6 @@ class SimpleAdderTester(c: SimpleAdder) extends DspTester(c) {
 
     println(s"SimpleAdder: $i + $j should make $expected got ${peek(c.io.c)}")
   }
-//  for {
-//    i <- 0 to 100 by 3
-//    j <- 0 to 100 by 7
-//  } {
-//    poke(c.io.a1, BigInt(i))
-//    poke(c.io.a2, BigInt(j))
-//    step(1)
-//    println(s"peek ${peek(c.io.c)}")
-//  }
 }
 class SimpleAdderSpec extends FlatSpec with Matchers {
   behavior of "SimpleAdder"

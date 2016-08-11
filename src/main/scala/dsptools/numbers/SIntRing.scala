@@ -8,7 +8,7 @@ import spire.algebra.Ring
 
 /**
   * Defines basic math functions for SInt
-  * @param context
+  * @param context a context object describing SInt behavior
   */
 class SIntRing(implicit context: DspContext) extends Ring[SInt] {
   def plus(f: SInt, g: SInt): SInt = {

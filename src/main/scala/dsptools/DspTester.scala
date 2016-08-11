@@ -2,28 +2,27 @@
 
 package dsptools
 
-import chisel3.internal.firrtl.{KnownBinaryPoint, BinaryPoint, KnownWidth}
+import chisel3.internal.firrtl.{KnownBinaryPoint, KnownWidth}
 import chisel3.{Bits, Module}
-import chisel3.core.{FixedPoint, SInt}
-import chisel3.iotesters.{Backend, PeekPokeTester}
+import chisel3.core.FixedPoint
+import chisel3.iotesters.PeekPokeTester
 
 class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
   def toBigInt(x: Double, fractionalWidth: Int): BigInt = {
     val multiplier = math.pow(2,fractionalWidth)
     val result = BigInt(math.round(x * multiplier))
-    //    println(s"toBigInt:x = $x, width = $fractionalWidth multiplier $multiplier result $result")
+    // println(s"toBigInt:x = $x, width = $fractionalWidth multiplier $multiplier result $result")
     result
   }
 
   def toDouble(i: BigInt, fractionalWidth: Int): Double = {
     val multiplier = math.pow(2,fractionalWidth)
     val result = i.toDouble / multiplier
-    //    println(s"toDouble:i = $i, fw = $fractionalWidth, mult = $multiplier, result $result")
+    // println(s"toDouble:i = $i, fw = $fractionalWidth, multiplier = $multiplier, result $result")
     result
   }
 
   def poke(signal: FixedPoint, value: Double): Unit = {
-    println(s"signal is $signal")
     (signal.width, signal.binaryPoint) match {
       case (KnownWidth(width), KnownBinaryPoint(binaryPoint)) =>
         val bigInt = toBigInt(value, binaryPoint)
