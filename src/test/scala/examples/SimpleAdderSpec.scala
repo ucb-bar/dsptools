@@ -3,9 +3,9 @@
 package examples
 
 import chisel3.core._
-import chisel3.iotesters.{runPeekPokeTester, Backend, PeekPokeTester}
+import chisel3.iotesters.{Backend}
 import chisel3.{Bundle, Module}
-import examples.StreamingAutocorrelator
+import dsptools.DspTester
 import org.scalatest.{Matchers, FlatSpec}
 
 class SimpleAdder extends Module {
@@ -21,19 +21,25 @@ class SimpleAdder extends Module {
 
   io.c := register1
 }
-class SimpleAdderTester(c: SimpleAdder, backend: Option[Backend] = None) extends PeekPokeTester(c, _backend = backend) {
-  poke(c.io.a1, 4)
-  poke(c.io.a2, 0x30)
-  step(1)
-  println(s"peek ${peek(c.io.c)}")
+class SimpleAdderTester(c: SimpleAdder) extends DspTester(c) {
+  poke(c.io.a1, 7.1)
+
+  for {
+    i <- 0 to 100 by 3
+    j <- 0 to 100 by 7
+  } {
+    poke(c.io.a1, BigInt(i))
+    poke(c.io.a2, BigInt(j))
+    step(1)
+    println(s"peek ${peek(c.io.c)}")
+  }
 }
 class SimpleAdderSpec extends FlatSpec with Matchers {
   behavior of "SimpleAdder"
 
   it should "add to numbers excellently" in {
-    runPeekPokeTester(
-      () => new SimpleAdder, "firrtl") {
-      (c, b) => new SimpleAdderTester(c, b)
+    chisel3.iotesters.Driver(() => new SimpleAdder) { c =>
+      new SimpleAdderTester(c)
     } should be(true)
 
   }

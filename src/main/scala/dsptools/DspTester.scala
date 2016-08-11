@@ -2,10 +2,13 @@
 
 package dsptools
 
-import chisel3.Module
-import chisel3.core.SInt
+import chisel3.{Bits, Module}
+import chisel3.core.{FixedPoint, SInt}
 import chisel3.iotesters.{Backend, PeekPokeTester}
 
-class DspTester[T <: Module](c: T, b: Option[Backend] = None) extends PeekPokeTester(c, _backend = b) {
+class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
+  def poke(signal: FixedPoint, value: Double): Unit = {
+    println(s"signal is $signal")
+  }
 
 }

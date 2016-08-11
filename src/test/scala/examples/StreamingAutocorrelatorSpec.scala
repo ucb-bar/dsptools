@@ -5,18 +5,16 @@ package examples
 //scalastyle:off magic.number
 
 import chisel3.core.SInt
-import chisel3.iotesters.{PeekPokeTester, Backend, runPeekPokeTester}
+import chisel3.iotesters.{PeekPokeTester}
 import dsptools.numbers.SIntRing
 import dsptools.{Grow, DspContext}
-import examples.StreamingAutocorrelator
 import org.scalatest.{Matchers, FlatSpec}
 
-import dsptools.example.TransposedStreamingFIR
 import spire.algebra.{Ring, Field}
 
 
-class StreamingAutocorrelatorTester(c: StreamingAutocorrelator[SInt], b: Option[Backend] = None)
-  extends PeekPokeTester(c, _backend=b) {
+class StreamingAutocorrelatorTester(c: StreamingAutocorrelator[SInt])
+  extends PeekPokeTester(c) {
 
   for(num <- -5 to 5) {
     poke(c.io.input, BigInt(num))
@@ -31,8 +29,8 @@ class StreamingAutocorrelatorSpec extends FlatSpec with Matchers {
     implicit val DefaultDspContext = DspContext()
     implicit val evidence = (context :DspContext) => new SIntRing()(context)
 
-    runPeekPokeTester(
-      () => new StreamingAutocorrelator(SInt(width = 10), SInt(width = 16), 2, 3), "firrtl") {
-      (c, b) => new StreamingAutocorrelatorTester(c, b) } should be (true)
+    chisel3.iotesters.Driver(() => new StreamingAutocorrelator(SInt(width = 10), SInt(width = 16), 2, 3)) { c =>
+      new StreamingAutocorrelatorTester(c)
+    } should be (true)
   }
 }
