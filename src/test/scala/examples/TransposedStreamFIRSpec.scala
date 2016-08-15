@@ -5,16 +5,16 @@ package examples
 //scalastyle:off magic.number
 
 import chisel3.core.SInt
-import chisel3.iotesters.{PeekPokeTester, Backend, runPeekPokeTester}
+import chisel3.iotesters.{PeekPokeTester}
 import dsptools.numbers.SIntRing
 import dsptools.{Grow, DspContext}
 import org.scalatest.{Matchers, FlatSpec}
 
-import dsptools.example.{ConstantTapTransposedStreamingFIR, TransposedStreamingFIR}
+import dsptools.examples.{ConstantTapTransposedStreamingFIR, TransposedStreamingFIR}
 import spire.algebra.{Ring, Field}
 
-class ConstantTapTransposedStreamingTester(c: ConstantTapTransposedStreamingFIR[SInt], b: Option[Backend] = None)
-  extends PeekPokeTester(c, _backend=b) {
+class ConstantTapTransposedStreamingTester(c: ConstantTapTransposedStreamingFIR[SInt])
+  extends PeekPokeTester(c) {
 
   for(num <- -5 to 5) {
     poke(c.io.input, BigInt(num))
@@ -23,8 +23,8 @@ class ConstantTapTransposedStreamingTester(c: ConstantTapTransposedStreamingFIR[
   }
 }
 
-class TransposedStreamingTester(c: TransposedStreamingFIR[SInt], b: Option[Backend] = None)
-  extends PeekPokeTester(c, _backend=b) {
+class TransposedStreamingTester(c: TransposedStreamingFIR[SInt])
+  extends PeekPokeTester(c) {
 
   for(num <- -5 to 5) {
     poke(c.io.input, BigInt(num))
@@ -39,9 +39,9 @@ class TransposedStreamFIRSpec extends FlatSpec with Matchers {
     implicit val DefaultDspContext = DspContext()
     implicit val evidence = (context :DspContext) => new SIntRing()(context)
 
-    runPeekPokeTester(() => new ConstantTapTransposedStreamingFIR(SInt(width = 10), SInt(width = 16), taps), "firrtl") {
-      (c, b) => new
-          ConstantTapTransposedStreamingTester(c, b)
+    chisel3.iotesters.Driver(() => new ConstantTapTransposedStreamingFIR(SInt(width = 10), SInt(width = 16), taps)) {
+      c => new
+          ConstantTapTransposedStreamingTester(c)
     } should be (true)
   }
 //  "TransposedStreamingFIR" should "compute a running average like thing" in {

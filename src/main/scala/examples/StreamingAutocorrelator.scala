@@ -5,7 +5,7 @@ package examples
 import chisel3.{Bundle, Data}
 import chisel3.core.{Wire, Reg, Vec, Module}
 import dsptools.{Saturate, DspContext}
-import dsptools.example.TransposedStreamingFIR
+import dsptools.examples.TransposedStreamingFIR
 import spire.algebra.Ring
 
 class StreamingAutocorrelator[T <: Data](inputGenerator: => T, outputGenerator: => T, delay: Int, windowSize: Int)
