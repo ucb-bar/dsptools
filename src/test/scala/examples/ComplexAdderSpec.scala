@@ -29,7 +29,7 @@ class SimpleComplexAdder extends Module {
 //  val registerReal = Reg(io.a1.real)
 //  val registerImaginary = Reg(io.a1.imaginary)
 
-  register1 := io.a1 + io.a2
+  register1 := io.a1 * io.a2
 
   io.c := register1
 }
@@ -38,7 +38,7 @@ class SimpleComplexAdderTester(c: SimpleComplexAdder) extends DspTester(c) {
     i <- 0.0 to 1.0 by 0.25
     j <- 0.0 to 4.0 by 0.5
   } {
-    val expected = i + j
+    val expected = i * j
 
     poke(c.io.a1.real, i)
     poke(c.io.a1.imaginary, 0.0)
@@ -46,7 +46,7 @@ class SimpleComplexAdderTester(c: SimpleComplexAdder) extends DspTester(c) {
     poke(c.io.a2.imaginary, 0.0)
     step(1)
 
-    println(s"SimpleComplexAdder: $i + $j should make $expected got ${peek(c.io.c.real)}")
+    println(s"SimpleComplexAdder: $i * $j should make $expected got ${peek(c.io.c.real)}")
   }
 }
 class SimpleComplexAdderSpec extends FlatSpec with Matchers {
