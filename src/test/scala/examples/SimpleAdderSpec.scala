@@ -14,6 +14,8 @@ class SimpleAdder extends Module {
     val a2 = FixedPoint(INPUT, 8, 1)
     val c  = FixedPoint(OUTPUT, 12, 5)
   }
+//  spatialAssert(Seq(io.a1), Seq(io.c), 5)
+//  spatialAssert(Seq(io.a2), Seq(io.c), "group1")
 
   val register1 = Reg(FixedPoint())
 
