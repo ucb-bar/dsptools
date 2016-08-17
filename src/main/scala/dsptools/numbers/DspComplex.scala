@@ -36,7 +36,7 @@ class DspComplexRing[T <: Data:Ring](implicit context: DspContext) extends Ring[
   def times(f: DspComplex[T], g: DspComplex[T]): DspComplex[T] = {
     DspComplex.wire(f.real * g.real - f.imaginary * g.imaginary, f.real * g.imaginary + f.imaginary * g.real)
   }
-  def one: DspComplex[T] = DspComplex(implicitly[Ring[T]].one, implicitly[Ring[T]].zero)
-  def zero: DspComplex[T] = DspComplex(implicitly[Ring[T]].zero, implicitly[Ring[T]].zero)
-  def negate(f: DspComplex[T]): DspComplex[T] = DspComplex(-f.real, -f.imaginary)
+  def one: DspComplex[T] = DspComplex.wire(implicitly[Ring[T]].one, implicitly[Ring[T]].zero)
+  def zero: DspComplex[T] = DspComplex.wire(implicitly[Ring[T]].zero, implicitly[Ring[T]].zero)
+  def negate(f: DspComplex[T]): DspComplex[T] = DspComplex.wire(-f.real, -f.imaginary)
 }
