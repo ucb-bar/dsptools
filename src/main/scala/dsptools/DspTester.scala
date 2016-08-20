@@ -6,6 +6,7 @@ import chisel3.internal.firrtl.{KnownBinaryPoint, KnownWidth}
 import chisel3.{Bits, Module}
 import chisel3.core.FixedPoint
 import chisel3.iotesters.PeekPokeTester
+import dsptools.numbers.DspReal
 
 class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
   def toBigInt(x: Double, fractionalWidth: Int): BigInt = {
@@ -22,6 +23,14 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
     result
   }
 
+  def doubleToBigIntBits(double: Double): BigInt = {
+    BigInt(java.lang.Double.doubleToLongBits(double))
+  }
+
+  def bigIntBitsToDouble(bigInt: BigInt): Double = {
+    java.lang.Double.longBitsToDouble(bigInt.toLong)
+  }
+
   def poke(signal: FixedPoint, value: Double): Unit = {
     (signal.width, signal.binaryPoint) match {
       case (KnownWidth(width), KnownBinaryPoint(binaryPoint)) =>
@@ -30,6 +39,11 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
       case _ =>
         throw DspException(s"Error: poke: Can't create FixedPoint for $value, from signal template $signal")
     }
+  }
+
+  def poke(signal: DspReal, value: Double): Unit = {
+    val bigInt = doubleToBigIntBits(value)
+    poke(signal.node, bigInt)
   }
 
   def peek(signal: FixedPoint): Double = {
@@ -41,6 +55,10 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
       case _ =>
         throw DspException(s"Error: peek: Can't peek a FixedPoint, from signal template $signal")
     }
+  }
+  def peek(signal: DspReal): Double = {
+    val bigInt = super.peek(signal.node)
+    bigIntBitsToDouble(bigInt)
   }
 
 }
