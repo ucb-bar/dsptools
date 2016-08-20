@@ -61,4 +61,10 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
     bigIntBitsToDouble(bigInt)
   }
 
+  def expect(signal: DspReal, expected: Double, msg: String): Unit = {
+    val out = peek(signal)
+    println(f"expect got $out%15.8f expect $expected%15.8f")
+    expect(out - expected < 0.0001, msg)
+  }
+
 }

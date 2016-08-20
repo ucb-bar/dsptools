@@ -34,8 +34,8 @@ class RealMultiplyTester(c: RealMultiply) extends DspTester(c) {
     val result = peek(c.io.c)
 
     expect(
-      c.io.c == i * j,
-      s"Multiply test: $i * $j => $result, expected ${i * j}"
+      c.io.c, i * j,
+      s"Multiply test: $i * $j => $result expected ${i * j}"
     )
   }
 }
