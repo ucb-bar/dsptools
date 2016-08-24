@@ -1,0 +1,75 @@
+// See LICENSE for license details.
+
+package examples
+
+import chisel3.core._
+import dsptools.{DspContext, DspTester}
+import dsptools.numbers._
+import org.scalatest.{FlatSpec, Matchers}
+import spire.algebra.Ring
+import spire.implicits._
+
+class ParameterizedAdder[T <: Data:Ring](gen:() => T) extends Module {
+//class ParameterizedAdder(gen:() => DspReal) extends Module {
+
+  val io = new Bundle {
+    val a1: T = gen().cloneType.flip()
+    val a2: T = gen().cloneType.flip()
+    val c  = gen().cloneType
+  }
+
+  val register1 = Reg(gen().cloneType)
+
+  register1 := io.a1 + io.a2
+//  val sum = io.a1 + io.a2
+
+  register1 := io.a1
+
+  io.c := register1
+}
+
+class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends DspTester(c) {
+//class ParameterizedAdderTester(c: ParameterizedAdder) extends DspTester(c) {
+  for {
+    i <- 0.0 to 1.0 by 0.25
+    j <- 0.0 to 4.0 by 0.5
+  } {
+    poke(c.io.a1, i)
+    poke(c.io.a2, j)
+    step(1)
+
+    val result = peek(c.io.c)
+
+    println(s"peek $result")
+  }
+}
+
+
+class ParameterizedAdderSpec extends FlatSpec with Matchers {
+  behavior of "parameterized adder circuit on blackbox real"
+
+  it should "allow registers to be declared that infer widths" in {
+    implicit val DefaultDspContext = DspContext()
+    //  implicit val evidence = (context :DspContext) => new DspRealRing()(context)
+    implicit val evidence = new DspRealRing()(DefaultDspContext)
+
+    def getReal(): DspReal = new DspReal
+
+    chisel3.iotesters.Driver(() => new ParameterizedAdder(getReal)) { c =>
+      new ParameterizedAdderTester(c)
+    } should be (true)
+  }
+
+  behavior of "parameterized adder circuit on fixed point"
+
+  it should "allow registers to be declared that infer widths" in {
+    implicit val DefaultDspContext = DspContext()
+    implicit val evidence = new FixedPointRing()(DefaultDspContext)
+
+    def getReal(): FixedPoint = FixedPoint(OUTPUT, width = 32, binaryPoint = 16)
+
+    chisel3.iotesters.Driver(() => new ParameterizedAdder(getReal)) { c =>
+      new ParameterizedAdderTester(c)
+    } should be (true)
+  }
+}

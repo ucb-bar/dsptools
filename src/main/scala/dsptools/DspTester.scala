@@ -3,10 +3,11 @@
 package dsptools
 
 import chisel3.internal.firrtl.{KnownBinaryPoint, KnownWidth}
-import chisel3.{Bits, Module}
+import chisel3.{Data, Bits, Module}
 import chisel3.core.FixedPoint
 import chisel3.iotesters.PeekPokeTester
 import dsptools.numbers.DspReal
+import spire.algebra.Ring
 
 class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
   def toBigInt(x: Double, fractionalWidth: Int): BigInt = {
@@ -46,6 +47,13 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
     poke(signal.node, bigInt)
   }
 
+  def poke[T <: Data:Ring](signal: T, value: Double): Unit = {
+    signal match {
+      case d: DspReal => poke(d, value)
+      case f: FixedPoint => poke(f, value)
+    }
+  }
+
   def peek(signal: FixedPoint): Double = {
     val bigInt = super.peek(signal.asInstanceOf[Bits])
     (signal.width, signal.binaryPoint) match {
@@ -59,6 +67,13 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
   def peek(signal: DspReal): Double = {
     val bigInt = super.peek(signal.node)
     bigIntBitsToDouble(bigInt)
+  }
+
+  def peek[T <: Data:Ring](signal: T): Double = {
+    signal match {
+      case d: DspReal => peek(d)
+      case f: FixedPoint => peek(f)
+    }
   }
 
   def expect(signal: DspReal, expected: Double, msg: String): Unit = {

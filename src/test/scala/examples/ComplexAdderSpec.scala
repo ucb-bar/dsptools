@@ -10,7 +10,7 @@ import dsptools.numbers.{FixedPointRing, DspComplexRing, DspComplex}
 import org.scalatest.{Matchers, FlatSpec}
 import spire.implicits._
 
-
+//scalastyle:off magic.number
 class SimpleComplexAdder extends Module {
   implicit val dspContext = DspContext()
   implicit val fixedPointEvidence = new FixedPointRing()

@@ -3,6 +3,9 @@
 package dsptools.numbers
 
 import chisel3._
+import chisel3.core.Wire
+import dsptools.DspContext
+import spire.algebra.Ring
 
 
 class BlackboxTwoOperand extends BlackBox {
@@ -161,4 +164,24 @@ object DspReal {
     out
   }
 
+//  def wire[T <: Data:Ring](real: DspReal)(implicit context: DspContext): DspReal = {
+//    val result = Wire(new DspReal)
+//    result.node := real.node
+//    result
+//  }
 }
+
+class DspRealRing(implicit context: DspContext) extends Ring[DspReal] {
+  def plus(f: DspReal, g: DspReal): DspReal = {
+    f + g
+  }
+  def times(f: DspReal, g: DspReal): DspReal = {
+    f * g
+  }
+//  def one: DspReal = DspReal.wire(DspReal(1.0))
+//  def zero: DspReal = DspReal.wire(DspReal(0.0))
+  def one: DspReal = DspReal(1.0)
+  def zero: DspReal = DspReal(0.0)
+  def negate(f: DspReal): DspReal = zero - f
+}
+
