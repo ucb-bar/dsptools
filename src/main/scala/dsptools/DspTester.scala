@@ -53,11 +53,18 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
     poke(signal.imaginary, bigInt)
   }
 
+  def pokeX(signal: DspComplex[DspReal], value: Double): Unit = {
+    val bigInt = doubleToBigIntBits(value)
+    poke(signal.real.node, bigInt)
+    poke(signal.imaginary.node, bigInt)
+  }
+
   def poke[T <: Data:Ring](signal: T, value: Double): Unit = {
     signal match {
       case d: DspReal => poke(d, value)
       case f: FixedPoint => poke(f, value)
       case c: DspComplex[FixedPoint] => poke(c, value)
+      case c: DspComplex[DspReal] => pokeX(c, value)
 
     }
   }

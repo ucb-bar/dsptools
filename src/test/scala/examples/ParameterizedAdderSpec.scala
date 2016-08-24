@@ -9,6 +9,8 @@ import org.scalatest.{FlatSpec, Matchers}
 import spire.algebra.Ring
 import spire.implicits._
 
+//scalastyle:off magic.number
+
 class ParameterizedAdder[T <: Data:Ring](gen:() => T) extends Module {
   val io = new Bundle {
     val a1: T = gen().cloneType.flip()
@@ -38,7 +40,6 @@ class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends D
   }
 }
 
-
 class ParameterizedAdderSpec extends FlatSpec with Matchers {
   behavior of "parameterized adder circuit on blackbox real"
 
@@ -59,9 +60,9 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
     implicit val DefaultDspContext = DspContext()
     implicit val evidence = new FixedPointRing()(DefaultDspContext)
 
-    def getReal(): FixedPoint = FixedPoint(OUTPUT, width = 32, binaryPoint = 16)
+    def getFixed(): FixedPoint = FixedPoint(OUTPUT, width = 32, binaryPoint = 16)
 
-    chisel3.iotesters.Driver(() => new ParameterizedAdder(getReal)) { c =>
+    chisel3.iotesters.Driver(() => new ParameterizedAdder(getFixed)) { c =>
       new ParameterizedAdderTester(c)
     } should be (true)
   }
@@ -73,13 +74,31 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
     implicit val fixedEvidence = new FixedPointRing()(DefaultDspContext)
     implicit val evidence = new DspComplexRing[FixedPoint]()(fixedEvidence, DefaultDspContext)
 
-    def getReal(): DspComplex[FixedPoint] = {
+    def getComplex(): DspComplex[FixedPoint] = {
       DspComplex(
         FixedPoint(OUTPUT, width = 65, binaryPoint = 16),
         FixedPoint(OUTPUT, width = 65, binaryPoint = 16))
     }
 
-    chisel3.iotesters.Driver(() => new ParameterizedAdder(getReal)) { c =>
+    chisel3.iotesters.Driver(() => new ParameterizedAdder(getComplex)) { c =>
+      new ParameterizedAdderTester(c)
+    } should be (true)
+  }
+
+  behavior of "parameterized adder circuit on complex with reals"
+
+  it should "allow registers to be declared that infer widths" in {
+    implicit val DefaultDspContext = DspContext()
+    implicit val fixedEvidence = new DspRealRing()(DefaultDspContext)
+    implicit val evidence = new DspComplexRing[DspReal]()(fixedEvidence, DefaultDspContext)
+
+    def getComplex(): DspComplex[DspReal] = {
+      DspComplex(
+        DspReal(1.0),
+        DspReal(1.0))
+    }
+
+    chisel3.iotesters.Driver(() => new ParameterizedAdder(getComplex)) { c =>
       new ParameterizedAdderTester(c)
     } should be (true)
   }
