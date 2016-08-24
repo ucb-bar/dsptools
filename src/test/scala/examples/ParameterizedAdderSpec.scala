@@ -10,8 +10,6 @@ import spire.algebra.Ring
 import spire.implicits._
 
 class ParameterizedAdder[T <: Data:Ring](gen:() => T) extends Module {
-//class ParameterizedAdder(gen:() => DspReal) extends Module {
-
   val io = new Bundle {
     val a1: T = gen().cloneType.flip()
     val a2: T = gen().cloneType.flip()
@@ -21,15 +19,11 @@ class ParameterizedAdder[T <: Data:Ring](gen:() => T) extends Module {
   val register1 = Reg(gen().cloneType)
 
   register1 := io.a1 + io.a2
-//  val sum = io.a1 + io.a2
-
-  register1 := io.a1
 
   io.c := register1
 }
 
 class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends DspTester(c) {
-//class ParameterizedAdderTester(c: ParameterizedAdder) extends DspTester(c) {
   for {
     i <- 0.0 to 1.0 by 0.25
     j <- 0.0 to 4.0 by 0.5
@@ -50,7 +44,6 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
 
   it should "allow registers to be declared that infer widths" in {
     implicit val DefaultDspContext = DspContext()
-    //  implicit val evidence = (context :DspContext) => new DspRealRing()(context)
     implicit val evidence = new DspRealRing()(DefaultDspContext)
 
     def getReal(): DspReal = new DspReal
@@ -67,6 +60,24 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
     implicit val evidence = new FixedPointRing()(DefaultDspContext)
 
     def getReal(): FixedPoint = FixedPoint(OUTPUT, width = 32, binaryPoint = 16)
+
+    chisel3.iotesters.Driver(() => new ParameterizedAdder(getReal)) { c =>
+      new ParameterizedAdderTester(c)
+    } should be (true)
+  }
+
+  behavior of "parameterized adder circuit on complex"
+
+  it should "allow registers to be declared that infer widths" in {
+    implicit val DefaultDspContext = DspContext()
+    implicit val fixedEvidence = new FixedPointRing()(DefaultDspContext)
+    implicit val evidence = new DspComplexRing[FixedPoint]()(fixedEvidence, DefaultDspContext)
+
+    def getReal(): DspComplex[FixedPoint] = {
+      DspComplex(
+        FixedPoint(OUTPUT, width = 65, binaryPoint = 16),
+        FixedPoint(OUTPUT, width = 65, binaryPoint = 16))
+    }
 
     chisel3.iotesters.Driver(() => new ParameterizedAdder(getReal)) { c =>
       new ParameterizedAdderTester(c)

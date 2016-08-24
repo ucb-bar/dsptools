@@ -6,7 +6,7 @@ import chisel3.internal.firrtl.{KnownBinaryPoint, KnownWidth}
 import chisel3.{Data, Bits, Module}
 import chisel3.core.FixedPoint
 import chisel3.iotesters.PeekPokeTester
-import dsptools.numbers.DspReal
+import dsptools.numbers.{DspComplex, DspReal}
 import spire.algebra.Ring
 
 class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
@@ -47,10 +47,18 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
     poke(signal.node, bigInt)
   }
 
+  def poke(signal: DspComplex[FixedPoint], value: Double): Unit = {
+    val bigInt = doubleToBigIntBits(value)
+    poke(signal.real, bigInt)
+    poke(signal.imaginary, bigInt)
+  }
+
   def poke[T <: Data:Ring](signal: T, value: Double): Unit = {
     signal match {
       case d: DspReal => poke(d, value)
       case f: FixedPoint => poke(f, value)
+      case c: DspComplex[FixedPoint] => poke(c, value)
+
     }
   }
 
@@ -69,10 +77,16 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
     bigIntBitsToDouble(bigInt)
   }
 
+  def peek(signal: DspComplex[FixedPoint]): Double = {
+    val bigInt = super.peek(signal.real)
+    bigIntBitsToDouble(bigInt)
+  }
+
   def peek[T <: Data:Ring](signal: T): Double = {
     signal match {
       case d: DspReal => peek(d)
       case f: FixedPoint => peek(f)
+      case c: DspComplex[FixedPoint] => peek(c)
     }
   }
 
