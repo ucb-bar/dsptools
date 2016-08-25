@@ -1,56 +1,99 @@
 // See LICENSE for license details.
 
-package examples
+package dsptools.numbers
 
 import chisel3.core._
 import dsptools.{DspContext, DspTester}
 import dsptools.numbers._
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FreeSpec, FlatSpec, Matchers}
 import spire.algebra.Ring
 import spire.implicits._
 
 //scalastyle:off magic.number
 
-class ParameterizedAdder[T <: Data:Ring](gen:() => T) extends Module {
+class ParameterizedNumberOperation[T <: Data:Ring](
+                                          gen:() => T,
+                                          val op: String = "+"
+                                        ) extends Module {
   val io = new Bundle {
     val a1: T = gen().cloneType.flip()
     val a2: T = gen().cloneType.flip()
-    val c  = gen().cloneType
+    val c:  T = gen().cloneType
   }
 
   val register1 = Reg(gen().cloneType)
 
-  register1 := io.a1 + io.a2
+  register1 := {
+    op match {
+      case "+" => io.a1 + io.a2
+      case "-" => io.a1 - io.a2
+      case "*" => io.a1 * io.a2
+//      case "/" => io.a1 / io.a2
+      case _ => throw new Exception(s"Bad operator $op passed to ParameterizedNumberOperation")
+    }
+  }
 
   io.c := register1
 }
 
-class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedNumberOperation[T]) extends DspTester(c) {
+class ParameterizedOpTester[T<:Data:Ring](c: ParameterizedNumberOperation[T]) extends DspTester(c) {
   for {
     i <- 0.0 to 1.0 by 0.25
     j <- 0.0 to 4.0 by 0.5
   } {
+    val expected = c.op match {
+      case "+" => i + j
+      case "-" => i - j
+      case "*" => i * j
+      case _ => i + j
+    }
     poke(c.io.a1, i)
     poke(c.io.a2, j)
     step(1)
 
     val result = peek(c.io.c)
 
-    println(s"peek $result")
+    println(f"TESTCASE $i%6.2f ${c.op} $j%6.2f => $result" +
+      (if(result != expected) s"Error: expected $expected" else "")
+        )
   }
 }
 
-class ParameterizedAdderSpec extends FlatSpec with Matchers {
+class ParameterizedOpSpecification extends FreeSpec with Matchers {
+  """
+  The ParameterizedNumericOperation demostrates a Module that can be instantiated to
+  handle different numeric types and different numerical operations
+  """ -
+    {
+    implicit val DefaultDspContext = DspContext()
+    implicit val evidence          = new DspRealRing()(DefaultDspContext)
+
+    def getReal(): DspReal = new DspReal
+
+    "This instance will process Real numbers with the basic mathematical operations" - {
+      Seq("+", "-", "*").foreach { operation =>
+        s"operation $operation should work for all inputs" in {
+          chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(getReal, operation)) { c =>
+            new ParameterizedOpTester(c)
+          } should be(true)
+        }
+      }
+    }
+  }
+}
+
+class ParameterizedOpSpec extends FlatSpec with Matchers {
   behavior of "parameterized adder circuit on blackbox real"
 
   it should "allow registers to be declared that infer widths" in {
     implicit val DefaultDspContext = DspContext()
-    implicit val evidence = new DspRealRing()(DefaultDspContext)
+    implicit val evidence          = new DspRealRing()(DefaultDspContext)
 
     def getReal(): DspReal = new DspReal
 
-    chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(getReal)) { c =>
-      new ParameterizedAdderTester(c)
+
+    chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(getReal, "-")) { c =>
+      new ParameterizedOpTester(c)
     } should be (true)
   }
 
@@ -63,7 +106,7 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
     def getFixed(): FixedPoint = FixedPoint(OUTPUT, width = 32, binaryPoint = 16)
 
     chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(getFixed)) { c =>
-      new ParameterizedAdderTester(c)
+      new ParameterizedOpTester(c)
     } should be (true)
   }
 
@@ -81,7 +124,7 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
     }
 
     chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(getComplex)) { c =>
-      new ParameterizedAdderTester(c)
+      new ParameterizedOpTester(c)
     } should be (true)
   }
 
@@ -99,7 +142,7 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
     }
 
     chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(getComplex)) { c =>
-      new ParameterizedAdderTester(c)
+      new ParameterizedOpTester(c)
     } should be (true)
   }
 }
