@@ -3,11 +3,10 @@
 package dsptools
 
 import chisel3.internal.firrtl.{KnownBinaryPoint, KnownWidth}
-import chisel3.{Data, Bits, Module}
+import chisel3._
 import chisel3.core.FixedPoint
 import chisel3.iotesters.PeekPokeTester
 import dsptools.numbers.{DspComplex, DspReal}
-import spire.algebra.Ring
 
 class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
   def toBigInt(x: Double, fractionalWidth: Int): BigInt = {
@@ -42,32 +41,75 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
     }
   }
 
-  def poke(signal: DspReal, value: Double): Unit = {
-    val bigInt = doubleToBigIntBits(value)
-    poke(signal.node, bigInt)
-  }
+  def dspPoke(bundle: Data, value: Double): Unit = {
+    bundle match {
+      case f: FixedPoint =>
+        (f.width, f.binaryPoint) match {
+          case (KnownWidth(width), KnownBinaryPoint(binaryPoint)) =>
+            val bigInt = toBigInt(value, binaryPoint)
+            poke(f, bigInt)
+          case _ =>
+            throw DspException(s"Error: poke: Can't create FixedPoint for $value, from signal template $bundle")
+        }
 
-  def poke(signal: DspComplex[FixedPoint], value: Double): Unit = {
-    val bigInt = doubleToBigIntBits(value)
-    poke(signal.real, bigInt)
-    poke(signal.imaginary, bigInt)
-  }
-
-  def pokeX(signal: DspComplex[DspReal], value: Double): Unit = {
-    val bigInt = doubleToBigIntBits(value)
-    poke(signal.real.node, bigInt)
-    poke(signal.imaginary.node, bigInt)
-  }
-
-  def poke[T <: Data:Ring](signal: T, value: Double): Unit = {
-    signal match {
-      case d: DspReal => poke(d, value)
-      case f: FixedPoint => poke(f, value)
-      case c: DspComplex[FixedPoint] => poke(c, value)
-      case c: DspComplex[DspReal] => pokeX(c, value)
-
+      case r: DspReal =>
+        val bigInt = doubleToBigIntBits(value)
+        poke(r.node, bigInt)
+      case c: DspComplex[_]  => c.underlyingType() match {
+        case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
+        case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
+//        case "SInt" => poke(c.real.asInstanceOf[SInt], value)
+        case _ =>
+          throw DspException(
+            s"poke($bundle, $value): bundle DspComplex has unknown underlying type ${bundle.getClass.getName}")
+      }
+      case _ =>
+        throw DspException(s"poke($bundle, $value): bundle has unknown type ${bundle.getClass.getName}")
     }
   }
+
+  def dspPeek(bundle: Data): Double = {
+    bundle match {
+      case r: DspReal =>
+        val bigInt = super.peek(r.node)
+        bigIntBitsToDouble(bigInt)
+      case c: DspComplex[_]  => c.underlyingType() match {
+        case "fixed" => peek(c.real.asInstanceOf[FixedPoint])
+        case "real"  => dspPeek(c.real.asInstanceOf[DspReal])
+        //        case "SInt" => poke(c.real.asInstanceOf[SInt], value)
+        case _ =>
+          throw DspException(
+            s"peek($bundle): bundle DspComplex has unknown underlying type ${bundle.getClass.getName}")
+      }
+      case _ =>
+        throw DspException(s"peek($bundle): bundle has unknown type ${bundle.getClass.getName}")
+    }
+  }
+
+//  def dspPeekNumber[T <: Data](signal: T): T = {
+//    signal match {
+//      case r: DspReal =>
+//        val bigInt = super.peek(r.node)
+//        DspReal(bigIntBitsToDouble(bigInt)).asInstanceOf[T]
+//      case r: FixedPoint =>
+//        super.peek(r).asInstanceOf[T]
+//      case c: DspComplex[_]  => c.underlyingType() match {
+//        case "fixed" =>
+//          val real = dspPeekNumber(c.real.asInstanceOf[FixedPoint])
+//          val imaginary = dspPeekNumber(c.imaginary.asInstanceOf[FixedPoint])
+//          DspComplex(real, imaginary).asInstanceOf[T]
+//        case "real"  => dspPeek(c.real.asInstanceOf[DspReal])
+//          val real = dspPeekNumber(c.real.asInstanceOf[DspReal])
+//          val imaginary = dspPeekNumber(c.imaginary.asInstanceOf[DspReal])
+//          DspComplex(real, imaginary).asInstanceOf[T]
+//        case _ =>
+//          throw DspException(
+//            s"peek($signal): signal DspComplex has unknown underlying type ${signal.getClass.getName}")
+//      }
+//      case _ =>
+//        throw DspException(s"peek($signal): signal has unknown type ${signal.getClass.getName}")
+//    }
+//  }
 
   def peek(signal: FixedPoint): Double = {
     val bigInt = super.peek(signal.asInstanceOf[Bits])
@@ -79,28 +121,11 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
         throw DspException(s"Error: peek: Can't peek a FixedPoint, from signal template $signal")
     }
   }
-  def peek(signal: DspReal): Double = {
-    val bigInt = super.peek(signal.node)
-    bigIntBitsToDouble(bigInt)
-  }
 
-  def peek(signal: DspComplex[FixedPoint]): Double = {
-    val bigInt = super.peek(signal.real)
-    bigIntBitsToDouble(bigInt)
-  }
+  def dspExpect(bundle: Data, expected: Double, msg: String): Unit = {
+    val result = dspPeek(bundle)
 
-  def peek[T <: Data:Ring](signal: T): Double = {
-    signal match {
-      case d: DspReal => peek(d)
-      case f: FixedPoint => peek(f)
-      case c: DspComplex[FixedPoint] => peek(c)
-    }
+    println(f"expect got $result%15.8f expect $expected%15.8f")
+    expect(result - expected < 0.0001, msg)
   }
-
-  def expect(signal: DspReal, expected: Double, msg: String): Unit = {
-    val out = peek(signal)
-    println(f"expect got $out%15.8f expect $expected%15.8f")
-    expect(out - expected < 0.0001, msg)
-  }
-
 }
