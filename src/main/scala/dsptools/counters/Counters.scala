@@ -2,8 +2,8 @@
 
 package dsptools.counters
 
-import chisel3.Bundle
-import chisel3.core._
+import chisel3._
+import dsptools.{DspException, Mod}
 
 /** Ctrl locations:
   * External = Use external Ctrl signal
@@ -97,7 +97,7 @@ abstract class Counter(countParams: CountParams) extends Module {
   val eq0 = (io.out === UInt(0))
   val eqMax = (io.out === max)
 
-  val (upCustom, upCustomWrap) = (io.out + inc) % (max + 1.U)
+  val (upCustom, upCustomWrap) = Mod(io.out + inc, max + 1.U)
   val (modOut,overflow) = {
     if(io.modN == None) (io.out + inc,Bool(false))
     else Mod(io.out + inc,io.modN.get)
@@ -120,6 +120,8 @@ abstract class Counter(countParams: CountParams) extends Module {
     case TieFalse => Bool(false)
     case TieTrue => Bool(true)
     case External => iCtrl.wrap.get
+    case _ =>
+      throw DspException(s"unknown value for countParams.wrapCtrl ${countParams.wrapCtrl}")
   }
 
   // Adapt wrap to value based off of type of counter if it isn't retrieved externally
@@ -136,9 +138,13 @@ abstract class Counter(countParams: CountParams) extends Module {
   // If incrementing by 1 or using external wrap signals, add normally
   // But if incrementing by >1 and using internal wrap signals, do add mod (max + 1)
   val up = {
-    if (countParams.incMax == 1 || (countParams.wrapCtrl == External && countParams.customWrap))
-      (io.out + inc).shorten(countParams.countMax)
-    else upCustom
+    if (countParams.incMax == 1 || (countParams.wrapCtrl == External && countParams.customWrap)) {
+      //      (io.out + inc).shorten(countParams.countMax)  TODO: figure out what was intended here
+      (io.out + inc)
+    }
+    else {
+      upCustom
+    }
   }
 
   val down = io.out - inc
@@ -153,9 +159,17 @@ abstract class Counter(countParams: CountParams) extends Module {
   // When only internal wrap signals are used, note that mods already produce appropriately wrapped counter values
   val nextCount = {
     if (countParams.wrapCtrl == Internal && (countParams.countType == UpMod ||
-      (countParams.countType == Up && countParams.incMax > 1 && !countParams.customWrap)))
+      (countParams.countType == Up && countParams.incMax > 1 && !countParams.customWrap))) {
       nextInSeq
-    else Mux(wrap,wrapTo,nextInSeq)
+      //    else Mux(wrap,wrapTo,nextInSeq)
+    }
+    else {
+      if(wrap == Bool(true)) {
+        wrapTo
+      } else {
+        nextInSeq
+      }
+    }
   }
 
   // Conditionally update (hold until update) or always update
@@ -165,16 +179,12 @@ abstract class Counter(countParams: CountParams) extends Module {
   }
 
   val count = Mux(iCtrl.reset,UInt(countParams.resetVal),newOnClk)
-  io.out := count.reg()
+//  io.out := count.reg() TODO: Figure out where reg should come from
+  io.out := count
 
   // When counters are chained, subsequent counter increments when current counter wraps
   if (countParams.changeCtrl == External) oCtrl.change.get := wrap & iCtrl.change.get
   if (countParams.wrapCtrl == External) oCtrl.wrap.get := wrap
   oCtrl.reset := iCtrl.reset
-
-}
-
-
-class Counters {
 
 }

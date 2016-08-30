@@ -56,7 +56,8 @@ class Demod[T <: Data:Ring](gen: => T, p: DemodParams) {
   val io = new DemodIO(gen.width.asInstanceOf[IntWidth].width.toInt)
 
   //check if the integer part of the inputs are odd
-  val real_odd =  Bool(((io.symbolIn.real.toInt(Truncate)).toBits & SInt(1)) === SInt(1))
-  val imag_odd =  Bool(((io.symbolIn.imaginary.toInt(Truncate)).toBits & SInt(1)) === SInt(1))
+  //TODO: get toInt working so following statements can be added
+//  val real_odd =  Bool(((io.symbolIn.real.toInt(Truncate)).toBits & SInt(1)) === SInt(1))
+//  val imag_odd =  Bool(((io.symbolIn.imaginary.toInt(Truncate)).toBits & SInt(1)) === SInt(1))
 
 }
