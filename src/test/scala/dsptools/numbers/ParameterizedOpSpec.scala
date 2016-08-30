@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import breeze.math.Complex
-import chisel3.core._
+import chisel3._
 import dsptools.{DspContext, DspTester}
 import dsptools.numbers._
 import org.scalatest.{FreeSpec, FlatSpec, Matchers}
