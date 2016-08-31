@@ -5,8 +5,7 @@ package dsptools.numbers
 import breeze.math.Complex
 import chisel3._
 import dsptools.{DspContext, DspTester}
-import dsptools.numbers._
-import org.scalatest.{FreeSpec, FlatSpec, Matchers}
+import org.scalatest.{FreeSpec, Matchers}
 import spire.algebra.Ring
 import spire.implicits._
 
@@ -52,13 +51,9 @@ class ParameterizedOpTester[T<:Data:Ring](c: ParameterizedNumberOperation[T]) ex
     dspPoke(c.io.a2, j)
     step(1)
 
-    val result = dspPeek(c.io.c)
+    val result = dspPeekDouble(c.io.c)
 
     dspExpect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
-
-    println(f"TESTCASE $i%6.2f ${c.op} $j%6.2f => $result" +
-      (if(result != expected) s"Error: expected $expected" else "")
-        )
   }
 }
 
@@ -90,7 +85,7 @@ class ParameterizedOpSpecification extends FreeSpec with Matchers {
     "This instance will process Real numbers with the basic mathematical operations" - {
       Seq("+", "-", "*").foreach { operation =>
         s"operation $operation should work for all inputs" in {
-          chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(getComplexFixed, operation)) { c =>
+          chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(getReal, operation)) { c =>
             new ParameterizedOpTester(c)
           } should be(true)
         }
@@ -117,9 +112,9 @@ class ComplexOpTester[T<:DspComplex[_]](c: ParameterizedNumberOperation[T]) exte
     dspPoke(c.io.a2, c2)
     step(1)
 
-    val result = dspPeekComplex(c.io.c)
+    val result = dspPeek(c.io.c).right.get
 
-//    dspExpectComplex(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
+    dspExpect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
 
     println(f"TESTCASE $i%6.2f ${c.op} $j%6.2f => $result" +
       (if(result != expected) s"Error: expected $expected" else "")
