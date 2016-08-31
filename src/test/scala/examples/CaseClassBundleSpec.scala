@@ -2,11 +2,11 @@
 //
 package examples
 
-import chisel3.core._
+import chisel3._
 import chisel3.iotesters.PeekPokeTester
-import chisel3.{Bundle, Module}
 import org.scalatest.{FlatSpec, Matchers}
 
+//scalastyle:off magic.number
 
 //case class CaseClassBundle(a: SInt) extends Bundle
 //case class CaseClassBundle(underlying: SInt) extends Bundle {
@@ -15,13 +15,13 @@ import org.scalatest.{FlatSpec, Matchers}
 //}
 class CaseClassBundle(gen: SInt) extends Bundle {
     val underlying = gen
-//    override def cloneType: this.type = new CaseClassBundle(underlying.cloneType).asInstanceOf[this.type]
+    override def cloneType: this.type = new CaseClassBundle(underlying.cloneType).asInstanceOf[this.type]
 }
 
 class SimpleCaseClassModule(gen: SInt) extends Module {
   val io = new Bundle {
-    val in = (new CaseClassBundle(gen)).flip()
-    val out  = new CaseClassBundle(gen)
+    val in  = new CaseClassBundle(gen).flip()
+    val out = new CaseClassBundle(gen)
   }
 
   val register1 = Reg(io.out)
@@ -35,8 +35,7 @@ class SimpleCaseClassBundleTester(c: SimpleCaseClassModule) extends PeekPokeTest
 
   poke(c.io.in.underlying, 7)
   step(1)
-  println(s"SimpleCaseClassBundle: pushed 7 got ${peek(c.io.out.underlying)}")
-
+  expect(c.io.out.underlying, 7)
 }
 
 class SimpleCaseClassBundleSpec extends FlatSpec with Matchers {
