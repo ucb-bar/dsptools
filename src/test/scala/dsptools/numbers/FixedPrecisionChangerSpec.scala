@@ -34,7 +34,7 @@ class FixedPrecisionChangerSpec extends FreeSpec with Matchers {
       } should be (true)
     }
     "here we assign to a F8.1 from a F8.1" - {
-      "conversion to fixed point with less precision rounds up to 7,  IS THIS RIGHT?" in {
+      "conversion to fixed point with less precision than poked value rounds up to 7,  IS THIS RIGHT?" in {
         chisel3.iotesters.Driver(() => new FixedPrecisionChanger(8, 1, 8, 1)) { c =>
           new FixedPointTruncatorTester(c, 6.875, 7.0)
         } should be(true)
