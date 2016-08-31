@@ -12,16 +12,17 @@ import spire.implicits._
 //scalastyle:off magic.number
 
 class ParameterizedNumberOperation[T <: Data:Ring](
-                                          gen:() => T,
-                                          val op: String = "+"
+                                        inputGenerator:() => T,
+                                        outputGenerator:() => T,
+                                        val op: String = "+"
                                         ) extends Module {
   val io = new Bundle {
-    val a1: T = gen().cloneType.flip()
-    val a2: T = gen().cloneType.flip()
-    val c:  T = gen().cloneType
+    val a1: T = inputGenerator().cloneType.flip()
+    val a2: T = inputGenerator().cloneType.flip()
+    val c:  T = outputGenerator().cloneType
   }
 
-  val register1 = Reg(gen().cloneType)
+  val register1 = Reg(outputGenerator().cloneType)
 
   register1 := {
     op match {
@@ -66,26 +67,27 @@ class ParameterizedOpSpecification extends FreeSpec with Matchers {
     implicit val defaultDspContext    = DspContext()
     implicit val realEvidence         = new DspRealRing()(defaultDspContext)
     implicit val fixedEvidence        = new FixedPointRing()(defaultDspContext)
-    implicit val complexFixedEvidence = new DspComplexRing[FixedPoint]()(fixedEvidence, defaultDspContext)
-    implicit val complexRealEvidence  = new DspComplexRing[DspReal]()(realEvidence, defaultDspContext)
 
-    def getReal():  DspReal    = new DspReal
-    def getFixed(): FixedPoint = FixedPoint(OUTPUT, width = 32, binaryPoint = 16)
-    def getComplexFixed(): DspComplex[FixedPoint] = {
-      DspComplex(
-        FixedPoint(OUTPUT, width = 65, binaryPoint = 16),
-        FixedPoint(OUTPUT, width = 65, binaryPoint = 16))
-    }
-    def getComplexReal(): DspComplex[DspReal] = {
-      DspComplex(
-        DspReal(1.0),
-        DspReal(1.0))
-    }
+    def realGenerator():  DspReal    = new DspReal
+    def fixedInGenerator(): FixedPoint = FixedPoint(OUTPUT, width = 16, binaryPoint = 8)
+    def fixedOutGenerator(): FixedPoint = FixedPoint(OUTPUT, width = 48, binaryPoint = 8)
 
     "This instance will process Real numbers with the basic mathematical operations" - {
       Seq("+", "-", "*").foreach { operation =>
         s"operation $operation should work for all inputs" in {
-          chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(getReal, operation)) { c =>
+          chisel3.iotesters.Driver(
+            () => new ParameterizedNumberOperation(realGenerator, realGenerator, operation)) { c =>
+            new ParameterizedOpTester(c)
+          } should be(true)
+        }
+      }
+    }
+    "This instance will process Fixed point numbers with the basic mathematical operations" - {
+      Seq("+", "-", "*").foreach { operation =>
+        s"operation $operation should work for all inputs" in {
+          chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(fixedInGenerator,
+            fixedOutGenerator,
+            operation)) { c =>
             new ParameterizedOpTester(c)
           } should be(true)
         }
@@ -115,10 +117,6 @@ class ComplexOpTester[T<:DspComplex[_]](c: ParameterizedNumberOperation[T]) exte
     val result = dspPeek(c.io.c).right.get
 
     dspExpect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
-
-    println(f"TESTCASE $i%6.2f ${c.op} $j%6.2f => $result" +
-      (if(result != expected) s"Error: expected $expected" else "")
-        )
   }
 }
 
@@ -134,23 +132,39 @@ class ComplexOpSpecification extends FreeSpec with Matchers {
     implicit val complexFixedEvidence = new DspComplexRing[FixedPoint]()(fixedEvidence, defaultDspContext)
     implicit val complexRealEvidence  = new DspComplexRing[DspReal]()(realEvidence, defaultDspContext)
 
-    def getReal():  DspReal    = new DspReal
-    def getFixed(): FixedPoint = FixedPoint(OUTPUT, width = 32, binaryPoint = 16)
-    def getComplexFixed(): DspComplex[FixedPoint] = {
-      DspComplex(
-        FixedPoint(OUTPUT, width = 65, binaryPoint = 16),
-        FixedPoint(OUTPUT, width = 65, binaryPoint = 16))
-    }
-    def getComplexReal(): DspComplex[DspReal] = {
+      def complexFixedGenerator(): DspComplex[FixedPoint] = {
+        DspComplex(
+          FixedPoint(OUTPUT, width = 16, binaryPoint = 2),
+          FixedPoint(OUTPUT, width = 16, binaryPoint = 2))
+      }
+      def complexFixedOutputGenerator(): DspComplex[FixedPoint] = {
+        DspComplex(
+          FixedPoint(OUTPUT, width = 48, binaryPoint = 4),
+          FixedPoint(OUTPUT, width = 48, binaryPoint = 4))
+      }
+    def complexRealGenerator(): DspComplex[DspReal] = {
       DspComplex(
         DspReal(1.0),
         DspReal(1.0))
     }
 
-    "This instance will process Real numbers with the basic mathematical operations" - {
+    "This instance will process DspComplex[Real] numbers with the basic mathematical operations" - {
       Seq("+", "-", "*").foreach { operation =>
         s"operation $operation should work for all inputs" in {
-          chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(getComplexReal, operation)) { c =>
+          chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(complexRealGenerator,
+            complexRealGenerator,
+            operation)) { c =>
+            new ComplexOpTester(c)
+          } should be(true)
+        }
+      }
+    }
+    "This instance will process DspComplex[FixedPoint] numbers with the basic mathematical operations" - {
+      Seq("+", "-", "*").foreach { operation =>
+        s"operation $operation should work for all inputs" in {
+          chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(complexFixedGenerator,
+            complexFixedOutputGenerator,
+            operation)) { c =>
             new ComplexOpTester(c)
           } should be(true)
         }

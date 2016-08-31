@@ -83,6 +83,7 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
         throw DspException(
           s"poke($c, $value): c DspComplex has unknown underlying type ${c.getClass.getName}")
     }
+    println(s"DspPoke($c, $value)")
   }
 
   def dspPeek(data: Data): Either[Double, Complex] = {
@@ -107,7 +108,7 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
         Left(bigIntBitsToDouble(bigInt))
       case r: FixedPoint =>
         val bigInt = super.peek(r)
-        Left(bigIntBitsToDouble(bigInt))
+        Left(toDouble(bigInt, r.binaryPoint.get))
       case _ =>
         throw DspException(s"peek($data): data has unknown type ${data.getClass.getName}")
     }
