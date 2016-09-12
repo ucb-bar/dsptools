@@ -5,9 +5,9 @@ package dsptools
 import breeze.math.Complex
 import chisel3.internal.firrtl.{KnownBinaryPoint, KnownWidth}
 import chisel3._
-import chisel3.core.FixedPoint
 import chisel3.iotesters.PeekPokeTester
 import dsptools.numbers.{DspComplex, DspReal}
+import dsptools.Utilities._
 
 class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
   def toBigInt(x: Double, fractionalWidth: Int): BigInt = {
@@ -24,17 +24,9 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
     result
   }
 
-  def doubleToBigIntBits(double: Double): BigInt = {
-    BigInt(java.lang.Double.doubleToLongBits(double))
-  }
-
-  def bigIntBitsToDouble(bigInt: BigInt): Double = {
-    java.lang.Double.longBitsToDouble(bigInt.toLong)
-  }
-
   def poke(signal: FixedPoint, value: Double): Unit = {
-    (signal.width, signal.binaryPoint) match {
-      case (KnownWidth(width), KnownBinaryPoint(binaryPoint)) =>
+    signal.binaryPoint match {
+      case KnownBinaryPoint(binaryPoint) =>
         val bigInt = toBigInt(value, binaryPoint)
         poke(signal, bigInt)
       case _ =>
@@ -45,8 +37,8 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
   def dspPoke(bundle: Data, value: Double): Unit = {
     bundle match {
       case f: FixedPoint =>
-        (f.width, f.binaryPoint) match {
-          case (KnownWidth(width), KnownBinaryPoint(binaryPoint)) =>
+        f.binaryPoint match {
+          case KnownBinaryPoint(binaryPoint) =>
             val bigInt = toBigInt(value, binaryPoint)
             poke(f, bigInt)
           case _ =>
@@ -134,8 +126,8 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
 
   def peek(signal: FixedPoint): Double = {
     val bigInt = super.peek(signal.asInstanceOf[Bits])
-    (signal.width, signal.binaryPoint) match {
-      case (KnownWidth(width), KnownBinaryPoint(binaryPoint)) =>
+    signal.binaryPoint match {
+      case KnownBinaryPoint(binaryPoint) =>
         val double = toDouble(bigInt, binaryPoint)
         double
       case _ =>

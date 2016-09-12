@@ -3,7 +3,6 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.core.{Bundle, Module}
 import dsptools.DspTester
 import org.scalatest.{Matchers, FreeSpec}
 
@@ -21,6 +20,23 @@ class FixedPrecisionChanger(inWidth: Int, inBinaryPoint: Int, outWidth: Int, out
 }
 
 class FixedPointTruncatorTester(c: FixedPrecisionChanger, inValue: Double, outValue: Double) extends DspTester(c) {
+  dspPoke(c.io.in, inValue)
+  step(1)
+  dspExpect(c.io.out, outValue, s"got ${dspPeekDouble(c.io.out)} should have $outValue")
+}
+
+class RemoveMantissa(inWidth: Int, inBinaryPoint: Int, outWidth: Int, outBinaryPoint: Int) extends Module {
+  val io = new Bundle {
+    val in  = FixedPoint(INPUT, inWidth, inBinaryPoint)
+    val out = FixedPoint(OUTPUT, outWidth, 0)
+  }
+
+  val reg = Reg(FixedPoint())
+  reg := io.in
+  io.out := reg.setBinaryPoint(0)
+}
+
+class RemoveMantissaTester(c: RemoveMantissa, inValue: Double, outValue: Double) extends DspTester(c) {
   dspPoke(c.io.in, inValue)
   step(1)
   dspExpect(c.io.out, outValue, s"got ${dspPeekDouble(c.io.out)} should have $outValue")
@@ -51,6 +67,14 @@ class FixedPrecisionChangerSpec extends FreeSpec with Matchers {
           new FixedPointTruncatorTester(c, 1.0 / 3.0, 1.0 / 3.0)
         } should be(true)
       }
+    }
+  }
+
+  "removing mantissa can be done" - {
+    "by using the setBinaryPoint Method" in {
+      chisel3.iotesters.Driver(() => new RemoveMantissa(12, 4, 8, 0)) { c =>
+        new RemoveMantissaTester(c, 3.75, 3.0)
+      } should be(true)
     }
   }
 }

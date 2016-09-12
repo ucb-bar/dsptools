@@ -53,7 +53,11 @@ class Demod[T <: Data:Ring](gen: => T, p: DemodParams) {
     val modulation_type = UInt(INPUT, p.QAMn.max)
   }
 
-  val io = new DemodIO(gen.width.asInstanceOf[IntWidth].width.toInt)
+  val io = new DemodIO(gen.getWidth)
+
+  implicit val parameters = p
+
+
 
   //check if the integer part of the inputs are odd
   //TODO: get toInt working so following statements can be added

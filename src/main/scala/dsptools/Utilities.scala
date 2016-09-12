@@ -2,9 +2,27 @@
 
 package dsptools
 
-import chisel3.{Bool, UInt}
+import chisel3._
+import chisel3.internal.firrtl.{KnownBinaryPoint, BinaryPoint}
+import dsptools.numbers.DspReal
 
 object Utilities {
+  def removeMantissa(dspReal: DspReal): DspReal = {
+    dspReal.intPart()
+  }
+//  def removeMantissa(fixedPoint: FixedPoint): FixedPoint = {
+//    fixedPoint.binaryPoint match {
+//      case KnownBinaryPoint(x)
+//    }
+//  }
+  def doubleToBigIntBits(double: Double): BigInt = {
+    BigInt(java.lang.Double.doubleToLongBits(double))
+  }
+
+  def bigIntBitsToDouble(bigInt: BigInt): Double = {
+    java.lang.Double.longBitsToDouble(bigInt.toLong)
+  }
+
 
 }
 

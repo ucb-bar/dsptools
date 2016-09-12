@@ -2,9 +2,8 @@
 
 package dsptools.numbers
 
-import chisel3.core.{FixedPoint, Wire}
-import chisel3.{SInt, Data, Bundle}
-import dsptools.{DspException, Grow, DspContext}
+import chisel3._
+import dsptools.{DspException, DspContext}
 import spire.algebra.Ring
 import spire.implicits._
 
@@ -49,7 +48,3 @@ class DspComplexRing[T <: Data:Ring](implicit context: DspContext) extends Ring[
   def zero: DspComplex[T] = DspComplex.wire(implicitly[Ring[T]].zero, implicitly[Ring[T]].zero)
   def negate(f: DspComplex[T]): DspComplex[T] = DspComplex.wire(-f.real, -f.imaginary)
 }
-
-case class DspFixedPointComplex(override val real: FixedPoint, override val imaginary: FixedPoint)(implicit ev: FixedPointRing)
-  extends DspComplex[FixedPoint](real, imaginary)
-

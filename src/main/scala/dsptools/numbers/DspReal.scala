@@ -8,6 +8,13 @@ import dsptools.DspContext
 import spire.algebra.Ring
 
 
+class BlackboxOneOperand extends BlackBox {
+  val io = new Bundle() {
+    val in = UInt(INPUT, DspReal.UnderlyingWidth)
+    val out = UInt(OUTPUT, DspReal.UnderlyingWidth)
+  }
+}
+
 class BlackboxTwoOperand extends BlackBox {
   val io = new Bundle() {
     val in1 = UInt(INPUT, DspReal.UnderlyingWidth)
@@ -44,7 +51,6 @@ class BBFEquals extends BlackboxTwoOperandBool
 
 class BBFNotEquals extends BlackboxTwoOperandBool
 
-// TODO: parameterizable widths
 class BBFFromInt extends BlackBox {
   val io = new Bundle() {
     val in = UInt(INPUT, DspReal.UnderlyingWidth)
@@ -52,7 +58,6 @@ class BBFFromInt extends BlackBox {
   }
 }
 
-// TODO: parameterizable widths
 class BBFToInt extends BlackBox {
   val io = new Bundle() {
     val in = UInt(INPUT, DspReal.UnderlyingWidth)
@@ -60,8 +65,18 @@ class BBFToInt extends BlackBox {
   }
 }
 
+class BBFIntPart extends BlackboxOneOperand
+
 class DspReal extends Bundle {
   val node = UInt(OUTPUT, DspReal.UnderlyingWidth)
+
+  private def oneOperandOperator(blackbox_gen: => BlackboxOneOperand) : DspReal = {
+    val blackbox = blackbox_gen
+    blackbox.io.in := node
+    val out = Wire(new DspReal)
+    out.node := blackbox.io.out
+    out
+  }
 
   private def twoOperandOperator(arg1: DspReal, blackbox_gen: => BlackboxTwoOperand) : DspReal = {
     val blackbox = blackbox_gen
@@ -121,16 +136,16 @@ class DspReal extends Bundle {
     twoOperandBool(arg1, Module(new BBFNotEquals()))
   }
 
+  def intPart(dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFIntPart()))
+  }
   /** Returns this Real's value truncated to an integer, as a DspReal.UnderlyingWidth-bit UInt.
     * Behavior on overflow (possible with large exponent terms) is undefined.
-    *
-    * TODO: make underlying black box rtoi parameterized
     */
   def toUInt(dummy: Int = 0): UInt = {
-//    val blackbox = Module(new BBFToInt)
-//    blackbox.io.in := node
-//    blackbox.io.out
-    UInt(0, width=DspReal.UnderlyingWidth)
+    val blackbox = Module(new BBFToInt)
+    blackbox.io.in := node
+    blackbox.io.out
   }
 
   /** Returns this Real's value as its bit representation in DspReal.UnderlyingWidth-bit floating point.
@@ -152,9 +167,8 @@ object DspReal {
     out
   }
 
-  /** Creates a Real by doing integer conversion from a (up to) DspReal.UnderlyingWidth-bit UInt.
-    *
-    * TODO: make underlying black box itor parameterized
+  /**
+    * Creates a Real by doing integer conversion from a (up to) DspReal.UnderlyingWidth-bit UInt.
     */
   def apply(value: UInt): DspReal = {
     val blackbox = Module(new BBFFromInt)
@@ -163,12 +177,6 @@ object DspReal {
     out.node := blackbox.io.out
     out
   }
-
-//  def wire[T <: Data:Ring](real: DspReal)(implicit context: DspContext): DspReal = {
-//    val result = Wire(new DspReal)
-//    result.node := real.node
-//    result
-//  }
 }
 
 class DspRealRing(implicit context: DspContext) extends Ring[DspReal] {

@@ -2,12 +2,12 @@
 
 package dsptools.numbers
 
-import chisel3.core.{FixedPoint, SInt}
+import chisel3._
 import dsptools.{DspContext, Grow}
 import spire.algebra.Ring
 
 /**
-  * Defines basic math functions for SInt
+  * Defines basic math functions for FixedPoint numbers
   * @param context a context object describing SInt behavior
   */
 class FixedPointRing(implicit context: DspContext) extends Ring[FixedPoint] {
@@ -26,3 +26,5 @@ class FixedPointRing(implicit context: DspContext) extends Ring[FixedPoint] {
   def zero: FixedPoint = FixedPoint.fromBigInt(BigInt(0), binaryPoint = 0)
   def negate(f: FixedPoint): FixedPoint = zero - f
 }
+
+
