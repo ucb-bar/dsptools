@@ -3,18 +3,35 @@
 package dsptools
 
 import chisel3._
-import chisel3.internal.firrtl.{KnownBinaryPoint, BinaryPoint}
 import dsptools.numbers.DspReal
+import spire.algebra.Ring
 
 object Utilities {
-  def removeMantissa(dspReal: DspReal): DspReal = {
-    dspReal.intPart()
+  //Todo: I'm very dissatisfied with the name removeMantissa
+  def removeMatissa[T <: Data:Ring](number: T, trim: TrimType): T = {
+    number match {
+      case dspReal: DspReal=>
+        trim match {
+          case Truncate => dspReal.intPart().asInstanceOf[T]
+          case Round => (dspReal + DspReal(0.5)).intPart().asInstanceOf[T]
+          case _ => throw DspException(s"removeMantissa: unsupported trim operation $trim on $dspReal")
+        }
+      case fixedPoint: FixedPoint =>
+        trim match {
+          case Truncate => fixedPoint.setBinaryPoint(0).asInstanceOf[T]
+          case Round => (fixedPoint + FixedPoint.fromDouble(0.5, binaryPoint = 1)).setBinaryPoint(0).asInstanceOf[T]
+          case _ => throw DspException(s"removeMantissa: unsupported trim operation $trim on $fixedPoint")
+        }
+      case _ => throw DspException(s"removeMantissa: unsupported number type $number")
+    }
   }
-//  def removeMantissa(fixedPoint: FixedPoint): FixedPoint = {
-//    fixedPoint.binaryPoint match {
-//      case KnownBinaryPoint(x)
-//    }
-//  }
+
+  def isOdd[T <: Data:Ring](number: T, trim: TrimType = Truncate): Bool = {
+    (removeMatissa(number, trim).asUInt() & 1.U) === 1.U
+  }
+
+  def isEven[T <: Data:Ring](number: T, trim: TrimType = Truncate): Bool = ! isEven(number, trim)
+
   def doubleToBigIntBits(double: Double): BigInt = {
     BigInt(java.lang.Double.doubleToLongBits(double))
   }

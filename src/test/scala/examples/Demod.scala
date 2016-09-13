@@ -3,9 +3,8 @@
 package examples
 
 import chisel3._
-import dsptools.Truncate
+import dsptools.{Utilities, Truncate}
 import dsptools.numbers.DspComplex
-import firrtl.ir.IntWidth
 import spire.algebra.Ring
 
 //scalastyle:off magic.number
@@ -60,8 +59,92 @@ class Demod[T <: Data:Ring](gen: => T, p: DemodParams) {
 
 
   //check if the integer part of the inputs are odd
-  //TODO: get toInt working so following statements can be added
-//  val real_odd =  Bool(((io.symbolIn.real.toInt(Truncate)).toBits & SInt(1)) === SInt(1))
-//  val imag_odd =  Bool(((io.symbolIn.imaginary.toInt(Truncate)).toBits & SInt(1)) === SInt(1))
+  val real_odd = Utilities.isOdd(io.symbolIn.real, Truncate)
+  val imag_odd = Utilities.isOdd(io.symbolIn.imaginary, Truncate)
 
+  //Set up the vector for each constellation.
+  val bpsk_out0 = Bool()
+  val qpsk_out = Vec(2, Bool())
+  val QAM16_out = Vec(4, Bool())
+  val QAM64_out = Vec(6, Bool())
+  val QAM256_out = Vec(8, Bool())
+
+//  //Depending on the elements of QAMn, corresponding LUTs are initated and addresses are put in.
+//  //The output of the LUT is then stored in a vector.
+//  if (p.QAMn.indexOf(2) != -1) { //if support BPSK
+//  val LUT_bpsk= DSPModule(new IntLUT2Bools(p.graycode_bpsk,2))
+//    LUT_bpsk.io.addr(0) := DSPUInt(((index_offset + real_input) >> 1), LUT_bpsk.io.addr(0).getRange.max)
+//    bpsk_out0 := (LUT_bpsk.io.dout(0))(0) ? (mod_type === DSPUInt(2))
+//  }
+//  if (p.QAMn.indexOf(4) != -1) { //if support QPSK
+//  val LUT_qpsk= DSPModule(new IntLUT2Bools(p.graycode_qpsk,2))
+//    LUT_qpsk.io.addr(0) := DSPUInt(((index_offset + real_input) >> 1), LUT_qpsk.io.addr(0).getRange.max)
+//    LUT_qpsk.io.addr(1) :=  DSPUInt(((index_offset + imag_input) >> 1), LUT_qpsk.io.addr(0).getRange.max)
+//    qpsk_out(0) := (LUT_qpsk.io.dout(0))(0) ? (mod_type === DSPUInt(4))
+//    qpsk_out(1) := (LUT_qpsk.io.dout(1))(0) ? (mod_type === DSPUInt(4))
+//  }
+//  if (p.QAMn.indexOf(16) != -1) { //if support 16_QAM
+//  val LUT_16_QAM= DSPModule(new IntLUT2Bools(p.graycode_16_QAM,2))
+//    LUT_16_QAM.io.addr(0) := DSPUInt(((index_offset + real_input) >> 1), LUT_16_QAM.io.addr(0).getRange.max)
+//    LUT_16_QAM.io.addr(1) :=  DSPUInt(((index_offset + imag_input) >> 1), LUT_16_QAM.io.addr(0).getRange.max)
+//    QAM16_out(0) := (LUT_16_QAM.io.dout(0))(0) ? (mod_type === DSPUInt(16))
+//    QAM16_out(1) := (LUT_16_QAM.io.dout(0))(1) ? (mod_type === DSPUInt(16))
+//    QAM16_out(2) := (LUT_16_QAM.io.dout(1))(0) ? (mod_type === DSPUInt(16))
+//    QAM16_out(3) := (LUT_16_QAM.io.dout(1))(1) ? (mod_type === DSPUInt(16))
+//  }
+//  if (p.QAMn.indexOf(64) != -1) { //if support 64_QAM
+//  val LUT_64_QAM= DSPModule(new IntLUT2Bools(p.graycode_64_QAM,2))
+//    LUT_64_QAM.io.addr(0) := DSPUInt(((index_offset + real_input) >> 1), LUT_64_QAM.io.addr(0).getRange.max)
+//    LUT_64_QAM.io.addr(1) :=  DSPUInt(((index_offset + imag_input) >> 1), LUT_64_QAM.io.addr(0).getRange.max)
+//    QAM64_out(0) := (LUT_64_QAM.io.dout(0))(0) ? (mod_type === DSPUInt(64))
+//    QAM64_out(1) := (LUT_64_QAM.io.dout(0))(1) ? (mod_type === DSPUInt(64))
+//    QAM64_out(2) := (LUT_64_QAM.io.dout(0))(2) ? (mod_type === DSPUInt(64))
+//    QAM64_out(3) := (LUT_64_QAM.io.dout(1))(0) ? (mod_type === DSPUInt(64))
+//    QAM64_out(4) := (LUT_64_QAM.io.dout(1))(1) ? (mod_type === DSPUInt(64))
+//    QAM64_out(5) := (LUT_64_QAM.io.dout(1))(2) ? (mod_type === DSPUInt(64))
+//  }
+//  if (p.QAMn.indexOf(256) != -1) { //if support 256_QAM
+//  val LUT_256_QAM= DSPModule(new IntLUT2Bools(p.graycode_256_QAM,2))
+//    LUT_256_QAM.io.addr(0) := DSPUInt(((index_offset + real_input) >> 1), LUT_256_QAM.io.addr(0).getRange.max)
+//    LUT_256_QAM.io.addr(1) :=  DSPUInt(((index_offset + imag_input) >> 1), LUT_256_QAM.io.addr(0).getRange.max)
+//    QAM256_out(0) := (LUT_256_QAM.io.dout(0))(0) ? (mod_type === DSPUInt(256))
+//    QAM256_out(1) := (LUT_256_QAM.io.dout(0))(1) ? (mod_type === DSPUInt(256))
+//    QAM256_out(2) := (LUT_256_QAM.io.dout(0))(2) ? (mod_type === DSPUInt(256))
+//    QAM256_out(3) := (LUT_256_QAM.io.dout(0))(3) ? (mod_type === DSPUInt(256))
+//    QAM256_out(4) := (LUT_256_QAM.io.dout(1))(0) ? (mod_type === DSPUInt(256))
+//    QAM256_out(5) := (LUT_256_QAM.io.dout(1))(1) ? (mod_type === DSPUInt(256))
+//    QAM256_out(6) := (LUT_256_QAM.io.dout(1))(2) ? (mod_type === DSPUInt(256))
+//    QAM256_out(7) := (LUT_256_QAM.io.dout(1))(3) ? (mod_type === DSPUInt(256))
+//  }
+//
+//  //Setting the appropriate output of the demodulator corresponding to the constellation type.
+//  io.demodOut(0) := bpsk_out0 ? (mod_type === DSPUInt(2)) | qpsk_out(0) ? (mod_type === DSPUInt(4)) | QAM16_out(0) ? (mod_type === DSPUInt(16)) | QAM64_out(0) ? (mod_type === DSPUInt(64)) | QAM256_out(0) ? (mod_type === DSPUInt(256))
+//  if (p.QAMn.max >= 4) {
+//    io.demodOut(1) := qpsk_out(1) ? (mod_type === DSPUInt(4)) | QAM16_out(1)? (mod_type === DSPUInt(16)) | QAM64_out(1)? (mod_type === DSPUInt(64)) | QAM256_out(1) ? (mod_type === DSPUInt(256))
+//  }
+//  if (p.QAMn.max >= 16) {
+//    io.demodOut(2) := QAM16_out(2)? (mod_type === DSPUInt(16)) | QAM64_out(2)? (mod_type === DSPUInt(64)) | QAM256_out(2) ? (mod_type === DSPUInt(256))
+//    io.demodOut(3) := QAM16_out(3)? (mod_type === DSPUInt(16)) | QAM64_out(3)? (mod_type === DSPUInt(64)) | QAM256_out(3) ? (mod_type === DSPUInt(256))
+//  }
+//  if (p.QAMn.max >= 64) {
+//    io.demodOut(4) := QAM64_out(4)? (mod_type === DSPUInt(64)) | QAM256_out(4) ? (mod_type === DSPUInt(256))
+//    io.demodOut(5) := QAM64_out(5)? (mod_type === DSPUInt(64)) | QAM256_out(5) ? (mod_type === DSPUInt(256))
+//  }
+//  if (p.QAMn.max >= 256) {
+//    io.demodOut(6) := QAM256_out(6)? (mod_type === DSPUInt(256))
+//    io.demodOut(7) := QAM256_out(7)? (mod_type === DSPUInt(256))
+//  }
+//
+//  io.offsetOut := io.offsetIn
+//  debug(real_odd)
+//  debug(imag_odd)
+//  debug(real_input_unclamped)
+//  debug(imag_input_unclamped)
+//  debug(real_input)
+//  debug(imag_input)
+//  debug(index_real)
+//  debug(index_imag)
+//  debug(index_offset)
+//  debug(io.demodOut)
+//  debug(real_odd)
 }
