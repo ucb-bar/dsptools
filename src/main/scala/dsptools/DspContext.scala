@@ -21,7 +21,7 @@ object DspContext {
   val DefaultRegistersForFixedAdd     = 0
 }
 case class DspContext(
-                     val overflowType: OverflowType = Grow,
+                     val overflowType: OverflowType = Wrap,
                      val trimType:                  TrimType     = NoTrim,
                      val binaryPoint:               Option[Int]  = Some(DspContext.DefaultBinaryPoint),
                      val numberOfBits:              Option[Int]  = Some(DspContext.DefaultNumberOfBits),
