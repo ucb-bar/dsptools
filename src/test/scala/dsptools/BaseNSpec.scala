@@ -35,6 +35,18 @@ class BaseNSpec extends FreeSpec with Matchers {
     chisel3.iotesters.Driver(() => new BaseNCircuit) { c =>
       new BaseNCircuitTester(c)
     } should be(true)
+  }
 
+  "BaseN utilities have a number of capabilities" - {
+    "create a list of ints from an int based on a radix" in {
+      BaseN.toIntList(0, 5) should be (List(0))
+      BaseN.toIntList(1, 5) should be (List(1))
+      BaseN.toIntList(6, 5) should be (List(1, 1))
+    }
+    "create a compute length of list" in {
+      BaseN.numDigits(0, 5) should be (1)
+      BaseN.toIntList(1, 5) should be (1)
+      BaseN.toIntList(6, 5) should be (2)
+    }
   }
 }

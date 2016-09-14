@@ -36,9 +36,9 @@ object BaseN {
     padding ++ intList
   }
 
-  /** Converts a decimal number x to an optionally padded List of DSPUInts
+  /** Converts a decimal number x to an optionally padded List of UInts
     * Note that the amount of padding is determined by the maximum number that should be represented */
-  def toDSPUIntList(x: Int, r:Int, max: Int = -1): List[UInt] = {
+  def toUIntList(x: Int, r:Int, max: Int = -1): List[UInt] = {
     val intList = if (max < 0) toIntList(x,r) else toIntList(x,r,max)
     intList.map(x => UInt(x,r-1))
   }
@@ -46,7 +46,7 @@ object BaseN {
   /** Converts a constant into BaseN Vec representation (least significant digit indexed with 0) */
   def apply(x: Int, r:Int): BaseN = apply(x,r,-1)
   def apply(x: Int, r:Int, max:Int): BaseN = {
-    val temp = toDSPUIntList(x,r,max).reverse
+    val temp = toUIntList(x,r,max).reverse
     BaseN(temp,r)
   }
 
@@ -62,7 +62,7 @@ object BaseN {
     */
   def toBits(x: Int, r:Int, max:Int = -1): Bits = {
     val digitWidth = toBitWidth(r-1)
-    val digits = toDSPUIntList(x,r,max).map(x => x.litValue())
+    val digits = toUIntList(x,r,max).map(x => x.litValue())
     val lit = {
       if (digits.length > 1) {
         digits.tail.foldLeft(digits.head)((x, y) => (x << digitWidth) + y)
@@ -93,27 +93,27 @@ object BaseN {
     BaseN(temp,rad)
   }
 
-  /** Converts list, etc. of DSPUInts to BaseN */
+  /** Converts list, etc. of UInts to BaseN */
   def apply(elts: Seq[UInt], rad: Int): BaseN = {
-    new BaseN(i => elts.head.cloneType,elts,radix=rad)
+    new BaseN(elts.length, radix=rad)
   }
 
   // TODO: Vec, BaseN Vec to Bits
-  // TODO: intList to BaseN Vec, DSPUIntList to BaseN Vec, Vec to BaseN Vec (check element ranges < max radix)
+  // TODO: intList to BaseN Vec, UIntList to BaseN Vec, Vec to BaseN Vec (check element ranges < max radix)
 
 }
 
 // TODO: Ranging?, digit reverse with max digit specified, do I need an explicit mod?
 // TODO: Better delay handling
+// TODO: Handle mixed radix
 /** BaseN type extends Vec */
-class BaseN(gen: (Int) => UInt, elts: Seq[UInt], val radix: Int) extends Bundle { //extends Vec(gen,elts){
-  val underlying = Vec(elts)
-  def length: Int = underlying.length
+class BaseN(val length: Int, val radix: Int) extends Bundle { //extends Vec(gen,elts){
+  val underlying = Vec(length, UInt(BaseN.toBitWidth(radix)))
   def head: UInt = underlying.head
   def tail: Seq[UInt] = underlying.tail
 
   /** Clone type ! */
-  override def cloneType: this.type = BaseN(elts.map(x => x.cloneType),radix).asInstanceOf[this.type]
+  override def cloneType: this.type = BaseN(length, radix).asInstanceOf[this.type]
 
   if (!BaseN.supportedBases.flatten.contains(radix)) throw DspException("Radix not supported!")
 
