@@ -26,3 +26,9 @@ class SIntRing(implicit context: DspContext) extends Ring[SInt] {
   def zero: SInt = SInt(value = BigInt(0))
   def negate(f: SInt): SInt = zero - f
 }
+
+class SIntOrder(implicit context: DspContext) extends Order[SInt] {
+  override def compare(x: SInt, y: SInt): ComparisonBundle = {
+    ComparisonHelper(x === y, x < y)
+  }
+}

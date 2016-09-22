@@ -33,7 +33,7 @@ class RemoveMantissa(inWidth: Int, inBinaryPoint: Int, outWidth: Int, outBinaryP
 
   val reg = Reg(FixedPoint())
   reg := io.in
-  io.out := reg.setBinaryPoint(0)
+  io.out := reg//.setBinaryPoint(0)
 }
 
 class RemoveMantissaTester(c: RemoveMantissa, inValue: Double, outValue: Double) extends DspTester(c) {

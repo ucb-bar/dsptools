@@ -18,8 +18,8 @@ object Utilities {
         }
       case fixedPoint: FixedPoint =>
         trim match {
-          case Truncate => fixedPoint.setBinaryPoint(0).asInstanceOf[T]
-          case Round => (fixedPoint + FixedPoint.fromDouble(0.5, binaryPoint = 1)).setBinaryPoint(0).asInstanceOf[T]
+          case Truncate => fixedPoint.asInstanceOf[T]//.setBinaryPoint(0).asInstanceOf[T]
+          case Round => (fixedPoint + FixedPoint.fromDouble(0.5, binaryPoint = 1)).asInstanceOf[T]//.setBinaryPoint(0).asInstanceOf[T]
           case _ => throw DspException(s"removeMantissa: unsupported trim operation $trim on $fixedPoint")
         }
       case _ => throw DspException(s"removeMantissa: unsupported number type $number")
