@@ -26,7 +26,7 @@ class SimpleComplexAdder extends Module {
 //  val registerReal = Reg(io.a1.real)
 //  val registerImaginary = Reg(io.a1.imaginary)
 
-  register1 := Ring[DspComplex[FixedPoint]].times(io.a1, io.a2)//io.a1 * io.a2
+  register1 := io.a1 * io.a2
 
   io.c := register1
 }
