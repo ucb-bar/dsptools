@@ -1,5 +1,7 @@
 // See LICENSE for license details.
 
+// Author: Stevo Bailey (stevo.bailey@berkeley.edu)
+
 package dsptools.examples
 
 import chisel3.util.{Counter, ShiftRegister, log2Up}
