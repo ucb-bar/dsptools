@@ -7,15 +7,12 @@ import chisel3.iotesters.{Backend}
 import chisel3.{Bundle, Module}
 import dsptools.{DspContext, DspTester}
 import dsptools.numbers.{FixedPointRing, DspComplexRing, DspComplex}
+import dsptools.numbers.implicits._
 import org.scalatest.{Matchers, FlatSpec}
-import spire.implicits._
+import spire.algebra.Ring
 
 //scalastyle:off magic.number
 class SimpleComplexAdder extends Module {
-  implicit val dspContext = DspContext()
-  implicit val fixedPointEvidence = new FixedPointRing()
-  implicit val ev: DspComplexRing[FixedPoint] = new DspComplexRing[FixedPoint]()
-
   val io = new Bundle {
     val a1 = DspComplex(FixedPoint(INPUT, 6, 4), FixedPoint(INPUT, 6, 4))
     val a2 = DspComplex(FixedPoint(INPUT, 8, 1), FixedPoint(INPUT, 8, 1))
@@ -29,7 +26,7 @@ class SimpleComplexAdder extends Module {
 //  val registerReal = Reg(io.a1.real)
 //  val registerImaginary = Reg(io.a1.imaginary)
 
-  register1 := io.a1 * io.a2
+  register1 := Ring[DspComplex[FixedPoint]].times(io.a1, io.a2)//io.a1 * io.a2
 
   io.c := register1
 }

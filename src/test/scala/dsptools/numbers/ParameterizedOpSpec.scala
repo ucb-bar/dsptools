@@ -7,7 +7,9 @@ import chisel3._
 import dsptools.{DspContext, DspTester}
 import org.scalatest.{FreeSpec, Matchers}
 import spire.algebra.Ring
-import spire.implicits._
+//import spire.implicits._
+import dsptools.numbers._
+import dsptools.numbers.implicits._
 
 //scalastyle:off magic.number
 
@@ -64,10 +66,6 @@ class ParameterizedOpSpecification extends FreeSpec with Matchers {
   handle different numeric types and different numerical operations
   """ -
     {
-    implicit val defaultDspContext    = DspContext()
-    implicit val realEvidence         = new DspRealRing()(defaultDspContext)
-    implicit val fixedEvidence        = new FixedPointRing()(defaultDspContext)
-
     def realGenerator():  DspReal    = new DspReal
     def fixedInGenerator(): FixedPoint = FixedPoint(OUTPUT, width = 16, binaryPoint = 8)
     def fixedOutGenerator(): FixedPoint = FixedPoint(OUTPUT, width = 48, binaryPoint = 8)
@@ -126,12 +124,6 @@ class ComplexOpSpecification extends FreeSpec with Matchers {
   handle different numeric types and different numerical operations
   """ -
     {
-    implicit val defaultDspContext    = DspContext()
-    implicit val realEvidence         = new DspRealRing()(defaultDspContext)
-    implicit val fixedEvidence        = new FixedPointRing()(defaultDspContext)
-    implicit val complexFixedEvidence = new DspComplexRing[FixedPoint]()(fixedEvidence, defaultDspContext)
-    implicit val complexRealEvidence  = new DspComplexRing[DspReal]()(realEvidence, defaultDspContext)
-
       def complexFixedGenerator(): DspComplex[FixedPoint] = {
         DspComplex(
           FixedPoint(OUTPUT, width = 16, binaryPoint = 2),

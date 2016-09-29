@@ -7,10 +7,6 @@ import dsptools.{DspContext, DspTester, Saturate}
 import dsptools.numbers._
 import dsptools.numbers.implicits._
 import org.scalatest.{FlatSpec, Matchers}
-//import spire.algebra.Ring
-//import spire.implicits._
-
-//scalastyle:off magic.number
 
 class ParameterizedSaturatingAdder[T <: Data:Integral](gen:() => T) extends Module {
   val io = new Bundle {

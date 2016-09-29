@@ -41,11 +41,6 @@ trait SIntRing extends Any with Ring[SInt] with hasContext {
 }
 
 trait SIntImpl {
-  /*implicit object SIntRingImpl extends SIntRing
-  implicit object SIntOrderImpl extends SIntOrder
-  implicit object SIntSignedImpl extends SIntSigned
-  implicit object SIntIsRealImpl extends SIntIsReal
-  implicit object ConvertableToSIntImpl extends ConvertableToSInt*/
   implicit object SIntIntegralImpl extends SIntIntegral
 }
 

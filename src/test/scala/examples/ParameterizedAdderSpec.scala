@@ -8,7 +8,7 @@ import dsptools.numbers._
 import dsptools.numbers.implicits._
 import org.scalatest.{FlatSpec, Matchers}
 //import spire.algebra.Ring
-import spire.implicits._
+//import spire.implicits._
 
 //scalastyle:off magic.number
 
@@ -21,7 +21,7 @@ class ParameterizedAdder[T <: Data:Integral](gen:() => T) extends Module {
 
   val register1 = Reg(gen().cloneType)
 
-  register1 := Integral[T].plus(io.a1, io.a2) //io.a1 + io.a2
+  register1 := io.a1 + io.a2
 
   io.c := register1
 }
@@ -42,18 +42,8 @@ class ParameterizedAdderTester[T<:Data:Integral](c: ParameterizedAdder[T]) exten
 }
 
 class ParameterizedAdderSpec extends FlatSpec with Matchers {
-  behavior of "parameterized adder circuit on SInt"
 
-  it should "allow registers to be declared that infer widths" in {
-
-    def getSInt(): SInt = SInt(width=10)
-
-    chisel3.iotesters.Driver(() => new ParameterizedAdder(getSInt)) { c =>
-      new ParameterizedAdderTester(c)
-    } should be (true)
-  }
-
-/*behavior of "parameterized adder circuit on blackbox real"
+behavior of "parameterized adder circuit on blackbox real"
 
 it should "allow registers to be declared that infer widths" in {
 //    implicit val DefaultDspContext = DspContext()
@@ -78,7 +68,6 @@ it should "allow registers to be declared that infer widths" in {
     new ParameterizedAdderTester(c)
   } should be (true)
 }
-*/
 
 //TODO: The following test should be refactored because complex circuit requires different pokes/tester
 //  behavior of "parameterized adder circuit on complex"

@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3._
-import dsptools.{DspException, DspContext}
+import dsptools.{DspContext, DspException}
 import spire.algebra.Ring
 import spire.implicits._
 
@@ -37,7 +37,7 @@ class DspComplex[T <: Data:Ring](val real: T, val imaginary: T) extends Bundle {
  *
   * @param context a context object describing SInt behavior
   */
-class DspComplexRing[T <: Data:Ring](implicit context: DspContext) extends Ring[DspComplex[T]] {
+class DspComplexRing[T <: Data:Ring] extends Ring[DspComplex[T]] with hasContext {
   def plus(f: DspComplex[T], g: DspComplex[T]): DspComplex[T] = {
     DspComplex.wire(f.real + g.real, f.imaginary + g.imaginary)
   }
@@ -47,4 +47,10 @@ class DspComplexRing[T <: Data:Ring](implicit context: DspContext) extends Ring[
   def one: DspComplex[T] = DspComplex.wire(implicitly[Ring[T]].one, implicitly[Ring[T]].zero)
   def zero: DspComplex[T] = DspComplex.wire(implicitly[Ring[T]].zero, implicitly[Ring[T]].zero)
   def negate(f: DspComplex[T]): DspComplex[T] = DspComplex.wire(-f.real, -f.imaginary)
+}
+
+trait DspComplexImpl {
+  implicit def DspComplexRingImpl[T<:Data:Ring] = new DspComplexRing[T]()
+  implicit object DspComplexFixedPointRing extends DspComplexRing[FixedPoint]()(new FixedPointRing {})
+  implicit object DspComplexDspRealRing extends DspComplexRing[DspReal]()(new DspRealRing{})
 }
