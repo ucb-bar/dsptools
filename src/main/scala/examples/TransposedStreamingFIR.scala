@@ -2,16 +2,14 @@
 
 package dsptools.examples
 
-import chisel3.core.{Vec, Reg}
+import chisel3.{Vec, Reg}
 import chisel3.{Data, Module, Bundle}
 import dsptools.{Grow, DspContext}
 import spire.algebra._
 import spire.implicits._
 
-class ConstantTapTransposedStreamingFIR[T <: Data](inputGenerator: T, outputGenerator: T, taps: Seq[T])
-                                             (implicit ev : DspContext => Ring[T],
-                                               implicit val context: DspContext) extends Module {
-  implicit val ev2 = ev(context)
+class ConstantTapTransposedStreamingFIR[T <: Data:Ring](inputGenerator: T, outputGenerator: T, taps: Seq[T])
+                                               extends Module {
   val io = new Bundle {
     val input = inputGenerator.asInput
     val output = outputGenerator.asOutput
@@ -31,11 +29,9 @@ class ConstantTapTransposedStreamingFIR[T <: Data](inputGenerator: T, outputGene
   io.output := last
 }
 
-class TransposedStreamingFIR[T <: Data](inputGenerator: => T, outputGenerator: => T,
+class TransposedStreamingFIR[T <: Data:Ring](inputGenerator: => T, outputGenerator: => T,
                                         tapGenerator: => T, numberOfTaps: Int)
-                                       (implicit ev : DspContext => Ring[T],
-                                        val context: DspContext) extends Module {
-  implicit val ev2 = ev(context)
+                                        extends Module {
   val io = new Bundle {
     val input = inputGenerator.asInput                  // note, using as Input here, causes IntelliJ to not like '*'
     val output = outputGenerator.asOutput
@@ -59,4 +55,3 @@ class TransposedStreamingFIR[T <: Data](inputGenerator: => T, outputGenerator: =
 
   io.output := last
 }
-

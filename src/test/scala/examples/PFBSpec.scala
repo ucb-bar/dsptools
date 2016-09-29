@@ -11,7 +11,8 @@ import dsptools.numbers.{SIntOrder, SIntRing}
 import dsptools.{DspContext, Grow}
 import org.scalatest.{FlatSpec, Matchers}
 import dsptools.examples.PFB
-import spire.algebra.{Field, Order, Ring}
+//import spire.algebra.{Field, Order, Ring}
+import dsptools.numbers.implicits._
 
 class PFBTester(c: PFB[SInt]) extends PeekPokeTester(c) {
   poke(c.io.sync_in, 0)
@@ -49,11 +50,11 @@ class PFBSpec extends FlatSpec with Matchers {
       new VecTest) { c => new VecTestTester(c) } should be (true)
   }
   "PFB" should "sort of do something" in {
-    implicit val DefaultDspContext = DspContext()
-    implicit val evidence = (context :DspContext) => new SIntRing()(context)
+    //implicit val DefaultDspContext = DspContext()
+    //implicit val evidence = (context :DspContext) => new SIntRing()(context)
 
-    implicit val ring = new SIntRing()
-    implicit val order = new SIntOrder()
+    //implicit val ring = new SIntRing()
+    //implicit val order = new SIntOrder()
 
     chisel3.iotesters.Driver(() => new PFB(SInt(width = 10), Some(SInt(width = 16)), n=16, p=4,
       min_mem_depth = 1, taps = 4, pipe = 3, use_sp_mem = false, symm = false, changes = false)) {

@@ -4,9 +4,9 @@ package dsptools.examples
 
 import chisel3.util.{Counter, ShiftRegister, log2Up}
 import chisel3.{Bool, Bundle, Data, Module, Reg, UInt, Vec, Wire, when}
-import dsptools.numbers.Order
-import spire.algebra.{Order => _, _}
-import spire.implicits._
+import dsptools.numbers.{Integral}
+//import spire.algebra.{Order => _, _}
+//import spire.implicits._
 import dsptools.numbers.implicits._
 
 // polyphase filter bank io
@@ -27,7 +27,7 @@ class PFBIO[T<:Data](genIn: => T, genOut: => Option[T] = None, n: Int, p: Int) e
 // the following two options are mutually exclusive (changes takes precedence):
 // symm = use symmetric coefficients to save memory
 // changes = use changes in coefficient values to save memory (ROM)
-class PFB[T<:Data:Ring:Order](genIn: => T, genOut: => Option[T],
+class PFB[T<:Data:Integral](genIn: => T, genOut: => Option[T],
                         n: Int, p: Int, min_mem_depth: Int,
                         taps: Int, pipe: Int, use_sp_mem: Boolean,
                         symm: Boolean = false, changes: Boolean = true)  extends Module {
@@ -36,8 +36,11 @@ class PFB[T<:Data:Ring:Order](genIn: => T, genOut: => Option[T],
   val bp = n/p
 
   val coeffs_array = scala.io.Source.fromFile("pfbcoeff.csv").getLines.toSeq.map(_.split(",").map(_.toInt))
-  val coeffs_vec = Vec( coeffs_array.map( line => Vec ( line.map ( num =>
-    Ring[T].fromInt(num)
+  val coeffs_vec = Vec( coeffs_array.map( line => Vec ( line.map ( num => {
+    val w = Wire(genIn)
+    w := Integral[T].fromInt(num)
+    w
+  }
   ) ) ) )
 
   // replicate sync counter to avoid critical path when coefficients are calculated
@@ -53,14 +56,14 @@ class PFB[T<:Data:Ring:Order](genIn: => T, genOut: => Option[T],
   val coeffs_subset = coeffs_array.grouped(p).map(x=>x.head.head).toSeq
   require(coeffs_subset.length == taps)
   val coeffs = Vec( coeffs_subset.map(x => {
-    val xT: T = Ring[T].fromInt(x)
+    val xT: T = Integral[T].fromInt(x)
     val xReg: T = Reg(t = null.asInstanceOf[T], next = null.asInstanceOf[T], init = xT.cloneType)
     xReg
   }) )
-  val change = Vec.fill(taps) { Wire(Ring[T].fromInt(-1).cloneType) }
-  change.foreach {x => x := Ring[T].zero }
+  val change = Vec.fill(taps) { Wire(Integral[T].fromInt(-1).cloneType) }
+  change.foreach {x => x := Integral[T].zero }
 
-  val coeffs_changes = scala.io.Source.fromFile("src/pfbcoeff_changes.csv").getLines.toSeq.map(_.split(",").map(_.toInt))
+  val coeffs_changes = scala.io.Source.fromFile("pfbcoeff_changes.csv").getLines.toSeq.map(_.split(",").map(_.toInt))
   val coeffs_changes_vec = Vec.fill(taps) { Vec.fill(n/p) { UInt(width=log2Up(p + 1)) } }
   val coeffs_sign_neg = Vec.fill(taps) { Vec.fill(n/p) { Bool() } }
   for (i <- 0 until coeffs_changes.length) {
@@ -72,9 +75,9 @@ class PFB[T<:Data:Ring:Order](genIn: => T, genOut: => Option[T],
   for (i <- 0 until taps) {
     when (coeffs_changes_vec(i)(sync_in_repl) != UInt(0, log2Up(p + 1))) {
       when (coeffs_sign_neg(i)(sync_in_repl)) {
-        change(i) := -Ring[T].one
+        change(i) := -Integral[T].one
       } .otherwise {
-        change(i) := Ring[T].one
+        change(i) := Integral[T].one
       }
     }
   }
@@ -83,7 +86,7 @@ class PFB[T<:Data:Ring:Order](genIn: => T, genOut: => Option[T],
   coeffs := coeff_next
   // synchronize means no need for radiation hardening
   when (sync_in_repl === UInt(n/p-1)) {
-    coeffs := Vec(coeffs_subset map (Ring[T].fromInt(_)))
+    coeffs := Vec(coeffs_subset map (Integral[T].fromInt(_)))
   }
   // main FIR filter starts here
   // multiply, delay, and add
@@ -141,18 +144,18 @@ class PFB[T<:Data:Ring:Order](genIn: => T, genOut: => Option[T],
       }
       if (j == 1) {
         val add = mult_out(i)(j-1) + mult_out(i)(j)
-        val sign_in1: Bool = Order[T].lt(mult_out(i)(j-1), Ring[T].zero)
-        val sign_in2: Bool = Order[T].lt(mult_out(i)(j-1), Ring[T].zero)
-        val sign_out: Bool = Order[T].lt(add, Ring[T].zero)
+        val sign_in1: Bool = mult_out(i)(j-1).isSignNegative() //Order[T].lt(mult_out(i)(j-1), Ring[T].zero)
+        val sign_in2: Bool = mult_out(i)(j-1).isSignNegative() //Order[T].lt(mult_out(i)(j-1), Ring[T].zero)
+        val sign_out: Bool = add.isSignNegative() //Order[T].lt(add, Ring[T].zero)
         overflow(i)(j-1) := ((sign_in1 && sign_in2) && !sign_out) || ((!sign_in1 && !sign_in2) && sign_out)
         add_out(i)(j-1) := add
         //add_out(i)(j-1) := mult_out(i)(j-1) + mult_out(i)(j)
       }
       else if (j != 0) {
         val add = add_out(i)(j-2) + mult_out(i)(j)
-        val sign_in1 = Order[T].lt(mult_out(i)(j-1), Ring[T].zero)
-        val sign_in2 = Order[T].lt(mult_out(i)(j), Ring[T].zero)
-        val sign_out = Order[T].lt(add, Ring[T].zero)
+        val sign_in1 = mult_out(i)(j-1).isSignNegative()
+        val sign_in2 = mult_out(i)(j).isSignNegative()
+        val sign_out = add.isSignNegative()
         overflow(i)(j-1) := ((sign_in1 && sign_in2) && !sign_out) || ((!sign_in1 && !sign_in2) && sign_out)
         add_out(i)(j-1) := add
       }

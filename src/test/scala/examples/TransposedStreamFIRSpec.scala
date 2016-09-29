@@ -4,9 +4,9 @@ package examples
 
 //scalastyle:off magic.number
 
-import chisel3.core.SInt
+import chisel3.SInt
 import chisel3.iotesters.{PeekPokeTester}
-import dsptools.numbers.SIntRing
+import dsptools.numbers.implicits._
 import dsptools.{Grow, DspContext}
 import org.scalatest.{Matchers, FlatSpec}
 
@@ -36,8 +36,8 @@ class TransposedStreamingTester(c: TransposedStreamingFIR[SInt])
 class TransposedStreamFIRSpec extends FlatSpec with Matchers {
   "ConstantTapTransposedStreamingFIR" should "compute a running average like thing" in {
     val taps = Seq.tabulate(3) { x => SInt(x)}
-    implicit val DefaultDspContext = DspContext()
-    implicit val evidence = (context :DspContext) => new SIntRing()(context)
+    //implicit val DefaultDspContext = DspContext()
+    //implicit val evidence = (context :DspContext) => new SIntRing()(context)
 
     chisel3.iotesters.Driver(() => new ConstantTapTransposedStreamingFIR(SInt(width = 10), SInt(width = 16), taps)) {
       c => new

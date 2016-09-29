@@ -2,16 +2,17 @@
 
 package examples
 
-import chisel3.core._
+import chisel3._
 import dsptools.{DspContext, DspTester}
 import dsptools.numbers._
+import dsptools.numbers.implicits._
 import org.scalatest.{FlatSpec, Matchers}
-import spire.algebra.Ring
+//import spire.algebra.Ring
 import spire.implicits._
 
 //scalastyle:off magic.number
 
-class ParameterizedAdder[T <: Data:Ring](gen:() => T) extends Module {
+class ParameterizedAdder[T <: Data:Integral](gen:() => T) extends Module {
   val io = new Bundle {
     val a1: T = gen().cloneType.flip()
     val a2: T = gen().cloneType.flip()
@@ -20,12 +21,12 @@ class ParameterizedAdder[T <: Data:Ring](gen:() => T) extends Module {
 
   val register1 = Reg(gen().cloneType)
 
-  register1 := io.a1 + io.a2
+  register1 := Integral[T].plus(io.a1, io.a2) //io.a1 + io.a2
 
   io.c := register1
 }
 
-class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends DspTester(c) {
+class ParameterizedAdderTester[T<:Data:Integral](c: ParameterizedAdder[T]) extends DspTester(c) {
   for {
     i <- 0.0 to 1.0 by 0.25
     j <- 0.0 to 4.0 by 0.5
@@ -41,33 +42,44 @@ class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends D
 }
 
 class ParameterizedAdderSpec extends FlatSpec with Matchers {
-  behavior of "parameterized adder circuit on blackbox real"
+  behavior of "parameterized adder circuit on SInt"
 
   it should "allow registers to be declared that infer widths" in {
-    implicit val DefaultDspContext = DspContext()
-    implicit val evidence = new DspRealRing()(DefaultDspContext)
 
-    def getReal(): DspReal = new DspReal
+  def getSInt(): SInt = SInt(width=10)
 
-    chisel3.iotesters.Driver(() => new ParameterizedAdder(getReal)) { c =>
-      new ParameterizedAdderTester(c)
-    } should be (true)
-  }
+  chisel3.iotesters.Driver(() => new ParameterizedAdder(getSInt)) { c =>
+    new ParameterizedAdderTester(c)
+  } should be (true)
+}
+/*behavior of "parameterized adder circuit on blackbox real"
 
-  behavior of "parameterized adder circuit on fixed point"
+it should "allow registers to be declared that infer widths" in {
+//    implicit val DefaultDspContext = DspContext()
+//   implicit val evidence = new DspRealRing()(DefaultDspContext)
 
-  it should "allow registers to be declared that infer widths" in {
-    implicit val DefaultDspContext = DspContext()
-    implicit val evidence = new FixedPointRing()(DefaultDspContext)
+  def getReal(): DspReal = new DspReal
 
-    def getFixed(): FixedPoint = FixedPoint(OUTPUT, width = 32, binaryPoint = 16)
+  chisel3.iotesters.Driver(() => new ParameterizedAdder(getReal)) { c =>
+    new ParameterizedAdderTester(c)
+  } should be (true)
+}
 
-    chisel3.iotesters.Driver(() => new ParameterizedAdder(getFixed)) { c =>
-      new ParameterizedAdderTester(c)
-    } should be (true)
-  }
+behavior of "parameterized adder circuit on fixed point"
 
-  //TODO: The following test should be refactored because complex circuit requires different pokes/tester
+it should "allow registers to be declared that infer widths" in {
+  //implicit val DefaultDspContext = DspContext()
+  //implicit val evidence = new FixedPointRing()(DefaultDspContext)
+
+  def getFixed(): FixedPoint = FixedPoint(OUTPUT, width = 32, binaryPoint = 16)
+
+  chisel3.iotesters.Driver(() => new ParameterizedAdder(getFixed)) { c =>
+    new ParameterizedAdderTester(c)
+  } should be (true)
+}
+*/
+
+//TODO: The following test should be refactored because complex circuit requires different pokes/tester
 //  behavior of "parameterized adder circuit on complex"
 //
 //  it should "allow registers to be declared that infer widths" in {

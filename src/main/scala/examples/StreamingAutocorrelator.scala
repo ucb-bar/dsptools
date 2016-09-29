@@ -3,15 +3,15 @@
 package examples
 
 import chisel3.{Bundle, Data}
-import chisel3.core.{Wire, Reg, Vec, Module}
-import dsptools.{Saturate, DspContext}
+import chisel3.{Module, Reg, Vec, Wire}
+import dsptools.{DspContext, Saturate}
 import dsptools.examples.TransposedStreamingFIR
+import dsptools.numbers.DspContextResolver
 import spire.algebra.Ring
 
-class StreamingAutocorrelator[T <: Data](inputGenerator: => T, outputGenerator: => T, delay: Int, windowSize: Int)
-                                        (implicit ev : DspContext => Ring[T],
-                                         val context: DspContext) extends Module {
-  implicit val ev2 = ev(context)
+class StreamingAutocorrelator[T <: Data:Ring](inputGenerator: => T, outputGenerator: => T, delay: Int, windowSize: Int)
+                                         extends Module {
+//  implicit val ev2 = ev(context)
   val io = new Bundle {
     val input = inputGenerator
     val output = outputGenerator
@@ -26,8 +26,8 @@ class StreamingAutocorrelator[T <: Data](inputGenerator: => T, outputGenerator: 
 
   val window = delays.drop(delay + 1).reverse
 
-  val firFilter = {
-    val newContext = context.copy(overflowType = Saturate)
+  val firFilter = DspContextResolver.withContext(DspContextResolver.currentContext.copy(overflowType = Saturate)) {
+    //val newContext = context.copy(overflowType = Saturate)
 
     Module(new TransposedStreamingFIR(inputGenerator, outputGenerator, inputGenerator, windowSize))
   }
