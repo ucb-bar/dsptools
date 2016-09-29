@@ -26,14 +26,15 @@ trait hasContext extends Any {
 
 object DspContextResolver {
   private val dynamicDspContextVar = new DynamicVariable[mutable.Stack[DspContext]](new mutable.Stack)
-  dynamicDspContextVar.value.push(DspContext())
+  private val contextStack = dynamicDspContextVar.value
+  contextStack.push(DspContext())
   def withContext[T](context: DspContext)(blk: => T) = {
-    dynamicDspContextVar.value.push(context)
+    contextStack.push(context)
     val ret = blk
-    dynamicDspContextVar.value.pop()
+    contextStack.pop()
     ret
   }
-  implicit val currentContext: DspContext = dynamicDspContextVar.value.head
+  implicit def currentContext: DspContext = contextStack.top
 }
 
 /* Eq.scala */

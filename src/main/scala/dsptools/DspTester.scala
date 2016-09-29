@@ -36,8 +36,11 @@ class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
 
   def dspPoke(bundle: Data, value: Double): Unit = {
     bundle match {
-      case s: SInt =>
-        poke(s, value.toInt)
+      case s: SInt => {
+        val a: BigInt = BigInt(value.round.toInt)
+        poke(s, a)
+        return
+      }
       case f: FixedPoint =>
         f.binaryPoint match {
           case KnownBinaryPoint(binaryPoint) =>

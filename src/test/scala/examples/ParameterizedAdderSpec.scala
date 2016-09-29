@@ -46,12 +46,13 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
 
   it should "allow registers to be declared that infer widths" in {
 
-  def getSInt(): SInt = SInt(width=10)
+    def getSInt(): SInt = SInt(width=10)
 
-  chisel3.iotesters.Driver(() => new ParameterizedAdder(getSInt)) { c =>
-    new ParameterizedAdderTester(c)
-  } should be (true)
-}
+    chisel3.iotesters.Driver(() => new ParameterizedAdder(getSInt)) { c =>
+      new ParameterizedAdderTester(c)
+    } should be (true)
+  }
+
 /*behavior of "parameterized adder circuit on blackbox real"
 
 it should "allow registers to be declared that infer widths" in {

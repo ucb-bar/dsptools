@@ -1,0 +1,82 @@
+// See LICENSE for license details.
+
+package examples
+
+import chisel3._
+import dsptools.{DspContext, DspTester, Saturate}
+import dsptools.numbers._
+import dsptools.numbers.implicits._
+import org.scalatest.{FlatSpec, Matchers}
+//import spire.algebra.Ring
+//import spire.implicits._
+
+//scalastyle:off magic.number
+
+class ParameterizedSaturatingAdder[T <: Data:Integral](gen:() => T) extends Module {
+  val io = new Bundle {
+    val a1: T = gen().cloneType.flip()
+    val a2: T = gen().cloneType.flip()
+    val normalSum  = gen().cloneType
+    val saturatedSum = gen().cloneType
+  }
+
+  val register1 = Reg(gen().cloneType)
+  val register2 = Reg(gen().cloneType)
+
+  println(s"ParameterizedSaturatingAdder ${DspContextResolver.currentContext}")
+  register1 := io.a1 + io.a2
+
+  DspContextResolver.withContext(DspContextResolver.currentContext.copy(overflowType = Saturate)) {
+    register2 := io.a1 + io.a2
+  }
+  io.normalSum := register1
+  io.saturatedSum := register2
+}
+
+class ParameterizedSaturatingAdderTester[T<:Data:Integral](c: ParameterizedSaturatingAdder[T], width: Int) extends DspTester(c) {
+  val min = -(1 << (width - 1))
+  val max = (1 << (width-1)) - 1
+  println("Min = " + min.toString)
+  println("Max = " + max.toString)
+  def overflowint(x: Int): Int = {
+    if (x > max) overflowint(min + x - max - 1)
+    else if (x < min) overflowint(max + x - min + 1)
+    else x
+  }
+  def saturateint(x: Int): Int = {
+    if (x > max) max
+    else if (x < min) min
+    else x
+  }
+  for {
+    i <- min to max
+    j <- min to max
+  } {
+    println(s"I=${i} and J=${j}")
+    dspPoke(c.io.a1, i)
+    dspPoke(c.io.a2, j)
+    step(1)
+
+    val resultNormal = dspPeekDouble(c.io.normalSum)
+    val resultSaturated = dspPeekDouble(c.io.saturatedSum)
+
+    dspExpect(c.io.normalSum, overflowint(i+j), s"parameterized normal adder $i + $j => $resultNormal should have been ${overflowint(i+j)}")
+    dspExpect(c.io.saturatedSum, saturateint(i+j), s"parameterized saturating adder $i + $j => $resultSaturated should have been ${saturateint(i+j)}")
+  }
+}
+
+class ParameterizedSaturatingAdderSpec extends FlatSpec with Matchers {
+  behavior of "parameterized saturating adder circuit on SInt"
+
+  it should "allow registers to be declared that infer widths" in {
+
+    val width = 3
+    def getSInt(): SInt = SInt(width=width)
+
+    chisel3.iotesters.Driver(() => new ParameterizedSaturatingAdder(getSInt)) { c =>
+      new ParameterizedSaturatingAdderTester(c, width)
+    } should be (true)
+  }
+
+}
+

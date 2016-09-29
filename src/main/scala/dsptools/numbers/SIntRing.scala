@@ -2,10 +2,10 @@
 
 package dsptools.numbers
 
-import chisel3.core.SInt
-import dsptools.{DspContext, Grow}
+import chisel3.{Mux, SInt, UInt, Wire}
+import dsptools.{DspContext, Grow, Saturate}
 import spire.algebra.Ring
-import spire.math._
+import spire.math.{Algebraic, ConvertableTo, ConvertableFrom, Rational, Real}
 
 
 
@@ -17,8 +17,18 @@ trait SIntRing extends Any with Ring[SInt] with hasContext {
   def plus(f: SInt, g: SInt): SInt = {
     if(context.overflowType == Grow) {
       f +& g
-    }
-    else {
+    } else if (context.overflowType == Saturate) {
+      println("Saturating add is broken right now!")
+      val grow = f +& g
+      val nogrow = f +% g
+      val max = SInt(3)
+      val min = SInt(-4)
+
+      Mux(grow === nogrow,
+        nogrow,
+        Mux(grow > SInt(0), max, min )
+      )
+    } else {
       f +% g
     }
   }
