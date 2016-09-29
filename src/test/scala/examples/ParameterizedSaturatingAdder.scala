@@ -3,7 +3,7 @@
 package examples
 
 import chisel3._
-import dsptools.{DspContext, DspTester, Saturate}
+import dsptools.{DspTester, Saturate}
 import dsptools.numbers._
 import dsptools.numbers.implicits._
 import org.scalatest.{FlatSpec, Matchers}

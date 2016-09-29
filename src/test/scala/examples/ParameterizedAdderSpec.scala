@@ -3,14 +3,10 @@
 package examples
 
 import chisel3._
-import dsptools.{DspContext, DspTester}
+import dsptools.DspTester
 import dsptools.numbers._
 import dsptools.numbers.implicits._
 import org.scalatest.{FlatSpec, Matchers}
-//import spire.algebra.Ring
-//import spire.implicits._
-
-//scalastyle:off magic.number
 
 class ParameterizedAdder[T <: Data:Integral](gen:() => T) extends Module {
   val io = new Bundle {
@@ -46,9 +42,6 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
 behavior of "parameterized adder circuit on blackbox real"
 
 it should "allow registers to be declared that infer widths" in {
-//    implicit val DefaultDspContext = DspContext()
-//   implicit val evidence = new DspRealRing()(DefaultDspContext)
-
   def getReal(): DspReal = new DspReal
 
   chisel3.iotesters.Driver(() => new ParameterizedAdder(getReal)) { c =>
@@ -59,9 +52,6 @@ it should "allow registers to be declared that infer widths" in {
 behavior of "parameterized adder circuit on fixed point"
 
 it should "allow registers to be declared that infer widths" in {
-  //implicit val DefaultDspContext = DspContext()
-  //implicit val evidence = new FixedPointRing()(DefaultDspContext)
-
   def getFixed(): FixedPoint = FixedPoint(OUTPUT, width = 32, binaryPoint = 16)
 
   chisel3.iotesters.Driver(() => new ParameterizedAdder(getFixed)) { c =>

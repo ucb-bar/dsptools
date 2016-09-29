@@ -3,7 +3,6 @@
 package examples
 
 import chisel3.core._
-import chisel3.iotesters.{Backend}
 import chisel3.{Bundle, Module}
 import dsptools.DspTester
 import org.scalatest.{Matchers, FlatSpec}

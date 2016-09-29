@@ -4,14 +4,11 @@ package dsptools.numbers
 
 import breeze.math.Complex
 import chisel3._
-import dsptools.{DspContext, DspTester}
+import dsptools.DspTester
 import org.scalatest.{FreeSpec, Matchers}
 import spire.algebra.Ring
-//import spire.implicits._
 import dsptools.numbers._
 import dsptools.numbers.implicits._
-
-//scalastyle:off magic.number
 
 class ParameterizedNumberOperation[T <: Data:Ring](
                                         inputGenerator:() => T,
