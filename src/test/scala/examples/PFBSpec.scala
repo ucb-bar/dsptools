@@ -4,28 +4,81 @@ package examples
 
 //scalastyle:off magic.number
 
-import chisel3.Driver
-import chisel3.core.SInt
+import chisel3.{Data, Driver, FixedPoint, SInt}
 import chisel3.iotesters.PeekPokeTester
-import dsptools.numbers.{SIntOrder, SIntRing}
-import dsptools.{DspContext, Grow}
+import dsptools.numbers.{DspReal, SIntOrder, SIntRing}
+import dsptools.{DspContext, DspTester, Grow}
 import org.scalatest.{FlatSpec, Matchers}
-import dsptools.examples.PFB
+import dsptools.examples.{PFB, PFBConfig, PFBnew, sincHamming}
 //import spire.algebra.{Field, Order, Ring}
 import dsptools.numbers.implicits._
 
-class PFBTester(c: PFB[SInt]) extends PeekPokeTester(c) {
+class PFBTester[T<:Data](c: PFBnew[T]) extends DspTester(c) {
   poke(c.io.sync_in, 0)
 
   for(num <- -50 to 50) {
-    c.io.data_in.foreach { port => poke(port, BigInt(num)) }
+    c.io.data_in.foreach { port => dspPoke(port, num.toDouble) }
     step(1)
-    c.io.data_out.foreach { port => println(peek(port).toString)}
+    c.io.data_out.foreach { port => println(dspPeek(port).toString)}
   }
 }
+
+class PFBConstantInput[T<:Data](c: PFBnew[T]) extends DspTester(c) {
+  val windowSize = c.config.windowSize
+
+  val result = (0 to windowSize / c.config.parallelism * 4).foldLeft(Seq[Double]()) ( (sum:Seq[Double], next: Int) => {
+    c.io.data_in.foreach { port => dspPoke(port, 1.0)}
+    step(1)
+    c.io.data_in.foreach { port => dspPoke(port, 1.0)}
+    sum ++ c.io.data_out.map { port => dspPeek(port).left.get }
+  })
+
+  println()
+  result.foreach { x => print(x.toString + ", ")}
+  println()
+}
+
+class PFBLeakageTester[T<:Data](c: PFBnew[T], os: Int = 10) extends DspTester(c) {
+  val windowSize = c.config.windowSize
+  val parallelism = c.config.parallelism
+  val fftSize    = c.config.outputWindowSize
+
+  // multiply by two to be sure to flush old state before measuring
+  val numSteps = windowSize * 2 / parallelism
+
+  val testBin=fftSize / 2
+
+  def testTone(freq: Double): Seq[Double] = (0 until numSteps).flatMap(i => {
+      (0 until parallelism).map(j => {
+        val idx = i * parallelism + j
+        val x_t = scala.math.sin(2*scala.math.Pi * freq * idx.toDouble / fftSize)
+        dspPoke(c.io.data_in(j), x_t)
+      })
+      step(1)
+      c.io.data_out.map { port => dspPeek(port).left.get }
+    }).drop(numSteps * parallelism - fftSize) // keep only the last fftSize elements
+
+  def getEnergyAtBin(x_t: Seq[Double], bin: Int) : Double = {
+    val sinToCorr = (0 until x_t.length).map( idx => math.sin(2*math.Pi*bin*idx/(fftSize.toDouble)))
+    val cosToCorr = (0 until x_t.length).map( idx => math.cos(2*math.Pi*bin*idx/(fftSize.toDouble)))
+    val sinCorr = x_t zip sinToCorr map ( {case (x,y) => x * y} ) reduceLeft(_+_)
+    val cosCorr = x_t zip cosToCorr map ( {case (x,y) => x * y} ) reduceLeft(_+_)
+    sinCorr * sinCorr + cosCorr * cosCorr
+  }
+
+  val results = (0 until fftSize * os) map (f_os => {
+    println(s"${100 * f_os / (fftSize * os).toDouble}% done")
+    val test = testTone(f_os / os.toDouble)
+    getEnergyAtBin(test, testBin)
+  })
+
+  print(s"Results: ${results}")
+}
+
 class PFBSpec extends FlatSpec with Matchers {
   import chisel3.{Bool, Bundle, Module, Mux, UInt, Vec}
-  "Vecs" should "have some sort of justice" in {
+  behavior of "Vecs"
+  ignore should "have some sort of justice" in {
     class VecTest extends Module {
       val io = new Bundle {
         val in = Bool().flip
@@ -49,25 +102,43 @@ class PFBSpec extends FlatSpec with Matchers {
     chisel3.iotesters.Driver(() =>
       new VecTest) { c => new VecTestTester(c) } should be (true)
   }
-  "PFB" should "sort of do something" in {
-    //implicit val DefaultDspContext = DspContext()
-    //implicit val evidence = (context :DspContext) => new SIntRing()(context)
-
-    //implicit val ring = new SIntRing()
-    //implicit val order = new SIntOrder()
-
-    chisel3.iotesters.Driver(() => new PFB(SInt(width = 10), Some(SInt(width = 16)), n=16, p=4,
-      min_mem_depth = 1, taps = 4, pipe = 3, use_sp_mem = false, symm = false, changes = false)) {
+  behavior of "PFB"
+  ignore should "sort of do something" in {
+    chisel3.iotesters.Driver(() => new PFBnew(SInt(width = 10), Some(SInt(width = 16))) //, n=16, p=4,
+      //min_mem_depth = 1, taps = 4, pipe = 3, use_sp_mem = false, symm = false, changes = false)) {
+    ) {
+      c => new PFBTester(c)
+    } should be (true)
+    chisel3.iotesters.Driver(() => new PFBnew(
+      FixedPoint(width = 10, binaryPoint = 2),
+      Some(FixedPoint(width = 16, binaryPoint = 4))) //, n=16, p=4,
+      //min_mem_depth = 1, taps = 4, pipe = 3, use_sp_mem = false, symm = false, changes = false)) {
+    ) {
       c => new PFBTester(c)
     } should be (true)
   }
-  //  "TransposedStreamingFIR" should "compute a running average like thing" in {
-  //    implicit val DefaultDspContext = DspContext()
-  //    implicit val evidence = (context :DspContext) => new SIntRing()(context)
-  //
-  //    runPeekPokeTester(() => new ConstantTapTransposedStreamingFIR(SInt(width = 10), SInt(width = 16), taps), "firrtl") {
-  //      (c, b) => new
-  //          ConstantTapTransposedStreamingTester(c, b)
-  //    } should be (true)
-  //  }
+
+  ignore should "build with DspReal" in {
+    chisel3.iotesters.Driver(() => new PFBnew(DspReal(0.0),
+//  chisel3.iotesters.Driver(() => new PFBnew(FixedPoint(width=32,binaryPoint=16),
+    config=PFBConfig(
+      window = Seq(1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0),//sincHamming(8, 4),
+      outputWindowSize = 4,
+      parallelism=2
+    ))) {
+      c => new PFBConstantInput(c)
+    } should be (true)
+  }
+
+  it should "reduce leakage" in {
+    chisel3.iotesters.Driver(() => new PFBnew(DspReal(0.0),
+      //  chisel3.iotesters.Driver(() => new PFBnew(FixedPoint(width=32,binaryPoint=16),
+      config=PFBConfig(
+        window = sincHamming(64, 16),
+        outputWindowSize = 16,
+        parallelism=2
+      ))) {
+      c => new PFBLeakageTester[DspReal](c, 3)
+    } should be (true)
+  }
 }

@@ -41,7 +41,7 @@ trait SIntRing extends Any with Ring[SInt] with hasContext {
 }
 
 trait SIntImpl {
-  implicit object SIntIntegralImpl extends SIntIntegral
+  implicit object SIntIntegerImpl extends SIntInteger
 }
 
 trait SIntOrder extends Any with Order[SInt] with hasContext {
@@ -68,7 +68,7 @@ trait ConvertableToSInt extends ConvertableTo[SInt] with hasContext {
   def fromBigInt(n: BigInt): SInt = SInt(n)
   def fromByte(n: Byte): SInt = SInt(n.toInt)
   def fromDouble(n: Double): SInt = SInt(n.toInt)
-  def fromReal(n: Real): SInt = SInt(n.toInt)
+//  def fromReal(n: Real): SInt = SInt(n.toInt)
   def fromRational(n: Rational): SInt = SInt(n.toInt)
   def fromType[B](n: B)(implicit c: ConvertableFrom[B]): SInt = SInt(c.toBigInt(n))
   def fromInt(n: Int): SInt = SInt(n)
@@ -77,6 +77,7 @@ trait ConvertableToSInt extends ConvertableTo[SInt] with hasContext {
   def fromLong(n: Long): SInt = SInt(n)
 }
 
-trait SIntIntegral extends SIntRing with ConvertableToSInt with SIntIsReal with Integral[SInt] with hasContext {
+trait SIntInteger extends SIntRing with ConvertableToSInt with SIntIsReal with Integer[SInt] with hasContext {
   override def fromInt(n: Int): SInt = super[SIntRing].fromInt(n)
+  def mod(a: SInt, b: SInt): SInt = a % b
 }

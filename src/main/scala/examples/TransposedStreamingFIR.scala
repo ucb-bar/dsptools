@@ -2,31 +2,39 @@
 
 package dsptools.examples
 
-import chisel3.{Vec, Reg}
-import chisel3.{Data, Module, Bundle}
-import dsptools.{Grow, DspContext}
+import chisel3.util.Valid
+import chisel3.{Reg, Vec}
+import chisel3.{Bundle, Data, Module, when}
+import dsptools.{DspContext, Grow}
 import spire.algebra._
 import spire.implicits._
+import spire.math.ConvertableTo
 
-class ConstantTapTransposedStreamingFIR[T <: Data:Ring](inputGenerator: T, outputGenerator: T, taps: Seq[T])
+class ConstantTapTransposedStreamingFIR[T <: Data:Ring, V <% T](inputGenerator: T, outputGenerator: T, val taps: Seq[V])
                                                extends Module {
   val io = new Bundle {
-    val input = inputGenerator.asInput
-    val output = outputGenerator.asOutput
+    val input = Valid(inputGenerator.asOutput).flip
+    val output = Valid(outputGenerator.asOutput)
   }
 
   val products: Seq[T] = taps.reverse.map { tap =>
-    io.input * tap
+    io.input.bits * tap
   }
 
-  val last = Reg(products.head)
-  last := products.reduceLeft { (left: T, right: T) =>
+  val last = Reg[T](outputGenerator)
+  val nextLast = products.reduceLeft { (left: T, right: T) =>
     val reg = Reg(left)
-    reg := left
+    when (io.input.valid) {
+      reg := left
+    }
     reg + right
   }
+  when(io.input.valid) {
+    last := nextLast
+  }
 
-  io.output := last
+  io.output.bits := last
+  io.output.valid := Reg(next=io.input.valid)
 }
 
 class TransposedStreamingFIR[T <: Data:Ring](inputGenerator: => T, outputGenerator: => T,
@@ -41,10 +49,6 @@ class TransposedStreamingFIR[T <: Data:Ring](inputGenerator: => T, outputGenerat
   val products: Seq[T] = io.taps.reverse.map { tap: T =>
     io.input * tap
   }
-
-  //  withContext(context.copy(overflowType = Grow)) { newContext =>
-  //    val x = Module(new LUT)
-  //  }
 
   val last = Reg(products.head)
   last := products.reduceLeft { (left: T, right: T) =>

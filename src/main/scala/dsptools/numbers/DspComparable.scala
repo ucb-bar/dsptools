@@ -43,7 +43,7 @@ object DspContextResolver {
   * type. Any 2 instances `x` and `y` are equal if `eqv(x, y)` is `true`.
   * Moreover, `eqv` should form an equivalence relation.
   */
-trait Eq[@specialized A <: Data] extends Any {
+trait Eq[A <: Data] extends Any {
   /** Returns `true` if `x` and `y` are equivalent, `false` otherwise. */
   def eqv(x:A, y:A): Bool
 
@@ -54,17 +54,17 @@ trait Eq[@specialized A <: Data] extends Any {
     * Constructs a new `Eq` instance for type `B` where 2 elements are
     * equivalent iff `eqv(f(x), f(y))`.
     */
-  def on[@specialized B <: Data](f:B => A): Eq[B] = new MappedEq(this)(f)
+  def on[B <: Data](f:B => A): Eq[B] = new MappedEq(this)(f)
 }
 
-private[numbers] class MappedEq[@specialized A <: Data, @specialized B <: Data](eq: Eq[B])(f: A => B) extends Eq[A] {
+private[numbers] class MappedEq[A <: Data, B <: Data](eq: Eq[B])(f: A => B) extends Eq[A] {
   def eqv(x: A, y: A): Bool = eq.eqv(f(x), f(y))
 }
 
 object Eq {
   def apply[A <: Data](implicit e:Eq[A]):Eq[A] = e
 
-  def by[@specialized A <: Data, @specialized B <: Data](f:A => B)(implicit e:Eq[B]): Eq[A] = new MappedEq(e)(f)
+  def by[A <: Data, B <: Data](f:A => B)(implicit e:Eq[B]): Eq[A] = new MappedEq(e)(f)
 }
 
 
@@ -118,7 +118,7 @@ object ComparisonHelper {
   * false     true        = 1.0     (corresponds to x > y)
   *
   */
-trait PartialOrder[@specialized A <: Data] extends Any with Eq[A] {
+trait PartialOrder[A <: Data] extends Any with Eq[A] {
   self =>
   /** Result of comparing `x` with `y`. Returns ValidIO[ComparisonBundle]
     *  with `valid` false if operands are not comparable. If operands are
@@ -173,7 +173,7 @@ trait PartialOrder[@specialized A <: Data] extends Any with Eq[A] {
     * Defines a partial order on `B` by mapping `B` to `A` using `f` and using `A`s
     * order to order `B`.
     */
-  override def on[@specialized B <: Data](f: B => A): PartialOrder[B] = new MappedPartialOrder(this)(f)
+  override def on[B <: Data](f: B => A): PartialOrder[B] = new MappedPartialOrder(this)(f)
 
   /**
     * Defines a partial order on `A` where all arrows switch direction.
@@ -181,20 +181,20 @@ trait PartialOrder[@specialized A <: Data] extends Any with Eq[A] {
   def reverse: PartialOrder[A] = new ReversedPartialOrder(this)
 }
 
-private[numbers] class MappedPartialOrder[@specialized A <: Data, @specialized B <: Data](partialOrder: PartialOrder[B])(f: A => B) extends PartialOrder[A] {
+private[numbers] class MappedPartialOrder[A <: Data, B <: Data](partialOrder: PartialOrder[B])(f: A => B) extends PartialOrder[A] {
   def partialCompare(x: A, y: A): ValidIO[ComparisonBundle] = partialOrder.partialCompare(f(x), f(y))
 }
 
-private[numbers] class ReversedPartialOrder[@specialized A <: Data](partialOrder: PartialOrder[A]) extends PartialOrder[A] {
+private[numbers] class ReversedPartialOrder[A <: Data](partialOrder: PartialOrder[A]) extends PartialOrder[A] {
   def partialCompare(x: A, y: A): ValidIO[ComparisonBundle] = partialOrder.partialCompare(y, x)
 }
 
 object PartialOrder {
   @inline final def apply[A <: Data](implicit po: PartialOrder[A]): PartialOrder[A] = po
 
-  def by[@specialized A <: Data, @specialized B <: Data](f: A => B)(implicit po: PartialOrder[B]): PartialOrder[A] = po.on(f)
+  def by[A <: Data, B <: Data](f: A => B)(implicit po: PartialOrder[B]): PartialOrder[A] = po.on(f)
 
-  def from[@specialized A <: Data](f: (A, A) => ValidIO[ComparisonBundle]): PartialOrder[A] = new PartialOrder[A] {
+  def from[A <: Data](f: (A, A) => ValidIO[ComparisonBundle]): PartialOrder[A] = new PartialOrder[A] {
     def partialCompare(x: A, y: A): ValidIO[ComparisonBundle] = f(x, y)
   }
 
@@ -206,7 +206,7 @@ object PartialOrder {
 }
 
 /*
-private[numbers] class DerivedPartialOrdering[@specialized A <: Data](partialOrder: PartialOrder[A]) extends PartialOrdering[A] {
+private[numbers] class DerivedPartialOrdering[A <: Data](partialOrder: PartialOrder[A]) extends PartialOrdering[A] {
   def partialCompare(x: A, y: A): ValidIO[ComparisonBundle] = partialOrder.partialCompare(x, y)
   def lteq(x: A, y: A): Bool = partialOrder.lteqv(x, y)
 }
@@ -230,7 +230,7 @@ private[numbers] class DerivedPartialOrdering[@specialized A <: Data](partialOrd
   *
   * By the totality law, x <= y and y <= x cannot be both false.
   */
-trait Order[@specialized A <: Data] extends Any with PartialOrder[A] {
+trait Order[A <: Data] extends Any with PartialOrder[A] {
   self =>
 
   def partialCompare(x: A, y: A): ValidIO[ComparisonBundle] = {
@@ -261,7 +261,7 @@ trait Order[@specialized A <: Data] extends Any with PartialOrder[A] {
     * Defines an order on `B` by mapping `B` to `A` using `f` and using `A`s
     * order to order `B`.
     */
-  override def on[@specialized B <: Data](f: B => A): Order[B] = new MappedOrder(this)(f)
+  override def on[B <: Data](f: B => A): Order[B] = new MappedOrder(this)(f)
 
   /**
     * Defines an ordering on `A` where all arrows switch direction.
@@ -269,20 +269,20 @@ trait Order[@specialized A <: Data] extends Any with PartialOrder[A] {
   override def reverse: Order[A] = new ReversedOrder(this)
 }
 
-private[numbers] class MappedOrder[@specialized A <: Data, @specialized B <: Data](order: Order[B])(f: A => B) extends Order[A] {
+private[numbers] class MappedOrder[A <: Data, B <: Data](order: Order[B])(f: A => B) extends Order[A] {
   def compare(x: A, y: A): ComparisonBundle = order.compare(f(x), f(y))
 }
 
-private[numbers] class ReversedOrder[@specialized A <: Data](order: Order[A]) extends Order[A] {
+private[numbers] class ReversedOrder[A <: Data](order: Order[A]) extends Order[A] {
   def compare(x: A, y: A): ComparisonBundle = order.compare(y, x)
 }
 
 object Order {
   @inline final def apply[A <: Data](implicit o: Order[A]): Order[A] = o
 
-  def by[@specialized A <: Data, @specialized B <: Data](f: A => B)(implicit o: Order[B]): Order[A] = o.on(f)
+  def by[A <: Data, B <: Data](f: A => B)(implicit o: Order[B]): Order[A] = o.on(f)
 
-  def from[@specialized A <: Data](f: (A, A) => ComparisonBundle): Order[A] = new Order[A] {
+  def from[A <: Data](f: (A, A) => ComparisonBundle): Order[A] = new Order[A] {
     def compare(x: A, y: A): ComparisonBundle = f(x, y)
   }
 
@@ -382,7 +382,7 @@ object Sign {
   * A trait for things that have some notion of sign and the ability to ensure
   * something has a positive sign.
   */
-trait Signed[@specialized(Double, Float, Int, Long) A] extends Any {
+trait Signed[A] extends Any {
   /** Returns Zero if `a` is 0, Positive if `a` is positive, and Negative is `a` is negative. */
   def sign(a: A): Sign = Sign(signum(a))
 
@@ -422,7 +422,7 @@ private class OrderedRingIsSigned[A<:Data](implicit o: Order[A], r: Ring[A]) ext
 /**
   * A simple type class for numeric types that are a subset of the reals.
   */
-trait IsReal[@specialized A<:Data] extends Any with Order[A] with Signed[A] {
+trait IsReal[A<:Data] extends Any with Order[A] with Signed[A] {
 
   /**
     * Rounds `a` the nearest integer that is greater than or equal to `a`.
@@ -451,50 +451,57 @@ trait IsReal[@specialized A<:Data] extends Any with Order[A] with Signed[A] {
 }
 
 object IsReal {
-  def apply[@specialized A<:Data](implicit A: IsReal[A]): IsReal[A] = A
+  def apply[A<:Data](implicit A: IsReal[A]): IsReal[A] = A
 }
 
-trait IsAlgebraic[@specialized A<:Data] extends Any with IsReal[A] {
+trait IsAlgebraic[A<:Data] extends Any with IsReal[A] {
   //def toAlgebraic(a: A): Algebraic
   //def toDouble(a: A): DspReal = DspReal(toAlgebraic(a).toDouble) // ???
 }
 object IsAlgebraic {
-  def apply[@specialized A<:Data](implicit A: IsAlgebraic[A]): IsAlgebraic[A] = A
+  def apply[A<:Data](implicit A: IsAlgebraic[A]): IsAlgebraic[A] = A
 }
 
-trait IsRational[@specialized A<:Data] extends Any with IsAlgebraic[A] {
+trait IsRational[A<:Data] extends Any with IsAlgebraic[A] {
   //def toRational(a: A): Rational
   //def toAlgebraic(a: A): Algebraic = ???// Algebraic(toRational(a))
 }
 
 object IsRational {
-  def apply[@specialized A<:Data](implicit A: IsRational[A]): IsRational[A] = A
+  def apply[A<:Data](implicit A: IsRational[A]): IsRational[A] = A
 }
 
-trait IsIntegral[@specialized(Byte,Short,Int,Long) A<:Data] extends Any with IsRational[A] {
+trait IsIntegral[A<:Data] extends Any with IsRational[A] {
   def ceil(a: A): A = a
   def floor(a: A): A = a
   def round(a: A): A = a
   def isWhole(a: A): Bool = Bool(true)
+  def mod(a: A, b: A): A
 }
 
 object IsIntegral {
-  def apply[@specialized A<:Data](implicit A: IsIntegral[A]): IsIntegral[A] = A
+  def apply[A<:Data](implicit A: IsIntegral[A]): IsIntegral[A] = A
+}
+
+trait Real[A<:Data] extends Any with Ring[A] with ConvertableTo[A] with IsReal[A] {
+  def fromReal(a: spire.math.Real): A = fromDouble(a.toDouble)
 }
 
 /* Integral.scala */
-trait Integral[@specialized(Int,Long) A<:Data] extends Any with Ring[A] with ConvertableTo[A] with IsReal[A]
+trait Integer[A<:Data] extends Any with Real[A] with IsIntegral[A]
 
-object Integral {
+object Integer {
   //implicit final val IntIsIntegral = new IntIsIntegral
   //implicit final val LongIsIntegral = new LongIsIntegral
   //implicit final val BigIntIsIntegral = new BigIntIsIntegral
   //implicit final val SafeLongIsIntegral = new SafeLongIsIntegral
 
-  @inline final def apply[A<:Data](implicit ev: Integral[A]): Integral[A] = ev
+  @inline final def apply[A<:Data](implicit ev: Integer[A]): Integer[A] = ev
 }
 
-class IntegralOps[A<:Data](lhs: A)(implicit ev: Integral[A]) {
+class IntegralOps[A<:Data](lhs: A)(implicit ev: Integer[A]) {
+  def mod(rhs: A): A = ev.mod(lhs, rhs)
+  def %(rhs: A): A = mod(rhs)
   //def factor: prime.Factors = prime.factor(toSafeLong)
   //def isPrime: Boolean = prime.isPrime(toSafeLong)
   //def toSafeLong: SafeLong = SafeLong(ev.toBigInt(lhs))
@@ -577,6 +584,10 @@ trait SignedSyntax {
   implicit def signedOps[A<:Data: Signed](a: A): SignedOps[A] = new SignedOps(a)
 }
 
+trait ConvertableToSyntax {
+  def fromDouble[T<:Data:ConvertableTo](a: Double): T = implicitly[ConvertableTo[T]].fromDouble(a)
+}
+
 /* Ops.scala */
 final class EqOps[A <: Data](lhs:A)(implicit ev:Eq[A]) {
   def ===(rhs:A): Bool = macro Ops.binop[A, Bool]
@@ -650,7 +661,8 @@ final class IsRealOps[A<:Data](lhs:A)(implicit ev:IsReal[A]) {
   //def toDouble(): Double = macro Ops.unop[Double]
 }
 
-trait AllSyntax extends EqSyntax with PartialOrderSyntax with OrderSyntax with IsRealSyntax with SignedSyntax
+trait AllSyntax extends EqSyntax with PartialOrderSyntax with OrderSyntax with IsRealSyntax with SignedSyntax with
+  ConvertableToSyntax
 
 trait AllImpl extends SIntImpl with FixedPointImpl with DspRealImpl with DspComplexImpl
 

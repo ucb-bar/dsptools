@@ -195,7 +195,7 @@ trait DspRealRing extends Any with Ring[DspReal] with hasContext {
 }
 
 trait DspRealImpl {
-  implicit object DspRealIntegralImpl extends DspRealIntegral
+  implicit object DspRealRealImpl extends DspRealReal
 }
 
 trait DspRealOrder extends Any with Order[DspReal] with hasContext {
@@ -212,8 +212,13 @@ trait DspRealSigned extends Any with Signed[DspReal] with hasContext {
   /** An idempotent function that ensures an object has a non-negative sign. */
   def abs(a: DspReal): DspReal = Mux(a > DspReal(0), a, DspReal(0)-a)
 }
-trait DspRealIsReal extends Any with IsIntegral[DspReal] with DspRealOrder with DspRealSigned with hasContext {
+trait DspRealIsReal extends Any with IsReal[DspReal] with DspRealOrder with DspRealSigned with hasContext {
   def toDouble(a: DspReal): DspReal = ???
+
+  def ceil(a: DspReal): DspReal = ???
+  def floor(a: DspReal): DspReal = ???
+  def isWhole(a: DspReal): Bool = ???
+  def round(a: DspReal): DspReal = ???
 }
 
 trait ConvertableToDspReal extends ConvertableTo[DspReal] with hasContext {
@@ -222,7 +227,7 @@ trait ConvertableToDspReal extends ConvertableTo[DspReal] with hasContext {
   def fromBigInt(n: BigInt): DspReal = DspReal(n.toInt)
   def fromByte(n: Byte): DspReal = DspReal(n.toInt)
   def fromDouble(n: Double): DspReal = DspReal(n)
-  def fromReal(n: Real): DspReal = DspReal(n.toDouble)
+  //def fromReal(n: Real): DspReal = DspReal(n.toDouble)
   def fromRational(n: Rational): DspReal = DspReal(n.toDouble)
   def fromType[B](n: B)(implicit c: ConvertableFrom[B]): DspReal = DspReal(c.toDouble(n))
   def fromInt(n: Int): DspReal = DspReal(n)
@@ -231,6 +236,6 @@ trait ConvertableToDspReal extends ConvertableTo[DspReal] with hasContext {
   def fromLong(n: Long): DspReal = DspReal(n)
 }
 
-trait DspRealIntegral extends DspRealRing with ConvertableToDspReal with DspRealIsReal with Integral[DspReal] with hasContext {
+trait DspRealReal extends DspRealRing with ConvertableToDspReal with DspRealIsReal with Real[DspReal] with hasContext {
   override def fromInt(n: Int): DspReal = super[DspRealRing].fromInt(n)
 }

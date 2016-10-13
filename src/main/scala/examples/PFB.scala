@@ -6,17 +6,92 @@ package dsptools.examples
 
 import chisel3.util.{Counter, ShiftRegister, log2Up}
 import chisel3.{Bool, Bundle, Data, Module, Reg, UInt, Vec, Wire, when}
-import dsptools.numbers.{Integral}
-//import spire.algebra.{Order => _, _}
-//import spire.implicits._
+import dsptools.numbers.Real
 import dsptools.numbers.implicits._
 
 // polyphase filter bank io
-class PFBIO[T<:Data](genIn: => T, genOut: => Option[T] = None, n: Int, p: Int) extends Bundle {
-  val data_in = Vec.fill(p) { genIn.asInput }
-  val data_out = Vec.fill(p) { genOut.getOrElse(genIn).asOutput }
-  val sync_in = UInt(log2Up(n/p))
+class PFBIO[T<:Data](genIn: => T, genOut: => Option[T] = None,
+                     windowSize: Int, parallelism: Int) extends Bundle {
+  val data_in = Vec(parallelism, genIn.asInput)
+  val data_out = Vec(parallelism, genOut.getOrElse(genIn).asOutput)
+  val sync_in = UInt(log2Up(windowSize/parallelism))
   val overflow = Bool()
+}
+
+object sincHamming {
+  def apply(size: Int, nfft: Int): Seq[Double] = Seq.tabulate(size) (i=>{
+    val term1 = 0.54 - 0.46 * breeze.numerics.cos(2*scala.math.Pi * i.toDouble / size)
+    val term2 = breeze.numerics.sinc(size.toDouble / nfft -0.5 * (size.toDouble / nfft) )
+    println(term1 * term2 * 1024)
+    term1 * term2 //* 2*512
+  })
+}
+
+case class PFBConfig(
+                      window: Seq[Double] = sincHamming(64, 64 / 8),
+                      //windowSize: Int = 64,
+                      outputWindowSize: Int = 16,
+                      parallelism: Int = 8,
+                      pipelineDepth: Int = 4,
+                      useSinglePortMem: Boolean = false,
+                      symmetricCoeffs: Boolean  = false,
+                      useDeltaCompression: Boolean = false
+                    ) {
+  val windowSize = window.length
+
+  // various checks for validity
+  assert(window.length > 0)
+  assert(window.length % outputWindowSize == 0, "Window size not a multiple of output window size")
+  assert(outputWindowSize % parallelism == 0, "Output window size is not a multiple of parallelism")
+}
+
+class PFBnew[T<:Data:Real](
+                            genIn: => T,
+                            genOut: => Option[T] = None,
+                            val config: PFBConfig = PFBConfig()
+                          ) extends Module {
+  val io = new PFBIO(genIn, genOut, config.windowSize, config.parallelism)
+
+  val firGroup = Counter(config.outputWindowSize / config.parallelism)
+  firGroup.inc()
+  val firGroupPrev = ShiftRegister(firGroup.value, 1)
+
+  val firs = (0 until config.outputWindowSize).map(idx => {
+    val taps = config.window.zipWithIndex.filter {case (n, i) => i % config.outputWindowSize == idx} map ({case(n,i) => n})
+
+    implicit def ev(x:Double) = fromDouble[T](x)
+    val fir = Module(new ConstantTapTransposedStreamingFIR(genIn, genOut getOrElse(genIn), taps))
+    fir
+  })
+
+  firs.zipWithIndex.map({case(f, i) => {
+    val group = i % config.parallelism
+    f.io.input.bits := io.data_in(group)
+    f.io.input.valid := firGroup.value === UInt(group)
+  }})
+
+  io.data_out.zipWithIndex.map({case(p, i) => {
+    val toMux = firs.zipWithIndex.filter({case(f, f_i) => f_i % config.parallelism == i}).map({case (f,_)=>f})
+    val muxed = Vec(toMux.map(_.io.output.bits))
+    p := muxed(firGroupPrev)
+    toMux.zipWithIndex.map({case(f, f_i) => {
+      chisel3.assert(f.io.output.valid ||  (UInt(f_i) != firGroupPrev) )
+      chisel3.assert(!f.io.output.valid || (UInt(f_i) === firGroupPrev) )
+    }})
+  }})
+
+ /* val firs = io.data_in.zipWithIndex.map {case (in, idx) => {
+    val taps = config.window.zipWithIndex.filter {case (n, i) => i % config.parallelism ==idx} map {case(n, i) => n}
+    implicit def ev(x:Double) = fromDouble[T](x)
+    val fir = Module(new ConstantTapTransposedStreamingFIR(genIn, genOut getOrElse(genIn), taps))
+    fir
+  }}
+
+  io.data_in zip (io.data_out) zip(firs) map {case ((in, out), fir) => {
+    fir.io.input := in
+    out := fir.io.output
+  }}*/
+
 }
 
 // polyphase filter bank
@@ -29,7 +104,7 @@ class PFBIO[T<:Data](genIn: => T, genOut: => Option[T] = None, n: Int, p: Int) e
 // the following two options are mutually exclusive (changes takes precedence):
 // symm = use symmetric coefficients to save memory
 // changes = use changes in coefficient values to save memory (ROM)
-class PFB[T<:Data:Integral](genIn: => T, genOut: => Option[T],
+class PFB[T<:Data:Real](genIn: => T, genOut: => Option[T],
                         n: Int, p: Int, min_mem_depth: Int,
                         taps: Int, pipe: Int, use_sp_mem: Boolean,
                         symm: Boolean = false, changes: Boolean = true)  extends Module {
@@ -40,7 +115,7 @@ class PFB[T<:Data:Integral](genIn: => T, genOut: => Option[T],
   val coeffs_array = scala.io.Source.fromFile("pfbcoeff.csv").getLines.toSeq.map(_.split(",").map(_.toInt))
   val coeffs_vec = Vec( coeffs_array.map( line => Vec ( line.map ( num => {
     val w = Wire(genIn)
-    w := Integral[T].fromInt(num)
+    w := implicitly[Real[T]].fromInt(num)
     w
   }
   ) ) ) )
@@ -58,12 +133,13 @@ class PFB[T<:Data:Integral](genIn: => T, genOut: => Option[T],
   val coeffs_subset = coeffs_array.grouped(p).map(x=>x.head.head).toSeq
   require(coeffs_subset.length == taps)
   val coeffs = Vec( coeffs_subset.map(x => {
-    val xT: T = Integral[T].fromInt(x)
-    val xReg: T = Reg(t = null.asInstanceOf[T], next = null.asInstanceOf[T], init = xT.cloneType)
+    val xT: T = implicitly[Real[T]].fromInt(x)
+    val xReg: T = Wire(xT.cloneType) //t = null.asInstanceOf[T], next = null.asInstanceOf[T], init = xT.cloneType)
+    xReg := xT
     xReg
   }) )
-  val change = Vec.fill(taps) { Wire(Integral[T].fromInt(-1).cloneType) }
-  change.foreach {x => x := Integral[T].zero }
+  val change = Vec.fill(taps) { Wire(implicitly[Real[T]].fromInt(-1).cloneType) }
+  change.foreach {x => x := implicitly[Real[T]].zero }
 
   val coeffs_changes = scala.io.Source.fromFile("pfbcoeff_changes.csv").getLines.toSeq.map(_.split(",").map(_.toInt))
   val coeffs_changes_vec = Vec.fill(taps) { Vec.fill(n/p) { UInt(width=log2Up(p + 1)) } }
@@ -77,9 +153,9 @@ class PFB[T<:Data:Integral](genIn: => T, genOut: => Option[T],
   for (i <- 0 until taps) {
     when (coeffs_changes_vec(i)(sync_in_repl) != UInt(0, log2Up(p + 1))) {
       when (coeffs_sign_neg(i)(sync_in_repl)) {
-        change(i) := -Integral[T].one
+        change(i) := -implicitly[Real[T]].one
       } .otherwise {
-        change(i) := Integral[T].one
+        change(i) := implicitly[Real[T]].one
       }
     }
   }
@@ -88,7 +164,7 @@ class PFB[T<:Data:Integral](genIn: => T, genOut: => Option[T],
   coeffs := coeff_next
   // synchronize means no need for radiation hardening
   when (sync_in_repl === UInt(n/p-1)) {
-    coeffs := Vec(coeffs_subset map (Integral[T].fromInt(_)))
+    coeffs := Vec(coeffs_subset map (implicitly[Real[T]].fromInt(_)))
   }
   // main FIR filter starts here
   // multiply, delay, and add

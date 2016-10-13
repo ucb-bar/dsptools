@@ -7,8 +7,9 @@ import dsptools.DspTester
 import dsptools.numbers._
 import dsptools.numbers.implicits._
 import org.scalatest.{FlatSpec, Matchers}
+import spire.algebra.Ring
 
-class ParameterizedAdder[T <: Data:Integral](gen:() => T) extends Module {
+class ParameterizedAdder[T <: Data:Ring](gen:() => T) extends Module {
   val io = new Bundle {
     val a1: T = gen().cloneType.flip()
     val a2: T = gen().cloneType.flip()
@@ -22,7 +23,7 @@ class ParameterizedAdder[T <: Data:Integral](gen:() => T) extends Module {
   io.c := register1
 }
 
-class ParameterizedAdderTester[T<:Data:Integral](c: ParameterizedAdder[T]) extends DspTester(c) {
+class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends DspTester(c) {
   for {
     i <- 0.0 to 1.0 by 0.25
     j <- 0.0 to 4.0 by 0.5

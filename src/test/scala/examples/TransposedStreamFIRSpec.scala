@@ -5,21 +5,39 @@ package examples
 //scalastyle:off magic.number
 
 import chisel3.SInt
-import chisel3.iotesters.{PeekPokeTester}
+import chisel3.iotesters.PeekPokeTester
 import dsptools.numbers.implicits._
-import dsptools.{Grow, DspContext}
-import org.scalatest.{Matchers, FlatSpec}
-
+import dsptools.{DspContext, Grow}
+import org.scalatest.{FlatSpec, Matchers}
 import dsptools.examples.{ConstantTapTransposedStreamingFIR, TransposedStreamingFIR}
-import spire.algebra.{Ring, Field}
+import spire.algebra.{Field, Ring}
 
-class ConstantTapTransposedStreamingTester(c: ConstantTapTransposedStreamingFIR[SInt])
+class ConstantTapTransposedStreamingTester(c: ConstantTapTransposedStreamingFIR[SInt, Int])
   extends PeekPokeTester(c) {
+  val smallest = -5
+  val biggest  = 5
+  println(s"Taps are ${c.taps.toString}")
 
-  for(num <- -5 to 5) {
-    poke(c.io.input, BigInt(num))
+  def checkAnswer(n: Int) : Int = {
+    // assumes inputs increase by 1 each time
+    c.taps.zipWithIndex.foldLeft(0) {case (s, (tap, idx)) => {
+      s + tap * (if(n - idx >= smallest) n - idx else 0)
+    }}
+  }
+  for(num <- smallest to biggest) {
+    poke(c.io.input.bits, BigInt(-7))
+    poke(c.io.input.valid, 0)
+    for (i<- 0 until 10) {
+      step(1)
+      assert(peek(c.io.output.valid) == 0)
+    }
+    poke(c.io.input.valid, 1)
+    poke(c.io.input.bits, BigInt(num))
     step(1)
-    println(peek(c.io.output).toString())
+    println(peek(c.io.output.bits).toString())
+    println(s"Answer should be ${checkAnswer(num)}")
+    assert(peek(c.io.output.bits) == checkAnswer(num))
+    assert(peek(c.io.output.valid) == 1)
   }
 }
 
@@ -35,7 +53,8 @@ class TransposedStreamingTester(c: TransposedStreamingFIR[SInt])
 
 class TransposedStreamFIRSpec extends FlatSpec with Matchers {
   "ConstantTapTransposedStreamingFIR" should "compute a running average like thing" in {
-    val taps = Seq.tabulate(3) { x => SInt(x)}
+    val taps = Seq.tabulate(3){x=>x} // { x => SInt(x)}
+    implicit def fromInt(x: Int) = SInt(x)
     //implicit val DefaultDspContext = DspContext()
     //implicit val evidence = (context :DspContext) => new SIntRing()(context)
 

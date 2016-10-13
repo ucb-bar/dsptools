@@ -8,7 +8,7 @@ import dsptools.numbers._
 import dsptools.numbers.implicits._
 import org.scalatest.{FlatSpec, Matchers}
 
-class ParameterizedSaturatingAdder[T <: Data:Integral](gen:() => T) extends Module {
+class ParameterizedSaturatingAdder[T <: Data:Integer](gen:() => T) extends Module {
   val io = new Bundle {
     val a1: T = gen().cloneType.flip()
     val a2: T = gen().cloneType.flip()
@@ -29,7 +29,7 @@ class ParameterizedSaturatingAdder[T <: Data:Integral](gen:() => T) extends Modu
   io.saturatedSum := register2
 }
 
-class ParameterizedSaturatingAdderTester[T<:Data:Integral](c: ParameterizedSaturatingAdder[T], width: Int) extends DspTester(c) {
+class ParameterizedSaturatingAdderTester[T<:Data:Integer](c: ParameterizedSaturatingAdder[T], width: Int) extends DspTester(c) {
   val min = -(1 << (width - 1))
   val max = (1 << (width-1)) - 1
   println("Min = " + min.toString)

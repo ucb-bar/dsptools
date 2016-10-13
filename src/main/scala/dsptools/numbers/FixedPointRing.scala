@@ -29,7 +29,7 @@ trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
 }
 
 trait FixedPointImpl {
-  implicit object FixedPointIntegralImpl extends FixedPointIntegral
+  implicit object FixedPointRealImpl extends FixedPointReal
 }
 
 trait FixedPointOrder extends Any with Order[FixedPoint] with hasContext {
@@ -46,8 +46,12 @@ trait FixedPointSigned extends Any with Signed[FixedPoint] with hasContext {
   /** An idempotent function that ensures an object has a non-negative sign. */
   def abs(a: FixedPoint): FixedPoint = Mux(a > FixedPoint.fromBigInt(0), a, FixedPoint.fromBigInt(0)-a)
 }
-trait FixedPointIsReal extends Any with IsIntegral[FixedPoint] with FixedPointOrder with FixedPointSigned with hasContext {
+trait FixedPointIsReal extends Any with IsReal[FixedPoint] with FixedPointOrder with FixedPointSigned with hasContext {
   def toDouble(a: FixedPoint): DspReal = ???
+  def ceil(a: FixedPoint): FixedPoint = ???
+  def floor(a: FixedPoint): FixedPoint = ???
+  def isWhole(a: FixedPoint): Bool = ???
+  def round(a: FixedPoint): FixedPoint = ???
 }
 
 trait ConvertableToFixedPoint extends ConvertableTo[FixedPoint] with hasContext {
@@ -56,7 +60,7 @@ trait ConvertableToFixedPoint extends ConvertableTo[FixedPoint] with hasContext 
   def fromBigInt(n: BigInt): FixedPoint = FixedPoint.fromBigInt(n)
   def fromByte(n: Byte): FixedPoint = FixedPoint.fromBigInt(n.toInt)
   def fromDouble(n: Double): FixedPoint = FixedPoint.fromDouble(n)
-  def fromReal(n: Real): FixedPoint = FixedPoint.fromDouble(n.toDouble)
+  //def fromReal(n: Real): FixedPoint = FixedPoint.fromDouble(n.toDouble)
   def fromRational(n: Rational): FixedPoint = FixedPoint.fromDouble(n.toDouble)
   def fromType[B](n: B)(implicit c: ConvertableFrom[B]): FixedPoint = FixedPoint.fromDouble(c.toDouble(n))
   def fromInt(n: Int): FixedPoint = FixedPoint.fromBigInt(n)
@@ -65,6 +69,6 @@ trait ConvertableToFixedPoint extends ConvertableTo[FixedPoint] with hasContext 
   def fromLong(n: Long): FixedPoint = FixedPoint.fromBigInt(n)
 }
 
-trait FixedPointIntegral extends FixedPointRing with ConvertableToFixedPoint with FixedPointIsReal with Integral[FixedPoint] with hasContext {
+trait FixedPointReal extends FixedPointRing with ConvertableToFixedPoint with FixedPointIsReal with Real[FixedPoint] with hasContext {
   override def fromInt(n: Int): FixedPoint = super[FixedPointRing].fromInt(n)
 }
