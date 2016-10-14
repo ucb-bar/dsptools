@@ -5,9 +5,7 @@ package dsptools.numbers
 import chisel3.{Mux, SInt, UInt, Wire}
 import dsptools.{DspContext, Grow, Saturate}
 import spire.algebra.Ring
-import spire.math.{Algebraic, ConvertableTo, ConvertableFrom, Rational, Real}
-
-
+import spire.math.{Algebraic, ConvertableFrom, ConvertableTo, Rational, Real}
 
 /**
   * Defines basic math functions for SInt
@@ -42,6 +40,7 @@ trait SIntRing extends Any with Ring[SInt] with hasContext {
 
 trait SIntImpl {
   implicit object SIntIntegerImpl extends SIntInteger
+  implicit def fromInt(x: Double): SInt = SInt(x.toInt)
 }
 
 trait SIntOrder extends Any with Order[SInt] with hasContext {

@@ -9,7 +9,7 @@ import chisel3.iotesters.PeekPokeTester
 import dsptools.numbers.{DspReal, SIntOrder, SIntRing}
 import dsptools.{DspContext, DspTester, Grow}
 import org.scalatest.{FlatSpec, Matchers}
-import dsptools.examples.{PFB, PFBConfig, PFBnew, sincHamming}
+import dsptools.examples._
 //import spire.algebra.{Field, Order, Ring}
 import dsptools.numbers.implicits._
 
@@ -36,6 +36,33 @@ class PFBConstantInput[T<:Data](c: PFBnew[T]) extends DspTester(c) {
   println()
   result.foreach { x => print(x.toString + ", ")}
   println()
+}
+
+class PFBFilterTester[T<:Data](c: PFBFilter[T,Double],
+                               val start: Int = -50,
+                               val stop: Int  = 50,
+                               val step: Int  = 1
+                              ) extends DspTester(c) {
+  def computedResult(n: Int): Double = {
+    val delay = c.taps.length
+    val nTaps = c.taps(0).length
+    val counterValue = (n - start) / step
+    val taps  = c.taps(counterValue % c.taps.length)
+    println(s"Using taps ${taps}")
+    val samples = Seq.tabulate(nTaps){x => {
+      val samp = n - x * delay
+      if (samp >= start) samp
+      else 0
+    }}
+    taps.zip(samples).map { case(x,y) => x*y }  reduce (_+_)
+  }
+  for (num <- start to stop by step) {
+    dspPoke(c.io.data_in, num.toDouble)
+    println(dspPeek(c.io.data_out).toString)
+    println(s"Should be ${computedResult(num)} at time ${num}")
+    assert(math.abs(dspPeek(c.io.data_out).left.get - computedResult(num)) < 0.1 )
+    step(1)
+  }
 }
 
 class PFBLeakageTester[T<:Data](c: PFBnew[T], os: Int = 10) extends DspTester(c) {
@@ -118,6 +145,7 @@ class PFBSpec extends FlatSpec with Matchers {
     } should be (true)
   }
 
+  /*
   ignore should "build with DspReal" in {
     chisel3.iotesters.Driver(() => new PFBnew(DspReal(0.0),
 //  chisel3.iotesters.Driver(() => new PFBnew(FixedPoint(width=32,binaryPoint=16),
@@ -139,6 +167,16 @@ class PFBSpec extends FlatSpec with Matchers {
         parallelism=2
       ))) {
       c => new PFBLeakageTester[DspReal](c, 3)
+    } should be (true)
+  }
+  */
+  behavior of "PFBFilter"
+  it should "build and run" in {
+    chisel3.iotesters.Driver(() => new PFBFilter[SInt,Double](
+      SInt(width=8), Some(SInt(width=10)), Some(SInt(width=10)),
+        Seq(Seq(1.0,2.0), Seq(3.0,4.0), Seq(5.0,6.0), Seq(7.0,8.0)))
+    ) {
+      c => new PFBFilterTester(c)
     } should be (true)
   }
 }

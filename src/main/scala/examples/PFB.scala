@@ -8,6 +8,8 @@ import chisel3.util.{Counter, ShiftRegister, log2Up}
 import chisel3.{Bool, Bundle, Data, Module, Reg, UInt, Vec, Wire, when}
 import dsptools.numbers.Real
 import dsptools.numbers.implicits._
+import spire.algebra.Ring
+import spire.math.{ConvertableFrom, ConvertableTo}
 
 // polyphase filter bank io
 class PFBIO[T<:Data](genIn: => T, genOut: => Option[T] = None,
@@ -27,10 +29,48 @@ object sincHamming {
   })
 }
 
+class PFBFilter[T<:Data:Ring:ConvertableTo, V:ConvertableFrom](
+                 genIn: => T,
+                 genOut: => Option[T] = None,
+                 genTap: => Option[T] = None,
+                 val taps: Seq[Seq[V]]
+                 //conv: V=>T
+               ) extends Module {
+  val io = new Bundle {
+    val data_in = genIn.asInput
+    val data_out = genOut.getOrElse(genIn).asOutput
+    val overflow = Bool()
+  }
+
+  val delay = taps.length
+  val count = Counter(taps.length)
+  count.inc()
+  val countDelayed = Reg(next=count.value)
+
+  val tapsTransposed = taps.map(_.reverse).reverse.transpose.map( tap => {
+    val tapsWire = Wire(Vec(tap.length, genTap.getOrElse(genIn)))
+    tapsWire.zip(tap.reverse).foreach({case (t,d) => t := ConvertableTo[T].fromType(d)})
+    tapsWire
+  })
+
+  val products = tapsTransposed.map(tap => tap(count.value) * io.data_in)
+
+  val result = products.reduceLeft { (prev:T, prod:T) => ShiftRegister(prev, delay) + prod }
+
+  io.data_out := result
+
+}
+
+case class WindowConfig(
+                       taps: Int,
+                       subfilterSize: Int
+                       )
 case class PFBConfig(
-                      window: Seq[Double] = sincHamming(64, 64 / 8),
+                     window: Seq[Double] = sincHamming(64, 64 / 8),
+//                    window: WindowConfig => Seq[Double],
                       //windowSize: Int = 64,
-                      outputWindowSize: Int = 16,
+                    numTaps: Int = 4,
+                      //outputWindowSize: Int = 16,
                       parallelism: Int = 8,
                       pipelineDepth: Int = 4,
                       useSinglePortMem: Boolean = false,
@@ -38,6 +78,8 @@ case class PFBConfig(
                       useDeltaCompression: Boolean = false
                     ) {
   val windowSize = window.length
+  val outputWindowSize = windowSize / numTaps
+  //val delay = config.outputWindowSize / config.parallelism
 
   // various checks for validity
   assert(window.length > 0)

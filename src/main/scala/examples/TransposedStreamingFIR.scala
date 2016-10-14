@@ -5,12 +5,19 @@ package dsptools.examples
 import chisel3.util.Valid
 import chisel3.{Reg, Vec}
 import chisel3.{Bundle, Data, Module, when}
+import dsptools.numbers.Real
 import dsptools.{DspContext, Grow}
 import spire.algebra._
 import spire.implicits._
-import spire.math.ConvertableTo
+import spire.math.{ConvertableFrom, ConvertableTo}
 
-class ConstantTapTransposedStreamingFIR[T <: Data:Ring, V <% T](inputGenerator: T, outputGenerator: T, val taps: Seq[V])
+// CTTSF[FixedPoint, Double]
+// CTTSF[DspComplex[FixedPoint], scala.Complex[Double]]
+
+// This style preferred:
+// class CTTSF[T<:Data:Ring,V](i: T, o: T, val taps: Seq[V], conv: V=>T)
+
+class ConstantTapTransposedStreamingFIR[T <: Data:Ring:ConvertableTo, V:ConvertableFrom](inputGenerator: T, outputGenerator: T, val taps: Seq[V])
                                                extends Module {
   val io = new Bundle {
     val input = Valid(inputGenerator.asOutput).flip
@@ -18,7 +25,8 @@ class ConstantTapTransposedStreamingFIR[T <: Data:Ring, V <% T](inputGenerator: 
   }
 
   val products: Seq[T] = taps.reverse.map { tap =>
-    io.input.bits * tap
+    val t : T = implicitly[ConvertableTo[T]].fromType(tap)
+    io.input.bits * t
   }
 
   val last = Reg[T](outputGenerator)
