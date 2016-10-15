@@ -9,7 +9,11 @@ import chisel3.iotesters.PeekPokeTester
 import dsptools.numbers.{DspComplex, DspReal}
 import dsptools.Utilities._
 
-class DspTester[T <: Module](c: T) extends PeekPokeTester(c) {
+class DspTester[T <: Module](c: T,
+                             verbose: Boolean = true,
+                             base: Int = 16,
+                             logFile: Option[java.io.File] = None
+                            ) extends PeekPokeTester(c, verbose=verbose, base=base, logFile=logFile) {
   def toBigInt(x: Double, fractionalWidth: Int): BigInt = {
     val multiplier = math.pow(2,fractionalWidth)
     val result = BigInt(math.round(x * multiplier))

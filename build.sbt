@@ -24,5 +24,7 @@ libraryDependencies += "org.scalanlp" %% "breeze" % "0.12"
 
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.5",
-  "org.scalacheck" %% "scalacheck" % "1.12.4")
+  "org.scalacheck" %% "scalacheck" % "1.12.4",
+  "co.theasi" %% "plotly" % "0.1"
+)
 

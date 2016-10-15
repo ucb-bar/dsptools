@@ -5,7 +5,7 @@ package dsptools.numbers
 import chisel3.{Mux, SInt, UInt, Wire}
 import dsptools.{DspContext, Grow, Saturate}
 import spire.algebra.Ring
-import spire.math.{Algebraic, ConvertableFrom, ConvertableTo, Rational, Real}
+import spire.math.{Algebraic, ConvertableFrom, ConvertableTo, Rational}
 
 /**
   * Defines basic math functions for SInt
