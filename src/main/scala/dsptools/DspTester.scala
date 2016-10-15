@@ -60,7 +60,7 @@ class DspTester[T <: Module](c: T,
       case c: DspComplex[_]  => c.underlyingType() match {
         case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
         case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
-        //        case "SInt" => poke(c.real.asInstanceOf[SInt], value)
+        case "SInt" => poke(c.real.asInstanceOf[SInt], value.toInt)
         case _ =>
           throw DspException(
             s"poke($bundle, $value): bundle DspComplex has unknown underlying type ${bundle.getClass.getName}")
@@ -79,7 +79,9 @@ class DspTester[T <: Module](c: T,
         dspPoke(c.real.asInstanceOf[DspReal], value.real)
         dspPoke(c.imaginary.asInstanceOf[DspReal], value.imag)
 
-      //case "SInt" => poke(c.real.asInstanceOf[SInt], value)
+      case "SInt" =>
+        poke(c.real.asInstanceOf[SInt], value.real.toInt)
+        poke(c.imaginary.asInstanceOf[SInt], value.imag.toInt)
       case _ =>
         throw DspException(
           s"poke($c, $value): c DspComplex has unknown underlying type ${c.getClass.getName}")
@@ -99,7 +101,10 @@ class DspTester[T <: Module](c: T,
             val bigIntReal      = dspPeek(c.real.asInstanceOf[DspReal]).left.get
             val bigIntImaginary = dspPeek(c.imaginary.asInstanceOf[DspReal]).left.get
             Right(Complex(bigIntReal, bigIntImaginary))
-          //        case "SInt" => poke(c.real.asInstanceOf[SInt], value)
+          case "SInt" =>
+            val real = peek(c.real.asInstanceOf[SInt]).toDouble
+            val imag = peek(c.imaginary.asInstanceOf[SInt]).toDouble
+            Right(Complex(real, imag))
           case _ =>
             throw DspException(
               s"peek($c): c DspComplex has unknown underlying type ${c.getClass.getName}")

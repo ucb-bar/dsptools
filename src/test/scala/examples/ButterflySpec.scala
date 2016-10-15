@@ -2,6 +2,7 @@
 
 package examples
 
+import breeze.math.Complex
 import chisel3.{Data, Driver, FixedPoint, SInt}
 import chisel3.iotesters.PeekPokeTester
 import dsptools.numbers.{DspReal, SIntOrder, SIntRing}
@@ -10,14 +11,16 @@ import org.scalatest.{FlatSpec, Matchers}
 import dsptools.numbers.implicits._
 import dsptools.numbers.{DspComplex, Real}
 import dsptools.examples.Butterfly
-import scala.util.Random.{nextInt}
+//import scala.util.Random.{nextInt}
 
-class ButterflyTester[T<:Data:Real](c: Butterfly[T]) extends DspTester(c) {
+class ButterflyTester[T<:Data:Real](c: Butterfly[T], min: Int = -20, max: Int = 20) extends DspTester(c, base=10) {
+  require(max > min)
+  def nextInt(): Int = util.Random.nextInt(max - min) - min
   
   for(i <- 0 until 1) {
-    dspPoke(c.io.in1, nextInt())
-    dspPoke(c.io.in2, nextInt())
-    dspPoke(c.io.twiddle, nextInt())
+    dspPoke(c.io.in1, Complex(nextInt(), nextInt()))
+    dspPoke(c.io.in2, Complex(nextInt(), nextInt()))
+    dspPoke(c.io.twiddle, Complex(nextInt(), nextInt()))
     step(1)
     dspPeek(c.io.out1)
     dspPeek(c.io.out2)
