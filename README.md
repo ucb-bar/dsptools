@@ -145,9 +145,9 @@ class Doubler[T<:Data:Real](gen: => T) extends Module```
 (Including the `implicits._` object is important, otherwise the implicit conversion from `io.in + io.in` to `Real[T].plus(io.in, io.in)` won't work).
 
 Note: If you don't include the `:Real` at the end, the scala compiler will think `io.in + io.in` is string concatenation and you'll get a weird error saying
+
 ```[error]  found   : T
-[error]  required: String
-```
+[error]  required: String```
 
 Some useful typeclasses:
 - Ring
