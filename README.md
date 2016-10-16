@@ -139,8 +139,7 @@ as well as an implicit conversion so that `a+b` gets converted to `Real[T].plus(
 `Real[T]` is a typeclass.
 Typeclasses are a useful pattern in scala, so there is nice concise syntax to make using them easy:
 
-```
-import dsptools.numbers.implicits._
+```import dsptools.numbers.implicits._
 class Doubler[T<:Data:Real](gen: => T) extends Module```
 
 (Including the `implicits._` object is important, otherwise the implicit conversion from `io.in + io.in` to `Real[T].plus(io.in, io.in)` won't work).
