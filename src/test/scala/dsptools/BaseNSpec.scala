@@ -31,19 +31,19 @@ class BaseNCircuitTester(c: BaseNCircuit) extends DspTester(c) {
 }
 
 class BaseNSpec extends FreeSpec with Matchers {
-  "baseN tester increments" in {
+  "baseN tester increments" ignore {
     chisel3.iotesters.Driver(() => new BaseNCircuit) { c =>
       new BaseNCircuitTester(c)
     } should be(true)
   }
 
   "BaseN utilities have a number of capabilities" - {
-    "create a list of ints from an int based on a radix" in {
+    "create a list of ints from an int based on a radix" ignore {
       BaseN.toIntList(0, 5) should be (List(0))
       BaseN.toIntList(1, 5) should be (List(1))
       BaseN.toIntList(6, 5) should be (List(1, 1))
     }
-    "create a compute length of list" in {
+    "create a compute length of list" ignore {
       BaseN.numDigits(0, 5) should be (1)
       BaseN.toIntList(1, 5) should be (1)
       BaseN.toIntList(6, 5) should be (2)

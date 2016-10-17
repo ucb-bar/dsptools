@@ -64,7 +64,7 @@ class ParameterizedSaturatingAdderTester[T<:Data:Integer](c: ParameterizedSatura
 class ParameterizedSaturatingAdderSpec extends FlatSpec with Matchers {
   behavior of "parameterized saturating adder circuit on SInt"
 
-  it should "allow registers to be declared that infer widths" in {
+  ignore should "allow registers to be declared that infer widths" in {
 
     val width = 3
     def getSInt(): SInt = SInt(width=width)
