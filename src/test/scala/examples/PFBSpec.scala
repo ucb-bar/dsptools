@@ -8,6 +8,7 @@ import breeze.linalg.{linspace, max}
 import breeze.numerics.abs
 import chisel3.{Data, Driver, FixedPoint, SInt}
 import chisel3.iotesters.PeekPokeTester
+import co.theasi.plotly.{Plot, ScatterOptions, draw, writer}
 import dsptools.numbers.{DspReal, SIntOrder, SIntRing}
 import dsptools.{DspContext, DspTester, Grow}
 import org.scalatest.{FlatSpec, Matchers}
@@ -27,14 +28,22 @@ class PFBTester[T<:Data](c: PFB[T]) extends DspTester(c) {
 
 class PFBConstantInput[T<:Data](c: PFB[T]) extends DspTester(c) {
   val windowSize = c.config.windowSize
+  val parallelism = c.config.parallelism
+  val numGroups = windowSize / c.config.outputWindowSize
 
-  val result = (0 to windowSize / c.config.parallelism * 4).foldLeft(Seq[Double]()) ( (sum:Seq[Double], next: Int) => {
-    c.io.data_in.foreach { port => dspPoke(port, 1.0)}
+  val result = (0 to (windowSize / parallelism)).flatMap ( x => {
+    val toPoke = if (x < numGroups * parallelism) 1.0 else 0.0
+    c.io.data_in.foreach { port => dspPoke(port, toPoke)}
+    val retval = c.io.data_out.map { port => dspPeek(port).left.get }
     step(1)
-    c.io.data_in.foreach { port => dspPoke(port, 1.0)}
-    sum ++ c.io.data_out.map { port => dspPeek(port).left.get }
+    retval
   })
 
+  val x = (0 to windowSize).toSeq
+  val p = Plot()
+    .withScatter(x, result,    ScatterOptions().name("Chisel"))
+    .withScatter(x, c.config.window, ScatterOptions().name("Scala"))
+  draw(p, "impulse response", writer.FileOptions(overwrite=true))
   println()
   result.foreach { x => print(x.toString + ", ")}
   println()
@@ -132,36 +141,11 @@ class PFBLeakageTester[T<:Data](c: PFB[T], numBins: Int = 5, os: Int = 10) exten
 
 class PFBSpec extends FlatSpec with Matchers {
   import chisel3.{Bool, Bundle, Module, Mux, UInt, Vec}
-  behavior of "Vecs"
-  ignore should "have some sort of justice" in {
-    class VecTest extends Module {
-      val io = new Bundle {
-        val in = Bool().flip
-        val out = UInt(width=16)
-      }
-      val c = Mux(io.in,
-//        Vec(UInt(1), UInt(2), UInt(3)), // Fail
-        Vec(UInt(1, width=5), UInt(2), UInt(3)), // Pass
-        Vec(UInt(10), UInt(20), UInt(30)))
-      io.out := c(0)
-    }
-    class VecTestTester(c: VecTest) extends PeekPokeTester(c) {
-      poke(c.io.in, 0)
-      step(1)
-      expect(c.io.out, 10)
-      poke(c.io.in, 1)
-      step(1)
-      expect(c.io.out, 1)
-    }
-    println(Driver.emit( () => new VecTest()) )
-    chisel3.iotesters.Driver(() =>
-      new VecTest) { c => new VecTestTester(c) } should be (true)
-  }
   behavior of "PFB"
   ignore should "sort of do something" in {
-    chisel3.iotesters.Driver(() => new PFB(SInt(width = 10), Some(SInt(width = 16)),
+    chisel3.iotesters.Driver(() => new PFB(DspReal(0.0), Some(DspReal(0.0)),
       config=PFBConfig(
-        outputWindowSize=4, numTaps = 4, parallelism = 2
+        outputWindowSize=64, numTaps = 4, parallelism = 2
       ))) {
       c => new PFBTester(c)
     } should be (true)
@@ -173,11 +157,11 @@ class PFBSpec extends FlatSpec with Matchers {
   }
 
 
-  ignore should "build with DspReal" in {
+  it should "build with DspReal" in {
     chisel3.iotesters.Driver(() => new PFB(DspReal(0.0),
 //  chisel3.iotesters.Driver(() => new PFBnew(FixedPoint(width=32,binaryPoint=16),
     config=PFBConfig(
-      windowFunc = w => Seq(1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0),
+      //windowFunc = w => Seq(1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0),
         numTaps = 2,
       outputWindowSize = 4,
       parallelism=2

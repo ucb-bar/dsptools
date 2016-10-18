@@ -103,53 +103,8 @@ class PFB[T<:Data:Real](
     })
   })
 
-  //println(config.window)
-  //println(groupedWindow)
   val filters = groupedWindow.map( taps => Module(new PFBFilter(genIn, genOut, genTap, taps)))
   filters.zip(io.data_in).foreach( { case (filt, port) => filt.io.data_in := port } )
   filters.zip(io.data_out).foreach( { case (filt, port) => port := filt.io.data_out } )
-
-/*
-  val firGroup = Counter(config.outputWindowSize / config.parallelism)
-  firGroup.inc()
-  val firGroupPrev = ShiftRegister(firGroup.value, 1)
-
-  val firs = (0 until config.outputWindowSize).map(idx => {
-    val taps = config.window.zipWithIndex.filter {case (n, i) => i % config.outputWindowSize == idx} map ({case(n,i) => n})
-
-    implicit def ev(x:Double) = fromDouble[T](x)
-    val fir = Module(new ConstantTapTransposedStreamingFIR(genIn, genOut getOrElse(genIn), taps))
-    fir
-  })
-
-  firs.zipWithIndex.map({case(f, i) => {
-    val group = i % config.parallelism
-    f.io.input.bits := io.data_in(group)
-    f.io.input.valid := firGroup.value === UInt(group)
-  }})
-
-  io.data_out.zipWithIndex.map({case(p, i) => {
-    val toMux = firs.zipWithIndex.filter({case(f, f_i) => f_i % config.parallelism == i}).map({case (f,_)=>f})
-    val muxed = Vec(toMux.map(_.io.output.bits))
-    p := muxed(firGroupPrev)
-    toMux.zipWithIndex.map({case(f, f_i) => {
-      chisel3.assert(f.io.output.valid ||  (UInt(f_i) != firGroupPrev) )
-      chisel3.assert(!f.io.output.valid || (UInt(f_i) === firGroupPrev) )
-    }})
-  }})
-*/
-
- /* val firs = io.data_in.zipWithIndex.map {case (in, idx) => {
-    val taps = config.window.zipWithIndex.filter {case (n, i) => i % config.parallelism ==idx} map {case(n, i) => n}
-    implicit def ev(x:Double) = fromDouble[T](x)
-    val fir = Module(new ConstantTapTransposedStreamingFIR(genIn, genOut getOrElse(genIn), taps))
-    fir
-  }}
-
-  io.data_in zip (io.data_out) zip(firs) map {case ((in, out), fir) => {
-    fir.io.input := in
-    out := fir.io.output
-  }}*/
-
 }
 
