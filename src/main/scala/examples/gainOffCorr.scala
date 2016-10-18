@@ -6,6 +6,8 @@ import chisel3.core._
 import chisel3.{Bundle, Module}
 import dsptools.DspTester
 import org.scalatest.{Matchers, FlatSpec}
+import spire.algebra.Ring
+import spire.implicits._
 
 //Simple implementation does the following
 //   1.Input value can be either real/imag
@@ -15,13 +17,13 @@ import org.scalatest.{Matchers, FlatSpec}
 
 class gainOffCorr[T<:Data:Ring](genIn: => T,genGain: => T,genOff: => T,genOut: => T, numLanes: Int) extends Module {
     val io = new Bundle {
-       val inputVal =  Vec(numLames, genIn.asInput)
+       val inputVal =  Vec(numLanes, genIn.asInput)
        val gainCorr =  Vec(numLanes, genGain.asInput)
        val offsetCorr = Vec(numLanes, genOff.asInput)
        val outputVal = Vec(numLanes, genOut.asOutput) 
     }
    
     val inputGainCorr = io.inputVal.zip(io.gainCorr).map{case (in, gain) => in*gain } 
-    io.outputVal = inputGainCorr.zip(io.offsetCorr).map{case (inGainCorr, offset) => inGainCorr + offset }
+    io.outputVal := inputGainCorr.zip(io.offsetCorr).map{case (inGainCorr, offset) => inGainCorr + offset }
 }
 
