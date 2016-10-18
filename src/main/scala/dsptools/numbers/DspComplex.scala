@@ -17,6 +17,8 @@ object DspComplex {
     result.imaginary := imaginary
     result
   }
+  def multiplyByJ[T <: Data:Ring](x: DspComplex[T]): DspComplex[T] =
+    wire(x.imaginary, -x.real)
 }
 class DspComplex[T <: Data:Ring](val real: T, val imaginary: T) extends Bundle {
   override def cloneType: this.type = {
