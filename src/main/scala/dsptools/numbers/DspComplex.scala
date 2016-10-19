@@ -17,6 +17,8 @@ object DspComplex {
     result.imaginary := imaginary
     result
   }
+  def j[T <: Data:Ring]() : DspComplex[T] =
+    wire(Ring[T].zero, Ring[T].one)
   def multiplyByJ[T <: Data:Ring](x: DspComplex[T]): DspComplex[T] =
     wire(x.imaginary, -x.real)
 }
