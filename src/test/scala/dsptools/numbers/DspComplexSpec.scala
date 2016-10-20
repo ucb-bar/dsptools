@@ -8,6 +8,7 @@ import chisel3.testers.BasicTester
 import dsptools.numbers.implicits._
 import chisel3.{Bundle, Module, SInt, printf}
 
+//scalastyle:off magic.number
 class DspComplexExamples extends Module {
   val io = IO(new Bundle {
     val in = Input(DspComplex(SInt(width=5), SInt(width=5)))
