@@ -16,12 +16,12 @@ import spire.implicits._
 //   4.Assuming that the memory interface for gain and offset values will be done at a higher level
 
 class gainOffCorr[T<:Data:Ring](genIn: => T,genGain: => T,genOff: => T,genOut: => T, numLanes: Int) extends Module {
-    val io = new Bundle {
-       val inputVal =  Vec(numLanes, genIn.asInput)
-       val gainCorr =  Vec(numLanes, genGain.asInput)
-       val offsetCorr = Vec(numLanes, genOff.asInput)
-       val outputVal = Vec(numLanes, genOut.asOutput) 
-    }
+    val io = IO(new Bundle {
+       val inputVal =  Input(Vec(numLanes, genIn))
+       val gainCorr =  Input(Vec(numLanes, genGain))
+       val offsetCorr = Input(Vec(numLanes, genOff))
+       val outputVal = Output(Vec(numLanes, genOut))
+    })
    
     val inputGainCorr = io.inputVal.zip(io.gainCorr).map{case (in, gain) => in*gain } 
     io.outputVal := inputGainCorr.zip(io.offsetCorr).map{case (inGainCorr, offset) => inGainCorr + offset }

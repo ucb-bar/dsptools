@@ -9,10 +9,10 @@ import org.scalatest.{Matchers, FreeSpec}
 
 class BaseNCircuit extends Module {
   val thing = Reg(BaseN(Seq.fill(5)(UInt(4)), rad = 3))
-  val io = new Bundle {
-    val inc = UInt(INPUT, 3)
-    val out = thing.cloneType
-  }
+  val io = IO(new Bundle {
+    val inc = Input(UInt(width = 3))
+    val out = Output(thing.cloneType)
+  })
   val increment = BaseN(Seq.fill(5)(UInt(4)), rad = 3)
 
   increment := io.inc

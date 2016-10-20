@@ -9,11 +9,11 @@ import dsptools.numbers.DspReal
 import org.scalatest.{FlatSpec, Matchers}
 
 class RealAdder extends Module {
-  val io = new Bundle {
-    val a1 = (new DspReal).flip()
-    val a2 = (new DspReal).flip()
-    val c  = new DspReal
-  }
+  val io = IO(new Bundle {
+    val a1 = Input(new DspReal)
+    val a2 = Input(new DspReal)
+    val c  = Output(new DspReal)
+  })
 
   val register1 = Reg(new DspReal)
 
