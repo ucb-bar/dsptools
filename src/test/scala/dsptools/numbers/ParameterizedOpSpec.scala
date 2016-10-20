@@ -15,11 +15,11 @@ class ParameterizedNumberOperation[T <: Data:Ring](
                                         outputGenerator:() => T,
                                         val op: String = "+"
                                         ) extends Module {
-  val io = new Bundle {
-    val a1: T = inputGenerator().cloneType.flip()
-    val a2: T = inputGenerator().cloneType.flip()
-    val c:  T = outputGenerator().cloneType
-  }
+  val io = IO(new Bundle {
+    val a1: T = Input(inputGenerator().cloneType)
+    val a2: T = Input(inputGenerator().cloneType)
+    val c:  T = Output(outputGenerator().cloneType)
+  })
 
   val register1 = Reg(outputGenerator().cloneType)
 
@@ -64,8 +64,8 @@ class ParameterizedOpSpecification extends FreeSpec with Matchers {
   """ -
     {
     def realGenerator():  DspReal    = new DspReal
-    def fixedInGenerator(): FixedPoint = FixedPoint(OUTPUT, width = 16, binaryPoint = 8)
-    def fixedOutGenerator(): FixedPoint = FixedPoint(OUTPUT, width = 48, binaryPoint = 8)
+    def fixedInGenerator(): FixedPoint = FixedPoint(width = 16, binaryPoint = 8)
+    def fixedOutGenerator(): FixedPoint = FixedPoint(width = 48, binaryPoint = 8)
 
     "This instance will process Real numbers with the basic mathematical operations" - {
       Seq("+", "-", "*").foreach { operation =>
@@ -123,13 +123,13 @@ class ComplexOpSpecification extends FreeSpec with Matchers {
     {
       def complexFixedGenerator(): DspComplex[FixedPoint] = {
         DspComplex(
-          FixedPoint(OUTPUT, width = 16, binaryPoint = 2),
-          FixedPoint(OUTPUT, width = 16, binaryPoint = 2))
+          FixedPoint(width = 16, binaryPoint = 2),
+          FixedPoint(width = 16, binaryPoint = 2))
       }
       def complexFixedOutputGenerator(): DspComplex[FixedPoint] = {
         DspComplex(
-          FixedPoint(OUTPUT, width = 48, binaryPoint = 4),
-          FixedPoint(OUTPUT, width = 48, binaryPoint = 4))
+          FixedPoint(width = 48, binaryPoint = 4),
+          FixedPoint(width = 48, binaryPoint = 4))
       }
     def complexRealGenerator(): DspComplex[DspReal] = {
       DspComplex(

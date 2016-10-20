@@ -5,20 +5,20 @@
 package dsptools.examples
 
 import chisel3.util.{Counter, ShiftRegister, log2Up}
-import chisel3.{Bool, Bundle, Data, Module, Reg, UInt, Vec, Wire, when}
+import chisel3._
 import dsptools.numbers.{DspComplex, Real}
 import dsptools.numbers.implicits._
 
 // butterfly io
-class ButterflyIO[T<:Data:Real](genIn: => DspComplex[T], 
-                                genOut: => Option[DspComplex[T]] = None, 
+class ButterflyIO[T<:Data:Real](genIn: => DspComplex[T],
+                                genOut: => Option[DspComplex[T]] = None,
                                 genTwiddle: => Option[DspComplex[T]] = None
                                ) extends Bundle {
-  val in1 = genIn.asInput
-  val in2 = genIn.asInput
-  val out1 = genOut.getOrElse(genIn).asOutput
-  val out2 = genOut.getOrElse(genIn).asOutput
-  val twiddle = genTwiddle.getOrElse(genIn).asInput
+  val in1 = Input(genIn)
+  val in2 = Input(genIn)
+  val out1 = Output(genOut.getOrElse(genIn))
+  val out2 = Output(genOut.getOrElse(genIn))
+  val twiddle = Input(genTwiddle.getOrElse(genIn))
 }
 
 // two input two output butterfly
@@ -34,16 +34,17 @@ class ButterflyIO[T<:Data:Real](genIn: => DspComplex[T],
 //              /    \
 //   in2 ---w---      ------ out2
 //
-class Butterfly[T<:Data:Real](genIn: => DspComplex[T], 
+
+class Butterfly[T<:Data:Real](genIn: => DspComplex[T],
                               genOut: => Option[DspComplex[T]] = None,
                               genTwiddle: => Option[DspComplex[T]] = None
                              ) extends Module {
-  val io = new ButterflyIO(genIn, genOut, genTwiddle)
+  val io = IO(new ButterflyIO(genIn, genOut, genTwiddle))
 
   // multiply
-  val product = io.in2*io.twiddle
+  val product = io.in2 * io.twiddle
 
   // add/subtract
-  io.out1 := io.in1+product
-  io.out2 := io.in1-product
+  io.out1 := io.in1 + product
+  io.out2 := io.in1 - product
 }

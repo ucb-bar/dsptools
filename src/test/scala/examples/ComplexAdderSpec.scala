@@ -13,11 +13,11 @@ import spire.algebra.Ring
 
 //scalastyle:off magic.number
 class SimpleComplexAdder extends Module {
-  val io = new Bundle {
-    val a1 = DspComplex(FixedPoint(INPUT, 6, 4), FixedPoint(INPUT, 6, 4))
-    val a2 = DspComplex(FixedPoint(INPUT, 8, 1), FixedPoint(INPUT, 8, 1))
-    val c  = DspComplex(FixedPoint(OUTPUT, 12, 5), FixedPoint(OUTPUT, 12, 5))
-  }
+  val io = IO(new Bundle {
+    val a1 = Input(DspComplex(FixedPoint(6, 4), FixedPoint(6, 4)))
+    val a2 = Input(DspComplex(FixedPoint(8, 1), FixedPoint(8, 1)))
+    val c  = Output(DspComplex(FixedPoint(12, 5), FixedPoint(12, 5)))
+  })
   //  spatialAssert(Seq(io.a1), Seq(io.c), 5)
   //  spatialAssert(Seq(io.a2), Seq(io.c), "group1")
 

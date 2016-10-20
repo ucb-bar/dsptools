@@ -23,10 +23,10 @@ case class DemodParams (
   graycode_256_QAM: List[Int] = List(0, 1, 3, 2, 6, 7, 5, 4, 12, 13, 15, 14, 10, 11, 9, 8)
 )
 
-class Demod[T <: Data:Ring](gen: => T, p: DemodParams) {
+class Demod[T <: Data:Ring](gen: => T, p: DemodParams) extends Module {
   class DemodIO(numberOfOutputs: Int) extends Bundle {
     // Input either signed DSPFixed or DSPDbl, as set by gen
-    val symbolIn = DspComplex(gen.asInput, gen.asInput)
+    val symbolIn = Input(DspComplex(gen, gen))
     // # of "hard" bits required is set by the maximum n-QAM supported
     // (toBitWidth converts from an integer to # of bits required to represent it)
     // Note for 4-QAM, the UInt range is [0,3]
@@ -35,7 +35,7 @@ class Demod[T <: Data:Ring](gen: => T, p: DemodParams) {
     // only be 1 bit wide (using the sign bit)
     // When performing hard decoding, n = 0, m = ??? -- you should determine what ??? is (15 is a placeholder)
     val m = if (p.softDemod) 15 else 0
-    val demodOut = Vec(numberOfOutputs, Bool(OUTPUT))
+    val demodOut = Output(Vec(numberOfOutputs, Bool()))
 //    val demodOut = Vec(UInt.toBitWidth(p.QAMn.max-1), Bool(OUTPUT))
     // If the bits of demodOut are interpreted as signed BigInt rather than fixed (i.e. renormalize wrt LSB),
     // a large positive number is a very confident 0, and a small positive number is a less confident 0.
@@ -44,15 +44,15 @@ class Demod[T <: Data:Ring](gen: => T, p: DemodParams) {
     // People aren't generally consistent about choosing positive LLRs to correspond to 0 or 1, so we choose
     // one with a convenient interpretation in this context.
     // Offset of the input sample relative to frame size (needs to support up to max frame size)
-    val offsetIn = UInt(INPUT,p.frameSizes.max-1)
+    val offsetIn = Input(UInt(p.frameSizes.max-1))
     // If symbolIn --> corresponding demodOut takes n cycles, offsetOut should be offsetIn delayed n clocks
-    val offsetOut = UInt(OUTPUT,p.frameSizes.max-1)
-    val reset = Bool(INPUT)
+    val offsetOut = Output(UInt(p.frameSizes.max-1)
+    val reset = Input(Bool())
     //Constellation type to demodulate. (2,4,16,64,256)
-    val modulation_type = UInt(INPUT, p.QAMn.max)
+    val modulation_type = Input(UInt(p.QAMn.max))
   }
 
-  val io = new DemodIO(gen.getWidth)
+  val io = IO(new DemodIO(gen.getWidth))
 
   implicit val parameters = p
 

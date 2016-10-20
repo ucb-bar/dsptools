@@ -9,12 +9,12 @@ import dsptools.numbers.implicits._
 import org.scalatest.{FlatSpec, Matchers}
 
 class ParameterizedSaturatingAdder[T <: Data:Integer](gen:() => T) extends Module {
-  val io = new Bundle {
-    val a1: T = gen().cloneType.flip()
-    val a2: T = gen().cloneType.flip()
-    val normalSum  = gen().cloneType
-    val saturatedSum = gen().cloneType
-  }
+  val io = IO(new Bundle {
+    val a1: T =        Input(gen().cloneType)
+    val a2: T =        Input(gen().cloneType)
+    val normalSum  =   Output(gen().cloneType)
+    val saturatedSum = Output(gen().cloneType)
+  })
 
   val register1 = Reg(gen().cloneType)
   val register2 = Reg(gen().cloneType)

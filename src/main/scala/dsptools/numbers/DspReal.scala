@@ -10,26 +10,26 @@ import spire.math.{UInt => _, _}
 
 
 class BlackboxOneOperand extends BlackBox {
-  val io = new Bundle() {
-    val in = UInt(INPUT, DspReal.UnderlyingWidth)
-    val out = UInt(OUTPUT, DspReal.UnderlyingWidth)
-  }
+  val io = IO(new Bundle() {
+    val in = Input(UInt(DspReal.UnderlyingWidth))
+    val out = Output(UInt(DspReal.UnderlyingWidth))
+  })
 }
 
 class BlackboxTwoOperand extends BlackBox {
-  val io = new Bundle() {
-    val in1 = UInt(INPUT, DspReal.UnderlyingWidth)
-    val in2 = UInt(INPUT, DspReal.UnderlyingWidth)
-    val out = UInt(OUTPUT, DspReal.UnderlyingWidth)
-  }
+  val io = IO(new Bundle() {
+    val in1 = Input(UInt(DspReal.UnderlyingWidth))
+    val in2 = Input(UInt(DspReal.UnderlyingWidth))
+    val out = Output(UInt(DspReal.UnderlyingWidth))
+  })
 }
 
 class BlackboxTwoOperandBool extends BlackBox {
-  val io = new Bundle() {
-    val in1 = UInt(INPUT, DspReal.UnderlyingWidth)
-    val in2 = UInt(INPUT, DspReal.UnderlyingWidth)
-    val out = Bool(OUTPUT)
-  }
+  val io = IO(new Bundle() {
+    val in1 = Input(UInt(DspReal.UnderlyingWidth))
+    val in2 = Input(UInt(DspReal.UnderlyingWidth))
+    val out = Output(Bool())
+  })
 }
 
 class BBFAdd extends BlackboxTwoOperand
@@ -53,23 +53,23 @@ class BBFEquals extends BlackboxTwoOperandBool
 class BBFNotEquals extends BlackboxTwoOperandBool
 
 class BBFFromInt extends BlackBox {
-  val io = new Bundle() {
-    val in = UInt(INPUT, DspReal.UnderlyingWidth)
-    val out = UInt(OUTPUT, DspReal.UnderlyingWidth)
-  }
+  val io = IO(new Bundle() {
+    val in = Input(UInt(DspReal.UnderlyingWidth))
+    val out = Output(UInt(DspReal.UnderlyingWidth))
+  })
 }
 
 class BBFToInt extends BlackBox {
-  val io = new Bundle() {
-    val in = UInt(INPUT, DspReal.UnderlyingWidth)
-    val out = UInt(OUTPUT, DspReal.UnderlyingWidth)
-  }
+  val io = IO(new Bundle() {
+    val in = Input(UInt(DspReal.UnderlyingWidth))
+    val out = Output(UInt(DspReal.UnderlyingWidth))
+  })
 }
 
 class BBFIntPart extends BlackboxOneOperand
 
 class DspReal extends Bundle {
-  val node = UInt(OUTPUT, DspReal.UnderlyingWidth)
+  val node = Output(UInt(DspReal.UnderlyingWidth))
 
   private def oneOperandOperator(blackbox_gen: => BlackboxOneOperand) : DspReal = {
     val blackbox = blackbox_gen
@@ -92,7 +92,7 @@ class DspReal extends Bundle {
     val blackbox = blackbox_gen
     blackbox.io.in1 := node
     blackbox.io.in2 := arg1.node
-    val out = Wire(new Bool(OUTPUT))
+    val out = Wire(Output(new Bool()))
     out := blackbox.io.out
     out
   }

@@ -2,8 +2,7 @@
 
 package examples
 
-import chisel3.{Bundle, Data}
-import chisel3.{Module, Reg, Vec, Wire}
+import chisel3._
 import dsptools.{DspContext, Saturate}
 import dsptools.examples.TransposedStreamingFIR
 import dsptools.numbers.DspContextResolver
@@ -12,10 +11,10 @@ import spire.algebra.Ring
 class StreamingAutocorrelator[T <: Data:Ring](inputGenerator: => T, outputGenerator: => T, delay: Int, windowSize: Int)
                                          extends Module {
 //  implicit val ev2 = ev(context)
-  val io = new Bundle {
-    val input = inputGenerator
-    val output = outputGenerator
-  }
+  val io = IO(new Bundle {
+    val input = Input(inputGenerator)
+    val output = Output(outputGenerator)
+  })
 
   // create a sequence of registers (head is io.input)
   val delays = (0 until delay + windowSize).scanLeft(io.input) { case (left, _) =>

@@ -19,10 +19,10 @@ class CaseClassBundle(gen: SInt) extends Bundle {
 }
 
 class SimpleCaseClassModule(gen: SInt) extends Module {
-  val io = new Bundle {
-    val in  = new CaseClassBundle(gen).flip()
-    val out = new CaseClassBundle(gen)
-  }
+  val io = IO(new Bundle {
+    val in  = Input(new CaseClassBundle(gen))
+    val out = Output(new CaseClassBundle(gen))
+  })
 
   val register1 = Reg(io.out)
 
