@@ -9,12 +9,12 @@ import dsptools.numbers.implicits._
 import chisel3.{Bundle, Module, SInt, printf}
 
 class DspComplexExamples extends Module {
-  val io = new Bundle {
-    val in = DspComplex(SInt(width=5), SInt(width=5)).asInput
-    val outJ = DspComplex(SInt(width=5), SInt(width=5)).asOutput
-    val inByJ = DspComplex(SInt(width=5), SInt(width=5)).asOutput
-    val inByJShortcut = DspComplex(SInt(width=5), SInt(width=5)).asOutput
-  }
+  val io = IO(new Bundle {
+    val in = Input(DspComplex(SInt(width=5), SInt(width=5)))
+    val outJ = Output(DspComplex(SInt(width=5), SInt(width=5)))
+    val inByJ = Output(DspComplex(SInt(width=5), SInt(width=5)))
+    val inByJShortcut = Output(DspComplex(SInt(width=5), SInt(width=5)))
+  })
 
   io.outJ := DspComplex.j[SInt]
   io.inByJ := io.in * DspComplex.j[SInt]
@@ -53,9 +53,9 @@ class SIntTester extends BasicTester {
 
   assert( x === xcopy )
 
-  val y = DspComplex(SInt(-4), SInt(-1))
+  val y = DspComplex.wire(SInt(-4), SInt(-1))
 
-  assert ( y.real === SInt(-4))
+  assert ( y.real === (-4).S)
   assert (y.imaginary === (-1).S)
 
   stop()
