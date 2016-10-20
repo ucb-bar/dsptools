@@ -2,12 +2,9 @@
 
 package dsptools.examples
 
+import chisel3._
 import chisel3.util.Valid
-import chisel3.{Reg, Vec}
-import chisel3.{Bundle, Data, Module, when}
-import dsptools.numbers.Real
-import dsptools.{DspContext, Grow}
-import spire.algebra._
+import spire.algebra.Ring
 import spire.implicits._
 import spire.math.{ConvertableFrom, ConvertableTo}
 
@@ -19,10 +16,10 @@ import spire.math.{ConvertableFrom, ConvertableTo}
 
 class ConstantTapTransposedStreamingFIR[T <: Data:Ring:ConvertableTo, V:ConvertableFrom](inputGenerator: T, outputGenerator: T, val taps: Seq[V])
                                                extends Module {
-  val io = new Bundle {
-    val input = Valid(inputGenerator.asOutput).flip
-    val output = Valid(outputGenerator.asOutput)
-  }
+  val io = IO(new Bundle {
+    val input  = Input(Valid(inputGenerator.asOutput))
+    val output = Output(Valid(outputGenerator.asOutput))
+  })
 
   val products: Seq[T] = taps.reverse.map { tap =>
     val t : T = implicitly[ConvertableTo[T]].fromType(tap)
@@ -48,11 +45,11 @@ class ConstantTapTransposedStreamingFIR[T <: Data:Ring:ConvertableTo, V:Converta
 class TransposedStreamingFIR[T <: Data:Ring](inputGenerator: => T, outputGenerator: => T,
                                         tapGenerator: => T, numberOfTaps: Int)
                                         extends Module {
-  val io = new Bundle {
-    val input = inputGenerator.asInput                  // note, using as Input here, causes IntelliJ to not like '*'
-    val output = outputGenerator.asOutput
-    val taps = Vec(numberOfTaps, tapGenerator).asInput  // note, using as Input here, causes IntelliJ to not like '*'
-  }
+  val io = IO(new Bundle {
+    val input = Input(inputGenerator)                  // note, using as Input here, causes IntelliJ to not like '*'
+    val output = Output(outputGenerator)
+    val taps = Input(Vec(numberOfTaps, tapGenerator))  // note, using as Input here, causes IntelliJ to not like '*'
+  })
 
   val products: Seq[T] = io.taps.reverse.map { tap: T =>
     io.input * tap

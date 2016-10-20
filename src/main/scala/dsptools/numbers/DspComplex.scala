@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3._
-import dsptools.{DspContext, DspException}
+import dsptools.DspException
 import spire.algebra.Ring
 import spire.implicits._
 
@@ -17,6 +17,11 @@ object DspComplex {
     result.imaginary := imaginary
     result
   }
+  def j[T <: Data:Ring]() : DspComplex[T] =
+    wire(Ring[T].zero, Ring[T].one)
+
+  def multiplyByJ[T <: Data:Ring](x: DspComplex[T]): DspComplex[T] =
+    wire(-x.imaginary, x.real)
 }
 class DspComplex[T <: Data:Ring](val real: T, val imaginary: T) extends Bundle {
   override def cloneType: this.type = {
@@ -35,7 +40,6 @@ class DspComplex[T <: Data:Ring](val real: T, val imaginary: T) extends Bundle {
 /**
   * Defines basic math functions for DspComplex
  *
-  * @param context a context object describing SInt behavior
   */
 class DspComplexRing[T <: Data:Ring] extends Ring[DspComplex[T]] with hasContext {
   def plus(f: DspComplex[T], g: DspComplex[T]): DspComplex[T] = {

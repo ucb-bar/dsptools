@@ -56,37 +56,37 @@ case class CountParams (
 
 /** Counter control signals (I --> O can be passed through chain of counters) */
 class CountCtrl (countParams: CountParams) extends Bundle {
-  val wrap   = if (countParams.wrapCtrl == External)   Some(Bool(INPUT)) else None
-  val change = if (countParams.changeCtrl == External) Some(Bool(INPUT)) else None
-  val reset  = Bool(INPUT)
+  val wrap   = if (countParams.wrapCtrl == External)   Some(Bool()) else None
+  val change = if (countParams.changeCtrl == External) Some(Bool()) else None
+  val reset  = Bool()
 }
 
 /** Counter IO */
 class CountIO (countParams: CountParams) extends Bundle {
   // Count up/down control signal
-  val upDown = if (countParams.countType == UpDown) Some(Bool(INPUT)) else None
+  val upDown = if (countParams.countType == UpDown) Some(Input(Bool())) else None
   // Counters usually increment by 1
-  val inc = if (countParams.incMax != 1) Some(UInt(INPUT,countParams.incMax)) else None
+  val inc = if (countParams.incMax != 1) Some(Input(UInt(countParams.incMax))) else None
   // Counter wrap to value (up counters default wrap to 0)
-  val wrapTo =  if (countParams.customWrap) Some(UInt(INPUT,countParams.countMax)) else None
+  val wrapTo =  if (countParams.customWrap) Some(Input(UInt(countParams.countMax))) else None
   // Counter default wrap condition is when count is maxed out (so need to know max)
   val max = {
     if (countParams.wrapCtrl == Internal && countParams.countType != UpMod) {
-      Some(UInt(INPUT,countParams.countMax))
+      Some(Input(UInt(countParams.countMax)))
     }
     else {
       None
     }
   }
   // n in x%n
-  val modN = if (countParams.countType == UpMod) Some(UInt(INPUT,countParams.countMax+1)) else None
-  val out  = UInt(OUTPUT,countParams.countMax)
+  val modN = if (countParams.countType == UpMod) Some(Input(UInt(countParams.countMax+1))) else None
+  val out  = Output(UInt(countParams.countMax))
 }
 
 /** Counter template */
 abstract class Counter(countParams: CountParams) extends Module {
 
-  val io = new CountIO(countParams)
+  val io = IO(new CountIO(countParams))
 
   val iCtrl = new CountCtrl(countParams)
   val oCtrl = new CountCtrl(countParams).flip

@@ -10,11 +10,11 @@ import org.scalatest.{FlatSpec, Matchers}
 import spire.algebra.Ring
 
 class ParameterizedAdder[T <: Data:Ring](gen:() => T) extends Module {
-  val io = new Bundle {
-    val a1: T = gen().cloneType.flip()
-    val a2: T = gen().cloneType.flip()
-    val c  = gen().cloneType
-  }
+  val io = IO(new Bundle {
+    val a1: T = Input(gen().cloneType)
+    val a2: T = Input(gen().cloneType)
+    val c     = Output(gen().cloneType)
+  })
 
   val register1 = Reg(gen().cloneType)
 
@@ -53,7 +53,7 @@ it should "allow registers to be declared that infer widths" in {
 behavior of "parameterized adder circuit on fixed point"
 
 it should "allow registers to be declared that infer widths" in {
-  def getFixed(): FixedPoint = FixedPoint(OUTPUT, width = 32, binaryPoint = 16)
+  def getFixed(): FixedPoint = FixedPoint(width = 32, binaryPoint = 16)
 
   chisel3.iotesters.Driver(() => new ParameterizedAdder(getFixed)) { c =>
     new ParameterizedAdderTester(c)
