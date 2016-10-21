@@ -7,8 +7,9 @@ import chisel3._
 import dsptools.DspTester
 import org.scalatest.{FreeSpec, Matchers}
 import spire.algebra.Ring
-import dsptools.numbers._
 import dsptools.numbers.implicits._
+
+//scalastyle:off magic.number
 
 class ParameterizedNumberOperation[T <: Data:Ring](
                                         inputGenerator:() => T,

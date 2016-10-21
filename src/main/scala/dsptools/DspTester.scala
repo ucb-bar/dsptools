@@ -3,7 +3,7 @@
 package dsptools
 
 import breeze.math.Complex
-import chisel3.internal.firrtl.{KnownBinaryPoint}
+import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3._
 import chisel3.iotesters.PeekPokeTester
 import dsptools.numbers.{DspComplex, DspReal}
@@ -17,14 +17,18 @@ class DspTester[T <: Module](c: T,
   def toBigInt(x: Double, fractionalWidth: Int): BigInt = {
     val multiplier = math.pow(2,fractionalWidth)
     val result = BigInt(math.round(x * multiplier))
+    //scalastyle:off regex
     // println(s"toBigInt:x = $x, width = $fractionalWidth multiplier $multiplier result $result")
+    //scalastyle:on regex
     result
   }
 
   def toDouble(i: BigInt, fractionalWidth: Int): Double = {
     val multiplier = math.pow(2,fractionalWidth)
     val result = i.toDouble / multiplier
+    //scalastyle:off regex
     // println(s"toDouble:i = $i, fw = $fractionalWidth, multiplier = $multiplier, result $result")
+    //scalastyle:on regex
     result
   }
 
@@ -38,13 +42,12 @@ class DspTester[T <: Module](c: T,
     }
   }
 
+  //scalastyle:off cyclomatic.complexity
   def dspPoke(bundle: Data, value: Double): Unit = {
     bundle match {
-      case s: SInt => {
+      case s: SInt =>
         val a: BigInt = BigInt(value.round.toInt)
         poke(s, a)
-        return
-      }
       case f: FixedPoint =>
         f.binaryPoint match {
           case KnownBinaryPoint(binaryPoint) =>
@@ -55,10 +58,7 @@ class DspTester[T <: Module](c: T,
         }
       case r: DspReal =>
         val bigInt = doubleToBigIntBits(value)
-        val pokeValue = if(bigInt < 0) {
-          DspReal.bigInt2powUnderlying + bigInt
-        }
-        else bigInt
+        val pokeValue = if(bigInt >= 0) bigInt else DspReal.bigInt2powUnderlying + bigInt
         poke(r.node, pokeValue)
       case c: DspComplex[_]  => c.underlyingType() match {
         case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
@@ -72,6 +72,7 @@ class DspTester[T <: Module](c: T,
         throw DspException(s"poke($bundle, $value): bundle has unknown type ${bundle.getClass.getName}")
     }
   }
+  //scalastyle:on cyclomatic.complexity
 
   def dspPoke(c: DspComplex[_], value: Complex): Unit = {
     c.underlyingType() match {
@@ -89,7 +90,9 @@ class DspTester[T <: Module](c: T,
         throw DspException(
           s"poke($c, $value): c DspComplex has unknown underlying type ${c.getClass.getName}")
     }
+    //scalastyle:off regex
     println(s"DspPoke($c, $value)")
+    //scalastyle:on regex
   }
 
   def dspPeek(data: Data): Either[Double, Complex] = {
@@ -154,6 +157,7 @@ class DspTester[T <: Module](c: T,
     }
   }
 
+  //scalastyle:off regex
   def dspExpect(data: Data, expected: Double, msg: String): Unit = {
     dspPeek(data) match {
       case Left(double) =>
@@ -174,4 +178,5 @@ class DspTester[T <: Module](c: T,
         throw DspException(s"dspExpect($data, $expected) returned $double when expecting complex")
     }
   }
+  //scalastyle:on regex
 }
