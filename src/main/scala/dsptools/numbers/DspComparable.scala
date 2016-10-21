@@ -1,9 +1,11 @@
+// See LICENSE for license details.
+
 package dsptools.numbers
 
 import scala.util.DynamicVariable
 import chisel3.util.{Valid, ValidIO}
 import chisel3.{Bool, Bundle, Data, Mux, UInt}
-import dsptools.DspContext
+import dsptools.{TrimType, OverflowType, DspContext}
 import spire.algebra._
 import spire.macros.Ops
 import spire.math.{Algebraic, ConvertableFrom, ConvertableTo, SafeLong, prime}
@@ -19,23 +21,6 @@ import scala.language.experimental.macros
   * Java Bools. I suppose a more general solution would be generic in
   * return type, but the use cases there seem obscure.
   */
-
-trait hasContext extends Any {
-  def context: DspContext = DspContextResolver.currentContext
-}
-
-object DspContextResolver {
-  private val dynamicDspContextVar = new DynamicVariable[mutable.Stack[DspContext]](new mutable.Stack)
-  private def contextStack = dynamicDspContextVar.value
-  contextStack.push(DspContext())
-  def withContext[T](context: DspContext)(blk: => T) = {
-    contextStack.push(context)
-    val ret = blk
-    contextStack.pop()
-    ret
-  }
-  implicit def currentContext: DspContext = contextStack.top
-}
 
 /* Eq.scala */
 /**

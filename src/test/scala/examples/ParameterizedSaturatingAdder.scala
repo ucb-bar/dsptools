@@ -3,7 +3,7 @@
 package examples
 
 import chisel3._
-import dsptools.{DspTester, Saturate}
+import dsptools.{DspContext, DspTester, Saturate}
 import dsptools.numbers._
 import dsptools.numbers.implicits._
 import org.scalatest.{FlatSpec, Matchers}
@@ -19,10 +19,10 @@ class ParameterizedSaturatingAdder[T <: Data:Integer](gen:() => T) extends Modul
   val register1 = Reg(gen().cloneType)
   val register2 = Reg(gen().cloneType)
 
-  println(s"ParameterizedSaturatingAdder ${DspContextResolver.currentContext}")
+  println(s"ParameterizedSaturatingAdder ${DspContext.current}")
   register1 := io.a1 + io.a2
 
-  DspContextResolver.withContext(DspContextResolver.currentContext.copy(overflowType = Saturate)) {
+  DspContext.withOverflowType(Saturate) {
     register2 := io.a1 + io.a2
   }
   io.normalSum := register1

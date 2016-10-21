@@ -3,13 +3,12 @@
 package dsptools.numbers
 
 import chisel3.{Mux, SInt, UInt, Wire}
-import dsptools.{DspContext, Grow, Saturate}
+import dsptools.{hasContext, DspContext, Grow, Saturate}
 import spire.algebra.Ring
 import spire.math.{Algebraic, ConvertableFrom, ConvertableTo, Rational}
 
 /**
   * Defines basic math functions for SInt
-  * @param context a context object describing SInt behavior
   */
 trait SIntRing extends Any with Ring[SInt] with hasContext {
   def plus(f: SInt, g: SInt): SInt = {

@@ -4,6 +4,7 @@ package dsptools.numbers
 
 import chisel3._
 import chisel3.core.Wire
+import dsptools.hasContext
 import spire.algebra.Ring
 import spire.math.{UInt => _, _}
 

@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3._
-import dsptools.DspException
+import dsptools.{hasContext, DspException}
 import spire.algebra.Ring
 import spire.implicits._
 
