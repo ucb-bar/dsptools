@@ -53,10 +53,13 @@ class DspTester[T <: Module](c: T,
           case _ =>
             throw DspException(s"Error: poke: Can't create FixedPoint for $value, from signal template $bundle")
         }
-
       case r: DspReal =>
         val bigInt = doubleToBigIntBits(value)
-        poke(r.node, bigInt)
+        val pokeValue = if(bigInt < 0) {
+          DspReal.bigInt2powUnderlying + bigInt
+        }
+        else bigInt
+        poke(r.node, pokeValue)
       case c: DspComplex[_]  => c.underlyingType() match {
         case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
         case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
