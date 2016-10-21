@@ -6,13 +6,14 @@ import scala.util.DynamicVariable
 import chisel3.util.{Valid, ValidIO}
 import chisel3.{Bool, Bundle, Data, Mux, UInt}
 import dsptools.{TrimType, OverflowType, DspContext}
-import spire.algebra._
 import spire.macros.Ops
-import spire.math.{Algebraic, ConvertableFrom, ConvertableTo, SafeLong, prime}
+import spire.math.Algebraic
 import spire.std.{IntIsEuclideanRing, IntIsReal}
 
 import scala.collection.mutable
 import scala.language.experimental.macros
+
+import scala.language.implicitConversions
 
 /**
   * Created by rigge on 9/21/16.
@@ -469,6 +470,8 @@ object IsIntegral {
 }
 
 trait Real[A<:Data] extends Any with Ring[A] with ConvertableTo[A] with IsReal[A] {
+  def fromRational(a: spire.math.Rational): A = fromDouble(a.toDouble)
+  def fromAlgebraic(a: spire.math.Algebraic): A = fromDouble(a.toDouble)
   def fromReal(a: spire.math.Real): A = fromDouble(a.toDouble)
 }
 

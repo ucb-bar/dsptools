@@ -54,13 +54,12 @@ class TransposedStreamingTester(c: TransposedStreamingFIR[SInt])
 class TransposedStreamFIRSpec extends FlatSpec with Matchers {
   "ConstantTapTransposedStreamingFIR" should "compute a running average like thing" in {
     val taps = Seq.tabulate(3){x=>x} // { x => SInt(x)}
-    implicit def fromInt(x: Int) = SInt(x)
+    def fromInt(x: Int) = SInt(x)
     //implicit val DefaultDspContext = DspContext()
     //implicit val evidence = (context :DspContext) => new SIntRing()(context)
 
     chisel3.iotesters.Driver(() => new ConstantTapTransposedStreamingFIR(SInt(width = 10), SInt(width = 16), taps)) {
-      c => new
-          ConstantTapTransposedStreamingTester(c)
+      c => new ConstantTapTransposedStreamingTester(c)
     } should be (true)
   }
 //  "TransposedStreamingFIR" should "compute a running average like thing" in {

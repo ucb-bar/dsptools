@@ -5,9 +5,6 @@ package dsptools.numbers
 import chisel3._
 import chisel3.core.Wire
 import dsptools.hasContext
-import spire.algebra.Ring
-import spire.math.{UInt => _, _}
-
 
 class BlackboxOneOperand extends BlackBox {
   val io = IO(new Bundle() {
@@ -225,12 +222,12 @@ trait DspRealIsReal extends Any with IsReal[DspReal] with DspRealOrder with DspR
 
 trait ConvertableToDspReal extends ConvertableTo[DspReal] with hasContext {
   def fromShort(n: Short): DspReal = DspReal(n.toInt)
-  def fromAlgebraic(n: Algebraic): DspReal = DspReal(n.toInt)
+  //def fromAlgebraic(n: Algebraic): DspReal = DspReal(n.toInt)
   def fromBigInt(n: BigInt): DspReal = DspReal(n.toInt)
   def fromByte(n: Byte): DspReal = DspReal(n.toInt)
   def fromDouble(n: Double): DspReal = DspReal(n)
   //def fromReal(n: Real): DspReal = DspReal(n.toDouble)
-  def fromRational(n: Rational): DspReal = DspReal(n.toDouble)
+  //def fromRational(n: Rational): DspReal = DspReal(n.toDouble)
   def fromType[B](n: B)(implicit c: ConvertableFrom[B]): DspReal = DspReal(c.toDouble(n))
   def fromInt(n: Int): DspReal = DspReal(n)
   def fromFloat(n: Float): DspReal = DspReal(n.toDouble)

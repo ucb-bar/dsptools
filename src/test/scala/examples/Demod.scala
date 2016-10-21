@@ -4,8 +4,7 @@ package examples
 
 import chisel3._
 import dsptools.{Utilities, Truncate}
-import dsptools.numbers.DspComplex
-import spire.algebra.Ring
+import dsptools.numbers.{DspComplex, Ring}
 
 //scalastyle:off magic.number
 
