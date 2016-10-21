@@ -14,11 +14,15 @@ import spire.math.{ConvertableFrom, ConvertableTo}
 // This style preferred:
 // class CTTSF[T<:Data:Ring,V](i: T, o: T, val taps: Seq[V], conv: V=>T)
 
-class ConstantTapTransposedStreamingFIR[T <: Data:Ring:ConvertableTo, V:ConvertableFrom](inputGenerator: T, outputGenerator: T, val taps: Seq[V])
-                                               extends Module {
+class ConstantTapTransposedStreamingFIR[T <: Data:Ring:ConvertableTo, V:ConvertableFrom](
+    inputGenerator: T,
+    outputGenerator: T,
+    val taps: Seq[V])
+  extends Module {
+
   val io = IO(new Bundle {
-    val input  = Input(Valid(inputGenerator.asOutput))
-    val output = Output(Valid(outputGenerator.asOutput))
+    val input  = Input(Valid(inputGenerator))
+    val output = Output(Valid(outputGenerator))
   })
 
   val products: Seq[T] = taps.reverse.map { tap =>
@@ -28,7 +32,7 @@ class ConstantTapTransposedStreamingFIR[T <: Data:Ring:ConvertableTo, V:Converta
 
   val last = Reg[T](outputGenerator)
   val nextLast = products.reduceLeft { (left: T, right: T) =>
-    val reg = Reg(left)
+    val reg = Reg(left.cloneType)
     when (io.input.valid) {
       reg := left
     }
@@ -55,9 +59,9 @@ class TransposedStreamingFIR[T <: Data:Ring](inputGenerator: => T, outputGenerat
     io.input * tap
   }
 
-  val last = Reg(products.head)
+  val last = Reg(products.head.cloneType)
   last := products.reduceLeft { (left: T, right: T) =>
-    val reg = Reg(left)
+    val reg = Reg(left.cloneType)
     reg := left
     reg + right
   }

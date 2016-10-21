@@ -29,7 +29,7 @@ class StreamingAutocorrelatorSpec extends FlatSpec with Matchers {
     //implicit val DefaultDspContext = DspContext()
     //implicit val evidence = (context :DspContext) => new SIntRing()(context)
 
-    chisel3.iotesters.Driver(() => new StreamingAutocorrelator(SInt(width = 10), SInt(width = 16), 2, 3)) { c =>
+    chisel3.iotesters.Driver(() => new StreamingAutocorrelator(SInt(width = 10), SInt(width = 20), 2, 3)) { c =>
       new StreamingAutocorrelatorTester(c)
     } should be (true)
   }
