@@ -4,8 +4,6 @@ package dsptools.numbers
 
 import chisel3._
 import dsptools.{hasContext, DspContext, Grow}
-import spire.algebra.Ring
-import spire.math._
 
 /**
   * Defines basic math functions for FixedPoint numbers
@@ -55,12 +53,12 @@ trait FixedPointIsReal extends Any with IsReal[FixedPoint] with FixedPointOrder 
 
 trait ConvertableToFixedPoint extends ConvertableTo[FixedPoint] with hasContext {
   def fromShort(n: Short): FixedPoint = FixedPoint.fromBigInt(n.toInt)
-  def fromAlgebraic(n: Algebraic): FixedPoint = FixedPoint.fromBigInt(n.toBigInt)
+  //def fromAlgebraic(n: Algebraic): FixedPoint = FixedPoint.fromBigInt(n.toBigInt)
   def fromBigInt(n: BigInt): FixedPoint = FixedPoint.fromBigInt(n)
   def fromByte(n: Byte): FixedPoint = FixedPoint.fromBigInt(n.toInt)
   def fromDouble(n: Double): FixedPoint = FixedPoint.fromDouble(n)
   //def fromReal(n: Real): FixedPoint = FixedPoint.fromDouble(n.toDouble)
-  def fromRational(n: Rational): FixedPoint = FixedPoint.fromDouble(n.toDouble)
+  //def fromRational(n: Rational): FixedPoint = FixedPoint.fromDouble(n.toDouble)
   def fromType[B](n: B)(implicit c: ConvertableFrom[B]): FixedPoint = FixedPoint.fromDouble(c.toDouble(n))
   def fromInt(n: Int): FixedPoint = FixedPoint.fromBigInt(n)
   def fromFloat(n: Float): FixedPoint = FixedPoint.fromDouble(n.toDouble)

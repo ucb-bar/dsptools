@@ -4,8 +4,8 @@ package dsptools.numbers
 
 import chisel3.{Mux, SInt, UInt, Wire}
 import dsptools.{hasContext, DspContext, Grow, Saturate}
-import spire.algebra.Ring
-import spire.math.{Algebraic, ConvertableFrom, ConvertableTo, Rational}
+
+import scala.language.implicitConversions
 
 /**
   * Defines basic math functions for SInt
@@ -62,12 +62,12 @@ trait SIntIsReal extends Any with IsIntegral[SInt] with SIntOrder with SIntSigne
 
 trait ConvertableToSInt extends ConvertableTo[SInt] with hasContext {
   def fromShort(n: Short): SInt = SInt(n.toInt)
-  def fromAlgebraic(n: Algebraic): SInt = SInt(n.toBigInt)
+  //def fromAlgebraic(n: Algebraic): SInt = SInt(n.toBigInt)
   def fromBigInt(n: BigInt): SInt = SInt(n)
   def fromByte(n: Byte): SInt = SInt(n.toInt)
   def fromDouble(n: Double): SInt = SInt(n.toInt)
 //  def fromReal(n: Real): SInt = SInt(n.toInt)
-  def fromRational(n: Rational): SInt = SInt(n.toInt)
+  //def fromRational(n: Rational): SInt = SInt(n.toInt)
   def fromType[B](n: B)(implicit c: ConvertableFrom[B]): SInt = SInt(c.toBigInt(n))
   def fromInt(n: Int): SInt = SInt(n)
   def fromFloat(n: Float): SInt = SInt(n.toInt)

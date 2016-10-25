@@ -4,8 +4,7 @@ package dsptools.numbers
 
 import chisel3._
 import dsptools.{hasContext, DspException}
-import spire.algebra.Ring
-import spire.implicits._
+import implicits._
 
 object DspComplex {
   def apply[T <: Data:Ring](real: T, imaginary: T): DspComplex[T] = {
@@ -18,7 +17,7 @@ object DspComplex {
     result
   }
   def j[T <: Data:Ring]() : DspComplex[T] =
-    wire(Ring[T].zero, Ring[T].one)
+    wire(implicitly[Ring[T]].zero, implicitly[Ring[T]].one)
 
   def multiplyByJ[T <: Data:Ring](x: DspComplex[T]): DspComplex[T] =
     wire(-x.imaginary, x.real)
