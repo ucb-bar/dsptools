@@ -6,6 +6,9 @@ DSP Tools Development Environment
 This repository hopefully serves as a good starting point for making and easily testing your various DSP
  generators *(1 generator at a time)*. See [UC Berkeley Chisel](https://chisel.eecs.berkeley.edu) homepage for more information about Chisel.
 
+For a list of common errors, check out the [wiki page](https://github.com/ucb-bar/dsptools/wiki/Common-Errors).
+Feel free to add your own!
+
 ----------
 
 Key Enhancements
