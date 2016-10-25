@@ -3,13 +3,12 @@
 package dsptools.numbers
 
 import chisel3._
-import dsptools.{DspContext, Grow}
+import dsptools.{hasContext, DspContext, Grow}
 import spire.algebra.Ring
 import spire.math._
 
 /**
   * Defines basic math functions for FixedPoint numbers
-  * @param context a context object describing FixedPoint behavior
   */
 trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
   def plus(f: FixedPoint, g: FixedPoint): FixedPoint = {

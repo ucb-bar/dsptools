@@ -24,7 +24,7 @@ class SimpleCaseClassModule(gen: SInt) extends Module {
     val out = Output(new CaseClassBundle(gen))
   })
 
-  val register1 = Reg(io.out)
+  val register1 = Reg(io.out.cloneType)
 
   register1 := io.in
 

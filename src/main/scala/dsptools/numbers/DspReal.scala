@@ -4,30 +4,30 @@ package dsptools.numbers
 
 import chisel3._
 import chisel3.core.Wire
-import dsptools.DspContext
+import dsptools.hasContext
 import spire.algebra.Ring
 import spire.math.{UInt => _, _}
 
 
 class BlackboxOneOperand extends BlackBox {
   val io = IO(new Bundle() {
-    val in = Input(UInt(DspReal.UnderlyingWidth))
-    val out = Output(UInt(DspReal.UnderlyingWidth))
+    val in = Input(UInt(width = DspReal.UnderlyingWidth))
+    val out = Output(UInt(width = DspReal.UnderlyingWidth))
   })
 }
 
 class BlackboxTwoOperand extends BlackBox {
   val io = IO(new Bundle() {
-    val in1 = Input(UInt(DspReal.UnderlyingWidth))
-    val in2 = Input(UInt(DspReal.UnderlyingWidth))
-    val out = Output(UInt(DspReal.UnderlyingWidth))
+    val in1 = Input(UInt(width = DspReal.UnderlyingWidth))
+    val in2 = Input(UInt(width = DspReal.UnderlyingWidth))
+    val out = Output(UInt(width = DspReal.UnderlyingWidth))
   })
 }
 
 class BlackboxTwoOperandBool extends BlackBox {
   val io = IO(new Bundle() {
-    val in1 = Input(UInt(DspReal.UnderlyingWidth))
-    val in2 = Input(UInt(DspReal.UnderlyingWidth))
+    val in1 = Input(UInt(width = DspReal.UnderlyingWidth))
+    val in2 = Input(UInt(width = DspReal.UnderlyingWidth))
     val out = Output(Bool())
   })
 }
@@ -69,7 +69,7 @@ class BBFToInt extends BlackBox {
 class BBFIntPart extends BlackboxOneOperand
 
 class DspReal extends Bundle {
-  val node = Output(UInt(DspReal.UnderlyingWidth))
+  val node = Output(UInt(width = DspReal.UnderlyingWidth))
 
   private def oneOperandOperator(blackbox_gen: => BlackboxOneOperand) : DspReal = {
     val blackbox = blackbox_gen
@@ -158,6 +158,8 @@ class DspReal extends Bundle {
 
 object DspReal {
   val UnderlyingWidth = 64
+  val bigInt2powUnderlying = BigInt(f"${math.pow(2.0, UnderlyingWidth)}%.0f")
+
   /** Creates a Real with a constant value.
     */
   def apply(value: Double): DspReal = {

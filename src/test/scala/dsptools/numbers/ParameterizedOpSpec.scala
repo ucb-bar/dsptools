@@ -7,8 +7,9 @@ import chisel3._
 import dsptools.DspTester
 import org.scalatest.{FreeSpec, Matchers}
 import spire.algebra.Ring
-import dsptools.numbers._
 import dsptools.numbers.implicits._
+
+//scalastyle:off magic.number
 
 class ParameterizedNumberOperation[T <: Data:Ring](
                                         inputGenerator:() => T,
@@ -119,23 +120,28 @@ class ComplexOpSpecification extends FreeSpec with Matchers {
   """
   The ParameterizedNumericOperation demonstrates a Module that can be instantiated to
   handle different numeric types and different numerical operations
-  """ -
-    {
-      def complexFixedGenerator(): DspComplex[FixedPoint] = {
-        DspComplex(
-          FixedPoint(width = 16, binaryPoint = 2),
-          FixedPoint(width = 16, binaryPoint = 2))
-      }
-      def complexFixedOutputGenerator(): DspComplex[FixedPoint] = {
-        DspComplex(
-          FixedPoint(width = 48, binaryPoint = 4),
-          FixedPoint(width = 48, binaryPoint = 4))
-      }
+  """ - {
+    def complexFixedGenerator(): DspComplex[FixedPoint] = {
+      DspComplex(
+        FixedPoint(width = 16, binaryPoint = 2),
+        FixedPoint(width = 16, binaryPoint = 2))
+    }
+    def complexFixedOutputGenerator(): DspComplex[FixedPoint] = {
+      DspComplex(
+        FixedPoint(width = 48, binaryPoint = 4),
+        FixedPoint(width = 48, binaryPoint = 4))
+    }
     def complexRealGenerator(): DspComplex[DspReal] = {
       DspComplex(
         DspReal(1.0),
         DspReal(1.0))
     }
+
+//    "Run Repl for complexReal" in {
+//      dsptools.Driver.executeFirrtlRepl(
+//        () => new ParameterizedNumberOperation(complexRealGenerator, complexRealGenerator, "+")
+//      )
+//    }
 
     "This instance will process DspComplex[Real] numbers with the basic mathematical operations" - {
       Seq("+", "-", "*").foreach { operation =>
