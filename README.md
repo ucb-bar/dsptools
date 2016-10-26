@@ -98,13 +98,15 @@ You can also write
 and use `T` like it is a real type for any member functions of variables.
 To write a generic chisel Module, we might try to write
 
-```class Passthrough[T](gen: => T) extends Module {
+```
+class Passthrough[T](gen: => T) extends Module {
   val io = new Bundle {
     val in = gen.asInput
     val out = gen.asOutput
   }
   io.out := io.in
-}```
+}
+```
 
 Here, `gen` is a parameter specifying the type you want to use for your IO's, so you could write `Module(new Passthrough(SInt(width=10)))` or `Module(new Passthrough(new Bundle { ... }))`.
 Unfortunately, there's a problem with this.
@@ -120,37 +122,45 @@ Now the example above should compile.
 This example isn't very interesting, though.
 `Data` lets you do basic things like assignment and make registers, but doesn't define any mathematical operations, so if we write
 
-```class Doubler[T<:Data](gen: => T) extends Module {
+```
+class Doubler[T<:Data](gen: => T) extends Module {
   val io = new Bundle {
     val in = gen.asInput
     val out = gen.asOutput
   }
   io.out := io.in + io.in
-}```
+}
+```
 
 it won't compile.
 This is where typeclasses come in.
 This library defines a trait
 
-```trait Real[T] {
+```
+trait Real[T] {
   ...
   def plus(x: T, y: T): T
   ...
-}```
+}
+```
 
 as well as an implicit conversion so that `a+b` gets converted to `Real[T].plus(a,b)`.
 `Real[T]` is a typeclass.
 Typeclasses are a useful pattern in scala, so there is nice concise syntax to make using them easy:
 
-```import dsptools.numbers.implicits._
-class Doubler[T<:Data:Real](gen: => T) extends Module```
+```
+import dsptools.numbers.implicits._
+class Doubler[T<:Data:Real](gen: => T) extends Module
+```
 
 (Including the `implicits._` object is important, otherwise the implicit conversion from `io.in + io.in` to `Real[T].plus(io.in, io.in)` won't work).
 
 Note: If you don't include the `:Real` at the end, the scala compiler will think `io.in + io.in` is string concatenation and you'll get a weird error saying
 
-```[error]  found   : T
-[error]  required: String```
+```
+[error]  found   : T
+[error]  required: String
+```
 
 Some useful typeclasses:
 - Ring
