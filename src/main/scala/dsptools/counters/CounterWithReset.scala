@@ -3,6 +3,7 @@
 package dsptools.counters
 
 import chisel3._
+import chisel3.util._
 
 object CounterWithReset { 
   def apply(cond: Bool, n: Int, reset: Bool) = {

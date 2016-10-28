@@ -3,6 +3,7 @@
 package dsptools.junctions
 
 import chisel3._
+import chisel3.util._
 
 trait WithSync {
   val sync = Output(Bool())
@@ -16,7 +17,7 @@ object ValidWithSync {
   def apply[T <: Data](gen: T) = new ValidWithSync(gen)
 }
 
-class DecoupledWithSync[+T <: Data](gen: T) extends Decoupled[T](gen) with WithSync {
+class DecoupledWithSync[+T <: Data](gen: T) extends DecoupledIO[T](gen) with WithSync {
   override def cloneType: this.type = DecoupledWithSync(gen).asInstanceOf[this.type]
 }
 
