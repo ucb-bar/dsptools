@@ -5,7 +5,7 @@ package examples
 //scalastyle:off magic.number
 
 import chisel3.SInt
-import chisel3.iotesters.PeekPokeTester
+import chisel3.iotesters.{PeekPokeTester, TesterOptions}
 import dsptools.numbers.implicits._
 import dsptools.{DspContext, Grow}
 import org.scalatest.{FlatSpec, Matchers}
@@ -13,7 +13,7 @@ import dsptools.examples.{ConstantTapTransposedStreamingFIR, TransposedStreaming
 import spire.algebra.{Field, Ring}
 
 class ConstantTapTransposedStreamingTester(c: ConstantTapTransposedStreamingFIR[SInt, Int])
-  extends PeekPokeTester(c) {
+  extends PeekPokeTester(c, verbose=true) {
   val smallest = -5
   val biggest  = 5
   println(s"Taps are ${c.taps.toString}")
@@ -24,21 +24,27 @@ class ConstantTapTransposedStreamingTester(c: ConstantTapTransposedStreamingFIR[
       s + tap * (if(n - idx >= smallest) n - idx else 0)
     }}
   }
+  // initialize old state to 0
+  poke(c.io.input.valid, 1)
+  poke(c.io.input.bits, BigInt(0))
+  step(c.taps.length)
+
   for(num <- smallest to biggest) {
     poke(c.io.input.bits, BigInt(-7))
     poke(c.io.input.valid, 0)
     for (i<- 0 until 10) {
       step(1)
-      assert(peek(c.io.output.valid) == 0)
+      expect(c.io.output.valid, 0, "Output should not be valid if input is invalid")
     }
     poke(c.io.input.valid, 1)
     poke(c.io.input.bits, BigInt(num))
     step(1)
     println(peek(c.io.output.bits).toString())
     println(s"Answer should be ${checkAnswer(num)}")
-    assert(peek(c.io.output.bits) == checkAnswer(num))
-    assert(peek(c.io.output.valid) == 1)
+    expect(c.io.output.bits, checkAnswer(num), "Output did should match expected data")
+    expect(c.io.output.valid, 1, "Output should be valid if input is valid")
   }
+
 }
 
 class TransposedStreamingTester(c: TransposedStreamingFIR[SInt])
@@ -53,22 +59,11 @@ class TransposedStreamingTester(c: TransposedStreamingFIR[SInt])
 
 class TransposedStreamFIRSpec extends FlatSpec with Matchers {
   "ConstantTapTransposedStreamingFIR" should "compute a running average like thing" in {
-    val taps = Seq.tabulate(3){x=>x} // { x => SInt(x)}
-    def fromInt(x: Int) = SInt(x)
-    //implicit val DefaultDspContext = DspContext()
-    //implicit val evidence = (context :DspContext) => new SIntRing()(context)
+    val taps = (0 until 3)
 
-    chisel3.iotesters.Driver(() => new ConstantTapTransposedStreamingFIR(SInt(width = 10), SInt(width = 16), taps)) {
+    chisel3.iotesters.Driver.execute(Array("--is-verbose"),
+      () => new ConstantTapTransposedStreamingFIR(SInt(width = 10), SInt(width = 16), taps)) {
       c => new ConstantTapTransposedStreamingTester(c)
     } should be (true)
   }
-//  "TransposedStreamingFIR" should "compute a running average like thing" in {
-//    implicit val DefaultDspContext = DspContext()
-//    implicit val evidence = (context :DspContext) => new SIntRing()(context)
-//
-//    runPeekPokeTester(() => new ConstantTapTransposedStreamingFIR(SInt(width = 10), SInt(width = 16), taps), "firrtl") {
-//      (c, b) => new
-//          ConstantTapTransposedStreamingTester(c, b)
-//    } should be (true)
-//  }
 }
