@@ -13,7 +13,7 @@ import dsptools.examples.{ConstantTapTransposedStreamingFIR, TransposedStreaming
 import spire.algebra.{Field, Ring}
 
 class ConstantTapTransposedStreamingTester(c: ConstantTapTransposedStreamingFIR[SInt, Int])
-  extends PeekPokeTester(c, verbose=true) {
+  extends PeekPokeTester(c) {
   val smallest = -5
   val biggest  = 5
   println(s"Taps are ${c.taps.toString}")
