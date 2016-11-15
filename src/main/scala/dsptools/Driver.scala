@@ -4,7 +4,7 @@ package dsptools
 
 import chisel3._
 import chisel3.iotesters._
-import firrtl.{FirrtlExecutionSuccess, HasFirrtlOptions, ExecutionOptionsManager, FirrtlExecutionOptions}
+import firrtl.{HasFirrtlOptions, ExecutionOptionsManager}
 import numbers.DspRealFactory
 import firrtl_interpreter._
 
@@ -18,7 +18,7 @@ object Driver {
                             testerGen: T => PeekPokeTester[T]
                           ): Boolean = {
 
-    optionsManager.interpreterOptions = InterpreterOptions(
+    optionsManager.interpreterOptions = optionsManager.interpreterOptions.copy(
       blackBoxFactories = optionsManager.interpreterOptions.blackBoxFactories :+ new DspRealFactory)
 
     val testerResult = {
@@ -27,14 +27,32 @@ object Driver {
     testerResult
   }
 
+  def execute[T <: Module](
+                            dutGenerator: () => T,
+                            args: Array[String]
+                          )
+                          (
+                            testerGen: T => PeekPokeTester[T]
+                          ): Boolean = {
+
+    val optionsManager = new TesterOptionsManager {
+      interpreterOptions = interpreterOptions.copy(
+        blackBoxFactories = interpreterOptions.blackBoxFactories :+ new DspRealFactory)
+    }
+
+    if(optionsManager.parse(args)) {
+      iotesters.Driver.execute(dutGenerator, optionsManager)(testerGen)
+    }
+    else {
+      optionsManager.parser.showUsageAsError()
+      false
+    }
+  }
+
   def executeFirrtlRepl[T <: Module](
       dutGenerator: () => T,
       optionsManager: ReplOptionsManager = new ReplOptionsManager): Boolean = {
 
-    //    val testerOptions = new TesterOptionsManager {
-    //      interpreterOptions = InterpreterOptions(blackBoxFactories = Seq(new DspRealFactory))
-    //    }
-    //
     optionsManager.chiselOptions = optionsManager.chiselOptions.copy(runFirrtlCompiler = false)
     optionsManager.firrtlOptions = optionsManager.firrtlOptions.copy(compilerName = "low")
     optionsManager.interpreterOptions = optionsManager.interpreterOptions.copy(
@@ -47,7 +65,7 @@ object Driver {
         FirrtlRepl.execute(optionsManager)
         true
       case ChiselExecutionFailure(message) =>
-        println("Failed to compile circuit")
+        println("Failed to compile circuit") //scalastyle:off regex
         false
     }
   }
