@@ -29,7 +29,7 @@ abstract class DspRealTwoArgumentToDouble extends BlackBoxImplementation {
     val doubleArg2 = bigIntBitsToDouble(arg2.value)
     val doubleResult = twoOp(doubleArg1, doubleArg2)
     val result = doubleToBigIntBits(doubleResult)
-    ConcreteSInt(result, DspReal.UnderlyingWidth).asUInt
+    ConcreteSInt(result, DspReal.UnderlyingWidth, arg1.poisoned || arg2.poisoned).asUInt
 
 //    TypeInstanceFactory(tpe, result)
   }
@@ -56,7 +56,7 @@ abstract class DspRealOneArgumentToDouble extends BlackBoxImplementation {
     val doubleArg1 = bigIntBitsToDouble(arg1.value)
     val doubleResult = oneOp(doubleArg1)
     val result = doubleToBigIntBits(doubleResult)
-    ConcreteSInt(result, DspReal.UnderlyingWidth).asUInt
+    ConcreteSInt(result, DspReal.UnderlyingWidth, arg1.poisoned).asUInt
   }
 }
 
@@ -83,7 +83,7 @@ abstract class DspRealTwoArgumentToBoolean extends BlackBoxImplementation {
     val doubleArg2 = bigIntBitsToDouble(arg2.value)
     val booleanResult = twoOp(doubleArg1, doubleArg2)
     val result = if(booleanResult) Big1 else Big0
-    TypeInstanceFactory(tpe, result)
+    TypeInstanceFactory(tpe, result, arg1.poisoned || arg2.poisoned)
   }
 }
 

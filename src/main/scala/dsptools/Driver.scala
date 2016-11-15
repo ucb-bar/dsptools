@@ -54,7 +54,7 @@ object Driver {
 }
 
 class ReplOptionsManager
-  extends ExecutionOptionsManager("chisel-testers")
+  extends ExecutionOptionsManager("dsptools-repl")
     with HasInterpreterOptions
     with HasChiselExecutionOptions
     with HasFirrtlOptions

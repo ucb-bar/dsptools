@@ -4,7 +4,7 @@ package examples
 
 import chisel3.core._
 import chisel3.iotesters.{Backend, PeekPokeTester}
-import dsptools.DspTester
+import dsptools.{ReplOptionsManager, DspTester}
 import dsptools.numbers.DspReal
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -20,6 +20,15 @@ class RealAdder extends Module {
   register1 := io.a1 + io.a2
 
   io.c := register1
+}
+
+object RealAdder {
+  def main(args: Array[String]) {
+    val optionsManager = new ReplOptionsManager
+    if(optionsManager.parse(args)) {
+      dsptools.Driver.executeFirrtlRepl(() => new RealAdder, optionsManager)
+    }
+  }
 }
 
 class RealAdderTester(c: RealAdder) extends DspTester(c) {
