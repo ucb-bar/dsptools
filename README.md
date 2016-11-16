@@ -40,7 +40,7 @@ Key DSP library enhancements over base Chisel (albeit at the expense of coding s
 Getting Started
 ===============
 
-This package is under intensive development right now. Changes are happenging quickly and there a dependencies on
+This package is under intensive development right now. Changes are happening quickly and there a dependencies on
 several different branches of related projects.  
 Here is a simple manual way to build a running system
 
