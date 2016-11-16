@@ -90,7 +90,9 @@ class DspTester[T <: Module](c: T,
           s"poke($c, $value): c DspComplex has unknown underlying type ${c.getClass.getName}")
     }
     //scalastyle:off regex
-    println(s"DspPoke($c, $value)")
+    if (_verbose) {
+      println(s"DspPoke($c, $value)")
+    }
     //scalastyle:on regex
   }
 
