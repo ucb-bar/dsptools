@@ -6,15 +6,14 @@ import chisel3._
 import chisel3.iotesters.ChiselPropSpec
 import chisel3.testers.BasicTester
 import dsptools.numbers.implicits._
-import chisel3.{Bundle, Module, SInt, printf}
 
 //scalastyle:off magic.number
 class DspComplexExamples extends Module {
   val io = IO(new Bundle {
-    val in = Input(DspComplex(SInt(width=5), SInt(width=5)))
-    val outJ = Output(DspComplex(SInt(width=5), SInt(width=5)))
-    val inByJ = Output(DspComplex(SInt(width=5), SInt(width=5)))
-    val inByJShortcut = Output(DspComplex(SInt(width=5), SInt(width=5)))
+    val in = Input(DspComplex(SInt(5.W), SInt(5.W)))
+    val outJ = Output(DspComplex(SInt(5.W), SInt(5.W)))
+    val inByJ = Output(DspComplex(SInt(5.W), SInt(5.W)))
+    val inByJShortcut = Output(DspComplex(SInt(5.W), SInt(5.W)))
   })
 
   io.outJ := DspComplex.j[SInt]
@@ -25,8 +24,8 @@ class DspComplexExamples extends Module {
 class DspComplexExamplesTester extends BasicTester {
   val dut = Module(new DspComplexExamples)
 
-  dut.io.in.real      := SInt(7)
-  dut.io.in.imaginary := SInt(-4)
+  dut.io.in.real      := 7.S
+  dut.io.in.imaginary := (-4).S
 
   printf(s"inByJ.real: %d\n", dut.io.inByJ.real)
   printf(s"inByJ.imaginary: %d\n", dut.io.inByJ.imaginary)
@@ -34,27 +33,27 @@ class DspComplexExamplesTester extends BasicTester {
   printf(s"inByJShortcut.real: %d\n", dut.io.inByJShortcut.real)
   printf(s"inByJShortcut.imaginary: %d\n", dut.io.inByJShortcut.imaginary)
 
-  assert(dut.io.outJ.real === SInt(0))
-  assert(dut.io.outJ.imaginary === SInt(1))
+  assert(dut.io.outJ.real === 0.S)
+  assert(dut.io.outJ.imaginary === 1.S)
 
-  assert(dut.io.inByJ.real === SInt(4))
-  assert(dut.io.inByJ.imaginary === SInt(7))
+  assert(dut.io.inByJ.real === 4.S)
+  assert(dut.io.inByJ.imaginary === 7.S)
 
-  assert(dut.io.inByJShortcut.real === SInt(4))
-  assert(dut.io.inByJShortcut.imaginary === SInt(7))
+  assert(dut.io.inByJShortcut.real === 4.S)
+  assert(dut.io.inByJShortcut.imaginary === 7.S)
 
   stop()
 }
 
 class SIntTester extends BasicTester {
-  val x = SInt(10)
+  val x = 10.S
 
   val xcopy = Wire(x.cloneType)
   xcopy := x
 
   assert( x === xcopy )
 
-  val y = DspComplex.wire(SInt(-4), SInt(-1))
+  val y = DspComplex.wire((-4).S, (-1).S)
 
   assert ( y.real === (-4).S)
   assert (y.imaginary === (-1).S)

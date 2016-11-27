@@ -4,10 +4,9 @@ package examples
 
 //scalastyle:off magic.number
 
-import chisel3.SInt
-import chisel3.iotesters.{PeekPokeTester}
+import chisel3._
+import chisel3.iotesters.PeekPokeTester
 import dsptools.numbers.implicits._
-import dsptools.{Grow, DspContext}
 import org.scalatest.{Matchers, FlatSpec}
 
 import spire.algebra.{Ring, Field}
@@ -25,11 +24,11 @@ class StreamingAutocorrelatorTester(c: StreamingAutocorrelator[SInt])
 
 class StreamingAutocorrelatorSpec extends FlatSpec with Matchers {
   "StreamingAutocorrelatorFIR" should "compute a running average like thing" in {
-    val taps = Seq.tabulate(3) { x => SInt(x)}
+    val taps = Seq.tabulate(3) { x => x.S}
     //implicit val DefaultDspContext = DspContext()
     //implicit val evidence = (context :DspContext) => new SIntRing()(context)
 
-    chisel3.iotesters.Driver(() => new StreamingAutocorrelator(SInt(width = 10), SInt(width = 20), 2, 3)) { c =>
+    chisel3.iotesters.Driver(() => new StreamingAutocorrelator(SInt(10.W), SInt(20.W), 2, 3)) { c =>
       new StreamingAutocorrelatorTester(c)
     } should be (true)
   }

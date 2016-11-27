@@ -40,7 +40,7 @@ object BaseN {
     * Note that the amount of padding is determined by the maximum number that should be represented */
   def toUIntList(x: Int, r:Int, max: Int = -1): List[UInt] = {
     val intList = if (max < 0) toIntList(x,r) else toIntList(x,r,max)
-    intList.map(x => UInt(x,r-1))
+    intList.map(x => x.U((r-1).W))
   }
 
   /** Converts a constant into BaseN Vec representation (least significant digit indexed with 0) */
@@ -71,7 +71,7 @@ object BaseN {
         digits.head
       }
     }
-    UInt(lit,width=digits.length*digitWidth)
+    lit.U((digits.length*digitWidth).W)
   }
 
   /** Converts a Bit representation of a number in base-r into a BaseN Vec representation with 0 indexing
@@ -89,7 +89,7 @@ object BaseN {
   /** Create a new BaseN (to be assigned) specifying radix and max value */
   def apply(dir: Direction, rad: Int, max: Int): BaseN = {
     val maxDigits = toIntList(max, rad).length
-    val temp = (0 until maxDigits).map(i => UInt(dir,rad-1))
+    val temp = (0 until maxDigits).map(i => UInt((rad-1).W))
     BaseN(temp,rad)
   }
 
@@ -108,7 +108,7 @@ object BaseN {
 // TODO: Handle mixed radix
 /** BaseN type extends Vec */
 class BaseN(val length: Int, val radix: Int) extends Bundle { //extends Vec(gen,elts){
-  val underlying = Vec(length, UInt(BaseN.toBitWidth(radix)))
+  val underlying = Vec(length, UInt(BaseN.toBitWidth(radix).W))
   def head: UInt = underlying.head
   def tail: Seq[UInt] = underlying.tail
 
@@ -291,10 +291,10 @@ class BaseN(val length: Int, val radix: Int) extends Bundle { //extends Vec(gen,
     // Note: LSB's always correspond to lower indexing
     val diff = b.length - length
     if (diff > 0) {
-      (BaseN(this.underlying ++ List.fill(diff)(UInt(0)),radix), b)
+      (BaseN(this.underlying ++ List.fill(diff)(0.U),radix), b)
     }
     else if (diff < 0) {
-      (this,BaseN(b.underlying ++ List.fill(-diff)(UInt(0)),radix))
+      (this,BaseN(b.underlying ++ List.fill(-diff)(0.U),radix))
     }
     else {
       (this, b)

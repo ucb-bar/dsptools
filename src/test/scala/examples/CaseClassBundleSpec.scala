@@ -42,7 +42,7 @@ class SimpleCaseClassBundleSpec extends FlatSpec with Matchers {
   behavior of "SimpleCaseClassBundle"
 
   it should "push number through with one step delay" in {
-    chisel3.iotesters.Driver(() => new SimpleCaseClassModule(SInt(width = 5))) { c =>
+    chisel3.iotesters.Driver(() => new SimpleCaseClassModule(SInt(5.W))) { c =>
       new SimpleCaseClassBundleTester(c)
     } should be(true)
 
