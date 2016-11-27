@@ -43,12 +43,12 @@ class Demod[T <: Data:Ring](gen: => T, p: DemodParams) extends Module {
     // People aren't generally consistent about choosing positive LLRs to correspond to 0 or 1, so we choose
     // one with a convenient interpretation in this context.
     // Offset of the input sample relative to frame size (needs to support up to max frame size)
-    val offsetIn = Input(UInt(p.frameSizes.max-1))
+    val offsetIn = Input((p.frameSizes.max-1).U)
     // If symbolIn --> corresponding demodOut takes n cycles, offsetOut should be offsetIn delayed n clocks
-    val offsetOut = Output(UInt(p.frameSizes.max-1))
+    val offsetOut = Output((p.frameSizes.max-1).U)
     val reset = Input(Bool())
     //Constellation type to demodulate. (2,4,16,64,256)
-    val modulation_type = Input(UInt(p.QAMn.max))
+    val modulation_type = Input(UInt(p.QAMn.max.W))
   }
 
   val io = IO(new DemodIO(gen.getWidth))

@@ -2,7 +2,7 @@
 
 package dsptools.numbers
 
-import chisel3.{Bool, Data}
+import chisel3._
 
 /**
   * Much of this is drawn from non/spire, but using Chisel Bools instead of
@@ -66,7 +66,7 @@ trait IsIntegral[A<:Data] extends Any with IsRational[A] {
   def ceil(a: A): A = a
   def floor(a: A): A = a
   def round(a: A): A = a
-  def isWhole(a: A): Bool = Bool(true)
+  def isWhole(a: A): Bool = true.B
   def mod(a: A, b: A): A
 }
 

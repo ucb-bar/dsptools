@@ -66,21 +66,21 @@ class CountIO (countParams: CountParams) extends Bundle {
   // Count up/down control signal
   val upDown = if (countParams.countType == UpDown) Some(Input(Bool())) else None
   // Counters usually increment by 1
-  val inc = if (countParams.incMax != 1) Some(Input(UInt(countParams.incMax))) else None
+  val inc = if (countParams.incMax != 1) Some(Input(UInt(countParams.incMax.W))) else None
   // Counter wrap to value (up counters default wrap to 0)
-  val wrapTo =  if (countParams.customWrap) Some(Input(UInt(countParams.countMax))) else None
+  val wrapTo =  if (countParams.customWrap) Some(Input(UInt(countParams.countMax.W))) else None
   // Counter default wrap condition is when count is maxed out (so need to know max)
   val max = {
     if (countParams.wrapCtrl == Internal && countParams.countType != UpMod) {
-      Some(Input(UInt(countParams.countMax)))
+      Some(Input(UInt(countParams.countMax.W)))
     }
     else {
       None
     }
   }
   // n in x%n
-  val modN = if (countParams.countType == UpMod) Some(Input(UInt(countParams.countMax+1))) else None
-  val out  = Output(UInt(countParams.countMax))
+  val modN = if (countParams.countType == UpMod) Some(Input(UInt((countParams.countMax+1).W))) else None
+  val out  = Output(UInt(countParams.countMax.W))
 }
 
 /** Counter template */
@@ -91,34 +91,35 @@ abstract class Counter(countParams: CountParams) extends Module {
   val iCtrl = new CountCtrl(countParams)
   val oCtrl = new CountCtrl(countParams).flip
 
-  val inc = io.inc.getOrElse(UInt(1))
-  val max = io.max.getOrElse(UInt(countParams.countMax))
+  val inc = io.inc.getOrElse(1.U)
+  val max = io.max.getOrElse(countParams.countMax.U)
 
-  val eq0 = (io.out === UInt(0))
-  val eqMax = (io.out === max)
+  val eq0 = io.out === 0.U
+  val eqMax = io.out === max
 
   val (upCustom, upCustomWrap) = Mod(io.out + inc, max + 1.U)
   val (modOut,overflow) = {
-    if(io.modN == None) (io.out + inc,Bool(false))
-    else Mod(io.out + inc,io.modN.get)
+    if(io.modN.isEmpty) {
+      (io.out + inc,false.B)
+    }
+    else {
+      Mod(io.out + inc,io.modN.get)
+    }
   }
 
   // Adapt wrap condition based off of type of counter if it isn't retrieved externally
   val wrap = countParams.wrapCtrl match {
-    case Internal => {
+    case Internal =>
       countParams.countType match {
         case UpDown => Mux(io.upDown.get, eq0, eqMax)
         case Down => eq0
-        case Up => {
+        case Up =>
           // For >1 increments, custom wrap indicated by sum overflow on next count
-          if (countParams.incMax > 1) upCustomWrap
-          else eqMax
-        }
+          if (countParams.incMax > 1) upCustomWrap else eqMax
         case UpMod => overflow
       }
-    }
-    case TieFalse => Bool(false)
-    case TieTrue => Bool(true)
+    case TieFalse => false.B
+    case TieTrue => true.B
     case External => iCtrl.wrap.get
     case _ =>
       throw DspException(s"unknown value for countParams.wrapCtrl ${countParams.wrapCtrl}")
@@ -128,9 +129,9 @@ abstract class Counter(countParams: CountParams) extends Module {
   val wrapTo = {
     io.wrapTo.getOrElse(
       countParams.countType match {
-        case UpDown => Mux(io.upDown.get,max, UInt(0))
+        case UpDown => Mux(io.upDown.get,max, 0.U)
         case Down => max
-        case _ => UInt(0)
+        case _ => 0.U
       }
     )
   }
@@ -140,7 +141,7 @@ abstract class Counter(countParams: CountParams) extends Module {
   val up = {
     if (countParams.incMax == 1 || (countParams.wrapCtrl == External && countParams.customWrap)) {
       //      (io.out + inc).shorten(countParams.countMax)  TODO: figure out what was intended here
-      (io.out + inc)
+      io.out + inc
     }
     else {
       upCustom
@@ -164,11 +165,13 @@ abstract class Counter(countParams: CountParams) extends Module {
       //    else Mux(wrap,wrapTo,nextInSeq)
     }
     else {
-      if(wrap == Bool(true)) {
-        wrapTo
-      } else {
-        nextInSeq
+      val nextThing = Wire(Bool())
+      when(wrap === true.B) {
+        nextThing := wrapTo
+      } otherwise {
+        nextThing := nextInSeq
       }
+      nextThing
     }
   }
 
@@ -178,7 +181,7 @@ abstract class Counter(countParams: CountParams) extends Module {
     case TieTrue => nextCount
   }
 
-  val count = Mux(iCtrl.reset,UInt(countParams.resetVal),newOnClk)
+  val count = Mux(iCtrl.reset, countParams.resetVal.U, newOnClk)
 //  io.out := count.reg() TODO: Figure out where reg should come from
   io.out := count
 

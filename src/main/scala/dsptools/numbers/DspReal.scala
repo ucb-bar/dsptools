@@ -8,23 +8,23 @@ import dsptools.hasContext
 
 class BlackboxOneOperand extends BlackBox {
   val io = IO(new Bundle() {
-    val in = Input(UInt(width = DspReal.UnderlyingWidth))
-    val out = Output(UInt(width = DspReal.UnderlyingWidth))
+    val in = Input(UInt(DspReal.UnderlyingWidth.W))
+    val out = Output(UInt(DspReal.UnderlyingWidth.W))
   })
 }
 
 class BlackboxTwoOperand extends BlackBox {
   val io = IO(new Bundle() {
-    val in1 = Input(UInt(width = DspReal.UnderlyingWidth))
-    val in2 = Input(UInt(width = DspReal.UnderlyingWidth))
-    val out = Output(UInt(width = DspReal.UnderlyingWidth))
+    val in1 = Input(UInt(DspReal.UnderlyingWidth.W))
+    val in2 = Input(UInt(DspReal.UnderlyingWidth.W))
+    val out = Output(UInt(DspReal.UnderlyingWidth.W))
   })
 }
 
 class BlackboxTwoOperandBool extends BlackBox {
   val io = IO(new Bundle() {
-    val in1 = Input(UInt(width = DspReal.UnderlyingWidth))
-    val in2 = Input(UInt(width = DspReal.UnderlyingWidth))
+    val in1 = Input(UInt(DspReal.UnderlyingWidth.W))
+    val in2 = Input(UInt(DspReal.UnderlyingWidth.W))
     val out = Output(Bool())
   })
 }
@@ -51,22 +51,22 @@ class BBFNotEquals extends BlackboxTwoOperandBool
 
 class BBFFromInt extends BlackBox {
   val io = IO(new Bundle() {
-    val in = Input(UInt(DspReal.UnderlyingWidth))
-    val out = Output(UInt(DspReal.UnderlyingWidth))
+    val in = Input(UInt(DspReal.UnderlyingWidth.W))
+    val out = Output(UInt(DspReal.UnderlyingWidth.W))
   })
 }
 
 class BBFToInt extends BlackBox {
   val io = IO(new Bundle() {
-    val in = Input(UInt(DspReal.UnderlyingWidth))
-    val out = Output(UInt(DspReal.UnderlyingWidth))
+    val in = Input(UInt(DspReal.UnderlyingWidth.W))
+    val out = Output(UInt(DspReal.UnderlyingWidth.W))
   })
 }
 
 class BBFIntPart extends BlackboxOneOperand
 
 class DspReal extends Bundle {
-  val node = Output(UInt(width = DspReal.UnderlyingWidth))
+  val node = Output(UInt(DspReal.UnderlyingWidth.W))
 
   private def oneOperandOperator(blackbox_gen: => BlackboxOneOperand) : DspReal = {
     val blackbox = blackbox_gen
@@ -163,7 +163,7 @@ object DspReal {
     def longAsUnsignedBigInt(in: Long) = (BigInt(in >>> 1) << 1) + (in & 1)
     def doubleToBits(in: Double) = longAsUnsignedBigInt(java.lang.Double.doubleToRawLongBits(value))
     val out = Wire(new DspReal)
-    out.node := UInt(doubleToBits(value), width=DspReal.UnderlyingWidth)
+    out.node := doubleToBits(value).U(DspReal.UnderlyingWidth.W)
     out
   }
 

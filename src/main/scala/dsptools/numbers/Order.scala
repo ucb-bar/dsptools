@@ -2,8 +2,8 @@
 
 package dsptools.numbers
 
-import chisel3.{Bool, Data, Mux}
-import chisel3.util.{Valid, ValidIO}
+import chisel3._
+import chisel3.util.ValidIO
 
 /**
   * Much of this is drawn from non/spire, but using Chisel Bools instead of
@@ -33,7 +33,7 @@ trait Order[A <: Data] extends Any with PartialOrder[A] {
 
   def partialCompare(x: A, y: A): ValidIO[ComparisonBundle] = {
     val c = compare(x, y)
-    ComparisonHelper(Bool(true), c.eq, c.lt)
+    ComparisonHelper(true.B, c.eq, c.lt)
   }
 
   override def eqv(x: A, y: A): Bool = compare(x, y).eq

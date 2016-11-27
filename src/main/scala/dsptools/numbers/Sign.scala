@@ -2,7 +2,7 @@
 
 package dsptools.numbers
 
-import chisel3.{Bool, Data, Mux, UInt}
+import chisel3._
 
 import scala.language.implicitConversions
 
@@ -28,14 +28,14 @@ sealed class Sign(that: SignBundle) extends SignBundle {
     this.neg ^ that.neg
   ))
 
-  def **(that: Int): Sign = **(UInt(that))
+  def **(that: Int): Sign = **(UInt(that.W))
   def **(that: UInt): Sign = new Sign(Sign(this.zero, this.neg ^ that(0)))
 }
 
 object Sign {
-  case object Zero extends Sign(Sign(Bool(true), Bool(false)))
-  case object Positive extends Sign(Sign(Bool(false), Bool(false)))
-  case object Negative extends Sign(Sign(Bool(false), Bool(true)))
+  case object Zero extends Sign(Sign(true.B, false.B))
+  case object Positive extends Sign(Sign(false.B, false.B))
+  case object Negative extends Sign(Sign(false.B, true.B))
 
   def apply(zero: Bool, neg: Bool): SignBundle = {
     val bundle = new SignBundle
