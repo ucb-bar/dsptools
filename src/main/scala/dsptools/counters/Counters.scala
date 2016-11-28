@@ -3,6 +3,7 @@
 package dsptools.counters
 
 import chisel3._
+import chisel3.util.log2Up
 import dsptools.{DspException, Mod}
 
 /** Ctrl locations:
@@ -66,20 +67,20 @@ class CountIO (countParams: CountParams) extends Bundle {
   // Count up/down control signal
   val upDown = if (countParams.countType == UpDown) Some(Input(Bool())) else None
   // Counters usually increment by 1
-  val inc = if (countParams.incMax != 1) Some(Input(UInt(countParams.incMax.W))) else None
+  val inc = if (countParams.incMax != 1) Some(Input(UInt(log2Up(countParams.incMax + 1).W))) else None
   // Counter wrap to value (up counters default wrap to 0)
-  val wrapTo =  if (countParams.customWrap) Some(Input(UInt(countParams.countMax.W))) else None
+  val wrapTo =  if (countParams.customWrap) Some(Input(UInt(log2Up(countParams.countMax + 1).W))) else None
   // Counter default wrap condition is when count is maxed out (so need to know max)
   val max = {
     if (countParams.wrapCtrl == Internal && countParams.countType != UpMod) {
-      Some(Input(UInt(countParams.countMax.W)))
+      Some(Input(UInt(log2Up(countParams.countMax + 1).W)))
     }
     else {
       None
     }
   }
   // n in x%n
-  val modN = if (countParams.countType == UpMod) Some(Input(UInt((countParams.countMax+1).W))) else None
+  val modN = if (countParams.countType == UpMod) Some(Input(UInt((countParams.countMax + 1).W))) else None
   val out  = Output(UInt(countParams.countMax.W))
 }
 
