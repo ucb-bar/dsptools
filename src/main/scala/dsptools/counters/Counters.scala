@@ -165,13 +165,7 @@ abstract class Counter(countParams: CountParams) extends Module {
       //    else Mux(wrap,wrapTo,nextInSeq)
     }
     else {
-      val nextThing = Wire(Bool())
-      when(wrap === true.B) {
-        nextThing := wrapTo
-      } otherwise {
-        nextThing := nextInSeq
-      }
-      nextThing
+      Mux(wrap, wrapTo, nextInSeq)
     }
   }
 
