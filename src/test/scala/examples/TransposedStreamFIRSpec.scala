@@ -4,7 +4,7 @@ package examples
 
 //scalastyle:off magic.number
 
-import chisel3.SInt
+import chisel3._
 import chisel3.iotesters.{PeekPokeTester, TesterOptions}
 import dsptools.numbers.implicits._
 import dsptools.{DspContext, Grow}
@@ -20,9 +20,9 @@ class ConstantTapTransposedStreamingTester(c: ConstantTapTransposedStreamingFIR[
 
   def checkAnswer(n: Int) : Int = {
     // assumes inputs increase by 1 each time
-    c.taps.zipWithIndex.foldLeft(0) {case (s, (tap, idx)) => {
+    c.taps.zipWithIndex.foldLeft(0) {case (s, (tap, idx)) =>
       s + tap * (if(n - idx >= smallest) n - idx else 0)
-    }}
+    }
   }
   // initialize old state to 0
   poke(c.io.input.valid, 1)
@@ -59,10 +59,10 @@ class TransposedStreamingTester(c: TransposedStreamingFIR[SInt])
 
 class TransposedStreamFIRSpec extends FlatSpec with Matchers {
   "ConstantTapTransposedStreamingFIR" should "compute a running average like thing" in {
-    val taps = (0 until 3)
+    val taps = 0 until 3
 
     chisel3.iotesters.Driver.execute(Array("--is-verbose"),
-      () => new ConstantTapTransposedStreamingFIR(SInt(width = 10), SInt(width = 16), taps)) {
+      () => new ConstantTapTransposedStreamingFIR(SInt(10.W), SInt(16.W), taps)) {
       c => new ConstantTapTransposedStreamingTester(c)
     } should be (true)
   }

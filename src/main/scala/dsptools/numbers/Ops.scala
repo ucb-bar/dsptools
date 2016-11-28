@@ -2,7 +2,7 @@
 
 package dsptools.numbers
 
-import chisel3.{Bool, Data}
+import chisel3._
 import spire.macros.Ops
 
 import scala.language.experimental.macros
@@ -39,10 +39,10 @@ final class PartialOrderOps[A <: Data](lhs: A)(implicit ev: PartialOrder[A]) {
   def <(rhs: Double)(implicit ev1: Field[A]): Bool = macro Ops.binopWithLift[Int, Field[A], A]
   def <=(rhs: Double)(implicit ev1: Field[A]): Bool = macro Ops.binopWithLift[Int, Field[A], A]
 
-  def >(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Bool = Bool(c.toNumber(lhs) > rhs)
-  def >=(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Bool = Bool(c.toNumber(lhs) >= rhs)
-  def <(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Bool = Bool(c.toNumber(lhs) < rhs)
-  def <=(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Bool = Bool(c.toNumber(lhs) <= rhs)
+  def >(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Bool = (c.toNumber(lhs) > rhs).B
+  def >=(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Bool = (c.toNumber(lhs) >= rhs).B
+  def <(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Bool = (c.toNumber(lhs) < rhs).B
+  def <=(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Bool = (c.toNumber(lhs) <= rhs).B
 }
 
 final class OrderOps[A <: Data](lhs: A)(implicit ev: Order[A]) {

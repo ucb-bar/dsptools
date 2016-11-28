@@ -48,7 +48,7 @@ class ParameterizedSaturatingAdderTester[T<:Data:Integer](c: ParameterizedSatura
     i <- min to max
     j <- min to max
   } {
-    println(s"I=${i} and J=${j}")
+    println(s"I=$i and J=$j")
     dspPoke(c.io.a1, i)
     dspPoke(c.io.a2, j)
     step(1)
@@ -67,7 +67,7 @@ class ParameterizedSaturatingAdderSpec extends FlatSpec with Matchers {
   ignore should "allow registers to be declared that infer widths" in {
 
     val width = 3
-    def getSInt(): SInt = SInt(width=width)
+    def getSInt(): SInt = SInt(width.W)
 
     chisel3.iotesters.Driver(() => new ParameterizedSaturatingAdder(getSInt)) { c =>
       new ParameterizedSaturatingAdderTester(c, width)

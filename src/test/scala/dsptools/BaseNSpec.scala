@@ -8,12 +8,12 @@ import org.scalatest.{Matchers, FreeSpec}
 //scalastyle:off magic.number
 
 class BaseNCircuit extends Module {
-  val thing = Reg(BaseN(Seq.fill(5)(UInt(4)), rad = 3))
+  val thing = Reg(BaseN(Seq.fill(5)(UInt(4.W)), rad = 3))
   val io = IO(new Bundle {
-    val inc = Input(UInt(width = 3))
+    val inc = Input(UInt(3.W))
     val out = Output(thing.cloneType)
   })
-  val increment = BaseN(Seq.fill(5)(UInt(4)), rad = 3)
+  val increment = BaseN(Seq.fill(5)(UInt(4.W)), rad = 3)
 
   increment := io.inc
 
