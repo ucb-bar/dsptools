@@ -3,6 +3,7 @@
 package examples
 
 import chisel3._
+import chisel3.util.log2Up
 import dsptools.{Utilities, Truncate}
 import dsptools.numbers.{DspComplex, Ring}
 
@@ -43,12 +44,12 @@ class Demod[T <: Data:Ring](gen: => T, p: DemodParams) extends Module {
     // People aren't generally consistent about choosing positive LLRs to correspond to 0 or 1, so we choose
     // one with a convenient interpretation in this context.
     // Offset of the input sample relative to frame size (needs to support up to max frame size)
-    val offsetIn = Input((p.frameSizes.max-1).U)
+    val offsetIn = Input(UInt(log2Up(p.frameSizes.max).W))
     // If symbolIn --> corresponding demodOut takes n cycles, offsetOut should be offsetIn delayed n clocks
-    val offsetOut = Output((p.frameSizes.max-1).U)
+    val offsetOut = Output(UInt(log2Up(p.frameSizes.max).W))
     val reset = Input(Bool())
     //Constellation type to demodulate. (2,4,16,64,256)
-    val modulation_type = Input(UInt(p.QAMn.max.W))
+    val modulation_type = Input(UInt(log2Up(p.QAMn.max).W))
   }
 
   val io = IO(new DemodIO(gen.getWidth))
