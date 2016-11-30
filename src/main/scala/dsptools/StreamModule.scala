@@ -77,8 +77,9 @@ abstract class StreamBlock[T <: Data, V <: Data](input: => T, output: => T, over
     def status(name : String) = scr.status(name)
 }
 
-abstract class StreamBlockTester[T <: Data, U <: Data, V <: StreamBlock[T, U]](val dut: V) 
+abstract class StreamBlockTester[T <: Data, U <: Data, V <: StreamBlock[T, U]](dut: V) 
   extends DspTester(dut) {
+  var streamInValid: Boolean = true
   val streamIn: Seq[BigInt]
   private val streamOut_ = new scala.collection.mutable.Queue
   val streamOut: Seq[BigInt] = streamOut_
@@ -91,8 +92,11 @@ abstract class StreamBlockTester[T <: Data, U <: Data, V <: StreamBlock[T, U]](v
 
   override def step(n: Int): Unit = {
     for (i <- 0 until n) {
+      if (streamInValid) {
+//        poke(dut.io.in.bits, 
+      }
       if (peek(dut.io.out.valid) != 0) {
-        streamOut_ += peek(dut.io.out.bits)
+//        streamOut_ += peek(dut.io.out.bits)
       }
       super.step(1)
     }
