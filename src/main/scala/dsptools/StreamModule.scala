@@ -10,6 +10,7 @@ import cde._
 // Don't import dsptools.junctions._
 import _root_.junctions._
 import uncore.tilelink._
+import uncore.converters._
 import rocketchip.PeripheryUtils
 import testchipip._
 
@@ -58,7 +59,8 @@ abstract class StreamBlock[T <: Data, V <: Data](override_clock: Option[Clock]=N
       val i = Wire(ValidWithSync(Vec(lanes, genIn().cloneType)))
       i.valid := io.in.valid
       i.sync  := io.in.sync
-      i.bits  fromBits io.in.bits
+      val w = i.bits.fromBits(io.in.bits)
+      i.bits  := w
       i
     }
     val unpacked_output = {
@@ -73,10 +75,13 @@ abstract class StreamBlock[T <: Data, V <: Data](override_clock: Option[Clock]=N
     val scrbuilder = new SCRBuilder(name)
     lazy val scr: SCRFile = {
       scrbuilt = true
-      val tl = Wire(new ClientUncachedTileLinkIO)
+      //val tl = Wire(new ClientUncachedTileLinkIO)
       val scr_ = scrbuilder.generate(baseAddr)
-      tl <> scr_.io.tl
-      PeripheryUtils.convertTLtoAXI(tl) <> io.axi
+      //tl <> scr_.io.tl
+      //PeripheryUtils.convertTLtoAXI(tl) <> io.axi
+      val tl2axi = Module(new TileLinkIONastiIOConverter())
+      tl2axi.io.tl <> scr_.io.tl
+      io.axi <> tl2axi.io.nasti
       scr_
     }
 
@@ -102,8 +107,8 @@ abstract class StreamBlock[T <: Data, V <: Data](override_clock: Option[Clock]=N
 abstract class StreamBlockTester[T <: Data, U <: Data, V <: StreamBlock[T, U]](dut: V, maxWait: Int = 100)
   extends DspTester(dut) {
   var streamInValid: Boolean = true
-  def pauseStream: Unit = streamInValid = false
-  def playStream:  Unit = streamInValid = true
+  def pauseStream(): Unit = streamInValid = false
+  def playStream():  Unit = streamInValid = true
   def streamIn: Seq[BigInt]
   private val streamInIter = streamIn.iterator
   private val streamOut_ = new scala.collection.mutable.Queue[BigInt]
@@ -112,26 +117,43 @@ abstract class StreamBlockTester[T <: Data, U <: Data, V <: StreamBlock[T, U]](d
 
   val axi = dut.io.axi
 
-  def aw_fire: Boolean = {
-    (peek(axi.aw.valid) != BigInt(0)) &&
+  def aw_ready: Boolean = {
+    // (peek(axi.aw.valid) != BigInt(0)) &&
     (peek(axi.aw.ready) != BigInt(0))
   }
 
-  def w_fire: Boolean = {
-    (peek(axi.w.valid) != BigInt(0)) &&
+  def w_ready: Boolean = {
+    // (peek(axi.w.valid) != BigInt(0)) &&
     (peek(axi.w.ready) != BigInt(0))
   }
+
+  def b_ready: Boolean = {
+    (peek(axi.b.valid) != BigInt(0)) // &&
+    // (peek(axi.b.ready) != BigInt(0))
+  }
+
+  poke(axi.aw.valid, 0)
+  poke(axi.ar.valid, 0)
+  poke(axi.b.valid,  0)
 
   val axiDataWidth = dut.io.axi.w.bits.data.getWidth
   val axiDataBytes = axiDataWidth / 8
   val burstLen = axiDataBytes
   def axiWrite(addr: Int, value: Int): Unit = {
+    var waited = 0
+    while (!aw_ready) {
+      require(waited < maxWait, "AXI AW not ready")
+      //if (waited >= maxWait) return
+      step(1)
+      waited += 1
+    } 
+
     // s_write_addr
     poke(axi.aw.valid,   1)
     poke(axi.aw.bits.id, 0)
     poke(axi.aw.bits.user, 0)
     poke(axi.aw.bits.addr,    addr)
-    poke(axi.aw.bits.len,     burstLen - 1)
+    poke(axi.aw.bits.len,     0)
     poke(axi.aw.bits.size,    log2Up(axiDataBytes))
     poke(axi.aw.bits.lock, 0)
     poke(axi.aw.bits.cache, 0)
@@ -139,33 +161,47 @@ abstract class StreamBlockTester[T <: Data, U <: Data, V <: StreamBlock[T, U]](d
     poke(axi.aw.bits.qos, 0)
     poke(axi.aw.bits.region, 0)
 
-    var waited = 0
-    while (!aw_fire) {
-      //require(waited < maxWait, "AXI AW did not fire")
-      if (waited >= maxWait) return
+    step(1)
+
+    poke(axi.aw.valid,   0)
+
+    waited = 0
+    do {
+      require(waited < maxWait, "AXI W not ready")
+      //if (waited >= maxWait) return
       step(1)
       waited += 1
-    }
-    poke(axi.aw.valid,   0)
+    } while (!w_ready)
 
     // s_write_data
     poke(axi.w.valid, 1)
     poke(axi.w.bits.data, value)
-    poke(axi.w.bits.strb, -1)
+    poke(axi.w.bits.strb, 0xFFFF)
     poke(axi.w.bits.last, 1)
+    poke(axi.w.bits.id, 0)
+    poke(axi.w.bits.user, 0)
 
-    waited = 0
-    while (!w_fire) {
-      require(waited < maxWait, "AXI W did not fire")
-      step(1)
-      waited += 1
-    }
+    step(1)
 
     poke(axi.w.valid, 0)
+    poke(axi.w.bits.last, 0)
 
     // s_write_stall
 
+    waited = 0
+    do {
+      require(waited < maxWait, "AXI B not ready")
+      //if (waited >= maxWait) return
+      step(1)
+      waited += 1
+    } while (!b_ready)
     // s_write_resp
+
+    poke(axi.b.ready, 1)
+
+
+    step(1)
+    poke(axi.b.ready, 0)
   }
 
   def axiRead(addr: Int): Int = {
@@ -173,15 +209,19 @@ abstract class StreamBlockTester[T <: Data, U <: Data, V <: StreamBlock[T, U]](d
   }
 
   override def step(n: Int): Unit = {
-    for (i <- 0 until n) {
+    //for (i <- 0 until n) {
       if (streamInValid && streamInIter.hasNext) {
+        poke(dut.io.in.valid, 1)
         poke(dut.io.in.bits, streamInIter.next)
+      } else {
+        poke(dut.io.in.valid, 0)
       }
       if (peek(dut.io.out.valid) != BigInt(0)) {
         streamOut_ += peek(dut.io.out.bits)
       }
       super.step(1)
-    }
+      if (n > 1) step(n - 1)
+    //}
   }
 }
 
