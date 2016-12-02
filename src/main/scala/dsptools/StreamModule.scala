@@ -36,8 +36,8 @@ class StreamBlockIO[T <: Data, V <: Data]()(implicit val p: Parameters) extends 
     val uint = Wire(vec).asUInt
     ValidWithSync(uint)
   }
-  val in = Input(makePort(genIn))
-  val out = Output(makePort(genOut))
+  val in = Input(makePort(genIn()))
+  val out = Output(makePort(genOut()))
   val axi = new NastiIO().flip
 
   override def cloneType: this.type = new StreamBlockIO()(p).asInstanceOf[this.type]
@@ -46,8 +46,8 @@ class StreamBlockIO[T <: Data, V <: Data]()(implicit val p: Parameters) extends 
 abstract class StreamBlock[T <: Data, V <: Data](override_clock: Option[Clock]=None, override_reset: Option[Bool]=None)
   (implicit val p: Parameters) extends Module(override_clock, override_reset) with HasStreamBlockParameters[T, V] {
     def baseAddr: BigInt
-    def packed_input  = pack(Vec(lanes, genIn))
-    def packed_output = pack(genOut)
+    def packed_input  = pack(Vec(lanes, genIn()))
+    def packed_output = pack(genOut())
     def pack[T <: Data](in: T): UInt = {
       val unpadded = Wire(in).asUInt
       val topad = (8 - (unpadded.getWidth % 8)) % 8
@@ -55,14 +55,14 @@ abstract class StreamBlock[T <: Data, V <: Data](override_clock: Option[Clock]=N
     }
     val io = IO(new StreamBlockIO[T, V])
     val unpacked_input = {
-      val i = Wire(ValidWithSync(Vec(lanes, genIn.cloneType)))
+      val i = Wire(ValidWithSync(Vec(lanes, genIn().cloneType)))
       i.valid := io.in.valid
       i.sync  := io.in.sync
       i.bits  fromBits io.in.bits
       i
     }
     val unpacked_output = {
-      val o = Wire(ValidWithSync(Vec(lanes, genOut.cloneType)))
+      val o = Wire(ValidWithSync(Vec(lanes, genOut().cloneType)))
       io.out.valid := o.valid
       io.out.sync  := o.sync
       io.out.bits  := o.bits.asUInt
@@ -99,12 +99,12 @@ abstract class StreamBlock[T <: Data, V <: Data](override_clock: Option[Clock]=N
     def status(name : String) = scr.status(name)
 }
 
-abstract class StreamBlockTester[T <: Data, U <: Data, V <: StreamBlock[T, U]](dut: V) 
+abstract class StreamBlockTester[T <: Data, U <: Data, V <: StreamBlock[T, U]](dut: V, maxWait: Int = 100)
   extends DspTester(dut) {
   var streamInValid: Boolean = true
   def pauseStream: Unit = streamInValid = false
   def playStream:  Unit = streamInValid = true
-  val streamIn: Seq[BigInt]
+  def streamIn: Seq[BigInt]
   private val streamInIter = streamIn.iterator
   private val streamOut_ = new scala.collection.mutable.Queue[BigInt]
   val streamOut: Seq[BigInt] = streamOut_
@@ -124,16 +124,27 @@ abstract class StreamBlockTester[T <: Data, U <: Data, V <: StreamBlock[T, U]](d
 
   val axiDataWidth = dut.io.axi.w.bits.data.getWidth
   val axiDataBytes = axiDataWidth / 8
+  val burstLen = axiDataBytes
   def axiWrite(addr: Int, value: Int): Unit = {
     // s_write_addr
     poke(axi.aw.valid,   1)
     poke(axi.aw.bits.id, 0)
+    poke(axi.aw.bits.user, 0)
     poke(axi.aw.bits.addr,    addr)
+    poke(axi.aw.bits.len,     burstLen - 1)
     poke(axi.aw.bits.size,    log2Up(axiDataBytes))
-    poke(axi.aw.bits.len,     0)
+    poke(axi.aw.bits.lock, 0)
+    poke(axi.aw.bits.cache, 0)
+    poke(axi.aw.bits.prot, 0)
+    poke(axi.aw.bits.qos, 0)
+    poke(axi.aw.bits.region, 0)
 
+    var waited = 0
     while (!aw_fire) {
+      //require(waited < maxWait, "AXI AW did not fire")
+      if (waited >= maxWait) return
       step(1)
+      waited += 1
     }
     poke(axi.aw.valid,   0)
 
@@ -143,8 +154,11 @@ abstract class StreamBlockTester[T <: Data, U <: Data, V <: StreamBlock[T, U]](d
     poke(axi.w.bits.strb, -1)
     poke(axi.w.bits.last, 1)
 
+    waited = 0
     while (!w_fire) {
+      require(waited < maxWait, "AXI W did not fire")
       step(1)
+      waited += 1
     }
 
     poke(axi.w.valid, 0)
