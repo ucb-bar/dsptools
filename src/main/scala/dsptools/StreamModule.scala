@@ -16,55 +16,75 @@ import testchipip._
 
 case object StreamBlockKey extends Field[StreamBlockParameters]
 
-trait StreamBlockParameters {
-  def genIn [T <: Data]: T
-  def genOut[T <: Data]: T = genIn[T]
-  val lanes: Int
-}
+case class StreamBlockParameters (
+  inputWidth: Int,
+  outputWidth: Int
+)
 
-trait HasStreamBlockParameters[T <: Data, V <: Data] {
+trait HasStreamBlockParameters {
   implicit val p: Parameters
   val streamExternal = p(StreamBlockKey)
-  def genIn(dummy: Int = 0):  T = streamExternal.genIn[T]
-  def genOut(dummy: Int = 0): V = streamExternal.genOut[V]
-  val lanes = streamExternal.lanes
+  val inputWidth = streamExternal.inputWidth
+  val outputWidth = streamExternal.outputWidth
+  // def genIn(dummy: Int = 0):  T = streamExternal.genIn[T]
+  // def genOut(dummy: Int = 0): V = streamExternal.genOut[V]
+  // val lanes = streamExternal.lanes
 }
 
-class StreamBlockIO[T <: Data, V <: Data]()(implicit val p: Parameters) extends Bundle 
-  with HasStreamBlockParameters[T, V] {
-  def makePort[U <: Data](in: U) = {
+case object GenKey extends Field[GenParameters]
+
+trait GenParameters {
+  def genIn [T <: Data]: T
+  def genOut[T <: Data]: T = genIn[T]
+  def lanesIn: Int
+  val lanesOut: Int = lanesIn
+}
+
+trait HasGenParameters[T <: Data, V <: Data] {
+  implicit val p: Parameters
+  val genExternal = p(GenKey)
+  def genIn(dummy: Int = 0)  = genExternal.genIn[T]
+  def genOut(dummy: Int = 0) = genExternal.genOut[V]
+  val lanesIn = genExternal.lanesIn
+  val lanesOut = genExternal.lanesOut
+  /*def makePort[U <: Data](in: U) = {
     val vec = Vec(lanes, in.cloneType)
     val uint = Wire(vec).asUInt
     ValidWithSync(uint)
-  }
-  val in = Input(makePort(genIn()))
-  val out = Output(makePort(genOut()))
+  }*/
+  // todo some assertions that the width is correct
+}
+
+class StreamBlockIO()(implicit val p: Parameters) extends Bundle 
+  with HasStreamBlockParameters {
+  val in  = Input( ValidWithSync(UInt(inputWidth.W)))
+  val out = Output(ValidWithSync(UInt(outputWidth.W)))
   val axi = new NastiIO().flip
 
   override def cloneType: this.type = new StreamBlockIO()(p).asInstanceOf[this.type]
 }
 
-abstract class StreamBlock[T <: Data, V <: Data](override_clock: Option[Clock]=None, override_reset: Option[Bool]=None)
-  (implicit val p: Parameters) extends Module(override_clock, override_reset) with HasStreamBlockParameters[T, V] {
+abstract class StreamBlock(override_clock: Option[Clock]=None, override_reset: Option[Bool]=None)
+  (implicit val p: Parameters) extends Module(override_clock, override_reset) with HasStreamBlockParameters {
     def baseAddr: BigInt
-    def packed_input  = pack(Vec(lanes, genIn()))
-    def packed_output = pack(genOut())
+    // def packed_input  = pack(Vec(lanes, genIn()))
+    // def packed_output = pack(genOut())
     def pack[T <: Data](in: T): UInt = {
       val unpadded = Wire(in).asUInt
       val topad = (8 - (unpadded.getWidth % 8)) % 8
       unpadded.pad(topad)
     }
-    val io = IO(new StreamBlockIO[T, V])
-    val unpacked_input = {
-      val i = Wire(ValidWithSync(Vec(lanes, genIn().cloneType)))
+    val io = IO(new StreamBlockIO)
+    def unpackInput[T <: Data](lanes: Int, genIn: T) = {
+      val i = Wire(ValidWithSync(Vec(lanes, genIn.cloneType)))
       i.valid := io.in.valid
       i.sync  := io.in.sync
       val w = i.bits.fromBits(io.in.bits)
       i.bits  := w
       i
     }
-    val unpacked_output = {
-      val o = Wire(ValidWithSync(Vec(lanes, genOut().cloneType)))
+    def unpackOutput[T <: Data](lanes: Int, genOut: T) = {
+      val o = Wire(ValidWithSync(Vec(lanes, genOut.cloneType)))
       io.out.valid := o.valid
       io.out.sync  := o.sync
       io.out.bits  := o.bits.asUInt
@@ -104,7 +124,7 @@ abstract class StreamBlock[T <: Data, V <: Data](override_clock: Option[Clock]=N
     def status(name : String) = scr.status(name)
 }
 
-abstract class StreamBlockTester[T <: Data, U <: Data, V <: StreamBlock[T, U]](dut: V, maxWait: Int = 100)
+abstract class StreamBlockTester[V <: StreamBlock](dut: V, maxWait: Int = 100)
   extends DspTester(dut) {
   var streamInValid: Boolean = true
   def pauseStream(): Unit = streamInValid = false
