@@ -14,21 +14,17 @@ import uncore.converters._
 import rocketchip.PeripheryUtils
 import testchipip._
 
-case object StreamBlockKey extends Field[StreamBlockParameters]
+case object DspBlockKey extends Field[DspBlockParameters]
 
-case class StreamBlockParameters (
+case class DspBlockParameters (
   inputWidth: Int,
   outputWidth: Int
 )
 
-trait HasStreamBlockParameters {
+trait HasDspBlockParameters {
   implicit val p: Parameters
-  val streamExternal = p(StreamBlockKey)
-  val inputWidth = streamExternal.inputWidth
-  val outputWidth = streamExternal.outputWidth
-  // def genIn(dummy: Int = 0):  T = streamExternal.genIn[T]
-  // def genOut(dummy: Int = 0): V = streamExternal.genOut[V]
-  // val lanes = streamExternal.lanes
+  def inputWidth  = p(DspBlockKey).inputWidth
+  def outputWidth = p(DspBlockKey).outputWidth
 }
 
 case object GenKey extends Field[GenParameters]
@@ -37,94 +33,102 @@ trait GenParameters {
   def genIn [T <: Data]: T
   def genOut[T <: Data]: T = genIn[T]
   def lanesIn: Int
-  val lanesOut: Int = lanesIn
+  def lanesOut: Int = lanesIn
 }
 
 trait HasGenParameters[T <: Data, V <: Data] {
   implicit val p: Parameters
-  val genExternal = p(GenKey)
+  def genExternal = p(GenKey)
   def genIn(dummy: Int = 0)  = genExternal.genIn[T]
   def genOut(dummy: Int = 0) = genExternal.genOut[V]
-  val lanesIn = genExternal.lanesIn
-  val lanesOut = genExternal.lanesOut
-  /*def makePort[U <: Data](in: U) = {
-    val vec = Vec(lanes, in.cloneType)
-    val uint = Wire(vec).asUInt
-    ValidWithSync(uint)
-  }*/
+  def lanesIn  = genExternal.lanesIn
+  def lanesOut = genExternal.lanesOut
   // todo some assertions that the width is correct
 }
 
-class StreamBlockIO()(implicit val p: Parameters) extends Bundle 
-  with HasStreamBlockParameters {
+trait HasGenDspParameters[T <: Data, V <: Data] extends HasDspBlockParameters with HasGenParameters[T, V] {
+  def portSize[U <: Data](lanes: Int, in: U): Int = {
+    val unpadded = lanes * in.getWidth
+    val topad = (8 - (unpadded % 8)) % 8
+    unpadded + topad
+  }
+  abstract override def inputWidth     = portSize(lanesIn,  genIn())
+  abstract override def outputWidth    = portSize(lanesOut, genOut())
+}
+
+class DspBlockIO()(implicit val p: Parameters) extends Bundle with HasDspBlockParameters {
   val in  = Input( ValidWithSync(UInt(inputWidth.W)))
   val out = Output(ValidWithSync(UInt(outputWidth.W)))
   val axi = new NastiIO().flip
 
-  override def cloneType: this.type = new StreamBlockIO()(p).asInstanceOf[this.type]
+  override def cloneType: this.type = new DspBlockIO()(p).asInstanceOf[this.type]
 }
 
-abstract class StreamBlock(override_clock: Option[Clock]=None, override_reset: Option[Bool]=None)
-  (implicit val p: Parameters) extends Module(override_clock, override_reset) with HasStreamBlockParameters {
-    def baseAddr: BigInt
-    // def packed_input  = pack(Vec(lanes, genIn()))
-    // def packed_output = pack(genOut())
-    def pack[T <: Data](in: T): UInt = {
-      val unpadded = Wire(in).asUInt
-      val topad = (8 - (unpadded.getWidth % 8)) % 8
-      unpadded.pad(topad)
-    }
-    val io = IO(new StreamBlockIO)
-    def unpackInput[T <: Data](lanes: Int, genIn: T) = {
-      val i = Wire(ValidWithSync(Vec(lanes, genIn.cloneType)))
-      i.valid := io.in.valid
-      i.sync  := io.in.sync
-      val w = i.bits.fromBits(io.in.bits)
-      i.bits  := w
-      i
-    }
-    def unpackOutput[T <: Data](lanes: Int, genOut: T) = {
-      val o = Wire(ValidWithSync(Vec(lanes, genOut.cloneType)))
-      io.out.valid := o.valid
-      io.out.sync  := o.sync
-      io.out.bits  := o.bits.asUInt
-      o
-    }
+abstract class DspBlock(b: => Option[DspBlockIO] = None, override_clock: Option[Clock]=None, override_reset: Option[Bool]=None)
+  (implicit val p: Parameters) extends Module(override_clock, override_reset) with HasDspBlockParameters {
+  def baseAddr: BigInt
+  val io: DspBlockIO = IO(b.getOrElse(new DspBlockIO))
 
-    var scrbuilt : Boolean = false
-    val scrbuilder = new SCRBuilder(name)
-    lazy val scr: SCRFile = {
-      scrbuilt = true
-      //val tl = Wire(new ClientUncachedTileLinkIO)
-      val scr_ = scrbuilder.generate(baseAddr)
-      //tl <> scr_.io.tl
-      //PeripheryUtils.convertTLtoAXI(tl) <> io.axi
-      val tl2axi = Module(new TileLinkIONastiIOConverter())
-      tl2axi.io.tl <> scr_.io.tl
-      io.axi <> tl2axi.io.nasti
-      scr_
-    }
+  def unpackInput[T <: Data](lanes: Int, genIn: T) = {
+    val i = Wire(ValidWithSync(Vec(lanes, genIn.cloneType)))
+    i.valid := io.in.valid
+    i.sync  := io.in.sync
+    val w = i.bits.fromBits(io.in.bits)
+    i.bits  := w
+    i
+  }
+  def unpackOutput[T <: Data](lanes: Int, genOut: T) = {
+    val o = Wire(ValidWithSync(Vec(lanes, genOut.cloneType)))
+    io.out.valid := o.valid
+    io.out.sync  := o.sync
+    io.out.bits  := o.bits.asUInt
+    o
+  }
 
-    def addControl(name: String, init: UInt = null) = {
-      require(!scrbuilt, 
-        s"Called addControl after SCR has been built." + 
-        s"Move your control() and status() calls after all addControl calls"
-      )
-      scrbuilder.addControl(name, init)
-    }
-    def addStatus(name: String) {
-      require(!scrbuilt,
-        s"Called addControl after SCR has been built." + 
-        s"Move your control() and status() calls after all addControl calls"
-      )
-      scrbuilder.addStatus(name)
-    }
+  var scrbuilt : Boolean = false
+  val scrbuilder = new SCRBuilder(name)
+  lazy val scr: SCRFile = {
+    scrbuilt = true
+    //val tl = Wire(new ClientUncachedTileLinkIO)
+    val scr_ = scrbuilder.generate(baseAddr)
+    //tl <> scr_.io.tl
+    //PeripheryUtils.convertTLtoAXI(tl) <> io.axi
+    val tl2axi = Module(new TileLinkIONastiIOConverter())
+    tl2axi.io.tl <> scr_.io.tl
+    io.axi <> tl2axi.io.nasti
+    scr_
+  }
 
-    def control(name: String) = scr.control(name)
-    def status(name : String) = scr.status(name)
+  def addControl(name: String, init: UInt = null) = {
+    require(!scrbuilt, 
+      s"Called addControl after SCR has been built." + 
+      s"Move your control() and status() calls after all addControl calls"
+    )
+    scrbuilder.addControl(name, init)
+  }
+  def addStatus(name: String) {
+    require(!scrbuilt,
+      s"Called addControl after SCR has been built." + 
+      s"Move your control() and status() calls after all addControl calls"
+    )
+    scrbuilder.addStatus(name)
+  }
+
+  def control(name: String) = scr.control(name)
+  def status(name : String) = scr.status(name)
 }
 
-abstract class StreamBlockTester[V <: StreamBlock](dut: V, maxWait: Int = 100)
+class GenDspBlockIO[T <: Data, V <: Data]()(implicit p: Parameters)
+  extends DspBlockIO()(p) with HasGenDspParameters[T, V]
+
+abstract class GenDspBlock[T <: Data, V <: Data]
+  (override_clock: Option[Clock]=None, override_reset: Option[Bool]=None)
+  (implicit p: Parameters) extends DspBlock(Some(new GenDspBlockIO()(p)), override_clock, override_reset)
+  with HasGenDspParameters[T, V] {
+  // override val io = IO(new GenDspBlockIO)
+}
+
+abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
   extends DspTester(dut) {
   var streamInValid: Boolean = true
   def pauseStream(): Unit = streamInValid = false
