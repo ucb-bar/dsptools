@@ -31,9 +31,6 @@ lazy val dsptools = (project in file(".")).
       "org.scalacheck" %% "scalacheck" % "1.12.4",
       "co.theasi" %% "plotly" % "0.1"
     )
-  ).
-  settings(
-   // packagedArtifacts := Seq(dsptools, dspblocks)
   )
 
 lazy val dspblocks = (project in file("dspblocks")).
@@ -41,9 +38,8 @@ lazy val dspblocks = (project in file("dspblocks")).
   dependsOn(dsptools).
   settings(
     libraryDependencies ++= Seq(
-      //"berkeley" %% "rocketchip" % sys.props.getOrElse("rocketchipVersion", defaultVersions("rocketchip")),
       "edu.berkeley.cs" %% "testchipip" % sys.props.getOrElse("testchipipVersion", defaultVersions("testchipip"))
     )
   )
 
-  (publishLocal in dsptools) <<= (publishLocal in dspblocks).dependsOn(publishLocal in dsptools)
+(publishLocal in dsptools) <<= (publishLocal in dspblocks).dependsOn(publishLocal in dsptools)
