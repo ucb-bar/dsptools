@@ -1,10 +1,8 @@
 DSP Tools Development Environment
 ===================
 
-> Note: The directory structure is in flux. We're in the process of refactoring. :) Unfortunately, that means the setup instructions will be temporarily out-of-date again :(...
-
-This repository hopefully serves as a good starting point for making and easily testing your various DSP
- generators *(1 generator at a time)*. See [UC Berkeley Chisel](https://chisel.eecs.berkeley.edu) homepage for more information about Chisel.
+This repository serves as a good starting point for making and easily testing your various DSP
+ generators in Chisel *(1 generator at a time)*. See [UC Berkeley Chisel](https://chisel.eecs.berkeley.edu) homepage for more information about Chisel.
 
 For a list of common errors, check out the [wiki page](https://github.com/ucb-bar/dsptools/wiki/Common-Errors).
 Feel free to add your own!
@@ -40,36 +38,32 @@ Key DSP library enhancements over base Chisel (albeit at the expense of coding s
 Getting Started
 ===============
 
-This package is under intensive development right now. Changes are happening quickly and there a dependencies on
-several different branches of related projects.  
-Here is a simple manual way to build a running system
+This package is under intensive development right now.
+Changes are happening quickly and there a dependencies on several different branches of related projects.  
+Until we have a stable release, you will have to `sbt publish-local` recent versions of the various dependencies.
+The various projects are
 
-- create a directory for the projects
+- [FIRRTL](https://github.com/ucb-bar/firrtl)
 
-- Build Firrtl
-    - `git clone http://github.com/ucb-bar/firrtl.git`
-    - `git checkout add-fixed-point-type`
-    - `sbt publish-local`
-    
-- Build Interpreter
-    - `git clone http://github.com/ucb-bar/firrtl-interpreter.git`
-    - `git checkout dsp-real-support`
-    - `sbt publish-local`
-    
-- Build Chisel3
-    - `git clone http://github.com/ucb-bar/chisel3.git`
-    - `git checkout dsp-support-1`
-    - `sbt publish-local`
+- [FIRRTL Interpreter](https://github.com/ucb-bar/firrtl-interpreter)
 
-- Build Chisel testers
-    - `git clone http://github.com/ucb-bar/chisel-testers.git`
-    - `sbt publish-local`
-    
-- Build dsptools
-    - `git clone http://github.com/ucb-bar/dsptools.git`
-    - sbt test
+- [Chisel3](https://github.com/ucb-bar/chisel3)
 
-In the future, these steps will be automated with sbt
+- [Chisel Testers](https://github.com/ucb-bar/chisel-testers)
+
+If you want to use the `DspBlock` functionality to produce DSP blocks that follow our standard interface (AXI4 Streaming input and output with AXI4 interface for SCR), you will have dependencies on
+
+- [Rocket Chip](https://github.com/ucb-bar/rocket-chip)
+
+- [Testchipip](https://github.com/ucb-bar/testchipip)
+
+Generally speaking, we try to make sure dsptools works on the latest version of the main branch of all dependencies.
+However, new features are pretty commonly added by us and other people and we'll end up in version hell, so we've created
+a repository to track the last known working versions of all our dependencies.
+
+This project is called [dsp-framework](https://github.com/ucb-art/dsp-framework).
+Dsp-framework includes dsptools.
+Dsp-framework is the recommended way to use dsptools if you want to use the features that depend on rocket.
 
 ----------
 
