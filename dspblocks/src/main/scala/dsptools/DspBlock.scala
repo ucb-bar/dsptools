@@ -158,7 +158,7 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
 
   poke(axi.aw.valid, 0)
   poke(axi.ar.valid, 0)
-  poke(axi.b.valid,  0)
+  poke(axi.b.ready,  0)
 
   val axiDataWidth = dut.io.axi.w.bits.data.getWidth
   val axiDataBytes = axiDataWidth / 8
@@ -191,8 +191,8 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
 
     waited = 0
     do {
+      // if (waited >= maxWait) return
       require(waited < maxWait, "AXI W not ready")
-      //if (waited >= maxWait) return
       step(1)
       waited += 1
     } while (!w_ready)
@@ -200,7 +200,7 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
     // s_write_data
     poke(axi.w.valid, 1)
     poke(axi.w.bits.data, value)
-    poke(axi.w.bits.strb, 0xFFFF)
+    poke(axi.w.bits.strb, 0xFF)
     poke(axi.w.bits.last, 1)
     poke(axi.w.bits.id, 0)
     poke(axi.w.bits.user, 0)
