@@ -7,7 +7,7 @@ import chisel3.util.log2Up
 import chisel3.internal.throwException
 import dsptools.junctions._
 import cde._
-// Don't import dsptools.junctions._
+// import junctions would import dsptools.junctions._
 import _root_.junctions._
 import uncore.tilelink._
 import uncore.converters._
