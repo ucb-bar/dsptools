@@ -56,18 +56,24 @@ trait HasGenDspParameters[T <: Data, V <: Data] extends HasDspBlockParameters wi
   abstract override def outputWidth    = portSize(lanesOut, genOut())
 }
 
-class DspBlockIO()(implicit val p: Parameters) extends Bundle with HasDspBlockParameters {
+trait DspBlockIO {
+  def inputWidth: Int
+  def outputWidth: Int
+  implicit val p: Parameters
+
   val in  = Input( ValidWithSync(UInt(inputWidth.W)))
   val out = Output(ValidWithSync(UInt(outputWidth.W)))
   val axi = new NastiIO().flip
-
-  override def cloneType: this.type = new DspBlockIO()(p).asInstanceOf[this.type]
 }
 
-abstract class DspBlock(b: => Option[DspBlockIO] = None, override_clock: Option[Clock]=None, override_reset: Option[Bool]=None)
+class BasicDspBlockIO()(implicit val p: Parameters) extends Bundle with HasDspBlockParameters with DspBlockIO {
+  override def cloneType: this.type = new BasicDspBlockIO()(p).asInstanceOf[this.type]
+}
+
+abstract class DspBlock(b: => Option[Bundle with DspBlockIO] = None, override_clock: Option[Clock]=None, override_reset: Option[Bool]=None)
   (implicit val p: Parameters) extends Module(override_clock, override_reset) with HasDspBlockParameters {
   def baseAddr: BigInt
-  val io: DspBlockIO = IO(b.getOrElse(new DspBlockIO))
+  val io: Bundle with DspBlockIO = IO(b.getOrElse(new BasicDspBlockIO))
 
   def unpackInput[T <: Data](lanes: Int, genIn: T) = {
     val i = Wire(ValidWithSync(Vec(lanes, genIn.cloneType)))
@@ -118,15 +124,15 @@ abstract class DspBlock(b: => Option[DspBlockIO] = None, override_clock: Option[
   def status(name : String) = scr.status(name)
 }
 
-class GenDspBlockIO[T <: Data, V <: Data]()(implicit p: Parameters)
-  extends DspBlockIO()(p) with HasGenDspParameters[T, V]
+class GenDspBlockIO[T <: Data, V <: Data]()(implicit val p: Parameters)
+  extends Bundle with HasGenDspParameters[T, V] with DspBlockIO {
+  override def cloneType = new GenDspBlockIO()(p).asInstanceOf[this.type]
+}
 
 abstract class GenDspBlock[T <: Data, V <: Data]
   (override_clock: Option[Clock]=None, override_reset: Option[Bool]=None)
-  (implicit p: Parameters) extends DspBlock(Some(new GenDspBlockIO()(p)), override_clock, override_reset)
-  with HasGenDspParameters[T, V] {
-  // override val io = IO(new GenDspBlockIO)
-}
+  (implicit p: Parameters) extends DspBlock(Some(new GenDspBlockIO[T, V]), override_clock, override_reset)
+  with HasGenDspParameters[T, V]
 
 abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
   extends DspTester(dut) {
