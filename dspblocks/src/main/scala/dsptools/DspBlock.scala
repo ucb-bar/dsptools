@@ -140,7 +140,7 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
   def pauseStream(): Unit = streamInValid = false
   def playStream():  Unit = streamInValid = true
   def streamIn: Seq[BigInt]
-  private val streamInIter = streamIn.iterator
+  private lazy val streamInIter = streamIn.iterator
   private val streamOut_ = new scala.collection.mutable.Queue[BigInt]
   val streamOut: Seq[BigInt] = streamOut_
   def done = !streamInIter.hasNext
@@ -169,7 +169,7 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
   val axiDataWidth = dut.io.axi.w.bits.data.getWidth
   val axiDataBytes = axiDataWidth / 8
   val burstLen = axiDataBytes
-  def axiWrite(addr: Int, value: Int): Unit = {
+  def axiWrite(addr: Int, value: BigInt): Unit = {
     var waited = 0
     while (!aw_ready) {
       require(waited < maxWait, "AXI AW not ready")
@@ -233,8 +233,9 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
     step(1)
     poke(axi.b.ready, 0)
   }
+  def axiWrite(addr: Int, value: Int): Unit = axiWrite(addr, BigInt(value))
 
-  def axiRead(addr: Int): Int = {
+  def axiRead(addr: Int): BigInt = {
     0
   }
 
