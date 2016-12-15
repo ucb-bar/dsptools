@@ -1,6 +1,4 @@
 module BBFFromInt(
-    input  [0:0] clk,
-    input  [0:0] reset,
     input  [63:0] in,
     output reg [63:0] out
 );
@@ -11,8 +9,6 @@ endmodule
 
 // WARNING! May cause overflow!
 module BBFToInt(
-    input  [0:0] clk,
-    input  [0:0] reset,
     input  [63:0] in,
     output reg [63:0] out
 );
@@ -22,8 +18,6 @@ module BBFToInt(
 endmodule
 
 module BBFAdd(
-    input  [0:0] clk,
-    input  [0:0] reset,
     input  [63:0] in1,
     input  [63:0] in2,
     output reg [63:0] out
@@ -34,8 +28,6 @@ module BBFAdd(
 endmodule
 
 module BBFSubtract(
-    input  [0:0] clk,
-    input  [0:0] reset,
     input  [63:0] in1,
     input  [63:0] in2,
     output [63:0] out
@@ -46,8 +38,6 @@ module BBFSubtract(
 endmodule
 
 module BBFMultiply(
-    input  [0:0] clk,
-    input  [0:0] reset,
     input  [63:0] in1,
     input  [63:0] in2,
     output [63:0] out
@@ -58,8 +48,6 @@ module BBFMultiply(
 endmodule
 
 module BBFDivide(
-    input  [0:0] clk,
-    input  [0:0] reset,
     input  [63:0] in1,
     input  [63:0] in2,
     output [63:0] out
@@ -70,8 +58,6 @@ module BBFDivide(
 endmodule
 
 module BBFGreaterThan(
-    input  [0:0] clk,
-    input  [0:0] reset,
     input  [63:0] in1,
     input  [63:0] in2,
     output out
@@ -82,8 +68,6 @@ module BBFGreaterThan(
 endmodule
 
 module BBFGreaterThanEquals(
-    input  [0:0] clk,
-    input  [0:0] reset,
     input  [63:0] in1,
     input  [63:0] in2,
     output out
@@ -94,8 +78,6 @@ module BBFGreaterThanEquals(
 endmodule
 
 module BBFLessThan(
-    input  [0:0] clk,
-    input  [0:0] reset,
     input  [63:0] in1,
     input  [63:0] in2,
     output out
@@ -106,8 +88,6 @@ module BBFLessThan(
 endmodule
 
 module BBFLessThanEquals(
-    input  [0:0] clk,
-    input  [0:0] reset,
     input  [63:0] in1,
     input  [63:0] in2,
     output out
@@ -118,8 +98,6 @@ module BBFLessThanEquals(
 endmodule
 
 module BBFEquals(
-    input  [0:0] clk,
-    input  [0:0] reset,
     input  [63:0] in1,
     input  [63:0] in2,
     output out
@@ -130,8 +108,6 @@ module BBFEquals(
 endmodule
 
 module BBFNotEquals(
-    input  [0:0] clk,
-    input  [0:0] reset,
     input  [63:0] in1,
     input  [63:0] in2,
     output out
