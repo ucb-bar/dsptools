@@ -114,8 +114,8 @@ abstract class DspBlock(b: => Option[Bundle with DspBlockIO] = None, override_cl
   }
   def addStatus(name: String) {
     require(!scrbuilt,
-      s"Called addControl after SCR has been built." + 
-      s"Move your control() and status() calls after all addControl calls"
+      s"Called addStatus after SCR has been built." + 
+      s"Move your control() and status() calls after all addStatus calls"
     )
     scrbuilder.addStatus(name)
   }
@@ -147,61 +147,35 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
 
   val axi = dut.io.axi
 
-  def aw_ready: Boolean = {
-    // (peek(axi.aw.valid) != BigInt(0)) &&
-    (peek(axi.aw.ready) != BigInt(0))
-  }
-
-  def w_ready: Boolean = {
-    // (peek(axi.w.valid) != BigInt(0)) &&
-    (peek(axi.w.ready) != BigInt(0))
-  }
-
-  def b_ready: Boolean = {
-    (peek(axi.b.valid) != BigInt(0)) // &&
-    // (peek(axi.b.ready) != BigInt(0))
-  }
+  def aw_ready: Boolean = { (peek(axi.aw.ready) != BigInt(0)) }
+  def w_ready: Boolean = { (peek(axi.w.ready) != BigInt(0)) }
+  def b_ready: Boolean = { (peek(axi.b.valid) != BigInt(0)) }
+  def ar_ready: Boolean = { (peek(axi.ar.ready) != BigInt(0)) }
+  def r_ready: Boolean = { (peek(axi.r.valid) != BigInt(0)) }
 
   poke(axi.aw.valid, 0)
   poke(axi.ar.valid, 0)
   poke(axi.b.ready,  0)
+  poke(axi.ar.valid, 0)
+  poke(axi.r.ready, 0)
 
   val axiDataWidth = dut.io.axi.w.bits.data.getWidth
   val axiDataBytes = axiDataWidth / 8
   val burstLen = axiDataBytes
   def axiWrite(addr: Int, value: BigInt): Unit = {
-    var waited = 0
-    while (!aw_ready) {
-      require(waited < maxWait, "AXI AW not ready")
-      //if (waited >= maxWait) return
-      step(1)
-      waited += 1
-    } 
 
     // s_write_addr
-    poke(axi.aw.valid,   1)
+    poke(axi.aw.valid, 1)
     poke(axi.aw.bits.id, 0)
     poke(axi.aw.bits.user, 0)
-    poke(axi.aw.bits.addr,    addr)
-    poke(axi.aw.bits.len,     0)
-    poke(axi.aw.bits.size,    log2Up(axiDataBytes))
+    poke(axi.aw.bits.addr, addr)
+    poke(axi.aw.bits.len, 0)
+    poke(axi.aw.bits.size, log2Up(axiDataBytes))
     poke(axi.aw.bits.lock, 0)
     poke(axi.aw.bits.cache, 0)
     poke(axi.aw.bits.prot, 0)
     poke(axi.aw.bits.qos, 0)
     poke(axi.aw.bits.region, 0)
-
-    step(1)
-
-    poke(axi.aw.valid,   0)
-
-    waited = 0
-    do {
-      // if (waited >= maxWait) return
-      require(waited < maxWait, "AXI W not ready")
-      step(1)
-      waited += 1
-    } while (!w_ready)
 
     // s_write_data
     poke(axi.w.valid, 1)
@@ -211,32 +185,76 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
     poke(axi.w.bits.id, 0)
     poke(axi.w.bits.user, 0)
 
-    step(1)
-
-    poke(axi.w.valid, 0)
-    poke(axi.w.bits.last, 0)
+    var waited = 0
+    var a_written = false
+    var d_written = false 
+    while (!a_written || !d_written) {
+      // check for ready condition
+      if (!a_written) { a_written = aw_ready }
+      if (!d_written) { d_written = w_ready }
+      require(waited < maxWait, "Timeout waiting for AXI AW or W to be ready")
+      step(1)
+      // invalidate when values are received
+      if (a_written) { poke(axi.aw.valid, 0) }
+      if (d_written) { poke(axi.w.valid, 0); poke(axi.w.bits.last, 0) }
+      waited += 1
+    } 
 
     // s_write_stall
 
     waited = 0
     do {
-      require(waited < maxWait, "AXI B not ready")
-      //if (waited >= maxWait) return
+      require(waited < maxWait, "Timeout waiting for AXI B to be valid")
       step(1)
       waited += 1
-    } while (!b_ready)
+    } while (!b_ready);
+    
     // s_write_resp
-
     poke(axi.b.ready, 1)
-
-
     step(1)
     poke(axi.b.ready, 0)
   }
   def axiWrite(addr: Int, value: Int): Unit = axiWrite(addr, BigInt(value))
 
   def axiRead(addr: Int): BigInt = {
-    0
+
+    // s_read_addr
+    poke(axi.ar.valid, 1)
+    poke(axi.ar.bits.id, 0)
+    poke(axi.ar.bits.user, 0)
+    poke(axi.ar.bits.addr, addr)
+    poke(axi.ar.bits.len, 0)
+    poke(axi.ar.bits.size, log2Up(axiDataBytes))
+    poke(axi.ar.bits.lock, 0)
+    poke(axi.ar.bits.cache, 0)
+    poke(axi.ar.bits.prot, 0)
+    poke(axi.ar.bits.qos, 0)
+    poke(axi.ar.bits.region, 0)
+
+    var waited = 0
+    while (!ar_ready) {
+      require(waited < maxWait, "Timeout waiting for AXI AR to be ready")
+      step(1)
+      waited += 1
+    }
+
+    step(1)
+    poke(axi.ar.valid, 0)
+    step(1)
+    poke(axi.r.ready, 1)
+
+    // s_read_data
+    while (!r_ready) {
+      require(waited < maxWait, "Timeout waiting for AXI R to be valid")
+      step(1)
+      waited += 1
+    } 
+
+    val ret = peek(axi.r.bits.data)
+    step(1)
+    poke(axi.r.ready, 0)
+    step(1)
+    ret
   }
 
   override def step(n: Int): Unit = {
