@@ -162,7 +162,7 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
   val axiDataWidth = dut.io.axi.w.bits.data.getWidth
   val axiDataBytes = axiDataWidth / 8
   val burstLen = axiDataBytes
-  def axiWrite(addr: Int, value: BigInt): Unit = {
+  def axiWrite(addr: BigInt, value: BigInt): Unit = {
 
     // s_write_addr
     poke(axi.aw.valid, 1)
@@ -214,9 +214,11 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
     step(1)
     poke(axi.b.ready, 0)
   }
-  def axiWrite(addr: Int, value: Int): Unit = axiWrite(addr, BigInt(value))
+  def axiWrite(addr: Int, value: Int): Unit = axiWrite(BigInt(addr), BigInt(value))
+  def axiWrite(addr: BigInt, value: Int): Unit = axiWrite(addr, BigInt(value))
+  def axiWrite(addr: Int, value: BigInt): Unit = axiWrite(BigInt(addr), value)
 
-  def axiRead(addr: Int): BigInt = {
+  def axiRead(addr: BigInt): BigInt = {
 
     // s_read_addr
     poke(axi.ar.valid, 1)
@@ -256,21 +258,20 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
     step(1)
     ret
   }
+  def axiRead(addr: Int): BigInt = axiRead(BigInt(addr))
 
   override def step(n: Int): Unit = {
-    //for (i <- 0 until n) {
-      if (streamInValid && streamInIter.hasNext) {
-        poke(dut.io.in.valid, 1)
-        poke(dut.io.in.bits, streamInIter.next)
-      } else {
-        poke(dut.io.in.valid, 0)
-      }
-      if (peek(dut.io.out.valid) != BigInt(0)) {
-        streamOut_ += peek(dut.io.out.bits)
-      }
-      super.step(1)
-      if (n > 1) step(n - 1)
-    //}
+    if (streamInValid && streamInIter.hasNext) {
+      poke(dut.io.in.valid, 1)
+      poke(dut.io.in.bits, streamInIter.next)
+    } else {
+      poke(dut.io.in.valid, 0)
+    }
+    if (peek(dut.io.out.valid) != BigInt(0)) {
+      streamOut_ += peek(dut.io.out.bits)
+    }
+    super.step(1)
+    if (n > 1) step(n - 1)
   }
 }
 
