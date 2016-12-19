@@ -12,7 +12,10 @@ import _root_.junctions._
 import uncore.tilelink._
 import uncore.converters._
 import rocketchip.PeripheryUtils
+import chisel3.internal.firrtl.KnownBinaryPoint
+import dsptools.numbers.{DspComplex, DspReal}
 import testchipip._
+import dsptools.Utilities._
 
 case object DspBlockKey extends Field[DspBlockParameters]
 
@@ -134,7 +137,7 @@ abstract class GenDspBlock[T <: Data, V <: Data]
   (implicit p: Parameters) extends DspBlock(Some(new GenDspBlockIO[T, V]), override_clock, override_reset)
   with HasGenDspParameters[T, V]
 
-abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
+abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implicit p: Parameters)
   extends DspTester(dut) {
   var streamInValid: Boolean = true
   def pauseStream(): Unit = streamInValid = false
@@ -145,7 +148,71 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
   val streamOut: Seq[BigInt] = streamOut_
   def done = !streamInIter.hasNext
 
-  val axi = dut.io.axi
+  def packInputStream[T<:Data](in: Seq[Seq[Double]], gen: T): Seq[BigInt] = {
+    gen match {
+      case s: SInt => 
+        in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, dbl) => 
+          val new_bi = BigInt(dbl.round.toInt)
+          (bi << gen.getWidth) + new_bi
+        })
+      case f: FixedPoint =>
+        f.asInstanceOf[FixedPoint].binaryPoint match {
+          case KnownBinaryPoint(binaryPoint) =>
+            in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, dbl) => 
+              val new_bi = toBigInt(dbl, binaryPoint)
+              (bi << gen.getWidth) + new_bi
+            })
+          case _ =>
+            throw DspException(s"Error: packInput: Can't create FixedPoint from signal template $f")
+        }
+      case r: DspReal =>
+        in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, dbl) => 
+          val new_bi = doubleToBigIntBits(dbl)
+          (bi << gen.getWidth) + new_bi
+        })
+      case _ => 
+        throw DspException(s"Error: packInput: Can't pack input type $gen yet...")
+    }
+  }
+
+  def unpackOutputStream[T<:Data](gen: T, lanesOut: Int): Seq[Double] = {
+    gen match {
+      //case s: SInt => 
+      //  streamOut.map(x => (0 until lanesOut).map{ idx => {
+      //    val y = (x >> (gen.getWidth * idx))
+      //     
+      //  }).toSeq
+      //case f: FixedPoint =>
+      //  f.asInstanceOf[FixedPoint].binaryPoint match {
+      //    case KnownBinaryPoint(binaryPoint) =>
+      //      in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, dbl) => 
+      //        val new_bi = toBigInt(dbl, binaryPoint)
+      //        (bi << gen.getWidth) + new_bi
+      //      })
+      //    case _ =>
+      //      throw DspException(s"Error: packInput: Can't create FixedPoint from signal template $f")
+      //  }
+      case r: DspReal =>
+        streamOut.map(x => (0 until lanesOut).map{ idx => {
+          val y = (x >> (gen.getWidth * idx))
+          bigIntBitsToDouble(y)
+        }}).flatten.toSeq
+      case _ => 
+        throw DspException(s"Error: packInput: Can't pack input type $gen yet...")
+    }
+  }
+
+  def compareOutput(chisel: Seq[Double], ref: Seq[Double]): Unit = {
+    chisel.zip(ref).zipWithIndex.foreach { case((c, r), index) =>
+      if (c != r) {
+        val epsilon = 1e-12
+        val err = abs(c-r)/abs(r+epsilon)
+        assert(err < epsilon || r < epsilon, s"Error: mismatch on output $index of ${err*100}%\n\tReference: $r\n\tChisel:    $c")
+      }
+    }
+  }
+
+  private val axi = dut.io.axi
 
   def aw_ready: Boolean = { (peek(axi.aw.ready) != BigInt(0)) }
   def w_ready: Boolean = { (peek(axi.w.ready) != BigInt(0)) }
@@ -217,6 +284,59 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)
   def axiWrite(addr: Int, value: Int): Unit = axiWrite(BigInt(addr), BigInt(value))
   def axiWrite(addr: BigInt, value: Int): Unit = axiWrite(addr, BigInt(value))
   def axiWrite(addr: Int, value: BigInt): Unit = axiWrite(BigInt(addr), value)
+
+  def axiWriteAs[T<:Data](addr: Int, value: Double, typ: T): Unit = {
+
+    // s_write_addr
+    poke(axi.aw.valid, 1)
+    poke(axi.aw.bits.id, 0)
+    poke(axi.aw.bits.user, 0)
+    poke(axi.aw.bits.addr, addr)
+    poke(axi.aw.bits.len, 0)
+    poke(axi.aw.bits.size, log2Up(axiDataBytes))
+    poke(axi.aw.bits.lock, 0)
+    poke(axi.aw.bits.cache, 0)
+    poke(axi.aw.bits.prot, 0)
+    poke(axi.aw.bits.qos, 0)
+    poke(axi.aw.bits.region, 0)
+
+    // s_write_data
+    poke(axi.w.valid, 1)
+    dspPokeAs(axi.w.bits.data, value, typ)
+    poke(axi.w.bits.strb, 0xFF)
+    poke(axi.w.bits.last, 1)
+    poke(axi.w.bits.id, 0)
+    poke(axi.w.bits.user, 0)
+
+    var waited = 0
+    var a_written = false
+    var d_written = false 
+    while (!a_written || !d_written) {
+      // check for ready condition
+      if (!a_written) { a_written = aw_ready }
+      if (!d_written) { d_written = w_ready }
+      require(waited < maxWait, "Timeout waiting for AXI AW or W to be ready")
+      step(1)
+      // invalidate when values are received
+      if (a_written) { poke(axi.aw.valid, 0) }
+      if (d_written) { poke(axi.w.valid, 0); poke(axi.w.bits.last, 0) }
+      waited += 1
+    } 
+
+    // s_write_stall
+
+    waited = 0
+    do {
+      require(waited < maxWait, "Timeout waiting for AXI B to be valid")
+      step(1)
+      waited += 1
+    } while (!b_ready);
+    
+    // s_write_resp
+    poke(axi.b.ready, 1)
+    step(1)
+    poke(axi.b.ready, 0)
+  }
 
   def axiRead(addr: BigInt): BigInt = {
 

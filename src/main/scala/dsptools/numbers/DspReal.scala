@@ -155,7 +155,9 @@ class DspReal extends Bundle {
 
 object DspReal {
   val UnderlyingWidth = 64
-  val bigInt2powUnderlying = BigInt(f"${math.pow(2.0, UnderlyingWidth)}%.0f")
+  // [stevo]: this doesn't work for UnderlyingWidth = 64...it produces 18446744073709552000 instead of 18446744073709551616
+  // val bigInt2powUnderlying = BigInt(f"${math.pow(2.0, UnderlyingWidth)}%.0f")
+  val bigInt2powUnderlying = BigInt(f"${math.pow(2.0, UnderlyingWidth/2)}%.0f")*BigInt(f"${math.pow(2.0, UnderlyingWidth/2)}%.0f")
 
   /** Creates a Real with a constant value.
     */
@@ -177,6 +179,9 @@ object DspReal {
     out.node := blackbox.io.out
     out
   }
+
+  // just the typ
+  def apply(): DspReal = new DspReal
 }
 
 trait DspRealRing extends Any with Ring[DspReal] with hasContext {

@@ -56,9 +56,7 @@ class DspTester[T <: Module](c: T,
             throw DspException(s"Error: poke: Can't create FixedPoint for $value, from signal template $bundle")
         }
       case r: DspReal =>
-        val bigInt = doubleToBigIntBits(value)
-        val pokeValue = if(bigInt >= 0) bigInt else DspReal.bigInt2powUnderlying + bigInt
-        poke(r.node, pokeValue)
+        poke(r.node, doubleToBigIntBits(value))
       case c: DspComplex[_]  => c.underlyingType() match {
         case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
         case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
@@ -81,7 +79,6 @@ class DspTester[T <: Module](c: T,
       case "real"  =>
         dspPoke(c.real.asInstanceOf[DspReal], value.real)
         dspPoke(c.imaginary.asInstanceOf[DspReal], value.imag)
-
       case "SInt" =>
         poke(c.real.asInstanceOf[SInt], value.real.toInt)
         poke(c.imaginary.asInstanceOf[SInt], value.imag.toInt)
@@ -92,6 +89,49 @@ class DspTester[T <: Module](c: T,
     //scalastyle:off regex
     if (_verbose) {
       println(s"DspPoke($c, $value)")
+    }
+    //scalastyle:on regex
+  }
+
+  // [stevo]: poke a value in type typ to a UInt input
+  //scalastyle:off cyclomatic.complexity
+  def dspPokeAs[T<:Data](bundle: Data, value: Double, typ: T): Unit = {
+    bundle match {
+      case u: UInt =>
+        typ match {
+          case s: SInt =>
+            assert(u.getWidth == s.getWidth, s"Error: pokeAs($bundle, $value, $t): $bundle and $t have different underlying widths")
+            val a: BigInt = BigInt(value.round.toInt)
+            poke(u, a)
+          case f: FixedPoint =>
+            f.binaryPoint match {
+              case KnownBinaryPoint(binaryPoint) =>
+                assert(u.getWidth == f.getWidth, s"Error: pokeAs($bundle, $value, $t): $bundle and $t have different underlying widths")
+                val bigInt = toBigInt(value, binaryPoint)
+                poke(u, bigInt)
+              case _ =>
+                throw DspException(s"Error: pokeAs($bundle, $value, $t): Can't create FixedPoint for $value, from signal template $t")
+            }
+          case r: DspReal =>
+            assert(u.getWidth == r.getWidth, s"Error: pokeAs($bundle, $value, $t): $bundle and $t have different underlying widths")
+            poke(u, doubleToBigIntBits(value))
+          case c: DspComplex[_]  => c.underlyingType() match {
+            case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
+            case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
+            case "SInt" => poke(c.real.asInstanceOf[SInt], value.toInt)
+            case _ =>
+              throw DspException(
+                s"pokeAs($bundle, $value, $t): bundle DspComplex has unknown underlying type ${t.getClass.getName}")
+          }
+          case _ =>
+            throw DspException(s"pokeAs($bundle, $value, $t): t has unknown type ${t.getClass.getName}")
+        }
+      case _ => 
+        throw DspException(s"pokeAs($bundle, $value, $t): bundle should be type UInt but is ${bundle.getClass.getName}")
+    }
+    //scalastyle:off regex
+    if (_verbose) {
+      println(s"pokeAs($bundle, $value, $t)")
     }
     //scalastyle:on regex
   }
@@ -126,6 +166,46 @@ class DspTester[T <: Module](c: T,
         Left(peek(s).toDouble)
       case _ =>
         throw DspException(s"peek($data): data has unknown type ${data.getClass.getName}")
+    }
+  }
+
+  // [stevo]: peek a UInt but cast it to another type
+  def dspPeekAs[T<:Data](data: Data, typ: T): Either[Double, Complex] = {
+    data match {
+      case u: UInt => {
+        typ match {
+          // TODO:
+          //case c: DspComplex[_] =>
+          //  c.underlyingType() match {
+          //    case "fixed" =>
+          //      val real      = dspPeek(c.real.asInstanceOf[FixedPoint]).left.get
+          //      val imaginary = dspPeek(c.imaginary.asInstanceOf[FixedPoint]).left.get
+          //      Right(Complex(real, imaginary))
+          //    case "real"  =>
+          //      val bigIntReal      = dspPeek(c.real.asInstanceOf[DspReal]).left.get
+          //      val bigIntImaginary = dspPeek(c.imaginary.asInstanceOf[DspReal]).left.get
+          //      Right(Complex(bigIntReal, bigIntImaginary))
+          //    case "SInt" =>
+          //      val real = peek(c.real.asInstanceOf[SInt]).toDouble
+          //      val imag = peek(c.imaginary.asInstanceOf[SInt]).toDouble
+          //      Right(Complex(real, imag))
+          //    case _ =>
+          //      throw DspException(
+          //        s"peek($c): c DspComplex has unknown underlying type ${c.getClass.getName}")
+          //  }
+          case r: DspReal =>
+            val bigInt = super.peek(u)
+            Left(bigIntBitsToDouble(bigInt))
+          case r: FixedPoint =>
+            val bigInt = super.peek(u)
+            Left(toDouble(bigInt, r.binaryPoint.get))
+          // TODO:
+          //case s: SInt =>
+          //  Left(peek(s).toDouble)
+          case _ =>
+            throw DspException(s"peek($data): data has unknown type ${data.getClass.getName}")
+        }
+      }
     }
   }
 

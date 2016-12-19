@@ -33,10 +33,11 @@ object Utilities {
   def isEven[T <: Data:Ring](number: T, trim: TrimType = Truncate): Bool = ! isEven(number, trim)
 
   def doubleToBigIntBits(double: Double): BigInt = {
-    if (double < 0) {
-      BigInt(java.lang.Double.doubleToLongBits(-double))+BigInt(1<<30)*BigInt(1<<30)*BigInt(8)
-    } else {
-      BigInt(java.lang.Double.doubleToLongBits(double))
+    val ret = BigInt(java.lang.Double.doubleToLongBits(double))
+    if(ret >= 0) { 
+      ret 
+    } else  {
+      DspReal.bigInt2powUnderlying + ret
     }
   }
 
