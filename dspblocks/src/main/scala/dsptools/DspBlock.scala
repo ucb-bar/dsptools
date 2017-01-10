@@ -16,6 +16,7 @@ import chisel3.internal.firrtl.KnownBinaryPoint
 import dsptools.numbers.{DspComplex, DspReal}
 import testchipip._
 import dsptools.Utilities._
+import scala.math._
 
 case object DspBlockKey extends Field[DspBlockParameters]
 
