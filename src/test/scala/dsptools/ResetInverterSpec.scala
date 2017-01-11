@@ -8,7 +8,7 @@ import dsptools.firrtltools.ResetInverter
 import firrtl._
 import org.scalatest.{FreeSpec, Matchers}
 
-class Unit extends Module with ResetInverter {
+class ExampleModuleNeedsResetInverted extends Module with ResetInverter {
   val io = IO(new Bundle {
     val out = Output(UInt(32.W))
   })
@@ -24,7 +24,7 @@ class ResetNSpec extends FreeSpec with Matchers {
     val optionsManager = new ExecutionOptionsManager("dsptools") with HasChiselExecutionOptions with HasFirrtlOptions {
       firrtlOptions = firrtlOptions.copy(compilerName = "low")
     }
-    chisel3.Driver.execute(optionsManager, () => new Unit) match {
+    chisel3.Driver.execute(optionsManager, () => new ExampleModuleNeedsResetInverted) match {
       case ChiselExecutionSucccess(_, chirrtl, Some(FirrtlExecutionSuccess(_, firrtl))) =>
         chirrtl should include ("input reset :")
         chirrtl should not include "input reset_n :"
