@@ -4,6 +4,7 @@ package dsptools.numbers
 
 import breeze.math.Complex
 import chisel3._
+import chisel3.iotesters.TesterOptionsManager
 import dsptools.DspTester
 import org.scalatest.{FreeSpec, Matchers}
 import dsptools.numbers._
@@ -71,8 +72,10 @@ class ParameterizedOpSpecification extends FreeSpec with Matchers {
     "This instance will process Real numbers with the basic mathematical operations" - {
       Seq("+", "-", "*").foreach { operation =>
         s"operation $operation should work for all inputs" in {
-          chisel3.iotesters.Driver(
-            () => new ParameterizedNumberOperation(realGenerator, realGenerator, operation)) { c =>
+          dsptools.Driver.execute(
+            () => new ParameterizedNumberOperation(realGenerator, realGenerator, operation),
+            Array.empty[String]
+          ) { c =>
             new ParameterizedOpTester(c)
           } should be(true)
         }
@@ -81,9 +84,11 @@ class ParameterizedOpSpecification extends FreeSpec with Matchers {
     "This instance will process Fixed point numbers with the basic mathematical operations" - {
       Seq("+", "-", "*").foreach { operation =>
         s"operation $operation should work for all inputs" in {
-          chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(fixedInGenerator,
+          dsptools.Driver.execute(() => new ParameterizedNumberOperation(fixedInGenerator,
             fixedOutGenerator,
-            operation)) { c =>
+            operation),
+            Array.empty[String]
+          ) { c =>
             new ParameterizedOpTester(c)
           } should be(true)
         }
@@ -142,13 +147,16 @@ class ComplexOpSpecification extends FreeSpec with Matchers {
 //        () => new ParameterizedNumberOperation(complexRealGenerator, complexRealGenerator, "+")
 //      )
 //    }
-
+//
     "This instance will process DspComplex[Real] numbers with the basic mathematical operations" - {
       Seq("+", "-", "*").foreach { operation =>
         s"operation $operation should work for all inputs" in {
-          chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(complexRealGenerator,
+          dsptools.Driver.execute(
+            () => new ParameterizedNumberOperation(complexRealGenerator,
             complexRealGenerator,
-            operation)) { c =>
+            operation),
+            Array.empty[String]
+          ) { c =>
             new ComplexOpTester(c)
           } should be(true)
         }
@@ -157,9 +165,11 @@ class ComplexOpSpecification extends FreeSpec with Matchers {
     "This instance will process DspComplex[FixedPoint] numbers with the basic mathematical operations" - {
       Seq("+", "-", "*").foreach { operation =>
         s"operation $operation should work for all inputs" in {
-          chisel3.iotesters.Driver(() => new ParameterizedNumberOperation(complexFixedGenerator,
+          dsptools.Driver.execute(() => new ParameterizedNumberOperation(complexFixedGenerator,
             complexFixedOutputGenerator,
-            operation)) { c =>
+            operation),
+            Array.empty[String]
+          ) { c =>
             new ComplexOpTester(c)
           } should be(true)
         }

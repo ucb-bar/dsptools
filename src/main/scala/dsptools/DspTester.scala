@@ -245,7 +245,11 @@ class DspTester[T <: Module](c: T,
   def nearlyEqual(a: Double, b: Double): Boolean = {
     val epsilon = 1e-12
     val divisor: Double = if(b == 0.0) b.abs else epsilon
-    (a - b).abs / divisor < epsilon
+    val result = (a - b).abs / (divisor + epsilon) < epsilon
+    //if(!result) {
+    //  println(f"Got error on a $a vs $b  ${a-b}%20.16f")
+    //}
+    result
   }
 
   //scalastyle:off regex
