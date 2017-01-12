@@ -56,8 +56,8 @@ class FixedPrecisionChangerSpec extends FreeSpec with Matchers {
         } should be(true)
       }
     }
-    "here we assign to a F8.6 from a F8.3" in {
-      dsptools.Driver.execute(() => new FixedPrecisionChanger(8, 3, 8, 6), Array.empty[String]) { c =>
+    "here we assign to a F10.6 from a F10.3" in {
+      dsptools.Driver.execute(() => new FixedPrecisionChanger(10, 3, 10, 6), Array.empty[String]) { c =>
         new FixedPointTruncatorTester(c, 6.875, 6.875)
       } should be (true)
     }
