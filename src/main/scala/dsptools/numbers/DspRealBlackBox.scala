@@ -134,6 +134,91 @@ class DspRealIntPart(val name: String) extends DspRealOneArgumentToDouble {
   def oneOp(double1: Double): Double = double1.toInt.toDouble
 }
 
+/** Math operations from IEEE.1364-2005 **/
+class DspRealLn(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.log(double1)
+}
+
+class DspRealLog10(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.log10(double1)
+}
+
+class DspRealExp(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.exp(double1)
+}
+
+class DspRealSqrt(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.sqrt(double1)
+}
+
+class DspRealPow(val name: String)  extends DspRealTwoArgumentToDouble {
+  def twoOp(double1: Double, double2: Double): Double = math.pow(double1, double2)
+}
+
+class DspRealFloor(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.floor(double1)
+}
+
+class DspRealCeil(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.ceil(double1)
+}
+
+class DspRealSin(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.sin(double1)
+}
+
+class DspRealCos(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.cos(double1)
+}
+
+class DspRealTan(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.tan(double1)
+}
+
+class DspRealASin(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.asin(double1)
+}
+
+class DspRealACos(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.acos(double1)
+}
+
+class DspRealATan(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.atan(double1)
+}
+
+class DspRealATan2(val name: String)  extends DspRealTwoArgumentToDouble {
+  def twoOp(double1: Double, double2: Double): Double = math.atan2(double1, double2)
+}
+
+class DspRealHypot(val name: String)  extends DspRealTwoArgumentToDouble {
+  def twoOp(double1: Double, double2: Double): Double = math.hypot(double1, double2)
+}
+
+class DspRealSinh(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.sinh(double1)
+}
+
+class DspRealCosh(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.cosh(double1)
+}
+
+class DspRealTanh(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.tanh(double1)
+}
+
+class DspRealASinh(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.log(double1 + math.sqrt(double1 * double1 + 1))
+}
+
+class DspRealACosh(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = math.log(double1 + math.sqrt(double1 * double1 - 1))
+}
+
+class DspRealATanh(val name: String)  extends DspRealOneArgumentToDouble {
+  def oneOp(double1: Double): Double = 0.5 * math.log((1 + double1) / (1 - double1))
+}
+
 class DspRealToInt(val name: String) extends BlackBoxImplementation {
   def outputDependencies(outputName: String): Seq[(String)] = {
     outputName match {
@@ -181,6 +266,27 @@ class DspRealFactory extends BlackBoxFactory {
       case "BBFFromInt"           => Some(add(new DspRealFromInt(instanceName)))
       case "BBFToInt"             => Some(add(new DspRealToInt(instanceName)))
       case "BBFIntPart"           => Some(add(new DspRealIntPart(instanceName)))
+      case "BBFLn "               => Some(add(new DspRealLn(instanceName)))
+      case "BBFLog10 "            => Some(add(new DspRealLog10(instanceName)))
+      case "BBFExp "              => Some(add(new DspRealExp(instanceName)))
+      case "BBFSqrt "             => Some(add(new DspRealSqrt(instanceName)))
+      case "BBFPow "              => Some(add(new DspRealPow(instanceName)))
+      case "BBFFloor "            => Some(add(new DspRealFloor(instanceName)))
+      case "BBFCeil "             => Some(add(new DspRealCeil(instanceName)))
+      case "BBFSin "              => Some(add(new DspRealSin(instanceName)))
+      case "BBFCos "              => Some(add(new DspRealCos(instanceName)))
+      case "BBFTan "              => Some(add(new DspRealTan(instanceName)))
+      case "BBFASin "             => Some(add(new DspRealASin(instanceName)))
+      case "BBFACos "             => Some(add(new DspRealACos(instanceName)))
+      case "BBFATan "             => Some(add(new DspRealATan(instanceName)))
+      case "BBFATan2 "            => Some(add(new DspRealATan2(instanceName)))
+      case "BBFHypot "            => Some(add(new DspRealHypot(instanceName)))
+      case "BBFSinh "             => Some(add(new DspRealSinh(instanceName)))
+      case "BBFCosh "             => Some(add(new DspRealCosh(instanceName)))
+      case "BBFTanh "             => Some(add(new DspRealTanh(instanceName)))
+      case "BBFASinh "            => Some(add(new DspRealASinh(instanceName)))
+      case "BBFACosh "            => Some(add(new DspRealACosh(instanceName)))
+      case "BBFATanh "            => Some(add(new DspRealATanh(instanceName)))
       case _                      => None
     }
   }
