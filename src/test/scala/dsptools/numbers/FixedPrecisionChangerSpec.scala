@@ -45,26 +45,26 @@ class RemoveMantissaTester(c: RemoveMantissa, inValue: Double, outValue: Double)
 class FixedPrecisionChangerSpec extends FreeSpec with Matchers {
   "assignment of numbers with differing binary points seems to work as I would expect" - {
     "here we assign to a F8.1 from a F8.3" in {
-      chisel3.iotesters.Driver(() => new FixedPrecisionChanger(8, 3, 8, 1)) { c=>
+      dsptools.Driver.execute(() => new FixedPrecisionChanger(8, 3, 8, 1)) { c =>
         new FixedPointTruncatorTester(c, 6.875, 6.5)
       } should be (true)
     }
     "here we assign to a F8.1 from a F8.1" - {
       "conversion to fixed point with less precision than poked value rounds up to 7,  IS THIS RIGHT?" in {
-        chisel3.iotesters.Driver(() => new FixedPrecisionChanger(8, 1, 8, 1)) { c =>
+        dsptools.Driver.execute(() => new FixedPrecisionChanger(8, 1, 8, 1)) { c =>
           new FixedPointTruncatorTester(c, 6.875, 7.0)
         } should be(true)
       }
     }
-    "here we assign to a F8.6 from a F8.3" in {
-      chisel3.iotesters.Driver(() => new FixedPrecisionChanger(8, 3, 8, 6)) { c=>
+    "here we assign to a F10.6 from a F10.3" in {
+      dsptools.Driver.execute(() => new FixedPrecisionChanger(10, 3, 10, 6)) { c =>
         new FixedPointTruncatorTester(c, 6.875, 6.875)
       } should be (true)
     }
     "let's try 1/3 just for fun with a big mantissa" - {
       "oops, this works because I built in a fudge factor for double comparison, how should this be done" in {
-        chisel3.iotesters.Driver(() => new FixedPrecisionChanger(64, 58, 64, 16)) { c =>
-          new FixedPointTruncatorTester(c, 1.0 / 3.0, 1.0 / 3.0)
+        dsptools.Driver.execute(() => new FixedPrecisionChanger(64, 58, 64, 16)) { c =>
+          new FixedPointTruncatorTester(c, 1.0 / 3.0, 0.3333282470703125)
         } should be(true)
       }
     }
@@ -72,7 +72,7 @@ class FixedPrecisionChangerSpec extends FreeSpec with Matchers {
 
   "removing mantissa can be done" - {
     "by using the setBinaryPoint Method" in {
-      chisel3.iotesters.Driver(() => new RemoveMantissa(12, 4, 8, 0)) { c =>
+      dsptools.Driver.execute(() => new RemoveMantissa(12, 4, 8, 0)) { c =>
         new RemoveMantissaTester(c, 3.75, 3.0)
       } should be(true)
     }
