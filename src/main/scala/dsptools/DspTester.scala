@@ -95,25 +95,29 @@ class DspTester[T <: Module](c: T,
 
   // [stevo]: poke a value in type typ to a UInt input
   //scalastyle:off cyclomatic.complexity
-  def dspPokeAs[T<:Data](bundle: Data, value: Double, typ: T): Unit = {
+  def dspPokeAs[U<:Data](bundle: Data, value: Double, typ: U): Unit = {
     bundle match {
       case u: UInt =>
         typ match {
           case s: SInt =>
-            assert(u.getWidth == s.getWidth, s"Error: pokeAs($bundle, $value, $t): $bundle and $t have different underlying widths")
+            assert(u.getWidth == s.getWidth,
+              s"Error: pokeAs($bundle, $value, $t): $bundle and $t have different underlying widths")
             val a: BigInt = BigInt(value.round.toInt)
             poke(u, a)
           case f: FixedPoint =>
             f.binaryPoint match {
               case KnownBinaryPoint(binaryPoint) =>
-                assert(u.getWidth == f.getWidth, s"Error: pokeAs($bundle, $value, $t): $bundle and $t have different underlying widths")
+                assert(u.getWidth == f.getWidth,
+                  s"Error: pokeAs($bundle, $value, $t): $bundle and $t have different underlying widths")
                 val bigInt = toBigInt(value, binaryPoint)
                 poke(u, bigInt)
               case _ =>
-                throw DspException(s"Error: pokeAs($bundle, $value, $t): Can't create FixedPoint for $value, from signal template $t")
+                throw DspException(
+                  s"Error: pokeAs($bundle, $value, $t): Can't create FixedPoint for $value, from signal template $t")
             }
           case r: DspReal =>
-            assert(u.getWidth == r.getWidth, s"Error: pokeAs($bundle, $value, $t): $bundle and $t have different underlying widths")
+            assert(u.getWidth == r.getWidth,
+              s"Error: pokeAs($bundle, $value, $t): $bundle and $t have different underlying widths")
             poke(u, doubleToBigIntBits(value))
           case c: DspComplex[_]  => c.underlyingType() match {
             case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
@@ -126,7 +130,7 @@ class DspTester[T <: Module](c: T,
           case _ =>
             throw DspException(s"pokeAs($bundle, $value, $t): t has unknown type ${t.getClass.getName}")
         }
-      case _ => 
+      case _ =>
         throw DspException(s"pokeAs($bundle, $value, $t): bundle should be type UInt but is ${bundle.getClass.getName}")
     }
     //scalastyle:off regex
@@ -170,9 +174,9 @@ class DspTester[T <: Module](c: T,
   }
 
   // [stevo]: peek a UInt but cast it to another type
-  def dspPeekAs[T<:Data](data: Data, typ: T): Either[Double, Complex] = {
+  def dspPeekAs[U<:Data](data: Data, typ: U): Either[Double, Complex] = {
     data match {
-      case u: UInt => {
+      case u: UInt =>
         typ match {
           // TODO:
           //case c: DspComplex[_] =>
@@ -193,7 +197,7 @@ class DspTester[T <: Module](c: T,
           //      throw DspException(
           //        s"peek($c): c DspComplex has unknown underlying type ${c.getClass.getName}")
           //  }
-          case r: DspReal =>
+          case _: DspReal =>
             val bigInt = super.peek(u)
             Left(bigIntBitsToDouble(bigInt))
           case r: FixedPoint =>
@@ -204,7 +208,7 @@ class DspTester[T <: Module](c: T,
           //  Left(peek(s).toDouble)
           case _ =>
             throw DspException(s"peek($data): data has unknown type ${data.getClass.getName}")
-        }
+
       }
     }
   }
@@ -238,12 +242,22 @@ class DspTester[T <: Module](c: T,
     }
   }
 
+  def nearlyEqual(a: Double, b: Double): Boolean = {
+    val epsilon = 1e-12
+    val divisor: Double = if(b.abs < epsilon) epsilon else b.abs
+    val result = (a - b).abs / (divisor + epsilon) < epsilon
+    //if(!result) {
+    //  println(f"Got error on a $a vs $b  ${a-b}%20.16f")
+    //}
+    result
+  }
+
   //scalastyle:off regex
   def dspExpect(data: Data, expected: Double, msg: String): Unit = {
     dspPeek(data) match {
       case Left(double) =>
         println(f"expect got $double%15.8f expect $expected%15.8f")
-        expect(double - expected < 0.0001, msg)
+        expect(nearlyEqual(double, expected), msg)
       case Right(complex) =>
         throw DspException(s"dspExpect($data, $expected) returned $complex when expecting double")
     }
@@ -253,8 +267,8 @@ class DspTester[T <: Module](c: T,
     dspPeek(data) match {
       case Right(complex) =>
         println(f"expect got $complex expect $expected")
-        expect(complex.real - expected.real < 0.0001, msg)
-        expect(complex.imag - expected.imag < 0.0001, msg)
+        expect(nearlyEqual(complex.real, expected.real), msg)
+        expect(nearlyEqual(complex.imag, expected.imag), msg)
       case Left(double) =>
         throw DspException(s"dspExpect($data, $expected) returned $double when expecting complex")
     }
