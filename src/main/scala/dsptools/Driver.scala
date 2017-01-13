@@ -29,7 +29,7 @@ object Driver {
 
   def execute[T <: Module](
                             dutGenerator: () => T,
-                            args: Array[String]
+                            args: Array[String] = Array.empty
                           )
                           (
                             testerGen: T => PeekPokeTester[T]

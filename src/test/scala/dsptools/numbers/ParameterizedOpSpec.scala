@@ -73,8 +73,7 @@ class ParameterizedOpSpecification extends FreeSpec with Matchers {
       Seq("+", "-", "*").foreach { operation =>
         s"operation $operation should work for all inputs" in {
           dsptools.Driver.execute(
-            () => new ParameterizedNumberOperation(realGenerator, realGenerator, operation),
-            Array.empty[String]
+            () => new ParameterizedNumberOperation(realGenerator, realGenerator, operation)
           ) { c =>
             new ParameterizedOpTester(c)
           } should be(true)
@@ -86,8 +85,7 @@ class ParameterizedOpSpecification extends FreeSpec with Matchers {
         s"operation $operation should work for all inputs" in {
           dsptools.Driver.execute(() => new ParameterizedNumberOperation(fixedInGenerator,
             fixedOutGenerator,
-            operation),
-            Array.empty[String]
+            operation)
           ) { c =>
             new ParameterizedOpTester(c)
           } should be(true)
@@ -154,8 +152,7 @@ class ComplexOpSpecification extends FreeSpec with Matchers {
           dsptools.Driver.execute(
             () => new ParameterizedNumberOperation(complexRealGenerator,
             complexRealGenerator,
-            operation),
-            Array.empty[String]
+            operation)
           ) { c =>
             new ComplexOpTester(c)
           } should be(true)
@@ -167,8 +164,7 @@ class ComplexOpSpecification extends FreeSpec with Matchers {
         s"operation $operation should work for all inputs" in {
           dsptools.Driver.execute(() => new ParameterizedNumberOperation(complexFixedGenerator,
             complexFixedOutputGenerator,
-            operation),
-            Array.empty[String]
+            operation)
           ) { c =>
             new ComplexOpTester(c)
           } should be(true)

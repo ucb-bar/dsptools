@@ -14,7 +14,7 @@ class BlackBoxFloatTester extends BasicTester {
   val (cnt, _) = Counter(true.B, 10)
   val accum = Reg(init=Wire(DspReal(1.0)))
 
-  private val addOut = accum + DspReal(1.0)
+  val addOut = accum + DspReal(1.0)
   val mulOut = addOut * DspReal(2.0)
 
   accum := addOut

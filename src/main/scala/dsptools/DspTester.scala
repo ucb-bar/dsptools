@@ -95,7 +95,7 @@ class DspTester[T <: Module](c: T,
 
   // [stevo]: poke a value in type typ to a UInt input
   //scalastyle:off cyclomatic.complexity
-  def dspPokeAs[TT<:Data](bundle: Data, value: Double, typ: TT): Unit = {
+  def dspPokeAs[U<:Data](bundle: Data, value: Double, typ: U): Unit = {
     bundle match {
       case u: UInt =>
         typ match {
@@ -174,7 +174,7 @@ class DspTester[T <: Module](c: T,
   }
 
   // [stevo]: peek a UInt but cast it to another type
-  def dspPeekAs[TT<:Data](data: Data, typ: TT): Either[Double, Complex] = {
+  def dspPeekAs[U<:Data](data: Data, typ: U): Either[Double, Complex] = {
     data match {
       case u: UInt =>
         typ match {
@@ -244,7 +244,7 @@ class DspTester[T <: Module](c: T,
 
   def nearlyEqual(a: Double, b: Double): Boolean = {
     val epsilon = 1e-12
-    val divisor: Double = if(b == 0.0) b.abs else epsilon
+    val divisor: Double = if(b.abs < epsilon) epsilon else b.abs
     val result = (a - b).abs / (divisor + epsilon) < epsilon
     //if(!result) {
     //  println(f"Got error on a $a vs $b  ${a-b}%20.16f")

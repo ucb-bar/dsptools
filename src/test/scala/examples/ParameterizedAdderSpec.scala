@@ -47,7 +47,7 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
   it should "allow registers to be declared that infer widths" in {
     def getReal: DspReal = new DspReal
 
-    dsptools.Driver.execute(() => new ParameterizedAdder(getReal _), Array.empty[String]) { c =>
+    dsptools.Driver.execute(() => new ParameterizedAdder(getReal _)) { c =>
       new ParameterizedAdderTester(c)
     } should be (true)
   }
@@ -57,7 +57,7 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
   it should "allow registers to be declared that infer widths" in {
     def getFixed: FixedPoint = FixedPoint(width = 32, binaryPoint = 16)
 
-    dsptools.Driver.execute(() => new ParameterizedAdder(getFixed _), Array.empty[String]) { c =>
+    dsptools.Driver.execute(() => new ParameterizedAdder(getFixed _)) { c =>
       new ParameterizedAdderTester(c)
     } should be (true)
   }
