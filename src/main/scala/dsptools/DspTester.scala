@@ -94,30 +94,32 @@ class DspTester[T <: Module](c: T,
   }
 
   // [stevo]: poke a value in type typ to a UInt input
+  // it's okay if typ has smaller underlying width than the bundle; we assume it just zero-pads
   //scalastyle:off cyclomatic.complexity
   def dspPokeAs[U<:Data](bundle: Data, value: Double, typ: U): Unit = {
     bundle match {
       case u: UInt =>
         typ match {
           case s: SInt =>
-            assert(u.getWidth == s.getWidth,
-              s"Error: pokeAs($bundle, $value, $t): $bundle and $t have different underlying widths")
+            assert(u.getWidth >= s.getWidth,
+              s"Error: pokeAs($bundle, $value, $typ): $typ has smaller underlying width than $bundle")
             val a: BigInt = BigInt(value.round.toInt)
             poke(u, a)
           case f: FixedPoint =>
             f.binaryPoint match {
               case KnownBinaryPoint(binaryPoint) =>
-                assert(u.getWidth == f.getWidth,
-                  s"Error: pokeAs($bundle, $value, $t): $bundle and $t have different underlying widths")
-                val bigInt = toBigInt(value, binaryPoint)
+                assert(u.getWidth >= f.getWidth,
+                  s"Error: pokeAs($bundle, $value, $typ): $typ has smaller underlying width than $bundle")
+                // [stevo]: convert negative to two's complement positive
+                val bigInt = BigInt.apply(1, toBigInt(value, binaryPoint).toByteArray)
                 poke(u, bigInt)
               case _ =>
                 throw DspException(
-                  s"Error: pokeAs($bundle, $value, $t): Can't create FixedPoint for $value, from signal template $t")
+                  s"Error: pokeAs($bundle, $value, $typ): Can't create FixedPoint for $value, from signal template $typ")
             }
           case r: DspReal =>
-            assert(u.getWidth == r.getWidth,
-              s"Error: pokeAs($bundle, $value, $t): $bundle and $t have different underlying widths")
+            assert(u.getWidth >= r.getWidth,
+              s"Error: pokeAs($bundle, $value, $typ): $typ has smaller underlying width than $bundle")
             poke(u, doubleToBigIntBits(value))
           case c: DspComplex[_]  => c.underlyingType() match {
             case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
@@ -125,17 +127,17 @@ class DspTester[T <: Module](c: T,
             case "SInt" => poke(c.real.asInstanceOf[SInt], value.toInt)
             case _ =>
               throw DspException(
-                s"pokeAs($bundle, $value, $t): bundle DspComplex has unknown underlying type ${t.getClass.getName}")
+                s"pokeAs($bundle, $value, $typ): bundle DspComplex has unknown underlying type ${typ.getClass.getName}")
           }
           case _ =>
-            throw DspException(s"pokeAs($bundle, $value, $t): t has unknown type ${t.getClass.getName}")
+            throw DspException(s"pokeAs($bundle, $value, $typ): typ has unknown type ${typ.getClass.getName}")
         }
       case _ =>
-        throw DspException(s"pokeAs($bundle, $value, $t): bundle should be type UInt but is ${bundle.getClass.getName}")
+        throw DspException(s"pokeAs($bundle, $value, $typ): bundle should be type UInt but is ${bundle.getClass.getName}")
     }
     //scalastyle:off regex
     if (_verbose) {
-      println(s"pokeAs($bundle, $value, $t)")
+      println(s"pokeAs($bundle, $value, $typ)")
     }
     //scalastyle:on regex
   }

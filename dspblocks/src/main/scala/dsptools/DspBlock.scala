@@ -162,7 +162,7 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
         f.asInstanceOf[FixedPoint].binaryPoint match {
           case KnownBinaryPoint(binaryPoint) =>
             in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, dbl) => 
-              val new_bi = toBigInt(dbl, binaryPoint)
+              val new_bi = BigInt.apply(1, toBigInt(dbl, binaryPoint).toByteArray)
               (bi << gen.getWidth) + new_bi
             })
           case _ =>
@@ -191,8 +191,8 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
         gen.real.asInstanceOf[FixedPoint].binaryPoint match {
           case KnownBinaryPoint(binaryPoint) =>
             in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, cpx) => 
-              val new_bi_real = toBigInt(cpx.real, binaryPoint)
-              val new_bi_imag = toBigInt(cpx.imag, binaryPoint)
+              val new_bi_real = BigInt.apply(1, toBigInt(cpx.real, binaryPoint).toByteArray) 
+              val new_bi_imag = BigInt.apply(1, toBigInt(cpx.imag, binaryPoint).toByteArray) 
               (((bi << gen.real.getWidth) + new_bi_real) << gen.imaginary.getWidth) + new_bi_imag
             })
           case _ =>
