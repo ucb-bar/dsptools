@@ -3,6 +3,7 @@
 package dsptools
 
 import chisel3._
+import breeze.math.Complex
 import chisel3.util.log2Up
 import chisel3.internal.throwException
 import dsptools.junctions._
@@ -149,6 +150,7 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
   val streamOut: Seq[BigInt] = streamOut_
   def done = !streamInIter.hasNext
 
+  // handle normal input types
   def packInputStream[T<:Data](in: Seq[Seq[Double]], gen: T): Seq[BigInt] = {
     gen match {
       case s: SInt => 
@@ -160,7 +162,7 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
         f.asInstanceOf[FixedPoint].binaryPoint match {
           case KnownBinaryPoint(binaryPoint) =>
             in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, dbl) => 
-              val new_bi = toBigInt(dbl, binaryPoint)
+              val new_bi = toBigIntUnsigned(dbl, f.getWidth, binaryPoint)
               (bi << gen.getWidth) + new_bi
             })
           case _ =>
@@ -176,39 +178,122 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
     }
   }
 
+  // handle complex input
+  def packInputStream[T<:Data](in: Seq[Seq[Complex]], gen: DspComplex[T]): Seq[BigInt] = {
+    gen.underlyingType() match {
+      case "SInt" =>
+        in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, cpx) => 
+          val new_bi_real = BigInt(cpx.real.round.toInt)
+          val new_bi_imag = BigInt(cpx.imag.round.toInt)
+          (((bi << gen.real.getWidth) + new_bi_real) << gen.imaginary.getWidth) + new_bi_imag
+        })
+      case "fixed" =>
+        gen.real.asInstanceOf[FixedPoint].binaryPoint match {
+          case KnownBinaryPoint(binaryPoint) =>
+            in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, cpx) => 
+              val new_bi_real = toBigIntUnsigned(cpx.real, gen.real.getWidth, binaryPoint)
+              val new_bi_imag = toBigIntUnsigned(cpx.imag, gen.real.getWidth, binaryPoint)
+              (((bi << gen.real.getWidth) + new_bi_real) << gen.imaginary.getWidth) + new_bi_imag
+            })
+          case _ =>
+            throw DspException(s"Error: packInput: Can't create Complex[FixedPoint] from signal template ${gen.getClass.getName}")
+        }
+      case "real" => 
+        in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, cpx) => 
+          val new_bi_real = doubleToBigIntBits(cpx.real)
+          val new_bi_imag = doubleToBigIntBits(cpx.imag)
+          (((bi << gen.real.getWidth) + new_bi_real) << gen.imaginary.getWidth) + new_bi_imag
+        })
+      case _ =>
+        throw DspException(s"Error: packInput: DspComplex has unknown underlying type ${gen.getClass.getName}")
+    }
+  }
+
+  // unpack normal output data types
   def unpackOutputStream[T<:Data](gen: T, lanesOut: Int): Seq[Double] = {
     gen match {
-      //case s: SInt => 
-      //  streamOut.map(x => (0 until lanesOut).map{ idx => {
-      //    val y = (x >> (gen.getWidth * idx))
-      //     
-      //  }).toSeq
-      //case f: FixedPoint =>
-      //  f.asInstanceOf[FixedPoint].binaryPoint match {
-      //    case KnownBinaryPoint(binaryPoint) =>
-      //      in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, dbl) => 
-      //        val new_bi = toBigInt(dbl, binaryPoint)
-      //        (bi << gen.getWidth) + new_bi
-      //      })
-      //    case _ =>
-      //      throw DspException(s"Error: packInput: Can't create FixedPoint from signal template $f")
-      //  }
+      case s: SInt => 
+        streamOut.map(x => (0 until lanesOut).map{ idx => {
+          // TODO: doesn't work if width is > 32
+          ((x >> (gen.getWidth * idx)) % pow(2, gen.getWidth).toInt).toDouble
+        }}).flatten.toSeq
+      case f: FixedPoint =>
+        f.asInstanceOf[FixedPoint].binaryPoint match {
+          case KnownBinaryPoint(binaryPoint) =>
+            streamOut.map(x => (0 until lanesOut).map{ idx => {
+              // TODO: doesn't work if width is > 32
+              val y = (x >> (gen.getWidth * idx)) % pow(2, gen.getWidth).toInt
+              toDoubleFromUnsigned(y, gen.getWidth, binaryPoint)
+            }}).flatten.toSeq
+          case _ =>
+            throw DspException(s"Error: packInput: Can't create FixedPoint from signal template $f")
+        }
       case r: DspReal =>
         streamOut.map(x => (0 until lanesOut).map{ idx => {
           val y = (x >> (gen.getWidth * idx))
           bigIntBitsToDouble(y)
         }}).flatten.toSeq
       case _ => 
-        throw DspException(s"Error: packInput: Can't pack input type $gen yet...")
+        throw DspException(s"Error: packInput: Can't unpack output type $gen yet...")
     }
   }
 
+  // unpack complex output data
+  def unpackOutputStream[T<:Data](gen: DspComplex[T], lanesOut: Int): Seq[Complex] = {
+    gen.underlyingType() match {
+      case "SInt" =>
+        streamOut.map(x => (0 until lanesOut).map{ idx => {
+          // TODO: doesn't work if width is > 32
+          val imag = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx)) % pow(2, gen.imaginary.getWidth).toInt
+          val real = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx + gen.imaginary.getWidth)) % pow(2, gen.real.getWidth).toInt
+          Complex(real.toDouble, imag.toDouble)
+        }}).flatten.toSeq
+      case "fixed" =>
+        gen.real.asInstanceOf[FixedPoint].binaryPoint match {
+          case KnownBinaryPoint(binaryPoint) =>
+            streamOut.map(x => (0 until lanesOut).map{ idx => {
+              val imag = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx)) % pow(2, gen.imaginary.getWidth).toInt
+              val real = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx + gen.imaginary.getWidth)) % pow(2, gen.real.getWidth).toInt
+              Complex(toDoubleFromUnsigned(real, gen.real.getWidth, binaryPoint), toDoubleFromUnsigned(imag, gen.imaginary.getWidth, binaryPoint))
+            }}).flatten.toSeq
+          case _ =>
+            throw DspException(s"Error: packInput: Can't create FixedPoint from signal template ${gen.getClass.getName}")
+        }
+      case "real" =>
+        streamOut.map(x => (0 until lanesOut).map{ idx => {
+          // [stevo]: comes out as (imaginary, real) because it's alphabetical
+          val imag = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx))
+          val real = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx + gen.imaginary.getWidth))
+          Complex(bigIntBitsToDouble(real), bigIntBitsToDouble(imag))
+        }}).flatten.toSeq
+      case _ => 
+        throw DspException(s"Error: packInput: DspComplex has unknown underlying type ${gen.getClass.getName}")
+    }
+  }
+
+  // compares chisel and reference outputs, errors if they differ by more than epsilon
   def compareOutput(chisel: Seq[Double], ref: Seq[Double]): Unit = {
     chisel.zip(ref).zipWithIndex.foreach { case((c, r), index) =>
       if (c != r) {
         val epsilon = 1e-12
-        val err = abs(c-r)/abs(r+epsilon)
+        val err = abs(c-r)/(abs(r)+epsilon)
         assert(err < epsilon || r < epsilon, s"Error: mismatch on output $index of ${err*100}%\n\tReference: $r\n\tChisel:    $c")
+      }
+    }
+  }
+
+  // compares chisel and reference outputs, errors if they differ by more than epsilon
+  def compareOutputComplex(chisel: Seq[Complex], ref: Seq[Complex]): Unit = {
+    chisel.zip(ref).zipWithIndex.foreach { case((c, r), index) =>
+      if (c.real != r.real) {
+        val epsilon = 1e-12
+        val err = abs(c.real-r.real)/(abs(r.real)+epsilon)
+        assert(err < epsilon || r.real < epsilon, s"Error: mismatch in real value on output $index of ${err*100}%\n\tReference: ${r.real}\n\tChisel:    ${c.real}")
+      }
+      if (c.imag != r.imag) {
+        val epsilon = 1e-12
+        val err = abs(c.imag-r.imag)/(abs(r.imag)+epsilon)
+        assert(err < epsilon || r.imag < epsilon, s"Error: mismatch in imag value on output $index of ${err*100}%\n\tReference: ${r.imag}\n\tChisel:    ${c.imag}")
       }
     }
   }
