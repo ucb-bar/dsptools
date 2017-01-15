@@ -162,7 +162,7 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
         f.asInstanceOf[FixedPoint].binaryPoint match {
           case KnownBinaryPoint(binaryPoint) =>
             in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, dbl) => 
-              val new_bi = BigInt.apply(1, toBigInt(dbl, binaryPoint).toByteArray)
+              val new_bi = toBigIntUnsigned(dbl, f.getWidth, binaryPoint)
               (bi << gen.getWidth) + new_bi
             })
           case _ =>
@@ -191,8 +191,8 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
         gen.real.asInstanceOf[FixedPoint].binaryPoint match {
           case KnownBinaryPoint(binaryPoint) =>
             in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, cpx) => 
-              val new_bi_real = BigInt.apply(1, toBigInt(cpx.real, binaryPoint).toByteArray) 
-              val new_bi_imag = BigInt.apply(1, toBigInt(cpx.imag, binaryPoint).toByteArray) 
+              val new_bi_real = toBigIntUnsigned(cpx.real, gen.real.getWidth, binaryPoint)
+              val new_bi_imag = toBigIntUnsigned(cpx.imag, gen.real.getWidth, binaryPoint)
               (((bi << gen.real.getWidth) + new_bi_real) << gen.imaginary.getWidth) + new_bi_imag
             })
           case _ =>
@@ -223,7 +223,7 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
             streamOut.map(x => (0 until lanesOut).map{ idx => {
               // TODO: doesn't work if width is > 32
               val y = (x >> (gen.getWidth * idx)) % pow(2, gen.getWidth).toInt
-              toDouble(y, binaryPoint)
+              toDoubleFromUnsigned(y, gen.getWidth, binaryPoint)
             }}).flatten.toSeq
           case _ =>
             throw DspException(s"Error: packInput: Can't create FixedPoint from signal template $f")
@@ -254,7 +254,7 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
             streamOut.map(x => (0 until lanesOut).map{ idx => {
               val imag = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx)) % pow(2, gen.imaginary.getWidth).toInt
               val real = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx + gen.imaginary.getWidth)) % pow(2, gen.real.getWidth).toInt
-              Complex(toDouble(real, binaryPoint), toDouble(imag, binaryPoint))
+              Complex(toDoubleFromUnsigned(real, gen.real.getWidth, binaryPoint), toDoubleFromUnsigned(imag, gen.imaginary.getWidth, binaryPoint))
             }}).flatten.toSeq
           case _ =>
             throw DspException(s"Error: packInput: Can't create FixedPoint from signal template ${gen.getClass.getName}")

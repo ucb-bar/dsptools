@@ -13,28 +13,38 @@ class DspTester[T <: Module](c: T,
                              base: Int = 16,
                              logFile: Option[java.io.File] = None
                             ) extends PeekPokeTester(c, base=base, logFile=logFile) {
-  def toBigInt(x: Double, fractionalWidth: Int): BigInt = {
-    val multiplier = math.pow(2,fractionalWidth)
-    val result = BigInt(math.round(x * multiplier))
-    //scalastyle:off regex
-    // println(s"toBigInt:x = $x, width = $fractionalWidth multiplier $multiplier result $result")
-    //scalastyle:on regex
-    result
+  // [stevo]: converts negative values to their 2's complement version
+  // also works for positive numbers
+  // sign extends to totalWidth
+  // used for FixedPoint
+  def toBigIntUnsigned(x: Double, totalWidth: Int, fractionalWidth: Int): BigInt = {
+    var bi = FixedPoint.toBigInt(x, fractionalWidth)
+    // TODO: doesn't work for totalWidth > 32
+    require(bi < BigInt.apply(math.pow(2, totalWidth-1).toInt) && bi >= BigInt.apply(-math.pow(2, totalWidth-1).toInt), s"Error: cannot represent value $x as a FixedPoint of width $totalWidth and binary point $fractionalWidth")
+    if (bi < 0) {
+      bi = -bi
+      (0 until totalWidth).foreach { x => bi = bi.flipBit(x) }
+      bi = bi + 1
+    }
+    bi
   }
 
-  def toDouble(i: BigInt, fractionalWidth: Int): Double = {
-    val multiplier = math.pow(2,fractionalWidth)
-    val result = i.toDouble / multiplier
-    //scalastyle:off regex
-    // println(s"toDouble:i = $i, fw = $fractionalWidth, multiplier = $multiplier, result $result")
-    //scalastyle:on regex
-    result
+  // [stevo]: converts a positive 2's complement BigInt to a double (positive or negative, where the MSB is the sign bit)
+  // used for FixedPoint
+  def toDoubleFromUnsigned(i: BigInt, totalWidth: Int, fractionalWidth: Int): Double = {
+    require(i >= 0, "Error: attempting to convert a signed BigInt to a double, did you mean toDouble instead?") 
+    var j = i
+    if (i.testBit(totalWidth-1)) { 
+      (0 until totalWidth).foreach { x => j = j.flipBit(x) }
+      j = -(j + 1)
+    }
+    FixedPoint.toDouble(j, fractionalWidth)
   }
 
   def poke(signal: FixedPoint, value: Double): Unit = {
     signal.binaryPoint match {
       case KnownBinaryPoint(binaryPoint) =>
-        val bigInt = toBigInt(value, binaryPoint)
+        val bigInt = FixedPoint.toBigInt(value, binaryPoint)
         poke(signal, bigInt)
       case _ =>
         throw DspException(s"Error: poke: Can't create FixedPoint for $value, from signal template $signal")
@@ -50,7 +60,7 @@ class DspTester[T <: Module](c: T,
       case f: FixedPoint =>
         f.binaryPoint match {
           case KnownBinaryPoint(binaryPoint) =>
-            val bigInt = toBigInt(value, binaryPoint)
+            val bigInt = FixedPoint.toBigInt(value, binaryPoint)
             poke(f, bigInt)
           case _ =>
             throw DspException(s"Error: poke: Can't create FixedPoint for $value, from signal template $bundle")
@@ -111,7 +121,7 @@ class DspTester[T <: Module](c: T,
                 assert(u.getWidth >= f.getWidth,
                   s"Error: pokeAs($bundle, $value, $typ): $typ has smaller underlying width than $bundle")
                 // [stevo]: convert negative to two's complement positive
-                val bigInt = BigInt.apply(1, toBigInt(value, binaryPoint).toByteArray)
+                val bigInt = toBigIntUnsigned(value, f.getWidth, binaryPoint)
                 poke(u, bigInt)
               case _ =>
                 throw DspException(
@@ -167,7 +177,7 @@ class DspTester[T <: Module](c: T,
         Left(bigIntBitsToDouble(bigInt))
       case r: FixedPoint =>
         val bigInt = super.peek(r)
-        Left(toDouble(bigInt, r.binaryPoint.get))
+        Left(FixedPoint.toDouble(bigInt, r.binaryPoint.get))
       case s: SInt =>
         Left(peek(s).toDouble)
       case _ =>
@@ -204,7 +214,7 @@ class DspTester[T <: Module](c: T,
             Left(bigIntBitsToDouble(bigInt))
           case r: FixedPoint =>
             val bigInt = super.peek(u)
-            Left(toDouble(bigInt, r.binaryPoint.get))
+            Left(toDoubleFromUnsigned(bigInt, r.getWidth, r.binaryPoint.get))
           // TODO:
           //case s: SInt =>
           //  Left(peek(s).toDouble)
@@ -237,7 +247,7 @@ class DspTester[T <: Module](c: T,
     val bigInt = super.peek(signal.asInstanceOf[Bits])
     signal.binaryPoint match {
       case KnownBinaryPoint(binaryPoint) =>
-        val double = toDouble(bigInt, binaryPoint)
+        val double = FixedPoint.toDouble(bigInt, binaryPoint)
         double
       case _ =>
         throw DspException(s"Error: peek: Can't peek a FixedPoint, from signal template $signal")
