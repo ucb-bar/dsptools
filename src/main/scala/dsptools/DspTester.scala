@@ -13,34 +13,6 @@ class DspTester[T <: Module](c: T,
                              base: Int = 16,
                              logFile: Option[java.io.File] = None
                             ) extends PeekPokeTester(c, base=base, logFile=logFile) {
-  // [stevo]: converts negative values to their 2's complement version
-  // also works for positive numbers
-  // sign extends to totalWidth
-  // used for FixedPoint
-  def toBigIntUnsigned(x: Double, totalWidth: Int, fractionalWidth: Int): BigInt = {
-    var bi = FixedPoint.toBigInt(x, fractionalWidth)
-    // TODO: doesn't work for totalWidth > 32
-    require(bi < BigInt.apply(math.pow(2, totalWidth-1).toInt) && bi >= BigInt.apply(-math.pow(2, totalWidth-1).toInt), s"Error: cannot represent value $x as a FixedPoint of width $totalWidth and binary point $fractionalWidth")
-    if (bi < 0) {
-      bi = -bi
-      (0 until totalWidth).foreach { x => bi = bi.flipBit(x) }
-      bi = bi + 1
-    }
-    bi
-  }
-
-  // [stevo]: converts a positive 2's complement BigInt to a double (positive or negative, where the MSB is the sign bit)
-  // used for FixedPoint
-  def toDoubleFromUnsigned(i: BigInt, totalWidth: Int, fractionalWidth: Int): Double = {
-    require(i >= 0, "Error: attempting to convert a signed BigInt to a double, did you mean toDouble instead?") 
-    var j = i
-    if (i.testBit(totalWidth-1)) { 
-      (0 until totalWidth).foreach { x => j = j.flipBit(x) }
-      j = -(j + 1)
-    }
-    FixedPoint.toDouble(j, fractionalWidth)
-  }
-
   def poke(signal: FixedPoint, value: Double): Unit = {
     signal.binaryPoint match {
       case KnownBinaryPoint(binaryPoint) =>
