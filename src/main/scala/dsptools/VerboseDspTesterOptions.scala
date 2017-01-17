@@ -8,8 +8,17 @@ case class VerboseDspTesterOptions(
     fixTolLSBs: Int = 1,
     realTolDecPts: Int = 8,
     genVerilogTb: Boolean = false,
+    clkMul: Int = 1,
     tbTimeUnitPs: Int = 100,
-    tbTimePrecisionPs: Int = 10) extends ComposableOptions
+    tbTimePrecisionPs: Int = 10) extends ComposableOptions {
+
+    val clkPeriodPs = tbTimeUnitPs * clkMul
+
+    require(tbTimeUnitPs >= tbTimePrecisionPs, "Time unit should be >= precision")
+    require(clkPeriodPs / 2 > tbTimePrecisionPs, "Half a clk period should be greater than time precision")
+    require(clkPeriodPs % 2 == 0, "Clk period should be divisible by 2")
+
+}
 
 trait HasVerboseDspTesterOptions {
 
@@ -48,6 +57,11 @@ trait HasVerboseDspTesterOptions {
     .abbr("tbprecps")
     .foreach { x => verboseDspTesterOptions = verboseDspTesterOptions.copy(tbTimePrecisionPs = x) }
     .text(s"tb time precision in ps, default is ${verboseDspTesterOptions.tbTimePrecisionPs}")
+
+  parser.opt[Int]("clk-mul")
+    .abbr("clkm")
+    .foreach { x => verboseDspTesterOptions = verboseDspTesterOptions.copy(clkMul = x) }
+    .text(s"clk period = clk-mul * time unit (ps), default is ${verboseDspTesterOptions.clkMul}")
 
 }
 
