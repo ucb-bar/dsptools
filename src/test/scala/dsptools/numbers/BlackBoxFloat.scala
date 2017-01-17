@@ -136,7 +136,7 @@ class FloatOpTester(c: FloatOps) extends DspTester(c) {
   val a = 3.4
   val b = 7.1
   // scala doesn't have inverse hyperbolic functions, hardcode them
-  val asinh_a = 1.93788
+  val asinh_a = 1.9378792776645006
   val acosh_a = 1.8945590126722978042798892652
   dspPoke(c.io.in1, a)
   dspPoke(c.io.in2, b)
@@ -169,10 +169,15 @@ class FloatOpTester(c: FloatOps) extends DspTester(c) {
   dspExpect(c.io.out, math.cos(a), "cos should work on reals")
   poke(c.io.opsel, Tan)
   dspExpect(c.io.out, math.tan(a), "tan should work on reals")
+
+  val arcArg = 0.5
+  dspPoke(c.io.in1, arcArg)
   poke(c.io.opsel, ASin)
-  dspExpect(c.io.out, math.asin(a), "asin should work on reals")
+  dspExpect(c.io.out, math.asin(arcArg), "asin should work on reals")
   poke(c.io.opsel, ACos)
-  dspExpect(c.io.out, math.acos(a), "acos should work on reals")
+  dspExpect(c.io.out, math.acos(arcArg), "acos should work on reals")
+
+  dspPoke(c.io.in1, a)
   poke(c.io.opsel, ATan)
   dspExpect(c.io.out, math.atan(a), "atan should work on reals")
   poke(c.io.opsel, ATan2)
