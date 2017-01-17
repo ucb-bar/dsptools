@@ -145,28 +145,25 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
   }
 
   // compares chisel and reference outputs, errors if they differ by more than epsilon
-  def compareOutput(chisel: Seq[Double], ref: Seq[Double]): Unit = {
+  def compareOutput(chisel: Seq[Double], ref: Seq[Double], epsilon: Double = 1e-12): Unit = {
     chisel.zip(ref).zipWithIndex.foreach { case((c, r), index) =>
       if (c != r) {
-        val epsilon = 1e-12
         val err = abs(c-r)/(abs(r)+epsilon)
-        assert(err < epsilon || r < epsilon, s"Error: mismatch on output $index of ${err*100}%\n\tReference: $r\n\tChisel:    $c")
+        assert(err < epsilon, s"Error: mismatch on output $index of ${err*100}%\n\tReference: $r\n\tChisel:    $c")
       }
     }
   }
 
   // compares chisel and reference outputs, errors if they differ by more than epsilon
-  def compareOutputComplex(chisel: Seq[Complex], ref: Seq[Complex]): Unit = {
+  def compareOutputComplex(chisel: Seq[Complex], ref: Seq[Complex], epsilon: Double = 1e-12): Unit = {
     chisel.zip(ref).zipWithIndex.foreach { case((c, r), index) =>
       if (c.real != r.real) {
-        val epsilon = 1e-12
         val err = abs(c.real-r.real)/(abs(r.real)+epsilon)
-        assert(err < epsilon || r.real < epsilon, s"Error: mismatch in real value on output $index of ${err*100}%\n\tReference: ${r.real}\n\tChisel:    ${c.real}")
+        assert(err < epsilon, s"Error: mismatch in real value on output $index of ${err*100}%\n\tReference: ${r.real}\n\tChisel:    ${c.real}")
       }
       if (c.imag != r.imag) {
-        val epsilon = 1e-12
         val err = abs(c.imag-r.imag)/(abs(r.imag)+epsilon)
-        assert(err < epsilon || r.imag < epsilon, s"Error: mismatch in imag value on output $index of ${err*100}%\n\tReference: ${r.imag}\n\tChisel:    ${c.imag}")
+        assert(err < epsilon, s"Error: mismatch in imag value on output $index of ${err*100}%\n\tReference: ${r.imag}\n\tChisel:    ${c.imag}")
       }
     }
   }
