@@ -14,7 +14,7 @@ import scala.util.DynamicVariable
 object Driver {
 
   private val optionsManagerVar = new DynamicVariable[Option[VerboseDspTesterOptionsManager]](None)
-  private[dsptools] def optionsManager = optionsManagerVar.value.getOrElse(new VerboseDspTesterOptionsManager)
+  def optionsManager = optionsManagerVar.value.getOrElse(new VerboseDspTesterOptionsManager)
 
   def execute[T <: Module, M <: TesterOptionsManager](
                             dutGenerator: () => T,
