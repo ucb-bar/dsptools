@@ -145,10 +145,10 @@ class DspTester[T <: Module](c: T,
               s"peek($c): c DspComplex has unknown underlying type ${c.getClass.getName}")
         }
       case r: DspReal =>
-        val bigInt = super.peek(r.node)
+        val bigInt = peek(r.node)
         Left(bigIntBitsToDouble(bigInt))
       case r: FixedPoint =>
-        val bigInt = super.peek(r)
+        val bigInt = peek(r.asInstanceOf[Bits])
         Left(FixedPoint.toDouble(bigInt, r.binaryPoint.get))
       case s: SInt =>
         Left(peek(s).toDouble)
@@ -182,10 +182,10 @@ class DspTester[T <: Module](c: T,
           //        s"peek($c): c DspComplex has unknown underlying type ${c.getClass.getName}")
           //  }
           case _: DspReal =>
-            val bigInt = super.peek(u)
+            val bigInt = peek(u)
             Left(bigIntBitsToDouble(bigInt))
           case r: FixedPoint =>
-            val bigInt = super.peek(u)
+            val bigInt = peek(u)
             Left(toDoubleFromUnsigned(bigInt, r.getWidth, r.binaryPoint.get))
           // TODO:
           //case s: SInt =>
@@ -216,7 +216,7 @@ class DspTester[T <: Module](c: T,
   }
 
   def peek(signal: FixedPoint): Double = {
-    val bigInt = super.peek(signal.asInstanceOf[Bits])
+    val bigInt = peek(signal.asInstanceOf[Bits])
     signal.binaryPoint match {
       case KnownBinaryPoint(binaryPoint) =>
         val double = FixedPoint.toDouble(bigInt, binaryPoint)
