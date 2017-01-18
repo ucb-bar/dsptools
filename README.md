@@ -51,19 +51,11 @@ The various projects are
 
 - [Chisel Testers](https://github.com/ucb-bar/chisel-testers)
 
-If you want to use the `DspBlock` functionality to produce DSP blocks that follow our standard interface (AXI4 Streaming input and output with AXI4 interface for SCR), you will have dependencies on
-
-- [Rocket Chip](https://github.com/ucb-bar/rocket-chip)
-
-- [Testchipip](https://github.com/ucb-bar/testchipip)
-
 Generally speaking, we try to make sure dsptools works on the latest version of the main branch of all dependencies.
 However, new features are pretty commonly added by us and other people and we'll end up in version hell, so we've created
 a repository to track the last known working versions of all our dependencies.
 
-This project is called [dsp-framework](https://github.com/ucb-art/dsp-framework).
-Dsp-framework includes dsptools.
-Dsp-framework is the recommended way to use dsptools if you want to use the features that depend on rocket.
+This project is called [dsp-framework](https://github.com/ucb-art/dsp-framework) and includes dsptools.
 
 ----------
 
