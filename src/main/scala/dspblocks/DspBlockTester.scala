@@ -362,7 +362,7 @@ trait AXIRWTester[T <: Module] { this: PeekPokeTester[T] =>
 
 abstract class DspBlockTester[V <: DspBlock](dut: V, override val maxWait: Int = 100)(implicit p: Parameters)
   extends DspTester[V](dut) with StreamIOTester[V] with AXIRWTester[V] {
-  val axi = dut.io.axi
+  def axi = dut.io.axi
 
   override def step(n: Int): Unit = {
     inputStep
