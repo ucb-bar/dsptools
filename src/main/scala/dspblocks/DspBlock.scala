@@ -1,9 +1,10 @@
 // See LICENSE for license details
 
-package dspjunctions
+package dspblocks
 
 import cde._
 import chisel3._
+import dspjunctions._
 // import junctions would import dsptools.junctions._
 import _root_.junctions._
 import uncore.tilelink._

@@ -1,28 +1,28 @@
 // See LICENSE for license details
 
-package dspjunctions
+package dspblocks
 
 import breeze.math.Complex
 import cde._
 import chisel3._
+import chisel3.iotesters.PeekPokeTester
 import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3.util.log2Up
 import dsptools.{DspTester, DspException}
 import dsptools.numbers.{DspComplex, DspReal}
 import dsptools.Utilities._
 import scala.math.{abs, pow}
+import _root_.junctions._
 
-abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implicit p: Parameters)
-  extends DspTester[V](dut) {
+trait InputTester {
   var streamInValid: Boolean = true
   def pauseStream(): Unit = streamInValid = false
   def playStream():  Unit = streamInValid = true
-  def streamIn: Seq[BigInt]
-  private lazy val streamInIter = streamIn.iterator
-  private val streamOut_ = new scala.collection.mutable.Queue[BigInt]
-  val streamOut: Seq[BigInt] = streamOut_
-  def done = !streamInIter.hasNext
 
+  def streamIn: Seq[BigInt]
+  protected lazy val streamInIter = streamIn.iterator
+  def done = !streamInIter.hasNext
+  def inputStep: Unit
   // handle normal input types
   def packInputStream[T<:Data](in: Seq[Seq[Double]], gen: T): Seq[BigInt] = {
     gen match {
@@ -81,7 +81,24 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
         throw DspException(s"Error: packInput: DspComplex has unknown underlying type ${gen.getClass.getName}")
     }
   }
+}
 
+trait StreamInputTester[T <: LazyDspBlock] extends InputTester { this: PeekPokeTester[T] =>
+  def dut: T
+  def inputStep: Unit = {
+    if (streamInValid && streamInIter.hasNext) {
+      poke(dut.io.in.valid, 1)
+      poke(dut.io.in.bits, streamInIter.next)
+    } else {
+      poke(dut.io.in.valid, 0)
+    }
+  }
+}
+
+trait OutputTester {
+  def outputStep: Unit
+  protected val streamOut_ = new scala.collection.mutable.Queue[BigInt]
+  val streamOut: Seq[BigInt] = streamOut_
   // unpack normal output data types
   def unpackOutputStream[T<:Data](gen: T, lanesOut: Int): Seq[Double] = {
     gen match {
@@ -143,32 +160,37 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
         throw DspException(s"Error: packInput: DspComplex has unknown underlying type ${gen.getClass.getName}")
     }
   }
+}
 
-  // compares chisel and reference outputs, errors if they differ by more than epsilon
-  def compareOutput(chisel: Seq[Double], ref: Seq[Double], epsilon: Double = 1e-12): Unit = {
-    chisel.zip(ref).zipWithIndex.foreach { case((c, r), index) =>
-      if (c != r) {
-        val err = abs(c-r)/(abs(r)+epsilon)
-        assert(err < epsilon, s"Error: mismatch on output $index of ${err*100}%\n\tReference: $r\n\tChisel:    $c")
-      }
+trait StreamOutputTester[T <: LazyDspBlock] extends OutputTester { this: PeekPokeTester[T] =>
+  def dut: T
+  def outputStep: Unit = {
+    if (peek(dut.io.out.valid) != BigInt(0)) {
+      streamOut_ += peek(dut.io.out.bits)
     }
   }
+}
 
-  // compares chisel and reference outputs, errors if they differ by more than epsilon
-  def compareOutputComplex(chisel: Seq[Complex], ref: Seq[Complex], epsilon: Double = 1e-12): Unit = {
-    chisel.zip(ref).zipWithIndex.foreach { case((c, r), index) =>
-      if (c.real != r.real) {
-        val err = abs(c.real-r.real)/(abs(r.real)+epsilon)
-        assert(err < epsilon, s"Error: mismatch in real value on output $index of ${err*100}%\n\tReference: ${r.real}\n\tChisel:    ${c.real}")
-      }
-      if (c.imag != r.imag) {
-        val err = abs(c.imag-r.imag)/(abs(r.imag)+epsilon)
-        assert(err < epsilon, s"Error: mismatch in imag value on output $index of ${err*100}%\n\tReference: ${r.imag}\n\tChisel:    ${c.imag}")
-      }
-    }
+trait AXIOutputTester[T <: Module] extends OutputTester with AXIRWTester[T] with InputTester { this: PeekPokeTester[T] =>
+  def ctrlAXI: NastiIO
+  def dataAXI: NastiIO
+  var axiInFlight: Bool
+  var axi: NastiIO = ctrlAXI
+  def outputStep: Unit = {}
+
+  override def playStream(): Unit = {
+    super[InputTester].playStream()
   }
+}
 
-  private val axi = dut.io.axi
+trait StreamIOTester[T <: LazyDspBlock] extends StreamInputTester[T] with StreamOutputTester[T] {
+  this: PeekPokeTester[T] =>
+}
+
+trait AXIRWTester[T <: Module] { this: PeekPokeTester[T] =>
+
+  def axi: NastiIO
+  def maxWait = 100
 
   def aw_ready: Boolean = { (peek(axi.aw.ready) != BigInt(0)) }
   def w_ready: Boolean = { (peek(axi.w.ready) != BigInt(0)) }
@@ -182,9 +204,9 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
   poke(axi.ar.valid, 0)
   poke(axi.r.ready, 0)
 
-  val axiDataWidth = dut.io.axi.w.bits.data.getWidth
-  val axiDataBytes = axiDataWidth / 8
-  val burstLen = axiDataBytes
+  def axiDataWidth = axi.w.bits.data.getWidth
+  def axiDataBytes = axiDataWidth / 8
+  def burstLen = axiDataBytes
   def axiWrite(addr: BigInt, value: BigInt): Unit = {
 
     // s_write_addr
@@ -258,7 +280,8 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
 
     // s_write_data
     poke(axi.w.valid, 1)
-    dspPokeAs(axi.w.bits.data, value, typ)
+    // TODO
+    // dspPokeAs(axi.w.bits.data, value, typ)
     poke(axi.w.bits.strb, 0xFF)
     poke(axi.w.bits.last, 1)
     poke(axi.w.bits.id, 0)
@@ -335,19 +358,41 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, maxWait: Int = 100)(implici
     ret
   }
   def axiRead(addr: Int): BigInt = axiRead(BigInt(addr))
+}
+
+abstract class DspBlockTester[V <: LazyDspBlock](dut: V, override val maxWait: Int = 100)(implicit p: Parameters)
+  extends DspTester[V](dut) with StreamIOTester[V] with AXIRWTester[V] {
+  val axi = dut.io.axi
 
   override def step(n: Int): Unit = {
-    if (streamInValid && streamInIter.hasNext) {
-      poke(dut.io.in.valid, 1)
-      poke(dut.io.in.bits, streamInIter.next)
-    } else {
-      poke(dut.io.in.valid, 0)
-    }
-    if (peek(dut.io.out.valid) != BigInt(0)) {
-      streamOut_ += peek(dut.io.out.bits)
-    }
+    inputStep
+    outputStep
     super.step(1)
     if (n > 1) step(n - 1)
+  }
+
+  // compares chisel and reference outputs, errors if they differ by more than epsilon
+  def compareOutput(chisel: Seq[Double], ref: Seq[Double], epsilon: Double = 1e-12): Unit = {
+    chisel.zip(ref).zipWithIndex.foreach { case((c, r), index) =>
+      if (c != r) {
+        val err = abs(c-r)/(abs(r)+epsilon)
+        assert(err < epsilon, s"Error: mismatch on output $index of ${err*100}%\n\tReference: $r\n\tChisel:    $c")
+      }
+    }
+  }
+
+  // compares chisel and reference outputs, errors if they differ by more than epsilon
+  def compareOutputComplex(chisel: Seq[Complex], ref: Seq[Complex], epsilon: Double = 1e-12): Unit = {
+    chisel.zip(ref).zipWithIndex.foreach { case((c, r), index) =>
+      if (c.real != r.real) {
+        val err = abs(c.real-r.real)/(abs(r.real)+epsilon)
+        assert(err < epsilon, s"Error: mismatch in real value on output $index of ${err*100}%\n\tReference: ${r.real}\n\tChisel:    ${c.real}")
+      }
+      if (c.imag != r.imag) {
+        val err = abs(c.imag-r.imag)/(abs(r.imag)+epsilon)
+        assert(err < epsilon, s"Error: mismatch in imag value on output $index of ${err*100}%\n\tReference: ${r.imag}\n\tChisel:    ${c.imag}")
+      }
+    }
   }
 }
 
