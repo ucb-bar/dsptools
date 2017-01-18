@@ -83,7 +83,7 @@ trait InputTester {
   }
 }
 
-trait StreamInputTester[T <: LazyDspBlock] extends InputTester { this: PeekPokeTester[T] =>
+trait StreamInputTester[T <: DspBlock] extends InputTester { this: PeekPokeTester[T] =>
   def dut: T
   def inputStep: Unit = {
     if (streamInValid && streamInIter.hasNext) {
@@ -162,7 +162,7 @@ trait OutputTester {
   }
 }
 
-trait StreamOutputTester[T <: LazyDspBlock] extends OutputTester { this: PeekPokeTester[T] =>
+trait StreamOutputTester[T <: DspBlock] extends OutputTester { this: PeekPokeTester[T] =>
   def dut: T
   def outputStep: Unit = {
     if (peek(dut.io.out.valid) != BigInt(0)) {
@@ -183,7 +183,7 @@ trait AXIOutputTester[T <: Module] extends OutputTester with AXIRWTester[T] with
   }
 }
 
-trait StreamIOTester[T <: LazyDspBlock] extends StreamInputTester[T] with StreamOutputTester[T] {
+trait StreamIOTester[T <: DspBlock] extends StreamInputTester[T] with StreamOutputTester[T] {
   this: PeekPokeTester[T] =>
 }
 
@@ -360,7 +360,7 @@ trait AXIRWTester[T <: Module] { this: PeekPokeTester[T] =>
   def axiRead(addr: Int): BigInt = axiRead(BigInt(addr))
 }
 
-abstract class DspBlockTester[V <: LazyDspBlock](dut: V, override val maxWait: Int = 100)(implicit p: Parameters)
+abstract class DspBlockTester[V <: DspBlock](dut: V, override val maxWait: Int = 100)(implicit p: Parameters)
   extends DspTester[V](dut) with StreamIOTester[V] with AXIRWTester[V] {
   val axi = dut.io.axi
 
