@@ -131,7 +131,7 @@ class FloatOps extends Module {
   }
 }
 
-class FloatOpTester(c: FloatOps) extends DspTester(c) {
+class FloatOpTester(c: FloatOps, skipTrig: Boolean = false) extends DspTester(c) {
   import FloatOpCodes._
   val a = 3.4
   val b = 7.1
@@ -170,31 +170,33 @@ class FloatOpTester(c: FloatOps) extends DspTester(c) {
   poke(c.io.opsel, Tan)
   dspExpect(c.io.out, math.tan(a), "tan should work on reals")
 
-  val arcArg = 0.5
-  dspPoke(c.io.in1, arcArg)
-  poke(c.io.opsel, ASin)
-  dspExpect(c.io.out, math.asin(arcArg), "asin should work on reals")
-  poke(c.io.opsel, ACos)
-  dspExpect(c.io.out, math.acos(arcArg), "acos should work on reals")
+  if(skipTrig) {
+    val arcArg = 0.5
+    dspPoke(c.io.in1, arcArg)
+    poke(c.io.opsel, ASin)
+    dspExpect(c.io.out, math.asin(arcArg), "asin should work on reals")
+    poke(c.io.opsel, ACos)
+    dspExpect(c.io.out, math.acos(arcArg), "acos should work on reals")
 
-  dspPoke(c.io.in1, a)
-  poke(c.io.opsel, ATan)
-  dspExpect(c.io.out, math.atan(a), "atan should work on reals")
-  poke(c.io.opsel, ATan2)
-  poke(c.io.opsel, Hypot)
-  poke(c.io.opsel, Sinh)
-  dspExpect(c.io.out, math.sinh(a), "sinh should work on reals")
-  poke(c.io.opsel, Cosh)
-  dspExpect(c.io.out, math.cosh(a), "cosh should work on reals")
-  poke(c.io.opsel, Tanh)
-  dspExpect(c.io.out, math.tanh(a), "tanh should work on reals")
-  poke(c.io.opsel, ASinh)
-  dspExpect(c.io.out, asinh_a, "asinh should work on reals")
-  poke(c.io.opsel, ACosh)
-  dspExpect(c.io.out, acosh_a, "acosh should work on reals")
-  poke(c.io.opsel, ATanh)
-  // not defined
-  // dspExpect(c.io.out, math.atanh(a), "atanh should work on reals")
+    dspPoke(c.io.in1, a)
+    poke(c.io.opsel, ATan)
+    dspExpect(c.io.out, math.atan(a), "atan should work on reals")
+    poke(c.io.opsel, ATan2)
+    poke(c.io.opsel, Hypot)
+    poke(c.io.opsel, Sinh)
+    dspExpect(c.io.out, math.sinh(a), "sinh should work on reals")
+    poke(c.io.opsel, Cosh)
+    dspExpect(c.io.out, math.cosh(a), "cosh should work on reals")
+    poke(c.io.opsel, Tanh)
+    dspExpect(c.io.out, math.tanh(a), "tanh should work on reals")
+    poke(c.io.opsel, ASinh)
+    dspExpect(c.io.out, asinh_a, "asinh should work on reals")
+    poke(c.io.opsel, ACosh)
+    dspExpect(c.io.out, acosh_a, "acosh should work on reals")
+    poke(c.io.opsel, ATanh)
+    // not defined
+    // dspExpect(c.io.out, math.atanh(a), "atanh should work on reals")
+  }
 }
 
 class BlackBoxFloatSpec extends ChiselFlatSpec {
@@ -232,7 +234,7 @@ class BlackBoxFloatSpec extends ChiselFlatSpec {
     }
 
     dsptools.Driver.execute(() => new FloatOps, optionsManager) { c =>
-      new FloatOpTester(c)
+      new FloatOpTester(c, skipTrig = true)
     } should be(true)
   }
 }

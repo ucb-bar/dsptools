@@ -160,7 +160,7 @@ module BBFPow(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($pos($bitstoreal(in1), $bitstoreal(in2)));
+  out <= $realtobits($pow($bitstoreal(in1), $bitstoreal(in2)));
   end
 endmodule
 
@@ -182,6 +182,7 @@ module BBFCeil(
   end
 endmodule
 
+/*
 module BBFSin(
     input  [63:0] in,
     output reg [63:0] out
@@ -309,3 +310,4 @@ module BBFATanh(
   out <= $realtobits($atanh($bitstoreal(in)));
   end
 endmodule
+*/
