@@ -65,7 +65,7 @@ trait DspBlockIO {
 
   val in  = Input( ValidWithSync(UInt(inputWidth.W)))
   val out = Output(ValidWithSync(UInt(outputWidth.W)))
-  val axi = new NastiIO().flip
+  val axi = Flipped(new NastiIO())
 }
 
 class BasicDspBlockIO()(implicit val p: Parameters) extends Bundle with HasDspBlockParameters with DspBlockIO {
@@ -97,9 +97,11 @@ abstract class LazyDspBlock()(implicit val p: Parameters) extends LazyModule wit
   println(s"Base address for $name is $baseAddr")
 }
 
-abstract class DspBlock(outer: LazyDspBlock, b: => Option[Bundle with DspBlockIO] = None)
+abstract class DspBlock(val outer: LazyDspBlock, b: => Option[Bundle with DspBlockIO] = None)
   (implicit val p: Parameters) extends LazyModuleImp(outer) with HasDspBlockParameters {
   val io: Bundle with DspBlockIO = IO(b.getOrElse(new BasicDspBlockIO))
+
+  def addrmap = testchipip.SCRAddressMap(outer.scrbuilder.devName).get
 
   def unpackInput[T <: Data](lanes: Int, genIn: T) = {
     val i = Wire(ValidWithSync(Vec(lanes, genIn.cloneType)))
@@ -127,6 +129,8 @@ abstract class DspBlock(outer: LazyDspBlock, b: => Option[Bundle with DspBlockIO
 
   def control(name: String) = scr.control(name)
   def status(name : String) = scr.status(name)
+
+  status("uuid") := this.hashCode.U
 }
 
 class GenDspBlockIO[T <: Data, V <: Data]()(implicit val p: Parameters)
