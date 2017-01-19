@@ -2,13 +2,15 @@
 
 package dsptools.numbers
 
+import java.nio.file.Files
+
 import chisel3._
 import chisel3.util._
 import chisel3.testers.BasicTester
 import chisel3.iotesters.{ChiselFlatSpec, PeekPokeTester, TesterOptionsManager}
 import dsptools.DspTester
 
-//scalastyle:off magic.number
+//scalastyle:off magic.number regex
 
 class BlackBoxFloatTester extends BasicTester {
   val (cnt, _) = Counter(true.B, 10)
@@ -94,13 +96,16 @@ object FloatOpCodes {
 }
 
 class FloatOps extends Module {
-  import FloatOpCodes._
   val io = IO(new Bundle {
-    val in1   = Input(DspReal(1.0))
-    val in2   = Input(DspReal(1.0))
+    val in1 = Input(DspReal(1.0))
+    val in2 = Input(DspReal(1.0))
     val opsel = Input(UInt(64.W))
-    val out   = Output(DspReal(1.0))
+    val out = Output(DspReal(1.0))
   })
+}
+
+class FloatOpsWithTrig extends FloatOps {
+  import FloatOpCodes._
 
   switch (io.opsel) {
     is(Add.U) { io.out := io.in1 + io.in2 }
@@ -131,7 +136,24 @@ class FloatOps extends Module {
   }
 }
 
-class FloatOpTester(c: FloatOps, skipTrig: Boolean = false) extends DspTester(c) {
+class FloatOpsWithoutTrig extends FloatOps {
+  import FloatOpCodes._
+  switch (io.opsel) {
+    is(Add.U) { io.out := io.in1 + io.in2 }
+    is(Subtract.U) { io.out := io.in1 - io.in2 }
+    is(Multiply.U) { io.out := io.in1 * io.in2 }
+    is(Divide.U) { io.out := io.in1 / io.in2 }
+    is(Ln.U) { io.out := io.in1.ln() }
+    is(Log10.U) { io.out := io.in1.log10() }
+    is(Exp.U) { io.out := io.in1.exp() }
+    is(Sqrt.U) { io.out := io.in1.sqrt() }
+    is(Pow.U) { io.out := io.in1.pow(io.in2) }
+    is(Floor.U) { io.out := io.in1.floor() }
+    is(Ceil.U) { io.out := io.in1.ceil() }
+  }
+}
+
+class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends DspTester(c) {
   import FloatOpCodes._
   val a = 3.4
   val b = 7.1
@@ -163,14 +185,15 @@ class FloatOpTester(c: FloatOps, skipTrig: Boolean = false) extends DspTester(c)
   dspExpect(c.io.out, math.floor(a), "floor should work on reals")
   poke(c.io.opsel, Ceil)
   dspExpect(c.io.out, math.ceil(a), "ceil should work on reals")
-  poke(c.io.opsel, Sin)
-  dspExpect(c.io.out, math.sin(a), "sin should work on reals")
-  poke(c.io.opsel, Cos)
-  dspExpect(c.io.out, math.cos(a), "cos should work on reals")
-  poke(c.io.opsel, Tan)
-  dspExpect(c.io.out, math.tan(a), "tan should work on reals")
 
-  if(skipTrig) {
+  if(testTrigFuncs) {
+    poke(c.io.opsel, Sin)
+    dspExpect(c.io.out, math.sin(a), "sin should work on reals")
+    poke(c.io.opsel, Cos)
+    dspExpect(c.io.out, math.cos(a), "cos should work on reals")
+    poke(c.io.opsel, Tan)
+    dspExpect(c.io.out, math.tan(a), "tan should work on reals")
+
     val arcArg = 0.5
     dspPoke(c.io.in1, arcArg)
     poke(c.io.opsel, ASin)
@@ -182,7 +205,9 @@ class FloatOpTester(c: FloatOps, skipTrig: Boolean = false) extends DspTester(c)
     poke(c.io.opsel, ATan)
     dspExpect(c.io.out, math.atan(a), "atan should work on reals")
     poke(c.io.opsel, ATan2)
+    dspExpect(c.io.out, math.atan2(a, b), "atan2 should work on reals")
     poke(c.io.opsel, Hypot)
+    dspExpect(c.io.out, math.hypot(a, b), "hypot should work on reals")
     poke(c.io.opsel, Sinh)
     dspExpect(c.io.out, math.sinh(a), "sinh should work on reals")
     poke(c.io.opsel, Cosh)
@@ -223,7 +248,7 @@ class BlackBoxFloatSpec extends ChiselFlatSpec {
         blackBoxFactories = interpreterOptions.blackBoxFactories :+ new DspRealFactory)
     }
 
-    dsptools.Driver.execute(() => new FloatOps, optionsManager) { c =>
+    dsptools.Driver.execute(() => new FloatOpsWithTrig, optionsManager) { c =>
       new FloatOpTester(c)
     } should be(true)
   }
@@ -233,8 +258,22 @@ class BlackBoxFloatSpec extends ChiselFlatSpec {
         testerOptions = testerOptions.copy(backendName = "verilator")
     }
 
-    dsptools.Driver.execute(() => new FloatOps, optionsManager) { c =>
-      new FloatOpTester(c, skipTrig = true)
+    //TODO: Fix this really ugly way of getting black box to verilator ASAP
+    optionsManager.setTargetDirName( "test_run_dir/floatops_verilator/")
+    optionsManager.setTopName("FloatOps")
+    optionsManager.makeTargetDir()
+
+    println(s"Dir is ${optionsManager.commonOptions.targetDirName}")
+    val blackBoxFile = new java.io.File("src/main/resources/BlackBoxFloat.v")
+    val resourceTarget = new java.io.File(optionsManager.targetDirName + "/" + "BBFAdd.v")
+    println(s"${blackBoxFile.getAbsolutePath} exists ${blackBoxFile.exists()}")
+    println(s"${resourceTarget.getAbsolutePath} exists ${resourceTarget.exists()}")
+    if(! resourceTarget.exists()) {
+      Files.copy(blackBoxFile.toPath, resourceTarget.toPath)
+    }
+
+    dsptools.Driver.execute(() => new FloatOpsWithoutTrig, optionsManager) { c =>
+      new FloatOpTester(c, testTrigFuncs = false)
     } should be(true)
   }
 }
