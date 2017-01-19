@@ -423,6 +423,8 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, override val maxWait: Int =
   def in = dut.io.in
   def axi = dut.io.axi
 
+  def addrmap = dut.addrmap //SCRAddressMap(dut.outer.scrbuilder.devName).get
+
   override def step(n: Int): Unit = {
     inputStep
     outputStep

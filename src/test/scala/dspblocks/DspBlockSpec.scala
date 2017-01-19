@@ -15,8 +15,6 @@ class PassthroughTester(dut: Passthrough) extends DspBlockTester(dut) {
 
   def streamIn = (0 until 12).map(x=>BigInt(x)).toSeq
 
-  val addrmap = dut.addrmap
-
   require(axiRead(addrmap("uuid")) == dut.hashCode, "UUID from SCR incorrect")
   require(axiRead(addrmap("delay")) == dut.passthroughDelay, "Delay from SCR incorrect")
 
@@ -36,8 +34,6 @@ class BarrelShifterTester(dut: BarrelShifter) extends DspBlockTester(dut) {
   pauseStream()
 
   def streamIn = (0 until 12).map(x => BigInt(x)).toSeq
-
-  val addrmap = dut.addrmap
 
   require(axiRead(addrmap("uuid")) == dut.hashCode, "UUID from SCR incorrect")
 
@@ -93,7 +89,7 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
 
   behavior of "DspBlockTester"
 
-  it should "work with Passthrough" in {
+  it should "work with Passthrough" ignore {
     implicit val p: Parameters = Parameters.root(new sam.DspConfig().toInstance).alterPartial({
       case BaseAddr => 0
       case PassthroughDelay => 10
