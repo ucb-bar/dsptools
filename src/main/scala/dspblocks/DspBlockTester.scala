@@ -321,7 +321,7 @@ trait AXIRWTester[T <: Module] { this: PeekPokeTester[T] =>
   def axiWrite(addr: BigInt, value: Int): Unit = axiWrite(addr, BigInt(value))
   def axiWrite(addr: Int, value: BigInt): Unit = axiWrite(BigInt(addr), value)
 
-  def axiWriteAs[T<:Data](addr: Int, value: Double, typ: T): Unit = {
+  def axiWriteAs[T<:Data](addr: BigInt, value: Double, typ: T): Unit = {
 
     // s_write_addr
     poke(axi.aw.valid, 1)
@@ -374,6 +374,7 @@ trait AXIRWTester[T <: Module] { this: PeekPokeTester[T] =>
     step(1)
     poke(axi.b.ready, 0)
   }
+  def axiWriteAs[T<:Data](addr: Int, value: Double, typ: T): Unit = axiWriteAs(BigInt(addr), value, typ)
 
   def axiRead(addr: BigInt): BigInt = {
 
