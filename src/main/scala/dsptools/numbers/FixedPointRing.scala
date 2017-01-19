@@ -44,11 +44,23 @@ trait FixedPointSigned extends Any with Signed[FixedPoint] with hasContext {
   def abs(a: FixedPoint): FixedPoint = Mux(a > FixedPoint.fromBigInt(0), a, FixedPoint.fromBigInt(0)-a)
 }
 trait FixedPointIsReal extends Any with IsReal[FixedPoint] with FixedPointOrder with FixedPointSigned with hasContext {
-  def toDouble(a: FixedPoint): DspReal = ???
-  def ceil(a: FixedPoint): FixedPoint = ???
-  def floor(a: FixedPoint): FixedPoint = ???
-  def isWhole(a: FixedPoint): Bool = ???
-  def round(a: FixedPoint): FixedPoint = ???
+  /**
+    * Todo: I don't think this can be done without a parameterized black box
+    * It will need to know the binary point and bits in order to
+    * @param a the fixed point number to convert
+    * @return
+    */
+  //TODO: commented out for now in IsReal also, see comment there
+//  def toDouble(a: FixedPoint): DspReal = ???
+
+  def ceil(a: FixedPoint): FixedPoint = {
+    Mux(a === floor(a), floor(a), floor(a) + 1.F(0))
+  }
+  def floor(a: FixedPoint): FixedPoint = a.setBinaryPoint(0)
+  def isWhole(a: FixedPoint): Bool = a === floor(a)
+  def round(a: FixedPoint): FixedPoint = {
+    (a + 0.5.F(1)).setBinaryPoint(0)
+  }
 }
 
 trait ConvertableToFixedPoint extends ConvertableTo[FixedPoint] with hasContext {

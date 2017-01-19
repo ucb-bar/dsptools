@@ -37,8 +37,11 @@ trait IsReal[A<:Data] extends Any with Order[A] with Signed[A] {
 
   /**
     * Approximates `a` as a `Double`.
+    * This is problematic conversion from FixedPoint
+    * to DspReal, where inference can make computing this
+    * difficult
     */
-  def toDouble(a: A): DspReal
+//  def toDouble(a: A): DspReal
 }
 
 object IsReal {

@@ -27,8 +27,8 @@ class ParameterizedAdder[T <: Data:Ring](gen:() => T) extends Module {
 
 class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    i <- -2.0 to 1.0 by 0.25
+    j <- -2.0 to 4.0 by 0.5
   } {
     dspPoke(c.io.a1, i)
     dspPoke(c.io.a2, j)
@@ -58,6 +58,10 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
     def getFixed: FixedPoint = FixedPoint(width = 32, binaryPoint = 16)
 
     dsptools.Driver.execute(() => new ParameterizedAdder(getFixed _)) { c =>
+      new ParameterizedAdderTester(c)
+    } should be (true)
+
+    dsptools.Driver.execute(() => new ParameterizedAdder(getFixed _), Array("--backend-name", "verilator")) { c =>
       new ParameterizedAdderTester(c)
     } should be (true)
   }
