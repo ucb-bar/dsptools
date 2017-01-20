@@ -177,7 +177,7 @@ trait StreamOutputTester[T <: DspBlock] extends OutputTester { this: PeekPokeTes
   }
 }
 
-trait AXIOutputTester[T <: Module] extends OutputTester with AXIRWTester[T] with InputTester { this: PeekPokeTester[T] =>
+trait AXIOutputTester[T <: Module] extends OutputTester with AXIRWTester[T] with InputTester { this: DspTester[T] =>
   // don't begin streaming until SAM is ready
   streamInValid = false
   var axi: NastiIO = ctrlAXI
@@ -245,7 +245,7 @@ trait StreamIOTester[T <: DspBlock] extends StreamInputTester[T] with StreamOutp
   this: PeekPokeTester[T] =>
 }
 
-trait AXIRWTester[T <: Module] { this: PeekPokeTester[T] =>
+trait AXIRWTester[T <: Module] { this: DspTester[T] =>
 
   def axi: NastiIO
   def maxWait = 100
@@ -339,7 +339,7 @@ trait AXIRWTester[T <: Module] { this: PeekPokeTester[T] =>
     // s_write_data
     poke(axi.w.valid, 1)
     // TODO
-    // dspPokeAs(axi.w.bits.data, value, typ)
+    dspPokeAs(axi.w.bits.data, value, typ)
     poke(axi.w.bits.strb, 0xFF)
     poke(axi.w.bits.last, 1)
     poke(axi.w.bits.id, 0)
