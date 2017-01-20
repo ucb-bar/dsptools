@@ -3,6 +3,7 @@
 package examples
 
 import chisel3._
+import chisel3.experimental.FixedPoint
 import dsptools.DspTester
 import dsptools.numbers._
 import dsptools.numbers.implicits._
