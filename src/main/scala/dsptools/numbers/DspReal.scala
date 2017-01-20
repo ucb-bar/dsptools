@@ -49,6 +49,49 @@ class BBFEquals extends BlackboxTwoOperandBool
 
 class BBFNotEquals extends BlackboxTwoOperandBool
 
+/** Math operations from IEEE.1364-2005 **/
+class BBFLn extends BlackboxOneOperand
+
+class BBFLog10 extends BlackboxOneOperand
+
+class BBFExp extends BlackboxOneOperand
+
+class BBFSqrt extends BlackboxOneOperand
+
+class BBFPow extends BlackboxTwoOperand
+
+class BBFFloor extends BlackboxOneOperand
+
+class BBFCeil extends BlackboxOneOperand
+
+class BBFSin extends BlackboxOneOperand
+
+class BBFCos extends BlackboxOneOperand
+
+class BBFTan extends BlackboxOneOperand
+
+class BBFASin extends BlackboxOneOperand
+
+class BBFACos extends BlackboxOneOperand
+
+class BBFATan extends BlackboxOneOperand
+
+class BBFATan2 extends BlackboxTwoOperand
+
+class BBFHypot extends BlackboxTwoOperand
+
+class BBFSinh extends BlackboxOneOperand
+
+class BBFCosh extends BlackboxOneOperand
+
+class BBFTanh extends BlackboxOneOperand
+
+class BBFASinh extends BlackboxOneOperand
+
+class BBFACosh extends BlackboxOneOperand
+
+class BBFATanh extends BlackboxOneOperand
+
 class BBFFromInt extends BlackBox {
   val io = IO(new Bundle() {
     val in = Input(UInt(DspReal.UnderlyingWidth.W))
@@ -132,6 +175,90 @@ class DspReal extends Bundle {
 
   def != (arg1: DspReal): Bool = {
     twoOperandBool(arg1, Module(new BBFNotEquals()))
+  }
+
+  def ln (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFLn()))
+  }
+
+  def log10 (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFLog10()))
+  }
+
+  def exp (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFExp()))
+  }
+
+  def sqrt (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFSqrt()))
+  }
+
+  def pow (arg1: DspReal): DspReal = {
+    twoOperandOperator(arg1, Module(new BBFPow()))
+  }
+
+  def floor (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFFloor()))
+  }
+
+  def ceil (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFCeil()))
+  }
+
+  def sin (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFSin()))
+  }
+
+  def cos (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFCos()))
+  }
+
+  def tan (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFTan()))
+  }
+
+  def asin (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFASin()))
+  }
+
+  def acos (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFACos()))
+  }
+
+  def atan (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFATan()))
+  }
+
+  def atan2 (arg1: DspReal): DspReal = {
+    twoOperandOperator(arg1, Module(new BBFATan2()))
+  }
+
+  def hypot (arg1: DspReal): DspReal = {
+    twoOperandOperator(arg1, Module(new BBFHypot()))
+  }
+
+  def sinh (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFSinh()))
+  }
+
+  def cosh (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFCosh()))
+  }
+
+  def tanh (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFTanh()))
+  }
+
+  def asinh (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFASinh()))
+  }
+
+  def acosh (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFACosh()))
+  }
+
+  def atanh (dummy: Int = 0): DspReal = {
+    oneOperandOperator(Module(new BBFATanh()))
   }
 
   def intPart(dummy: Int = 0): DspReal = {
