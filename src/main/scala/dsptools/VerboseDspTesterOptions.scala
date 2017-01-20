@@ -10,6 +10,7 @@ case class VerboseDspTesterOptions(
     genVerilogTb: Boolean = false,
     clkMul: Int = 1,
     tbTimeUnitPs: Int = 100,
+    // Note: tb checking occurs 1 precision step after clk
     tbTimePrecisionPs: Int = 10,
     initClkPeriods: Int = 5) extends ComposableOptions {
 
