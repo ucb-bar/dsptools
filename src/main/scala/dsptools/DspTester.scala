@@ -42,7 +42,7 @@ class DspTester[T <: Module](c: T,
       case c: DspComplex[_]  => c.underlyingType() match {
         case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
         case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
-        case "SInt" => poke(c.real.asInstanceOf[SInt], value.toInt)
+        case "SInt" => poke(c.real.asInstanceOf[SInt], value.round.toInt)
         case _ =>
           throw DspException(
             s"poke($bundle, $value): bundle DspComplex has unknown underlying type ${bundle.getClass.getName}")
