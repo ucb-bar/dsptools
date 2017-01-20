@@ -34,7 +34,7 @@ class LazyBarrelShifter()(implicit p: Parameters) extends LazyDspBlock()(p) {
 class BarrelShifter(outer: LazyBarrelShifter)(implicit p: Parameters) extends DspBlock(outer)(p) {
   require( inputWidth == outputWidth )
 
-  val shiftWidth = util.log2Up(inputWidth) - 1
+  val shiftWidth = util.log2Up(inputWidth)
 
   val shiftByInRange = control("shiftBy") < inputWidth.U
   val shiftBy        = Mux(shiftByInRange, control("shiftBy"), 0.U)(shiftWidth - 1, 0)
