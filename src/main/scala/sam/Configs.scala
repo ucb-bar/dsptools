@@ -65,12 +65,11 @@ class DspConfig extends Config(
     case _ => throw new CDEMatchError
   }) with HasIPXACTParameters {
   def getIPXACTParameters: Map[String, String] = {
-    // Get unadulterated, top level parameters.
-    val parameterList = List[Field[_]](TLId, PAddrBits)
-    val parameterMap = parameterList.foldLeft(Map[String, String]()) { (m, s) => m(s.toString) = params(s).toString; m }
+
+    val parameterMap = Map[String, String]()
 
     // Conjure up some IPXACT synthsized parameters.
-    parameterMap ++= List(("InputLanes", params(GenKey).lanesIn.toString), ("OutputLanes", params(GenKey).lanesOut.toString))
+    parameterMap ++= List(("InputLanes", params(GenKey).lanesIn.toString))
     parameterMap ++= List(("InputTotalBits", params(DspBlockKey).inputWidth.toString))
 
     parameterMap
@@ -83,9 +82,6 @@ case object SAMKey extends Field[SAMConfig]
 // bufferDepth = how many packets to store
 case class SAMConfig(subpackets: Int, bufferDepth: Int, baseAddr: Int) {
   // sanity checks
-  //require(lanesIn%lanesOut == 0, "Decimation amount must be an integer.")
-  //require(lanesOut <= lanesIn, "Cannot have more output lanes than input lanes.")
-  //require(pipelineDepth >= 0, "Must have positive pipelining")
   val memDepth = subpackets*bufferDepth
   val memAddrBits = log2Up(memDepth)
 }
