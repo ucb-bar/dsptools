@@ -11,14 +11,15 @@ case class VerboseDspTesterOptions(
     clkMul: Int = 1,
     tbTimeUnitPs: Int = 100,
     tbTimePrecisionPs: Int = 10,
-    initTimeUnits: Int = 5) extends ComposableOptions {
+    initClkPeriods: Int = 5) extends ComposableOptions {
 
     val clkPeriodPs = tbTimeUnitPs * clkMul
+    val initTimeUnits = clkMul * initClkPeriods
 
     require(tbTimeUnitPs >= tbTimePrecisionPs, "Time unit should be >= precision")
     require(clkPeriodPs / 2 > tbTimePrecisionPs, "Half a clk period should be greater than time precision")
     require(clkPeriodPs % 2 == 0, "Clk period should be divisible by 2")
-    require(initTimeUnits >= 1, "Reset should be applied for at least 1 time unit")
+    require(initClkPeriods >= 1, "Reset should be applied for at least 1 clk period")
 
 }
 
@@ -65,10 +66,10 @@ trait HasVerboseDspTesterOptions {
     .foreach { x => verboseDspTesterOptions = verboseDspTesterOptions.copy(clkMul = x) }
     .text(s"clk period = clk-mul * time unit (ps), default is ${verboseDspTesterOptions.clkMul}")
 
-  parser.opt[Int]("init-time-units")
+  parser.opt[Int]("init-clk-periods")
     .abbr("initt")
-    .foreach { x => verboseDspTesterOptions = verboseDspTesterOptions.copy(initTimeUnits = x) }
-    .text(s"initial reset time (# of tb time units), default is ${verboseDspTesterOptions.initTimeUnits}")
+    .foreach { x => verboseDspTesterOptions = verboseDspTesterOptions.copy(initClkPeriods = x) }
+    .text(s"initial reset time (# of clk periods), default is ${verboseDspTesterOptions.initClkPeriods}")
 
 }
 
