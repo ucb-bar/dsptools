@@ -21,7 +21,7 @@ import testchipip._
 
 class SAMIO()(implicit p: Parameters) extends NastiBundle()(p) {
   val config = p(SAMKey)
-  val w = (ceil(p(DspBlockKey).inputWidth*1.0/nastiXDataBits)*nastiXDataBits).toInt
+  val w = (ceil(p(DspBlockKey(p(DspBlockId))).inputWidth*1.0/nastiXDataBits)*nastiXDataBits).toInt
 
   val in = Input(ValidWithSync(UInt(w.W)))
   val out = Flipped(new NastiIO())
@@ -39,7 +39,7 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) {
   val io = IO(new SAMIO)
   val config = p(SAMKey)
   // [stevo]: make width a multiple of nastiDataWidth
-  val w = (ceil(p(DspBlockKey).inputWidth*1.0/nastiXDataBits)*nastiXDataBits).toInt
+  val w = (ceil(p(DspBlockKey(p(DspBlockId))).inputWidth*1.0/nastiXDataBits)*nastiXDataBits).toInt
 
   // memories
   // TODO: ensure that the master never tries to read beyond the depth of the SeqMem

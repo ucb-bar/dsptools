@@ -11,6 +11,7 @@ import rocketchip._
 import junctions._
 import cde.Parameters
 import dsptools._
+import dspblocks._
 
 class NastiConfig(implicit val p: Parameters) extends HasNastiParameters {}
 
@@ -359,7 +360,7 @@ trait DspGeneratorApp extends GeneratorApp {
   }
 
   def generateIPXact {
-    val bits_in = params(DspBlockKey).inputWidth
+    val bits_in = params(DspBlockKey(params(DspBlockId))).inputWidth
     val factory = new ObjectFactory
     val memMapName = "mm"
     val outMemMapName = "omm"
@@ -389,7 +390,7 @@ trait DspGeneratorApp extends GeneratorApp {
     fileSetRefs.add(verilogSource)
     views.getView.add(view)
     model.setViews(views)
-    model.setPorts(makeAllPorts(bits_in, bits_out))
+    // model.setPorts(makeAllPorts(bits_in, bits_out))
 
     val componentType = new ComponentType
     componentType.setLibrary("ucb-art")

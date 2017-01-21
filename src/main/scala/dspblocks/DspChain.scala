@@ -17,23 +17,28 @@ import junctions._
 import rocketchip._
 
 case class DspChainParameters (
-  blocks: Seq[Parameters => LazyDspBlock],
+  blocks: Seq[(Parameters => LazyDspBlock, String)],
   ctrlBaseAddr: Int,
   dataBaseAddr: Int
 )
 
-case object DspChainKey extends Field[DspChainParameters]
+case object DspChainId extends Field[String]
+case class DspChainKey(id: String) extends Field[DspChainParameters]
 
 trait HasDspChainParameters {
   implicit val p: Parameters
-  val blocks = p(DspChainKey).blocks
-  val ctrlBaseAddr = p(DspChainKey).ctrlBaseAddr
-  val dataBaseAddr = p(DspChainKey).dataBaseAddr
+  val dspChainExternal = p(DspChainKey(p(DspChainId)))
+  val blocks           = dspChainExternal.blocks
+  val ctrlBaseAddr     = dspChainExternal.ctrlBaseAddr
+  val dataBaseAddr     = dspChainExternal.dataBaseAddr
 }
 
-class DspChainIO()(implicit val p: Parameters) extends Bundle with HasDspBlockParameters {
+class DspChainIO()(implicit val p: Parameters) extends Bundle {
+  val firstBlockId = p(DspChainKey(p(DspChainId))).blocks.head._2
+
   val control_axi = Flipped(new NastiIO())
   val data_axi = Flipped(new NastiIO())
+  val stream_in = Flipped(ValidWithSync(UInt( (p(GenKey(firstBlockId)).genIn.getWidth * p(GenKey(firstBlockId)).lanesIn).W )))
 }
 
 class DspChain(
@@ -49,8 +54,9 @@ class DspChain(
   val lazy_mods = blocks.map(b => {
     val modParams = p.alterPartial({
       case BaseAddr => addr
+      case DspBlockId => b._2
     })
-    val mod = LazyModule(b(modParams))
+    val mod = LazyModule(b._1(modParams))
     addr += mod.size
     mod
   })
@@ -73,9 +79,10 @@ class DspChain(
 
   val lazySams = modules.map(mod => {
     val samWidth = mod.io.out.bits.getWidth
-    val samParams = p.alterPartial({ 
+    val samParams = p.alterPartial({
       case SAMKey => oldSamConfig.copy(baseAddr = addr)
-      case DspBlockKey => DspBlockParameters(samWidth, samWidth)
+      case DspBlockId => "sam"
+      case DspBlockKey("sam") => DspBlockParameters(samWidth, samWidth)
       case BaseAddr => addr
     })
     val lazySam = LazyModule( new LazySAM()(samParams) )
@@ -87,11 +94,19 @@ class DspChain(
     sam
   })
 
+  // connect input to first module
+  mod_ios.head.in := io.stream_in
+
+  // connect output of each module to appropriate SAM
+  modules.zip(sams).foreach {case (mod, sam) =>
+    sam.io.in := mod.io.out
+  }
+
   val control_axis = mod_ios.map(_.axi)
   val ctrlOutPorts = control_axis.length + sams.length
   val dataOutPorts = sams.length
 
-  val addrs = lazy_mods.map(mod => 
+  val addrs = lazy_mods.map(mod =>
     AddrMapEntry(s"${mod.name}", MemSize(mod.size, MemAttr(AddrMapProt.RWX)))
   ) ++ lazySams.zipWithIndex.map({ case(sam, idx) =>
     AddrMapEntry(s"sam${idx}", MemSize(sam.size, MemAttr(AddrMapProt.RWX)))

@@ -56,8 +56,9 @@ class DspConfig extends Config(
         maxManagerXacts = 1,
         dataBeats = 8,
         dataBits = 64 * 8)
-    case DspBlockKey => DspBlockParameters(1024, 1024)
-    case GenKey => new GenParameters {
+    case DspBlockId => "sam"
+    case DspBlockKey("sam") => DspBlockParameters(1024, 1024)
+    case GenKey("sam") => new GenParameters {
       // these are not used for the SAM block
       def genIn [T <: Data] = UInt(1.W).asInstanceOf[T]
       val lanesIn = 1
@@ -69,8 +70,8 @@ class DspConfig extends Config(
     val parameterMap = Map[String, String]()
 
     // Conjure up some IPXACT synthsized parameters.
-    parameterMap ++= List(("InputLanes", params(GenKey).lanesIn.toString))
-    parameterMap ++= List(("InputTotalBits", params(DspBlockKey).inputWidth.toString))
+    parameterMap ++= List(("InputLanes", params(GenKey(params(DspBlockId))).lanesIn.toString))
+    parameterMap ++= List(("InputTotalBits", params(DspBlockKey(params(DspBlockId))).inputWidth.toString))
 
     parameterMap
   }
