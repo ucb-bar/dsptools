@@ -11,20 +11,20 @@ The SAM uses the DSP streaming interface on input, and the AXI4 interface on the
 The host configures the SAM through status and control registers that are memory mapped on the AXI4 interface. 
 These registers are:
 
-__wWriteCount__: Status register indicating the number of words that have been stored since the SAM was triggered. The SAM is no longer storing samples when wWriteCount = wTargetCount. wWriteCount is reset when wStartAddr is written to.
-__wStartAddr__: When triggered, the SAM will store wTargetCount words starting at wStartAddr.
-__wTargetCount__: The next time the SAM is triggered to store samples, it will store wTargetCount samples at addresses from wStartAddr to (wStartAddr - 1)
-__wTrig__: Triggers the SAM to start recording streaming data. Trigger occurs on low to high transition.
-__wWaitForSync__: When true, the SAM waits for the first Sync signal before recording data. When false, it starts recording when wTrig goes high.
-__wPacketCount__: Indicates number of packets stored since the last time the SAM was triggered (i.e. the number of times sync (T_LAST) was seen, plus one for the initial data set).
-__wSyncAddr__: Gives the address at which the first packet start is known from the last time the SAM was triggered (i.e. the address written to the cycle after the first sync appears, or zero when no sync signal appears).
+* __wWriteCount__: Status register indicating the number of words that have been stored since the SAM was triggered. The SAM is no longer storing samples when wWriteCount = wTargetCount. wWriteCount is reset when wStartAddr is written to.
+* __wStartAddr__: When triggered, the SAM will store wTargetCount words starting at wStartAddr.
+* __wTargetCount__: The next time the SAM is triggered to store samples, it will store wTargetCount samples at addresses from wStartAddr to (wStartAddr - 1)
+* __wTrig__: Triggers the SAM to start recording streaming data. Trigger occurs on low to high transition.
+* __wWaitForSync__: When true, the SAM waits for the first Sync signal before recording data. When false, it starts recording when wTrig goes high.
+* __wPacketCount__: Indicates number of packets stored since the last time the SAM was triggered (i.e. the number of times sync (T_LAST) was seen, plus one for the initial data set).
+* __wSyncAddr__: Gives the address at which the first packet start is known from the last time the SAM was triggered (i.e. the address written to the cycle after the first sync appears, or zero when no sync signal appears).
 
 # Parameters
 
-__subpackets__: number of data subpackets that are time-multiplexed on the streaming interface input
-__bufferDepth__: number of packets to store
-__W__: the width of the streaming data interface (will be expanded to be an integer multiple of the AXI4 crossbar interface width).
-__B__: base address for the SAM
+* __subpackets__: number of data subpackets that are time-multiplexed on the streaming interface input
+* __bufferDepth__: number of packets to store
+* __W__: the width of the streaming data interface (will be expanded to be an integer multiple of the AXI4 crossbar interface width).
+* __B__: base address for the SAM
 
 # Behavior
 

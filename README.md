@@ -16,5 +16,5 @@ TODO: add a doc/ directory with more exhaustive documentation.
 
 # See Also
 
-[SAM documentation](/doc/SAM.md)
-[DSP Streaming Interface documentation](/doc/stream.md)
+* [SAM documentation](/doc/SAM.md)
+* [DSP Streaming Interface documentation](/doc/stream.md)
