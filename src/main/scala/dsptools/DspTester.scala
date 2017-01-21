@@ -62,8 +62,8 @@ class DspTester[T <: Module](c: T,
         dspPoke(c.real.asInstanceOf[DspReal], value.real)
         dspPoke(c.imaginary.asInstanceOf[DspReal], value.imag)
       case "SInt" =>
-        poke(c.real.asInstanceOf[SInt], value.real.toInt)
-        poke(c.imaginary.asInstanceOf[SInt], value.imag.toInt)
+        poke(c.real.asInstanceOf[SInt], value.real.round.toInt)
+        poke(c.imaginary.asInstanceOf[SInt], value.imag.round.toInt)
       case _ =>
         throw DspException(
           s"poke($c, $value): c DspComplex has unknown underlying type ${c.getClass.getName}")

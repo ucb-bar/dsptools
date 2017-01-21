@@ -1,12 +1,8 @@
-package chisel3.iotesters
+package dsptools
 
 import chisel3._
 import java.io.{File, FileWriter, BufferedWriter}
-
-// Flatten is private in chisel3; need to make it accessible to tester
-object Flatten {
-  def apply[T <: Aggregate](d: T): IndexedSeq[Bits] = d.flatten
-}
+import chisel3.iotesters.TestersCompatibility
 
 // Note: This will dump as long as genVerilogTb is true (even if you're peeking/poking DspReal)
 trait VerilogTbDump {
@@ -25,9 +21,9 @@ trait VerilogTbDump {
   if (verilogTb) initVerilogTbFile()
   else deleteVerilogTbFile
 
-  val (inputs, outputs) = getDataNames("io", dut.io) partition (_._1.dir == chisel3.INPUT)
+  val (inputs, outputs) = TestersCompatibility.getDataNames("io", dut.io) partition (_._1.dir == chisel3.INPUT)
 
-  private def isSigned(e: Element): Boolean = {
+  def isSigned(e: Element): Boolean = {
     e match {
       case _: SInt | _: FixedPoint => true
       case _ => false
@@ -91,7 +87,7 @@ trait VerilogTbDump {
     new File(tbFileName).delete()
   }
 
-  def finishVerilogTB() {
+  def finishVerilogTb() {
     if (verilogTb) {
       tb write "\n    #`CLK_PERIOD $display(\"\\t **Ran through all test vectors**\"); $finish;\n"
       tb write "\n  end\n"
