@@ -13,4 +13,8 @@ See the [dsp-framework](https://github.com/ucb-art/dsp-framework) and [craft2-ch
 # Usage
 
 TODO: add a doc/ directory with more exhaustive documentation.
-TODO: add SAM documentation.
+
+# See Also
+
+[SAM documentation](/doc/SAM.md)
+[DSP Streaming Interface documentation](/doc/stream.md)
