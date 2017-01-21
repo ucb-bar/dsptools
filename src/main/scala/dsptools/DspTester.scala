@@ -6,7 +6,7 @@ import breeze.math.Complex
 import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3._
 import chisel3.iotesters.PeekPokeTester
-import dsptools.numbers.{DspComplex, DspReal}
+import dsptools.numbers.{DspComplex, DspReal, Real}
 import dsptools.Utilities._
 
 class DspTester[T <: Module](c: T,
@@ -247,7 +247,7 @@ class DspTester[T <: Module](c: T,
     }
   }
 
-  def dspExpect(data: DspComplex[_], expected: Complex, msg: String): Boolean = {
+  def dspExpect[X <: Data:Real](data: DspComplex[X], expected: Complex, msg: String): Boolean = {
     dspPeek(data) match {
       case Right(complex) =>
         println(f"expect got $complex expect $expected")
