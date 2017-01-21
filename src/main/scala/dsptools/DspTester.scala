@@ -237,7 +237,7 @@ class DspTester[T <: Module](c: T,
   }
 
   //scalastyle:off regex
-  def dspExpect(data: Data, expected: Double, msg: String): Unit = {
+  def dspExpect(data: Data, expected: Double, msg: String): Boolean = {
     dspPeek(data) match {
       case Left(double) =>
         println(f"expect got $double%15.8f expect $expected%15.8f")
@@ -247,12 +247,11 @@ class DspTester[T <: Module](c: T,
     }
   }
 
-  def dspExpect(data: DspComplex[_], expected: Complex, msg: String): Unit = {
+  def dspExpect(data: DspComplex[_], expected: Complex, msg: String): Boolean = {
     dspPeek(data) match {
       case Right(complex) =>
         println(f"expect got $complex expect $expected")
-        expect(nearlyEqual(complex.real, expected.real), msg)
-        expect(nearlyEqual(complex.imag, expected.imag), msg)
+        expect(nearlyEqual(complex.real, expected.real), msg) & expect(nearlyEqual(complex.imag, expected.imag), msg)
       case Left(double) =>
         throw DspException(s"dspExpect($data, $expected) returned $double when expecting complex")
     }
