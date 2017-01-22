@@ -257,26 +257,40 @@ class VerboseDspTester[T <: Module](dut: T,
     (good, tolDec)
   }
 
+  // Keep consistent with poke
+  private def roundExpected(data: Data, expected: Double): Double = {
+    data match {
+      case s: SInt => expected.round
+      case _ => expected
+    }
+  }
+
+  def dspExpect(data: Data, expected: Double): Boolean = dspExpect(data, expected, msg = "")
   override def dspExpect(data: Data, expected: Double, msg: String): Boolean = {
+    val expectedNew = roundExpected(data, expected)
     val path = getName(data)
     val (dblVal, bitVal) = expectDspPeek(data)
-    val (good, tolerance) = checkDecimal(data, expected, dblVal, bitVal)
+    val (good, tolerance) = checkDecimal(data, expectedNew, dblVal, bitVal)
     if (dispDSP || !good) logger println ( if (!good) Console.RED else "" + 
       s"""${msg}  EXPECT ${path} -> $dblVal == """ +
-        s"""$expected ${if (good) "PASS" else "FAIL, tolerance = $tolerance"}""" + Console.RESET)
+        s"""$expectedNew ${if (good) "PASS" else "FAIL, tolerance = $tolerance"}""" + Console.RESET)
     good
   }
 
+  def dspExpect[X <: Data:Real](data: DspComplex[X], expected: Complex): Boolean = dspExpect(data, expected, msg = "")
   override def dspExpect[X <: Data:Real](data: DspComplex[X], expected: Complex, msg: String): Boolean = {
+    val expectedNewR = roundExpected(data.real, expected.real)
+    val expectedNewI = roundExpected(data.imaginary, expected.imag)
     val path = getName(data)
     val (dblValR, bitValR) = expectDspPeek(data.real) 
     val (dblValI, bitValI) = expectDspPeek(data.imaginary)
-    val (goodR, toleranceR) = checkDecimal(data.real, expected.real, dblValR, bitValR)
-    val (goodI, toleranceI) = checkDecimal(data.imaginary, expected.imag, dblValI, bitValI)
+    val (goodR, toleranceR) = checkDecimal(data.real, expectedNewR, dblValR, bitValR)
+    val (goodI, toleranceI) = checkDecimal(data.imaginary, expectedNewI, dblValI, bitValI)
     val good = goodR & goodI
     if (dispDSP || !good) logger println ( if (!good) Console.RED else "" + 
       s"""${msg}  EXPECT ${path} -> $dblValR + $dblValI i == """ +
-        s"""$expected ${if (good) "PASS" else "FAIL, tolerance = $toleranceR"}""" + Console.RESET)   
+        s"""$expectedNewR + $expectedNewI i ${if (good) "PASS" else "FAIL, tolerance = $toleranceR"}""" + 
+          Console.RESET)   
     good 
   }
   
