@@ -44,7 +44,7 @@ class VerboseDspTester[T <: Module](c: T,
   private def validPokeTest(signal: Bits, value: BigInt) {
     val len = value.bitLength
     val neededLen = if (isSigned(signal)) len + 1 else len
-    if (neededLen > signal.getWidth) throw DspException(s"Poke value of $signal is not in input range")
+    if (neededLen > signal.getWidth) throw DspException(s"Poke value of ${getName(signal)} is not in input range")
   }
 
   // TODO: Get rid of duplication in chisel-testers
@@ -112,11 +112,7 @@ class VerboseDspTester[T <: Module](c: T,
   }
 
   override def peek(signal: Aggregate): IndexedSeq[BigInt] =  {
-    chisel3.iotesters.TestersCompatibility.flatten(signal) map { x => 
-      val o = peek(x)
-      peekPrint(x, o)
-      o
-    }
+    TestersCompatibility.flatten(signal) map { x => peek(x) }
   }
 
   // Peek at does not involve external signals -- no VerilogTB print
@@ -125,19 +121,19 @@ class VerboseDspTester[T <: Module](c: T,
   }
 
   override def expect(good: Boolean, msg: => String): Boolean = {
-    if (dispDSP || ! good) logger println s"""EXPECT AT $t $msg ${if (good) "PASS" else "FAIL"}"""
+    if (dispDSP || !good) logger println (if (!good) Console.RED else "" +
+      s"""EXPECT AT $t $msg ${if (good) "PASS" else "FAIL"}""" + Console.RESET)
     if (!good) fail
     good
   }
 
   override def expect(signal: Bits, expected: BigInt, msg: => String = ""): Boolean = {
     val path = getName(signal)
-    val got = peek(signal)
-    peekPrint(signal, got)
+    val got = updatableDSPVerbose.withValue(false) { peek(signal) }
     val good = got == expected  
-    if (dispDSP) logger println (
+    if (dispDSP || !good) logger println (if (!good) Console.RED else "" +
       s"""${msg}  EXPECT ${path} -> ${TestersCompatibility.bigIntToStr(got, dispBase)} == """ +
-        s"""${TestersCompatibility.bigIntToStr(expected, dispBase)} ${if (good) "PASS" else "FAIL"}""")
+        s"""${TestersCompatibility.bigIntToStr(expected, dispBase)} ${if (good) "PASS" else "FAIL"}""" + Console.RESET)
     if (!good) fail
     good
   }
@@ -149,13 +145,10 @@ class VerboseDspTester[T <: Module](c: T,
 
   ///////////////// UNDERLYING FUNCTIONS FROM DSP TESTER /////////////////
 
-  // TODO: Clean up naming
+  // TODO: Clean up naming, consolidate methods
 
   override def poke(signal: FixedPoint, value: Double): Unit = {
-    updatableDSPVerbose.withValue(dispBits) {
-      super.poke(signal, value)
-    }
-    if (dispDSP) logger println s"  POKE ${getName(signal)} <- ${value}"
+    dspPoke(signal, value)
   }
 
   override def dspPoke(bundle: Data, value: Double): Unit = {
@@ -187,27 +180,21 @@ class VerboseDspTester[T <: Module](c: T,
   }
 
   override def dspPeekDouble(data: Data): Double = {
-    val value = updatableDSPVerbose.withValue(dispBits) {
-      super.dspPeekDouble(data)
-    }
-    if (dispDSP) logger println s"  PEEK ${getName(data)} -> ${value}"
-    value 
+    dspPeek(data) match {
+      case Left(dbl) => dbl
+      case _ => throw DspException(s"dspPeekDouble data type can't be DSPComplex")
+    }  
   }
 
   override def dspPeekComplex(data: Data): Complex = {
-    val value = updatableDSPVerbose.withValue(dispBits) {
-      super.dspPeekComplex(data)
-    }
-    if (dispDSP) logger println s"  PEEK ${getName(data)} -> ${value.toString}"
-    value 
+    dspPeek(data) match {
+      case Right(cplx) => cplx
+      case _ => throw DspException(s"dspPeekComplex data type can't be T <: Data:Real")
+    } 
   }
 
   override def peek(signal: FixedPoint): Double = {
-    val value = updatableDSPVerbose.withValue(dispBits) {
-      super.peek(signal)
-    }
-    if (dispDSP) logger println s"  PEEK ${getName(signal)} -> ${value}" 
-    value
+    dspPeekDouble(signal)
   }
 
   ///////////////// SPECIALIZED DSP EXPECT /////////////////
@@ -228,7 +215,7 @@ class VerboseDspTester[T <: Module](c: T,
           val bi = peek(s)
           (bi.toDouble, bi)
         }
-        case _ => throw DspException("Peeked node $node has incorrect type ${node.getClass.getName}")
+        case _ => throw DspException("Peeked node ${getName(node)} has incorrect type ${node.getClass.getName}")
       }
     }
   }
@@ -248,7 +235,10 @@ class VerboseDspTester[T <: Module](c: T,
       case s: SInt => BigInt(expected0.round.toInt)
     }
 
-    if (expectedBits.bitLength > data.getWidth-1) throw DspException("Expected value is out of output node range")
+    data match {
+      case _: FixedPoint | _: SInt => 
+        if (expectedBits.bitLength > data.getWidth-1) throw DspException("Expected value is out of output node range")
+    }
 
     // Allow for some tolerance in error checking
     val (tolerance, tolDec) = data match {
@@ -272,7 +262,7 @@ class VerboseDspTester[T <: Module](c: T,
     val path = getName(data)
     val (dblVal, bitVal) = expectDspPeek(data)
     val (good, tolerance) = checkDecimal(data, expected, dblVal, bitVal)
-    if (dispDSP | !good) logger println ( if (!good) Console.RED else "" + 
+    if (dispDSP || !good) logger println ( if (!good) Console.RED else "" + 
       s"""${msg}  EXPECT ${path} -> $dblVal == """ +
         s"""$expected ${if (good) "PASS" else "FAIL, tolerance = $tolerance"}""" + Console.RESET)
     good
@@ -285,7 +275,7 @@ class VerboseDspTester[T <: Module](c: T,
     val (goodR, toleranceR) = checkDecimal(data.real, expected.real, dblValR, bitValR)
     val (goodI, toleranceI) = checkDecimal(data.imaginary, expected.imag, dblValI, bitValI)
     val good = goodR & goodI
-    if (dispDSP | !good) logger println ( if (!good) Console.RED else "" + 
+    if (dispDSP || !good) logger println ( if (!good) Console.RED else "" + 
       s"""${msg}  EXPECT ${path} -> $dblValR + $dblValI i == """ +
         s"""$expected ${if (good) "PASS" else "FAIL, tolerance = $toleranceR"}""" + Console.RESET)   
     good 
