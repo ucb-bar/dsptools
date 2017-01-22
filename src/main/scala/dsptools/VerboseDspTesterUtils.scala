@@ -42,7 +42,7 @@ trait VerilogTbDump {
     tb write s"`timescale ${dsptestersOpt.tbTimeUnitPs}ps / ${dsptestersOpt.tbTimePrecisionPs}ps\n"
     tb write s"`define CLK_PERIOD ${dsptestersOpt.clkMul}\n"
     tb write s"`define RESET_TIME ${dsptestersOpt.initTimeUnits}\n"
-    tb write s"`define CLK_DELTA ${dsptestersOpt.tbTimePrecisionPs/dsptestersOpt.tbTimeUnitPs}\n"
+    tb write s"`define CLK_DELTA ${dsptestersOpt.tbTimePrecisionPs.toDouble/dsptestersOpt.tbTimeUnitPs}\n"
 
     tb write "`define expect(nodeName, nodeVal, expVal, cycle) if (nodeVal !== expVal) begin " +
       "\\\n  $display(\"\\t ASSERTION ON %s FAILED @ CYCLE = %d, 0x%h != EXPECTED 0x%h\", " +
