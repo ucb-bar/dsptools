@@ -18,10 +18,10 @@ trait VerilogTbDump {
   val dsptestersOpt = dsptools.Driver.optionsManager.verboseDspTesterOptions
   val verilogTb = dsptestersOpt.genVerilogTb
 
+  val (inputs, outputs) = TestersCompatibility.getDataNames("io", dut.io) partition (_._1.dir == chisel3.INPUT)
+
   if (verilogTb) initVerilogTbFile()
   else deleteVerilogTbFile
-
-  val (inputs, outputs) = TestersCompatibility.getDataNames("io", dut.io) partition (_._1.dir == chisel3.INPUT)
 
   def isSigned(e: Element): Boolean = {
     e match {

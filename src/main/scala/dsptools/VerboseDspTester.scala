@@ -64,13 +64,14 @@ class VerboseDspTester[T <: Module](dut: T,
   override def step(n: Int) {
     if (dispDSP) logger println s"STEP ${n}x -> ${t+n}"
     stepPrint(n)
-    super.step(n)
+    backend.step(n)
+    incTime(n)
   }
 
   override def reset(n: Int = 1) {
     if (dispDSP) logger println s"RESET ${n}x -> ${t+n}"
     resetPrint(n)
-    super.reset(n)
+    backend.reset(n)
     incTime(n)
   }
 
@@ -80,6 +81,7 @@ class VerboseDspTester[T <: Module](dut: T,
   }
 
   override def poke(signal: Bits, value: BigInt): Unit = {
+    // bit-level poke is displayed as unsigned
     validPokeTest(signal, value)
     if (!signal.isLit) backend.poke(signal, value, None)(logger, dispDSP, dispBase)
     pokePrint(signal, value)
@@ -97,6 +99,7 @@ class VerboseDspTester[T <: Module](dut: T,
 
   override def peek(signal: Bits): BigInt = {
     val o = {
+      // bit-level peek is displayed as unsigned
       if (!signal.isLit) backend.peek(signal, None)(logger, dispDSP, dispBase) 
       else {
         val litVal = signal.litValue()
