@@ -39,10 +39,11 @@ class VerboseDspTester[T <: Module](dut: T,
     s"${signal.parentPathName}.${TestersCompatibility.validName(signal.instanceName)}"
   }
 
-  private def validPokeTest(signal: Bits, value: BigInt) {
+  private def validRangeTest(signal: Bits, value: BigInt) {
     val len = value.bitLength
     val neededLen = if (isSigned(signal)) len + 1 else len
-    if (neededLen > signal.getWidth) throw DspException(s"Poke value of ${getName(signal)} is not in input range")
+    if (neededLen > signal.getWidth) 
+      throw DspException(s"Poke/Expect value of ${getName(signal)} is not in node range")
   }
 
   // TODO: Get rid of duplication in chisel-testers
@@ -52,11 +53,7 @@ class VerboseDspTester[T <: Module](dut: T,
       if(bigInt.bitLength >= width) - ((BigInt(1) << width) - bigInt)
       else bigInt
     }
-    signal match {
-      case s: SInt => signFix
-      case f: FixedPoint => signFix
-      case _ => bigInt
-    }
+    if (isSigned(signal)) signFix else bigInt
   }
 
   ///////////////// OVERRIDE UNDERLYING FUNCTIONS FROM PEEK POKE TESTER /////////////////
@@ -82,7 +79,7 @@ class VerboseDspTester[T <: Module](dut: T,
 
   override def poke(signal: Bits, value: BigInt): Unit = {
     // bit-level poke is displayed as unsigned
-    validPokeTest(signal, value)
+    validRangeTest(signal, value)
     if (!signal.isLit) backend.poke(signal, value, None)(logger, dispDSP, dispBase)
     pokePrint(signal, value)
   }
@@ -129,6 +126,7 @@ class VerboseDspTester[T <: Module](dut: T,
   }
 
   override def expect(signal: Bits, expected: BigInt, msg: => String = ""): Boolean = {
+    validRangeTest(signal, expected)
     val path = getName(signal)
     val got = updatableDSPVerbose.withValue(false) { peek(signal) }
     val good = got == expected  
@@ -236,10 +234,7 @@ class VerboseDspTester[T <: Module](dut: T,
       case s: SInt => BigInt(expected0.round.toInt)
     }
 
-    data match {
-      case _: FixedPoint | _: SInt => 
-        if (expectedBits.bitLength > data.getWidth-1) throw DspException("Expected value is out of output node range")
-    }
+    validRangeTest(data, expectedBits)
 
     // Allow for some tolerance in error checking
     val (tolerance, tolDec) = data match {
