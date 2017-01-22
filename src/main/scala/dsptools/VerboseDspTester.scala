@@ -234,7 +234,10 @@ class VerboseDspTester[T <: Module](dut: T,
       case s: SInt => BigInt(expected0.round.toInt)
     }
 
-    validRangeTest(data, expectedBits)
+    data match {
+      case _: FixedPoint | _: SInt => 
+        if (expectedBits.bitLength > data.getWidth-1) throw DspException("Expected value is out of output node range")
+    }
 
     // Allow for some tolerance in error checking
     val (tolerance, tolDec) = data match {
