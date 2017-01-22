@@ -237,6 +237,7 @@ class VerboseDspTester[T <: Module](dut: T,
     data match {
       case _: FixedPoint | _: SInt => 
         if (expectedBits.bitLength > data.getWidth-1) throw DspException("Expected value is out of output node range")
+      case _ =>
     }
 
     // Allow for some tolerance in error checking
