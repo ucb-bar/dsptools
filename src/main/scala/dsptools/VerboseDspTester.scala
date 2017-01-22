@@ -11,11 +11,9 @@ import chisel3.internal.InstanceId
 
 import scala.util.DynamicVariable
 
-class VerboseDspTester[T <: Module](c: T,
+class VerboseDspTester[T <: Module](dut: T,
     base: Int = 16,
-    logFile: Option[java.io.File] = None) extends DspTester(c, base, logFile) with VerilogTbDump {
-
-  override val dut: T = c
+    logFile: Option[java.io.File] = None) extends DspTester(dut, base, logFile) with VerilogTbDump {
 
   val updatableBase = new DynamicVariable[Int](_base)
   private def dispBase = updatableBase.value
