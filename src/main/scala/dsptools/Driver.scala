@@ -8,8 +8,14 @@ import firrtl.{HasFirrtlOptions, ExecutionOptionsManager}
 import numbers.DspRealFactory
 import firrtl_interpreter._
 
+import scala.util.DynamicVariable
+
 
 object Driver {
+
+  private val optionsManagerVar = new DynamicVariable[Option[VerboseDspTesterOptionsManager]](None)
+  def optionsManager = optionsManagerVar.value.getOrElse(new VerboseDspTesterOptionsManager)
+
   def execute[T <: Module](
                             dutGenerator: () => T,
                             optionsManager: TesterOptionsManager
@@ -18,13 +24,23 @@ object Driver {
                             testerGen: T => PeekPokeTester[T]
                           ): Boolean = {
 
-    optionsManager.interpreterOptions = optionsManager.interpreterOptions.copy(
-      blackBoxFactories = optionsManager.interpreterOptions.blackBoxFactories :+ new DspRealFactory)
+    val om = optionsManager match {
+      case v: VerboseDspTesterOptionsManager => Some(v)
+      case t => None
+    }                       
 
-    val testerResult = {
-      iotesters.Driver.execute(dutGenerator, optionsManager)(testerGen)
+    optionsManagerVar.withValue(om) {                          
+
+      optionsManager.interpreterOptions = optionsManager.interpreterOptions.copy(
+        blackBoxFactories = optionsManager.interpreterOptions.blackBoxFactories :+ new DspRealFactory)
+
+      val testerResult = {
+        iotesters.Driver.execute(dutGenerator, optionsManager)(testerGen)
+      }
+      testerResult
+
     }
-    testerResult
+
   }
 
   def execute[T <: Module](
@@ -35,13 +51,13 @@ object Driver {
                             testerGen: T => PeekPokeTester[T]
                           ): Boolean = {
 
-    val optionsManager = new TesterOptionsManager {
+    val optionsManager = new VerboseDspTesterOptionsManager {
       interpreterOptions = interpreterOptions.copy(
         blackBoxFactories = interpreterOptions.blackBoxFactories :+ new DspRealFactory)
     }
 
     if(optionsManager.parse(args)) {
-      iotesters.Driver.execute(dutGenerator, optionsManager)(testerGen)
+      execute(dutGenerator, optionsManager)(testerGen)
     }
     else {
       optionsManager.parser.showUsageAsError()

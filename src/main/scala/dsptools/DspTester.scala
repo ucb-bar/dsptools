@@ -6,7 +6,7 @@ import breeze.math.Complex
 import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3._
 import chisel3.iotesters.PeekPokeTester
-import dsptools.numbers.{DspComplex, DspReal}
+import dsptools.numbers.{DspComplex, DspReal, Real}
 import dsptools.Utilities._
 
 class DspTester[T <: Module](c: T,
@@ -42,7 +42,7 @@ class DspTester[T <: Module](c: T,
       case c: DspComplex[_]  => c.underlyingType() match {
         case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
         case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
-        case "SInt" => poke(c.real.asInstanceOf[SInt], value.toInt)
+        case "SInt" => poke(c.real.asInstanceOf[SInt], value.round.toInt)
         case _ =>
           throw DspException(
             s"poke($bundle, $value): bundle DspComplex has unknown underlying type ${bundle.getClass.getName}")
@@ -62,8 +62,8 @@ class DspTester[T <: Module](c: T,
         dspPoke(c.real.asInstanceOf[DspReal], value.real)
         dspPoke(c.imaginary.asInstanceOf[DspReal], value.imag)
       case "SInt" =>
-        poke(c.real.asInstanceOf[SInt], value.real.toInt)
-        poke(c.imaginary.asInstanceOf[SInt], value.imag.toInt)
+        poke(c.real.asInstanceOf[SInt], value.real.round.toInt)
+        poke(c.imaginary.asInstanceOf[SInt], value.imag.round.toInt)
       case _ =>
         throw DspException(
           s"poke($c, $value): c DspComplex has unknown underlying type ${c.getClass.getName}")
@@ -145,10 +145,10 @@ class DspTester[T <: Module](c: T,
               s"peek($c): c DspComplex has unknown underlying type ${c.getClass.getName}")
         }
       case r: DspReal =>
-        val bigInt = super.peek(r.node)
+        val bigInt = peek(r.node)
         Left(bigIntBitsToDouble(bigInt))
       case r: FixedPoint =>
-        val bigInt = super.peek(r)
+        val bigInt = peek(r.asInstanceOf[Bits])
         Left(FixedPoint.toDouble(bigInt, r.binaryPoint.get))
       case s: SInt =>
         Left(peek(s).toDouble)
@@ -182,10 +182,10 @@ class DspTester[T <: Module](c: T,
           //        s"peek($c): c DspComplex has unknown underlying type ${c.getClass.getName}")
           //  }
           case _: DspReal =>
-            val bigInt = super.peek(u)
+            val bigInt = peek(u)
             Left(bigIntBitsToDouble(bigInt))
           case r: FixedPoint =>
-            val bigInt = super.peek(u)
+            val bigInt = peek(u)
             Left(toDoubleFromUnsigned(bigInt, r.getWidth, r.binaryPoint.get))
           // TODO:
           //case s: SInt =>
@@ -216,7 +216,7 @@ class DspTester[T <: Module](c: T,
   }
 
   def peek(signal: FixedPoint): Double = {
-    val bigInt = super.peek(signal.asInstanceOf[Bits])
+    val bigInt = peek(signal.asInstanceOf[Bits])
     signal.binaryPoint match {
       case KnownBinaryPoint(binaryPoint) =>
         val double = FixedPoint.toDouble(bigInt, binaryPoint)
@@ -237,7 +237,7 @@ class DspTester[T <: Module](c: T,
   }
 
   //scalastyle:off regex
-  def dspExpect(data: Data, expected: Double, msg: String): Unit = {
+  def dspExpect(data: Data, expected: Double, msg: String): Boolean = {
     dspPeek(data) match {
       case Left(double) =>
         println(f"expect got $double%15.8f expect $expected%15.8f")
@@ -247,12 +247,11 @@ class DspTester[T <: Module](c: T,
     }
   }
 
-  def dspExpect(data: DspComplex[_], expected: Complex, msg: String): Unit = {
+  def dspExpect(data: DspComplex[_], expected: Complex, msg: String): Boolean = {
     dspPeek(data) match {
       case Right(complex) =>
         println(f"expect got $complex expect $expected")
-        expect(nearlyEqual(complex.real, expected.real), msg)
-        expect(nearlyEqual(complex.imag, expected.imag), msg)
+        expect(nearlyEqual(complex.real, expected.real), msg) && expect(nearlyEqual(complex.imag, expected.imag), msg)
       case Left(double) =>
         throw DspException(s"dspExpect($data, $expected) returned $double when expecting complex")
     }

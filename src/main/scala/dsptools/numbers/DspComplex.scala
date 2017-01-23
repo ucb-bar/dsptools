@@ -7,8 +7,15 @@ import dsptools.{hasContext, DspException}
 import implicits._
 
 object DspComplex {
+
+  def apply[T <: Data:Ring](gen: T): DspComplex[T] = {
+    new DspComplex(gen.cloneType, gen.cloneType)
+  }
   def apply[T <: Data:Ring](real: T, imaginary: T): DspComplex[T] = {
-    new DspComplex(real.cloneType, imaginary.cloneType)
+    if (real.isLit() && imaginary.isLit())
+      new DspComplex(real, imaginary)
+    else 
+      new DspComplex(real.cloneType, imaginary.cloneType)
   }
   def wire[T <: Data:Ring](real: T, imaginary: T): DspComplex[T] = {
     val result = Wire(new DspComplex(real.cloneType, imaginary.cloneType))
