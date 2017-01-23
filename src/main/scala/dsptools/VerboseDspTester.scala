@@ -243,6 +243,7 @@ class VerboseDspTester[T <: Module](dut: T,
     // Allow for some tolerance in error checking
     val (tolerance, tolDec) = data match {
       case f: FixedPoint => (fixTolInt, FixedPoint.toDouble(fixTolInt, f.binaryPoint.get))
+      case s: SInt => (fixTolInt, fixTolInt.toDouble)
       case _ => (Utilities.doubleToBigIntBits(floTolDec), floTolDec)
     }
     val good = {
@@ -274,7 +275,7 @@ class VerboseDspTester[T <: Module](dut: T,
     val (good, tolerance) = checkDecimal(data, expectedNew, dblVal, bitVal)
     if (dispDSP || !good) logger println ( if (!good) Console.RED else "" + 
       s"""${msg}  EXPECT ${path} -> $dblVal == """ +
-        s"""$expectedNew ${if (good) "PASS" else "FAIL, tolerance = $tolerance"}""" + Console.RESET)
+        s"""$expectedNew ${if (good) "PASS" else "FAIL"}, tolerance = $tolerance""" + Console.RESET)
     good
   }
 
@@ -292,7 +293,7 @@ class VerboseDspTester[T <: Module](dut: T,
     val good = goodR & goodI
     if (dispDSP || !good) logger println ( if (!good) Console.RED else "" + 
       s"""${msg}  EXPECT ${path} -> $dblValR + $dblValI i == """ +
-        s"""$expectedNewR + $expectedNewI i ${if (good) "PASS" else "FAIL, tolerance = $toleranceR"}""" + 
+        s"""$expectedNewR + $expectedNewI i ${if (good) "PASS" else "FAIL"}, tolerance = $toleranceR""" + 
           Console.RESET)   
     good 
   }
