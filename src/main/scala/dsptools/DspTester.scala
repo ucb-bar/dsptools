@@ -251,7 +251,7 @@ class DspTester[T <: Module](c: T,
     dspPeek(data) match {
       case Right(complex) =>
         println(f"expect got $complex expect $expected")
-        expect(nearlyEqual(complex.real, expected.real), msg) & expect(nearlyEqual(complex.imag, expected.imag), msg)
+        expect(nearlyEqual(complex.real, expected.real), msg) && expect(nearlyEqual(complex.imag, expected.imag), msg)
       case Left(double) =>
         throw DspException(s"dspExpect($data, $expected) returned $double when expecting complex")
     }

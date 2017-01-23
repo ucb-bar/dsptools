@@ -16,9 +16,9 @@ object Driver {
   private val optionsManagerVar = new DynamicVariable[Option[VerboseDspTesterOptionsManager]](None)
   def optionsManager = optionsManagerVar.value.getOrElse(new VerboseDspTesterOptionsManager)
 
-  def execute[T <: Module, M <: TesterOptionsManager](
+  def execute[T <: Module](
                             dutGenerator: () => T,
-                            optionsManager: M
+                            optionsManager: TesterOptionsManager
                           )
                           (
                             testerGen: T => PeekPokeTester[T]
