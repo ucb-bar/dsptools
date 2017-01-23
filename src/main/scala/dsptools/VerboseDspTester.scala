@@ -276,6 +276,7 @@ class VerboseDspTester[T <: Module](dut: T,
     if (dispDSP || !good) logger println ( { if (!good) Console.RED else "" } + 
       s"""${msg}  EXPECT ${path} -> $dblVal == """ +
         s"""$expectedNew ${if (good) "PASS" else "FAIL"}, tolerance = $tolerance""" + Console.RESET)
+    if (!good) fail
     good
   }
 
@@ -295,6 +296,7 @@ class VerboseDspTester[T <: Module](dut: T,
       s"""${msg}  EXPECT ${path} -> $dblValR + $dblValI i == """ +
         s"""$expectedNewR + $expectedNewI i ${if (good) "PASS" else "FAIL"}, tolerance = $toleranceR""" + 
           Console.RESET)   
+    if (!good) fail
     good 
   }
   
