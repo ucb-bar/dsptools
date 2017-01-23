@@ -65,13 +65,16 @@ class BBFToInt extends BlackBox {
 
 class BBFIntPart extends BlackboxOneOperand
 
-class DspReal extends Bundle {
-  val node = Output(UInt(DspReal.UnderlyingWidth.W))
+class DspReal(lit: Option[BigInt] = None) extends Bundle {
+  val node: UInt = lit match {
+    case Some(x) => x.U(DspReal.UnderlyingWidth.W)
+    case _ => Output(UInt(DspReal.UnderlyingWidth.W))
+  }
 
   private def oneOperandOperator(blackbox_gen: => BlackboxOneOperand) : DspReal = {
     val blackbox = blackbox_gen
     blackbox.io.in := node
-    val out = Wire(new DspReal)
+    val out = Wire(new DspReal())
     out.node := blackbox.io.out
     out
   }
@@ -80,7 +83,7 @@ class DspReal extends Bundle {
     val blackbox = blackbox_gen
     blackbox.io.in1 := node
     blackbox.io.in2 := arg1.node
-    val out = Wire(new DspReal)
+    val out = Wire(new DspReal())
     out.node := blackbox.io.out
     out
   }
@@ -164,9 +167,7 @@ object DspReal {
   def apply(value: Double): DspReal = {
     def longAsUnsignedBigInt(in: Long) = (BigInt(in >>> 1) << 1) + (in & 1)
     def doubleToBits(in: Double) = longAsUnsignedBigInt(java.lang.Double.doubleToRawLongBits(value))
-    val out = Wire(new DspReal)
-    out.node := doubleToBits(value).U(DspReal.UnderlyingWidth.W)
-    out
+    new DspReal(Some(doubleToBits(value)))
   }
 
   /**
@@ -175,13 +176,13 @@ object DspReal {
   def apply(value: UInt): DspReal = {
     val blackbox = Module(new BBFFromInt)
     blackbox.io.in := value
-    val out = Wire(new DspReal)
+    val out = Wire(new DspReal())
     out.node := blackbox.io.out
     out
   }
 
   // just the typ
-  def apply(): DspReal = new DspReal
+  def apply(): DspReal = new DspReal()
 }
 
 trait DspRealRing extends Any with Ring[DspReal] with hasContext {
