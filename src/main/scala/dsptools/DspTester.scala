@@ -247,7 +247,7 @@ class DspTester[T <: Module](c: T,
     }
   }
 
-  def dspExpect[X <: Data:Real](data: DspComplex[X], expected: Complex, msg: String): Boolean = {
+  def dspExpect(data: DspComplex[_], expected: Complex, msg: String): Boolean = {
     dspPeek(data) match {
       case Right(complex) =>
         println(f"expect got $complex expect $expected")

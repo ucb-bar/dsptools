@@ -278,15 +278,17 @@ class VerboseDspTester[T <: Module](dut: T,
     good
   }
 
-  def dspExpect[X <: Data:Real](data: DspComplex[X], expected: Complex): Boolean = dspExpect(data, expected, msg = "")
-  override def dspExpect[X <: Data:Real](data: DspComplex[X], expected: Complex, msg: String): Boolean = {
-    val expectedNewR = roundExpected(data.real, expected.real)
-    val expectedNewI = roundExpected(data.imaginary, expected.imag)
+  def dspExpect(data: DspComplex[_], expected: Complex): Boolean = dspExpect(data, expected, msg = "")
+  override def dspExpect(data: DspComplex[_], expected: Complex, msg: String): Boolean = {
+    val dataReal = data.real.asInstanceOf[Data]
+    val dataImag = data.imaginary.asInstanceOf[Data]
+    val expectedNewR = roundExpected(dataReal, expected.real)
+    val expectedNewI = roundExpected(dataImag, expected.imag)
     val path = getName(data)
-    val (dblValR, bitValR) = expectDspPeek(data.real) 
-    val (dblValI, bitValI) = expectDspPeek(data.imaginary)
-    val (goodR, toleranceR) = checkDecimal(data.real, expectedNewR, dblValR, bitValR)
-    val (goodI, toleranceI) = checkDecimal(data.imaginary, expectedNewI, dblValI, bitValI)
+    val (dblValR, bitValR) = expectDspPeek(dataReal) 
+    val (dblValI, bitValI) = expectDspPeek(dataImag)
+    val (goodR, toleranceR) = checkDecimal(dataReal, expectedNewR, dblValR, bitValR)
+    val (goodI, toleranceI) = checkDecimal(dataImag, expectedNewI, dblValI, bitValI)
     val good = goodR & goodI
     if (dispDSP || !good) logger println ( if (!good) Console.RED else "" + 
       s"""${msg}  EXPECT ${path} -> $dblValR + $dblValI i == """ +
