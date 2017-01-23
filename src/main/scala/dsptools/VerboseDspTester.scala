@@ -119,7 +119,7 @@ class VerboseDspTester[T <: Module](dut: T,
   }
 
   override def expect(good: Boolean, msg: => String): Boolean = {
-    if (dispDSP || !good) logger println (if (!good) Console.RED else "" +
+    if (dispDSP || !good) logger println ( { if (!good) Console.RED else "" } +
       s"""EXPECT AT $t $msg ${if (good) "PASS" else "FAIL"}""" + Console.RESET)
     if (!good) fail
     good
@@ -130,7 +130,7 @@ class VerboseDspTester[T <: Module](dut: T,
     val path = getName(signal)
     val got = updatableDSPVerbose.withValue(false) { peek(signal) }
     val good = got == expected  
-    if (dispDSP || !good) logger println (if (!good) Console.RED else "" +
+    if (dispDSP || !good) logger println ( { if (!good) Console.RED else "" } +
       s"""${msg}  EXPECT ${path} -> ${TestersCompatibility.bigIntToStr(got, dispBase)} == """ +
         s"""${TestersCompatibility.bigIntToStr(expected, dispBase)} ${if (good) "PASS" else "FAIL"}""" + Console.RESET)
     if (!good) fail
@@ -273,7 +273,7 @@ class VerboseDspTester[T <: Module](dut: T,
     val path = getName(data)
     val (dblVal, bitVal) = expectDspPeek(data)
     val (good, tolerance) = checkDecimal(data, expectedNew, dblVal, bitVal)
-    if (dispDSP || !good) logger println ( if (!good) Console.RED else "" + 
+    if (dispDSP || !good) logger println ( { if (!good) Console.RED else "" } + 
       s"""${msg}  EXPECT ${path} -> $dblVal == """ +
         s"""$expectedNew ${if (good) "PASS" else "FAIL"}, tolerance = $tolerance""" + Console.RESET)
     good
@@ -291,7 +291,7 @@ class VerboseDspTester[T <: Module](dut: T,
     val (goodR, toleranceR) = checkDecimal(dataReal, expectedNewR, dblValR, bitValR)
     val (goodI, toleranceI) = checkDecimal(dataImag, expectedNewI, dblValI, bitValI)
     val good = goodR & goodI
-    if (dispDSP || !good) logger println ( if (!good) Console.RED else "" + 
+    if (dispDSP || !good) logger println ( { if (!good) Console.RED else "" } + 
       s"""${msg}  EXPECT ${path} -> $dblValR + $dblValI i == """ +
         s"""$expectedNewR + $expectedNewI i ${if (good) "PASS" else "FAIL"}, tolerance = $toleranceR""" + 
           Console.RESET)   
