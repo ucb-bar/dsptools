@@ -5,6 +5,7 @@ package dsptools
 import breeze.math.Complex
 import dsptools.numbers.{DspComplex, DspReal, Real}
 import chisel3._
+import chisel3.experimental._
 import chisel3.iotesters.TestersCompatibility
 import dsptools.Utilities.bigIntBitsToDouble
 import chisel3.internal.InstanceId
