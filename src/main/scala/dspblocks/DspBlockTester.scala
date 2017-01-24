@@ -86,7 +86,7 @@ trait InputTester {
   }
 }
 
-trait StreamInputTester[T <: DspBlock] extends InputTester { this: DspTester[T] =>
+trait StreamInputTester[T <: Module] extends InputTester { this: DspTester[T] =>
   def dut: T
   def in: dspjunctions.ValidWithSync[UInt]
   def inputStep: Unit = {

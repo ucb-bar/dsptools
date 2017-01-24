@@ -43,7 +43,7 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) {
 
   // memories
   // TODO: ensure that the master never tries to read beyond the depth of the SeqMem
-  val mem = SeqMem(config.memDepth, UInt(width = w))
+  val mem = SeqMem(config.memDepth, UInt(w.W))
 
   // AXI4-Stream side
   val wIdle :: wReady :: wRecord :: Nil = Enum(Bits(), 3)
@@ -98,20 +98,20 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) {
   // AXI4 side
   val rIdle :: rWait :: rReadFirst :: rSend :: Nil = Enum(Bits(), 4)
   val rState = Reg(UInt(3.W), init=rIdle)
-  val rAddr = Reg(UInt(width = nastiXAddrBits - log2Ceil(w/8)))
-  val rLen = Reg(UInt(width = nastiXLenBits - log2Ceil(w/nastiXDataBits)))
+  val rAddr = Reg(UInt((nastiXAddrBits - log2Ceil(w/8)).W))
+  val rLen = Reg(UInt((nastiXLenBits - log2Ceil(w/nastiXDataBits)).W))
   val rawData = mem.read(rAddr) // this will read every cycle; how do we make it single-ported?
-  val rData = Reg(UInt(width = w))
+  val rData = Reg(UInt(w.W))
   val rCount =
-    if (w == nastiXDataBits) Reg(UInt(width = 1))
-    else Reg(UInt(width = log2Ceil(w/nastiXDataBits)))
+    if (w == nastiXDataBits) Reg(UInt(1.W))
+    else Reg(UInt(log2Ceil(w/nastiXDataBits).W))
   val rId = Reg(io.out.ar.bits.id.cloneType)
 
   // state must be Idle here, since fire happens when ar.ready is high
   // grab the address information, then wait for data
   when (io.out.ar.fire()) {
-    rAddr := io.out.ar.bits.addr >> UInt(log2Ceil(w/8))
-    rLen  := io.out.ar.bits.len  >> UInt(log2Ceil(w/nastiXDataBits))
+    rAddr := io.out.ar.bits.addr >> (log2Ceil(w/8)).U
+    rLen  := io.out.ar.bits.len  >> (log2Ceil(w/nastiXDataBits)).U
     rState := rWait
   }
 
@@ -119,26 +119,26 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) {
   when (rState === rWait) { rState := rReadFirst }
   when (rState === rReadFirst) {
     rData := rawData
-    rAddr := rAddr + UInt(1)
-    rCount := UInt(w/nastiXDataBits-1)
+    rAddr := rAddr + 1.U
+    rCount := (w/nastiXDataBits-1).U
     rId := io.out.ar.bits.id // seems unnecessary, since rId is always this
     rState := rSend
   }
 
   // wait for ready from master when in Send state
   when (io.out.r.fire()) {
-    when (rCount === UInt(0)) {
-      when (rLen === UInt(0)) {
+    when (rCount === 0.U) {
+      when (rLen === 0.U) {
         rState := rIdle
       } .otherwise {
         rData := rawData
-        rAddr := rAddr + UInt(1)
-        rLen := rLen - UInt(1)
-        rCount := UInt(w/nastiXDataBits-1)
+        rAddr := rAddr + 1.U
+        rLen := rLen - 1.U
+        rCount := (w/nastiXDataBits-1).U
       }
     } .otherwise {
-      rData := rData >> UInt(nastiXDataBits)
-      rCount := rCount - UInt(1)
+      rData := rData >> (nastiXDataBits).U
+      rCount := rCount - 1.U
     }
   }
 
@@ -147,25 +147,25 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) {
   io.out.r.bits := NastiReadDataChannel(
     id = rId,
     data = rData(nastiXDataBits - 1, 0),
-    last = rLen === UInt(0) && rCount === UInt(0))
+    last = rLen === 0.U && rCount === 0.U)
 
   // no write capabilities yet
-  io.out.aw.ready := Bool(false)
-  io.out.w.ready := Bool(false)
-  io.out.b.valid := Bool(false)
+  io.out.aw.ready := false.B
+  io.out.w.ready := false.B
+  io.out.b.valid := false.B
 
   // for now
   require(w % nastiXDataBits == 0)
 
   assert(!io.out.ar.valid ||
-    (io.out.ar.bits.addr(log2Ceil(w/8)-1, 0) === UInt(0) &&
+    (io.out.ar.bits.addr(log2Ceil(w/8)-1, 0) === 0.U &&
      io.out.ar.bits.len(log2Ceil(w/nastiXDataBits)-1, 0).andR &&
-     io.out.ar.bits.size === UInt(log2Up(nastiXDataBits/8))),
+     io.out.ar.bits.size === (log2Up(nastiXDataBits/8)).U),
    "Invalid read request")
 
   // required by AXI4 spec
   when (reset) {
-    io.out.r.valid := Bool(false)
+    io.out.r.valid := false.B
   }
 }
 
