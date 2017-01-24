@@ -83,3 +83,12 @@ trait Real[A<:Data] extends Any with Ring[A] with ConvertableTo[A] with IsReal[A
   def fromReal(a: spire.math.Real): A = fromDouble(a.toDouble)
 }
 
+object Real {
+  def apply[A<:Data](implicit A: Real[A]): Real[A] = A
+}
+
+/* Needs to be redefined from spire */
+object Ring {
+  def apply[A<:Data](implicit A: Ring[A]): Ring[A] = A
+}
+
