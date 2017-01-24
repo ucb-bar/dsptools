@@ -16,7 +16,8 @@ import testchipip._
 //import dsptools.Utilities._
 import scala.math._
 
-case object DspBlockKey extends Field[DspBlockParameters]
+case object DspBlockId extends Field[String]
+case class DspBlockKey(id: String) extends Field[DspBlockParameters]
 
 case class DspBlockParameters (
   inputWidth: Int,
@@ -25,11 +26,13 @@ case class DspBlockParameters (
 
 trait HasDspBlockParameters {
   implicit val p: Parameters
-  def inputWidth  = p(DspBlockKey).inputWidth
-  def outputWidth = p(DspBlockKey).outputWidth
+  def dspBlockExternal = p(DspBlockKey(p(DspBlockId)))
+  def inputWidth  = dspBlockExternal.inputWidth
+  def outputWidth = dspBlockExternal.outputWidth
 }
 
-case object GenKey extends Field[GenParameters]
+// uses DspBlockId
+case class GenKey(id: String) extends Field[GenParameters]
 
 trait GenParameters {
   def genIn [T <: Data]: T
@@ -40,7 +43,7 @@ trait GenParameters {
 
 trait HasGenParameters[T <: Data, V <: Data] {
   implicit val p: Parameters
-  def genExternal = p(GenKey)
+  def genExternal = p(GenKey(p(DspBlockId)))
   def genIn(dummy: Int = 0)  = genExternal.genIn[T]
   def genOut(dummy: Int = 0) = genExternal.genOut[V]
   def lanesIn  = genExternal.lanesIn
@@ -65,7 +68,7 @@ trait DspBlockIO {
 
   val in  = Input( ValidWithSync(UInt(inputWidth.W)))
   val out = Output(ValidWithSync(UInt(outputWidth.W)))
-  val axi = new NastiIO().flip
+  val axi = Flipped(new NastiIO())
 }
 
 class BasicDspBlockIO()(implicit val p: Parameters) extends Bundle with HasDspBlockParameters with DspBlockIO {
@@ -97,9 +100,13 @@ abstract class LazyDspBlock()(implicit val p: Parameters) extends LazyModule wit
   println(s"Base address for $name is $baseAddr")
 }
 
-abstract class DspBlock(outer: LazyDspBlock, b: => Option[Bundle with DspBlockIO] = None)
+abstract class DspBlock(val outer: LazyDspBlock, b: => Option[Bundle with DspBlockIO] = None)
   (implicit val p: Parameters) extends LazyModuleImp(outer) with HasDspBlockParameters {
   val io: Bundle with DspBlockIO = IO(b.getOrElse(new BasicDspBlockIO))
+
+  // override val desiredName = this.name
+
+  def addrmap = testchipip.SCRAddressMap(outer.scrbuilder.devName).get
 
   def unpackInput[T <: Data](lanes: Int, genIn: T) = {
     val i = Wire(ValidWithSync(Vec(lanes, genIn.cloneType)))
@@ -127,6 +134,8 @@ abstract class DspBlock(outer: LazyDspBlock, b: => Option[Bundle with DspBlockIO
 
   def control(name: String) = scr.control(name)
   def status(name : String) = scr.status(name)
+
+  status("uuid") := this.hashCode.U
 }
 
 class GenDspBlockIO[T <: Data, V <: Data]()(implicit val p: Parameters)
