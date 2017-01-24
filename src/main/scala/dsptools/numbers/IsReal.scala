@@ -92,3 +92,6 @@ object Ring {
   def apply[A<:Data](implicit A: Ring[A]): Ring[A] = A
 }
 
+object ConvertableTo {
+  def apply[A<:Data](implicit A: ConvertableTo[A]): ConvertableTo[A] = A
+}

@@ -66,7 +66,6 @@ trait FixedPointIsReal extends Any with IsReal[FixedPoint] with FixedPointOrder 
 
 trait ConvertableToFixedPoint extends ConvertableTo[FixedPoint] with hasContext {
   def fromShort(n: Short): FixedPoint = FixedPoint.fromBigInt(n.toInt)
-  //def fromAlgebraic(n: Algebraic): FixedPoint = FixedPoint.fromBigInt(n.toBigInt)
   def fromBigInt(n: BigInt): FixedPoint = FixedPoint.fromBigInt(n)
   def fromByte(n: Byte): FixedPoint = FixedPoint.fromBigInt(n.toInt)
   def fromDouble(n: Double): FixedPoint = FixedPoint.fromDouble(n)
