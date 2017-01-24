@@ -5,6 +5,7 @@ package dspblocks
 import breeze.math.Complex
 import cde._
 import chisel3._
+import chisel3.experimental._
 import chisel3.iotesters.PeekPokeTester
 import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3.util.log2Up
