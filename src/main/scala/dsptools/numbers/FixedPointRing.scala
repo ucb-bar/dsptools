@@ -3,7 +3,8 @@
 package dsptools.numbers
 
 import chisel3._
-import dsptools.{hasContext, DspContext, Grow}
+import chisel3.experimental.FixedPoint
+import dsptools.{DspContext, Grow, hasContext}
 
 /**
   * Defines basic math functions for FixedPoint numbers

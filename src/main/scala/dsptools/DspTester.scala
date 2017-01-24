@@ -5,6 +5,7 @@ package dsptools
 import breeze.math.Complex
 import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3._
+import chisel3.experimental.FixedPoint
 import chisel3.iotesters.PeekPokeTester
 import dsptools.numbers.{DspComplex, DspReal, Real}
 import dsptools.Utilities._

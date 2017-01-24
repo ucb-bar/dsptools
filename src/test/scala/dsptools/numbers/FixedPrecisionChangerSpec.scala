@@ -3,8 +3,9 @@
 package dsptools.numbers
 
 import chisel3._
+import chisel3.experimental.FixedPoint
 import dsptools.DspTester
-import org.scalatest.{Matchers, FreeSpec}
+import org.scalatest.{FreeSpec, Matchers}
 
 //scalastyle:off magic.number
 

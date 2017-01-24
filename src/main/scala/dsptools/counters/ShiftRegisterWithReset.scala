@@ -3,7 +3,7 @@
 package dsptools.counters
 
 import chisel3._
-import chisel3.util.{Counter, RegEnable}
+import chisel3.util.RegEnable
 
 object ShiftRegisterWithReset
 {

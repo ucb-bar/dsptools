@@ -3,6 +3,7 @@
 package dsptools
 
 import chisel3._
+import chisel3.experimental.FixedPoint
 import dsptools.numbers.DspReal
 import spire.algebra.Ring
 

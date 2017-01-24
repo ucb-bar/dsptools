@@ -3,7 +3,8 @@
 package dsptools.numbers
 
 import chisel3._
-import dsptools.{hasContext, DspException}
+import chisel3.experimental.FixedPoint
+import dsptools.{DspException, hasContext}
 import implicits._
 
 object DspComplex {
