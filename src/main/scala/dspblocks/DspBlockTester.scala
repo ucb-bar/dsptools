@@ -83,7 +83,7 @@ trait InputTester {
   }
 }
 
-trait StreamInputTester[T <: DspBlock] extends InputTester { this: PeekPokeTester[T] =>
+trait StreamInputTester[T <: DspBlock] extends InputTester { this: DspTester[T] =>
   def dut: T
   def inputStep: Unit = {
     if (streamInValid && streamInIter.hasNext) {
@@ -162,7 +162,7 @@ trait OutputTester {
   }
 }
 
-trait StreamOutputTester[T <: DspBlock] extends OutputTester { this: PeekPokeTester[T] =>
+trait StreamOutputTester[T <: DspBlock] extends OutputTester { this: DspTester[T] =>
   def dut: T
   def outputStep: Unit = {
     if (peek(dut.io.out.valid) != BigInt(0)) {
@@ -171,7 +171,7 @@ trait StreamOutputTester[T <: DspBlock] extends OutputTester { this: PeekPokeTes
   }
 }
 
-trait AXIOutputTester[T <: Module] extends OutputTester with AXIRWTester[T] with InputTester { this: PeekPokeTester[T] =>
+trait AXIOutputTester[T <: Module] extends OutputTester with AXIRWTester[T] with InputTester { this: DspTester[T] =>
   def ctrlAXI: NastiIO
   def dataAXI: NastiIO
   var axiInFlight: Bool
@@ -184,10 +184,10 @@ trait AXIOutputTester[T <: Module] extends OutputTester with AXIRWTester[T] with
 }
 
 trait StreamIOTester[T <: DspBlock] extends StreamInputTester[T] with StreamOutputTester[T] {
-  this: PeekPokeTester[T] =>
+  this: DspTester[T] =>
 }
 
-trait AXIRWTester[T <: Module] { this: PeekPokeTester[T] =>
+trait AXIRWTester[T <: Module] { this: DspTester[T] =>
 
   def axi: NastiIO
   def maxWait = 100
@@ -280,8 +280,7 @@ trait AXIRWTester[T <: Module] { this: PeekPokeTester[T] =>
 
     // s_write_data
     poke(axi.w.valid, 1)
-    // TODO
-    // dspPokeAs(axi.w.bits.data, value, typ)
+    dspPokeAs(axi.w.bits.data, value, typ)
     poke(axi.w.bits.strb, 0xFF)
     poke(axi.w.bits.last, 1)
     poke(axi.w.bits.id, 0)
