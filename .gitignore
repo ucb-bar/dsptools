@@ -2,6 +2,7 @@
 src/main/scala/dsptools/sandbox.sc
 test_run_dir/
 *.fir
+*.anno
 ### XilinxISE template
 # intermediate build files
 *.bgn
