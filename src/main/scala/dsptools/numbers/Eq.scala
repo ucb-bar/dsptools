@@ -2,7 +2,7 @@
 
 package dsptools.numbers
 
-import chisel3.{Bool, Bundle, Data}
+import chisel3.{Bool, Bundle, Data, Wire}
 import chisel3.util.{Valid, ValidIO}
 
 /**
@@ -62,7 +62,7 @@ object ComparisonHelper {
     ret
   }
   def apply(eq: Bool, lt: Bool): ComparisonBundle = {
-    val ret = new ComparisonBundle()
+    val ret = Wire(new ComparisonBundle().cloneType)
     ret.eq := eq
     ret.lt := lt
     ret

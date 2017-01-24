@@ -6,12 +6,6 @@ import chisel3.Data
 
 import scala.language.implicitConversions
 
-/**
-  * Much of this is drawn from non/spire, but using Chisel Bools instead of
-  * Java Bools. I suppose a more general solution would be generic in
-  * return type, but the use cases there seem obscure.
-  */
-
 trait EqSyntax {
   implicit def eqOps[A<:Data:Eq](a:A): EqOps[A] = new EqOps(a)
 }

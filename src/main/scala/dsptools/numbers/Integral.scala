@@ -16,7 +16,7 @@ object Integer {
   @inline final def apply[A<:Data](implicit ev: Integer[A]): Integer[A] = ev
 }
 
-class IntegralOps[A<:Data](lhs: A)(implicit ev: Integer[A]) {
+class IntegerOps[A<:Data](lhs: A)(implicit ev: Integer[A]) {
   def mod(rhs: A): A = ev.mod(lhs, rhs)
   def %(rhs: A): A = mod(rhs)
   //def factor: prime.Factors = prime.factor(toSafeLong)
