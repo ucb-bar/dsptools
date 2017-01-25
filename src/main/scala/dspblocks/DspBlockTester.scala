@@ -103,6 +103,7 @@ trait StreamInputTester[T <: Module] extends InputTester { this: DspTester[T] =>
 trait OutputTester {
   def outputStep: Unit
   protected val streamOut_ = new scala.collection.mutable.Queue[scala.collection.mutable.Queue[BigInt]]
+  streamOut_ += new scala.collection.mutable.Queue[BigInt]() // add an initial queue in case sync never goes high
   val streamOut: Seq[Seq[BigInt]] = streamOut_
   // unpack normal output data types
   def unpackOutputStream[T<:Data](gen: T, lanesOut: Int): Seq[Double] = {
