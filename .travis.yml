@@ -18,5 +18,5 @@ install:
   - bash .install_deps.sh
 
 script:
-  - sbt test
+  - sbt "testOnly dspblocks.DspBlockTesterSpec"
 
