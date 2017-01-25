@@ -10,7 +10,7 @@ if [ ! -d $TRAVIS_BUILD_DIR/lib ]; then
 fi
 orgs=( ucb-bar ucb-bar ucb-bar ucb-bar ucb-bar ucb-art grebe )
 repos=( firrtl chisel3 firrtl-interpreter chisel-testers dsptools rocket-chip testchipip )
-branches=( master master master master master master chisel3fix )
+branches=( master master master master master master chisel3switch )
 
 for idx in "${!repos[@]}"; do
     org=${orgs[$idx]}
