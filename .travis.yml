@@ -1,0 +1,22 @@
+git:
+  submodules: true
+language: scala
+# run on new infrastructure
+sudo: false
+
+cache:
+  directories:
+    $HOME/.ivy2
+    $INSTALL_DIR
+
+env:
+  global:
+    INSTALL_DIR=$TRAVIS_BUILD_DIR/install
+
+install:
+  # Install dependencies
+  - bash .install_deps.sh
+
+script:
+  - sbt test
+
