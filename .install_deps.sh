@@ -32,11 +32,4 @@ for idx in "${!repos[@]}"; do
         sbt pack
         cp target/pack/lib/*.jar $TRAVIS_BUILD_DIR/lib
     fi
-
 done
-
-
-# this is silly, but necessary
-# cd $INSTALL_DIR/rocket-chip
-# sbt pack
-# cp target/pack/lib/*.jar $TRAVIS_BUILD_DIR/lib
