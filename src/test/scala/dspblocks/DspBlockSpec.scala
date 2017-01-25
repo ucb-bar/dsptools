@@ -83,7 +83,7 @@ class PTBSTester(dut: DspChain) extends DspChainTester(dut) {
 class DspBlockTesterSpec extends FlatSpec with Matchers {
   val manager = new TesterOptionsManager {
     testerOptions = TesterOptions(backendName = "firrtl", testerSeed = 7L)
-    interpreterOptions = InterpreterOptions(setVerbose = true, writeVCD = false)
+    interpreterOptions = InterpreterOptions(setVerbose = false, writeVCD = false)
   }
 
 
