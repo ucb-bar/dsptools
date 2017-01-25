@@ -5,11 +5,12 @@ if [ ! -d $INSTALL_DIR ]; then
     mkdir $INSTALL_DIR
 fi
 
-git --version
-
+if [ ! -d $TRAVIS_BUILD_DIR/lib ]; then
+    mkdir $TRAVIS_BUILD_DIR/lib
+fi
 orgs=( ucb-bar ucb-bar ucb-bar ucb-bar ucb-bar ucb-art ucb-art )
 repos=( firrtl chisel3 firrtl-interpreter chisel-testers dsptools rocket-chip testchipip )
-branches=( master master master master master craftFork chisel3fix )
+branches=( master master master master master master chisel3fix )
 
 for idx in "${!repos[@]}"; do
     org=${orgs[$idx]}
@@ -20,6 +21,10 @@ for idx in "${!repos[@]}"; do
     fi
     cd $INSTALL_DIR/$repo
     git remote update
-    git checkout origin/$branch
+    git checkout $branch
     sbt publish-local
 done
+
+cd $INSTALL_DIR/rocket-chip
+sbt pack
+cp target/pack/lib/*.jar $TRAVIS_BUILD_DIR/lib
