@@ -5,6 +5,7 @@ package dspblocks
 import breeze.math.Complex
 import cde._
 import chisel3._
+import chisel3.experimental._
 import chisel3.iotesters.PeekPokeTester
 import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3.util.log2Up
@@ -86,7 +87,8 @@ trait InputTester {
   }
 }
 
-trait StreamInputTester[T <: Module] extends InputTester { this: PeekPokeTester[T] =>
+trait StreamInputTester[T <: Module] extends InputTester { this: DspTester[T] =>
+  def dut: T
   def in: dspjunctions.ValidWithSync[UInt]
   def inputStep: Unit = {
     if (streamInValid && streamInIter.hasNext) {
@@ -165,7 +167,7 @@ trait OutputTester {
   }
 }
 
-trait StreamOutputTester[T <: DspBlock] extends OutputTester { this: PeekPokeTester[T] =>
+trait StreamOutputTester[T <: DspBlock] extends OutputTester { this: DspTester[T] =>
   def dut: T
   def outputStep: Unit = {
     if (peek(dut.io.out.sync) != BigInt(0)) {
@@ -242,7 +244,7 @@ trait AXIOutputTester[T <: Module] extends OutputTester with AXIRWTester[T] with
 }
 
 trait StreamIOTester[T <: DspBlock] extends StreamInputTester[T] with StreamOutputTester[T] {
-  this: PeekPokeTester[T] =>
+  this: DspTester[T] =>
 }
 
 trait AXIRWTester[T <: Module] { this: DspTester[T] =>
@@ -338,7 +340,6 @@ trait AXIRWTester[T <: Module] { this: DspTester[T] =>
 
     // s_write_data
     poke(axi.w.valid, 1)
-    // TODO
     dspPokeAs(axi.w.bits.data, value, typ)
     poke(axi.w.bits.strb, 0xFF)
     poke(axi.w.bits.last, 1)
