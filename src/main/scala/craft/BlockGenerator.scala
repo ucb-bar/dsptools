@@ -347,7 +347,7 @@ trait DspGeneratorApp extends GeneratorApp {
 
   def makeParameters(factory: ObjectFactory): SpiritParameters = {
     val parameters = new SpiritParameters()
-    val config = new DspConfig()
+    val config = new sam.DspConfig()
     for ( (name, value) <- config.getIPXACTParameters) {
       println("parameter: %s, value: %s".format(name, value))
       val nameValuePairType = new NameValuePairType

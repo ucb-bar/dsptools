@@ -56,7 +56,7 @@ class SAMWrapperTester(c: SAMWrapper)(implicit p: Parameters) extends DspBlockTe
   poke(xbar.r.ready, 0)
   val xbarDataWidth = xbar.w.bits.data.getWidth
   val xbarDataBytes = xbarDataWidth / 8
-  val w = (ceil(p(DspBlockKey).inputWidth*1.0/xbarDataWidth)*xbarDataWidth).toInt
+  val w = (ceil(p(DspBlockKey(p(DspBlockId))).inputWidth*1.0/xbarDataWidth)*xbarDataWidth).toInt
   override val maxWait = 100
   val maxData = config.memDepth*(w/xbarDataWidth)
   def xbarRead(startAddr: Int, addrCount: Int): Array[BigInt] = {
