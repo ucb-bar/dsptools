@@ -9,6 +9,7 @@ import java.util.Collection
 import java.math.BigInteger
 import rocketchip._
 import junctions._
+import dspjunctions._
 import cde.Parameters
 
 class NastiParameters(implicit val p: Parameters) extends HasNastiParameters {}
