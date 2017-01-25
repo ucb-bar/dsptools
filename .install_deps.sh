@@ -14,7 +14,7 @@ for idx in "${!repos[@]}"; do
     repo=${repos[$idx]}
     branch=${branches[$idx]}
     if [ ! -d $INSTALL_DIR/$repo ]; then
-        git clone "https://github.com/$org/$repo.git" "$INSTALL_DIR/$repo"
+        git clone --depth=1 "https://github.com/$org/$repo.git" "$INSTALL_DIR/$repo"
     fi
     cd $INSTALL_DIR/$repo
     git pull
