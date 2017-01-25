@@ -18,6 +18,6 @@ for idx in "${!repos[@]}"; do
     fi
     cd $INSTALL_DIR/$repo
     git pull
-    git checkout $branch
+    git checkout -b $branch origin/$branch
     sbt publish-local
 done
