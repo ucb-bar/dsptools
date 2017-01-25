@@ -89,7 +89,7 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
 
   behavior of "DspBlockTester"
 
-  it should "work with Passthrough" ignore {
+  it should "work with Passthrough" in {
     implicit val p: Parameters = Parameters.root(new sam.DspConfig().toInstance).alterPartial({
       case BaseAddr => 0
       case PassthroughDelay => 10
@@ -115,15 +115,22 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
   
   behavior of "DspChainTester"
 
-  it should "work with Passthrough + BarrelShifter" in {
+  it should "work with Passthrough + BarrelShifter" ignore {
+    import chisel3._
     implicit val p: Parameters = Parameters.root(new sam.DspConfig().toInstance).alterPartial({
       case BaseAddr => 0
       case PassthroughDelay => 10
-      case DspBlockKey => DspBlockParameters(64, 64)
-      case DspChainKey => DspChainParameters(
+      case DspBlockId => "block"
+      case DspBlockKey("block") => DspBlockParameters(64, 64)
+      case GenKey("block") => new GenParameters {
+        def lanesIn = 1
+        def genIn[V<:Data] = UInt(64.W).asInstanceOf[V]
+      }
+      case DspChainId => "chain"
+      case DspChainKey("chain") => DspChainParameters(
         blocks = Seq(
-          implicit p => new LazyPassthrough,
-          implicit p => new LazyBarrelShifter
+          ({implicit p: Parameters => new LazyPassthrough}, "block"),
+          ({implicit p: Parameters => new LazyBarrelShifter}, "block")
         ),
         dataBaseAddr = 0x0000,
         ctrlBaseAddr = 0x1000
