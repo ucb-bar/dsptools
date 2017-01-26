@@ -1,7 +1,4 @@
-package SimpleTB
-
-object TbGoldenModel {
-  val txt = """// Example VCS Command: $VCS_HOME/bin/vcs -debug_pp -full64 +define+UNIT_DELAY +rad +v2k +vcs+lic+wait +vc+list +vcs+initreg+random +vcs+dumpvars+out.vcd tb.v SimpleIOModule.v ... 
+// Example VCS Command: $VCS_HOME/bin/vcs -debug_pp -full64 +define+UNIT_DELAY +rad +v2k +vcs+lic+wait +vc+list +vcs+initreg+random +vcs+dumpvars+out.vcd tb.v SimpleIOModule.v ... 
 `timescale 100ps / 10ps
 
 `define CLK_PERIOD 1
@@ -843,5 +840,4 @@ module testbench_v;
     #`CLK_PERIOD $display("\t **Ran through all test vectors**"); $finish;
 
   end
-endmodule""".stripMargin
-}
+endmodule

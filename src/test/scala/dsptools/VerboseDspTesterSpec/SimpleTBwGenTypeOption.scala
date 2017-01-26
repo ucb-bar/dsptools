@@ -392,9 +392,13 @@ class SimpleTBSpec extends FlatSpec with Matchers {
         tbFileLoc = tester.tbFileName
         tester
       } } should be (true)
-      def read(file: String) = scala.io.Source.fromFile(file).getLines.mkString("\n")
-      val tbTxt = read(tbFileLoc).stripMargin
-      require(tbTxt == TbGoldenModel.txt, "Test bench incorrect! (compared against simulated model)")
+      val tbTxt = scala.io.Source.fromFile(tbFileLoc).getLines
+      // This is a lot easier in Scala 2.12.x
+      val resourceGoldenModel = getClass.getResourceAsStream("/TBGoldenModel.v")
+      val TbGoldenModelTxt = scala.io.Source.fromInputStream(resourceGoldenModel).getLines
+      TbGoldenModelTxt.zip(tbTxt) foreach { case (expected, in) =>
+        (expected == in) should be (true)
+      }
     }
   }
 
