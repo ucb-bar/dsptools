@@ -79,12 +79,12 @@ case class TestParams(
 
 }
 
-class DataTypeBundle[R <: Data:Real](genType: R, width: Width, binaryPoint: BinaryPoint) extends Bundle {
+class DataTypeBundle[R <: Data:Real](genType: R, dataWidth: Width, binaryPoint: BinaryPoint) extends Bundle {
   val gen = genType.chiselCloneType
-  val s = SInt(width)
-  val f = FixedPoint(width, binaryPoint)
-  val u = UInt(width)
-  override def cloneType: this.type = new DataTypeBundle(genType, width, binaryPoint).asInstanceOf[this.type]
+  val s = SInt(dataWidth)
+  val f = FixedPoint(dataWidth, binaryPoint)
+  val u = UInt(dataWidth)
+  override def cloneType: this.type = new DataTypeBundle(genType, dataWidth, binaryPoint).asInstanceOf[this.type]
 }
 
 class Interface[R <: Data:Real](genShort: R, genLong: R, includeR: Boolean, p: TestParams) extends Bundle {
