@@ -65,7 +65,7 @@ trait VerilogTbDump {
       tb write s"  wire$s[${node.getWidth-1}:0] ${name};\n"
     }
 
-    tb write "\n  always #(`CLOCK_PERIOD/2) clock = ~clock;\n"
+    tb write "\n  always #(`CLK_PERIOD/2) clock = ~clock;\n"
 
     tb write "\n  initial begin\n"
     tb write "    #`RESET_TIME\n"
