@@ -1,4 +1,4 @@
-package sam
+package craft
 
 import chisel3._
 import cde.{Parameters, Field}
@@ -12,7 +12,7 @@ class DspTop(p: Parameters) extends LazyModule {
   override lazy val module = Module(new DspTopModule(p, this, new DspTopBundle(p)))
 }
 
-class DspTopBundle(p: Parameters) extends SAMWrapperIO()(p) {}
+class DspTopBundle(p: Parameters) extends BasicDspBlockIO()(p) {}
 
 class DspTopModule[+L <: DspTop, +B <: DspTopBundle](val p: Parameters, l: L, b: => B)
   extends LazyModuleImp(l) with DspModule {

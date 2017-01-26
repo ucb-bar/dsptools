@@ -6,6 +6,7 @@ import breeze.linalg._
 import chisel3._
 import chisel3.util._
 import chisel3.iotesters._
+import craft._
 import firrtl_interpreter.InterpreterOptions
 import dspblocks._
 import dsptools.numbers.{DspReal, SIntOrder, SIntRing}

@@ -1,5 +1,6 @@
 package sam
 
+import craft._
 import diplomacy.LazyModule
 import rocketchip._
 import testchipip._
