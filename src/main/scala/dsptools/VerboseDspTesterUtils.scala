@@ -40,18 +40,26 @@ trait VerilogTbDump {
   def initVerilogTbFile() {
     val dutName = dut.name
 
+    val resetTime = dsptestersOpt.initTimeUnits
+    val clkDelta = dsptestersOpt.tbTimePrecisionPs.toDouble/dsptestersOpt.tbTimeUnitPs
+
+    tb write s"// Example VCS Command: $$VCS_HOME/bin/vcs -debug_pp -full64 +define+UNIT_DELAY +rad +v2k +vcs+lic+wait " +
+    s"+vc+list +vcs+initreg+random +vcs+dumpvars+out.vcd tb.v ${dutName}.v ... \n"
+    
     tb write s"`timescale ${dsptestersOpt.tbTimeUnitPs}ps / ${dsptestersOpt.tbTimePrecisionPs}ps\n"
-    tb write s"`define CLK_PERIOD ${dsptestersOpt.clkMul}\n"
-    tb write s"`define RESET_TIME ${dsptestersOpt.initTimeUnits}\n"
-    tb write s"`define CLK_DELTA ${dsptestersOpt.tbTimePrecisionPs.toDouble/dsptestersOpt.tbTimeUnitPs}\n"
+    tb write s"\n`define CLK_PERIOD ${dsptestersOpt.clkMul}\n"
+    tb write s"\n`define HALF_CLK_PERIOD ${dsptestersOpt.clkMul.toDouble/2}\n"
+    tb write s"`define RESET_TIME ${resetTime}\n"
+    tb write s"`define CLK_DELTA ${clkDelta}\n"
+    tb write s"`define INIT_TIME ${clkDelta + resetTime}\n"
 
     tb write "`define expect(nodeName, nodeVal, expVal, cycle) if (nodeVal !== expVal) begin " +
       "\\\n  $display(\"\\t ASSERTION ON %s FAILED @ CYCLE = %d, 0x%h != EXPECTED 0x%h\", " +
       "\\\n  nodeName,cycle,nodeVal,expVal); $stop; end\n\n"
 
-    tb write "module test;\n"
+    tb write "module testbench_v;\n\n"
 
-    tb write "  integer cycle = 0;\n"
+    tb write "  integer cycle = 0;\n\n"
 
     tb write "  reg clock = 1;\n"
     tb write "  reg reset = 1;\n"
@@ -65,7 +73,7 @@ trait VerilogTbDump {
       tb write s"  wire$s[${node.getWidth-1}:0] ${name};\n"
     }
 
-    tb write "  always #(`CLOCK_PERIOD/2) clock = ~clock;\n"
+    tb write "\n  always #`HALF_CLK_PERIOD clock = ~clock;\n"
 
     tb write "\n  initial begin\n"
     tb write "    #`RESET_TIME\n"
@@ -76,11 +84,11 @@ trait VerilogTbDump {
     tb write "    .clock(clock),\n"
     tb write "    .reset(reset),\n"
     tb write ((inputs ++ outputs).unzip._2 map (name => s"    .${name}(${name})") mkString ",\n")
-    tb write "  );\n\n"
+    tb write ");\n\n"
 
     // Inputs fed delta after clk rising edge; read delta after clk rising edge
     tb write "  initial begin\n"
-    tb write "    #(`RESET_TIME + `CLK_DELTA) reset = 0;\n"
+    tb write "    #`INIT_TIME reset = 0;\n"
   }
 
   def deleteVerilogTbFile() {
