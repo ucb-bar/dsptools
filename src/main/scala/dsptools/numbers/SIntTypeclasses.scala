@@ -36,7 +36,25 @@ trait SIntRing extends Any with Ring[SInt] with hasContext {
   }
   def one: SInt = BigInt(1).S
   def zero: SInt = BigInt(0).S
-  def negate(f: SInt): SInt = zero - f
+  def negate(f: SInt): SInt = -f
+  override def minus(f: SInt, g: SInt): SInt = {
+    if(context.overflowType == Grow) {
+      f -& g
+    } else if (context.overflowType == Saturate) {
+      println("Saturating add is broken right now!")
+      val grow = f -& g
+      val nogrow = f -% g
+      val max = 3.S
+      val min = (-4).S
+
+      Mux(grow === nogrow,
+        nogrow,
+        Mux(grow > 0.S, max, min)
+      )
+    } else {
+      f -% g
+    }
+  }
 }
 
 trait SIntImpl {
