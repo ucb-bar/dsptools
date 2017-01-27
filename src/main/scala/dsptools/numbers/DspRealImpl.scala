@@ -41,12 +41,16 @@ trait DspRealSigned extends Any with Signed[DspReal] with hasContext {
   def abs(a: DspReal): DspReal = Mux(a > DspReal(0), a, DspReal(0)-a)
 }
 trait DspRealIsReal extends Any with IsReal[DspReal] with DspRealOrder with DspRealSigned with hasContext {
-  def toDouble(a: DspReal): DspReal = ???
+  def toDouble(a: DspReal): DspReal = a
 
-  def ceil(a: DspReal): DspReal = ???
-  def floor(a: DspReal): DspReal = ???
-  def isWhole(a: DspReal): Bool = ???
-  def round(a: DspReal): DspReal = ???
+  def ceil(a: DspReal): DspReal = a.ceil()
+  def floor(a: DspReal): DspReal = a.floor()
+  def isWhole(a: DspReal): Bool = a === round(a)
+  def round(a: DspReal): DspReal = 
+    Mux(a >= DspReal(0.0),
+      floor(a + DspReal(0.5)),
+      ceil (a + DspReal(0.5))
+      )
 }
 
 trait ConvertableToDspReal extends ConvertableTo[DspReal] with hasContext {
