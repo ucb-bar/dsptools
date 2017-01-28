@@ -7,7 +7,7 @@ import chisel3.experimental.FixedPoint
 trait AllSyntax extends EqSyntax with PartialOrderSyntax with OrderSyntax with IsRealSyntax with SignedSyntax with
   ConvertableToSyntax
 
-trait AllImpl extends SIntImpl with FixedPointImpl with DspRealImpl with DspComplexImpl
+trait AllImpl extends SIntImpl with FixedPointImpl with DspRealImpl with DspComplexImpl with UIntImpl
 
 object implicits extends AllSyntax with AllImpl with spire.syntax.AllSyntax {
 
@@ -23,8 +23,12 @@ object implicits extends AllSyntax with AllImpl with spire.syntax.AllSyntax {
     def double2T(dbl: Double): T = {
       val out = real match {
         case f: FixedPoint => FixedPoint.fromDouble(dbl, binaryPoint = f.binaryPoint.get)
-        case s: SInt => math.round(dbl).toInt.S
+        case s: SInt => dbl.round.toInt.S
         case r: DspReal => DspReal(dbl)
+        case u: UInt => {
+          require(dbl >= 0, "Double literal to UInt needs to be >= 0")
+          dbl.round.toInt.U
+        }
       }
       out.asInstanceOf[T]
     }
@@ -37,17 +41,23 @@ object implicits extends AllSyntax with AllImpl with spire.syntax.AllSyntax {
       val out = real match {
         case f: FixedPoint => {
           val sintBits = BigInt(dbl.toInt).bitLength + 1
-          require(sintBits + f.binaryPoint.get <= f.getWidth, 
-              errMsg)
+          require(sintBits + f.binaryPoint.get <= f.getWidth, errMsg)
           FixedPoint.fromDouble(dbl, width = f.getWidth, binaryPoint = f.binaryPoint.get)
         }
         case s: SInt => {
-          val intVal = math.round(dbl).toInt
+          val intVal = dbl.round.toInt
           val intBits = BigInt(intVal).bitLength + 1
           require(intBits <= s.getWidth, errMsg)
           intVal.asSInt(s.getWidth.W)
         }
         case r: DspReal => DspReal(dbl)
+        case u: UInt => {
+          require(dbl >= 0, "Double literal to UInt needs to be >= 0")
+          val intVal = dbl.round.toInt  
+          val intBits = BigInt(intVal).bitLength
+          require(intBits <= u.getWidth, errMsg)
+          intVal.asUInt(u.getWidth.W)
+        }
       }
       out.asInstanceOf[T]
     }
