@@ -27,7 +27,7 @@ trait IsReal[A <: Data] extends Any with Order[A] with Signed[A] {
 
   /**
     * Rounds `a` to the nearest integer 
-    * (When the fractional part is 0.5, it rounds to the integer with the larger magnitude)
+    * (When the fractional part is 0.5, the tie breaking method is determined by the DSP Context)
     */
   def round(a: A): A
 

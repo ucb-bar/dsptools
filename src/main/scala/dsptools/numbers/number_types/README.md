@@ -11,7 +11,7 @@ Here, we list number types that can be represented with Chisel base numbers.
 # IsReal
 * ceil
 * floor
-* round (0.5 fractional part -> rounded to integer with the larger absolute value)
+* round (0.5 fractional part -> tie breaking set by DSP Context)
 * isWhole
 
 # IsIntegral
