@@ -7,7 +7,6 @@ package object numbers {
   type MultiplicativeAction[T, U] = spire.algebra.MultiplicativeAction[T, U]
   type MultiplicativeCMonoid[T] = spire.algebra.MultiplicativeCMonoid[T]
   type Ring[T] = spire.algebra.Ring[T]
-  type ConvertableTo[T] = spire.math.ConvertableTo[T]
   type ConvertableFrom[T] = spire.math.ConvertableFrom[T]
 
   val Multiplicative = spire.algebra.Multiplicative
