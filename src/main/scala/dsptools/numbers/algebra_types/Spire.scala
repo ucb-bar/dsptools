@@ -12,4 +12,3 @@ package object numbers {
 
   val Multiplicative = spire.algebra.Multiplicative
 }
-
