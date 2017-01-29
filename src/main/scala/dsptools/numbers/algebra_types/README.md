@@ -4,6 +4,14 @@ Listed here are hierarchically presented type classes and operations associated 
 
 > Note that when classes are extended, subclass def's have the most precedence
 
+# Ring (Spire base)
+* plus (+)
+* minus (-)
+* negate (unary -)
+* times (*)
+* one
+* zero
+
 # Eq
 * eqv (===)
 * neqv (=!=)
