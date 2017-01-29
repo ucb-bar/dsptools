@@ -29,23 +29,21 @@ trait Signed[A] extends Any {
     val s = signum(a)
     !s.eq && !s.lt
   }
-  def isSignNegative(a: A): Bool = {
-    val s = signum(a)
-    !s.eq && s.lt
-  }
+  def isSignNegative(a: A): Bool = signum(a).lt
 
-  def isSignNonZero(a: A): Bool = !signum(a).eq
-  def isSignNonPositive(a: A): Bool = signum(a).lt
-  def isSignNonNegative(a: A): Bool = !signum(a).lt
+  def isSignNonZero(a: A): Bool = !isSignZero(a)
+  def isSignNonPositive(a: A): Bool = !isSignPositive(a)
+  def isSignNonNegative(a: A): Bool = !isSignNegative(a)
+
 }
 
 object Signed {
-  implicit def orderedRingIsSigned[A<:Data: Order: Ring]: Signed[A] = new OrderedRingIsSigned[A]
+  implicit def orderedRingIsSigned[A <: Data: Order: Ring]: Signed[A] = new OrderedRingIsSigned[A]
 
-  def apply[A<:Data](implicit s: Signed[A]): Signed[A] = s
+  def apply[A <: Data](implicit s: Signed[A]): Signed[A] = s
 }
 
-private class OrderedRingIsSigned[A<:Data](implicit o: Order[A], r: Ring[A]) extends Signed[A] {
+private class OrderedRingIsSigned[A <: Data](implicit o: Order[A], r: Ring[A]) extends Signed[A] {
   def signum(a: A): ComparisonBundle = o.compare(a, r.zero)
   def abs(a: A): A = Mux(signum(a).lt, r.negate(a), a)
 }
