@@ -7,3 +7,4 @@
 * asFixed (provide the prototype to get a binary point location)
 * asReal
 
+> **WARNING**: Binary points and widths *should* be known if these methods are going to be used!
