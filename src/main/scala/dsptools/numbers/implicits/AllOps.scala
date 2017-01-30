@@ -107,7 +107,7 @@ class ChiselConvertableFromOps[A <: Data](lhs: A)(implicit ev: ChiselConvertable
   def asReal(): DspReal = ev.asReal(lhs)
 }
 
-class ChiselBaseNum[A <: Data](lhs: A)(implicit ev: ChiselBaseNum[A]) {
+class ChiselBaseNumOps[A <: Data](lhs: A)(implicit ev: ChiselBaseNum[A]) {
   def <<(n: Int): A = ev.shl(lhs, n)
   def <<(n: UInt): A = ev.shl(lhs, n)
   def >>(n: Int): A = ev.shr(lhs, n)
