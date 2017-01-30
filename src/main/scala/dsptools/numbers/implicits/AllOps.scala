@@ -13,9 +13,11 @@ import scala.language.experimental.macros
   * return type, but the use cases there seem obscure.
   */
 
-final class EqOps[A <: Data](lhs:A)(implicit ev:Eq[A]) {
-  def ===(rhs:A): Bool = macro Ops.binop[A, Bool]
-  def =!=(rhs:A): Bool = macro Ops.binop[A, Bool]
+final class EqOps[A <: Data](lhs: A)(implicit ev: Eq[A]) {
+  def ===(rhs: A): Bool = macro Ops.binop[A, Bool]
+  def =!=(rhs: A): Bool = macro Ops.binop[A, Bool]
+  // Consistency with Chisel
+  def =/=(rhs: A): Bool = ev.eqv(lhs, rhs)
 }
 
 final class PartialOrderOps[A <: Data](lhs: A)(implicit ev: PartialOrder[A]) {
@@ -39,10 +41,10 @@ final class PartialOrderOps[A <: Data](lhs: A)(implicit ev: PartialOrder[A]) {
   def <(rhs: Double)(implicit ev1: Field[A]): Bool = macro Ops.binopWithLift[Int, Field[A], A]
   def <=(rhs: Double)(implicit ev1: Field[A]): Bool = macro Ops.binopWithLift[Int, Field[A], A]
 
-  def >(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Bool = (c.toNumber(lhs) > rhs).B
-  def >=(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Bool = (c.toNumber(lhs) >= rhs).B
-  def <(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Bool = (c.toNumber(lhs) < rhs).B
-  def <=(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Bool = (c.toNumber(lhs) <= rhs).B
+  def >(rhs: spire.math.Number)(implicit c: ConvertableFrom[A]): Bool = (c.toNumber(lhs) > rhs).B
+  def >=(rhs: spire.math.Number)(implicit c: ConvertableFrom[A]): Bool = (c.toNumber(lhs) >= rhs).B
+  def <(rhs: spire.math.Number)(implicit c: ConvertableFrom[A]): Bool = (c.toNumber(lhs) < rhs).B
+  def <=(rhs: spire.math.Number)(implicit c: ConvertableFrom[A]): Bool = (c.toNumber(lhs) <= rhs).B
 }
 
 final class OrderOps[A <: Data](lhs: A)(implicit ev: Order[A]) {
@@ -58,12 +60,12 @@ final class OrderOps[A <: Data](lhs: A)(implicit ev: Order[A]) {
   def min(rhs: Double)(implicit ev1: Field[A]): A = macro Ops.binopWithLift[Int, Field[A], A]
   def max(rhs: Double)(implicit ev1: Field[A]): A = macro Ops.binopWithLift[Int, Field[A], A]
 
-  def compare(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Int = c.toNumber(lhs) compare rhs
-  def min(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Number = c.toNumber(lhs) min rhs
-  def max(rhs:spire.math.Number)(implicit c:ConvertableFrom[A]): Number = c.toNumber(lhs) max rhs
+  def compare(rhs: spire.math.Number)(implicit c: ConvertableFrom[A]): Int = c.toNumber(lhs) compare rhs
+  def min(rhs: spire.math.Number)(implicit c: ConvertableFrom[A]): Number = c.toNumber(lhs) min rhs
+  def max(rhs: spire.math.Number)(implicit c: ConvertableFrom[A]): Number = c.toNumber(lhs) max rhs
 }
 
-final class SignedOps[A:Signed](lhs: A) {
+final class SignedOps[A: Signed](lhs: A) {
   def abs(): A = macro Ops.unop[A]
   def sign(): Sign = macro Ops.unop[Sign]
   def signum(): Int = macro Ops.unop[Int]
@@ -77,11 +79,38 @@ final class SignedOps[A:Signed](lhs: A) {
   def isSignNonNegative(): Bool = macro Ops.unop[Bool]
 }
 
-final class IsRealOps[A<:Data](lhs:A)(implicit ev:IsReal[A]) {
+final class IsRealOps[A <: Data](lhs: A)(implicit ev: IsReal[A]) {
   def isWhole(): Bool = macro Ops.unop[Bool]
   def ceil(): A = macro Ops.unop[A]
   def floor(): A = macro Ops.unop[A]
   def round(): A = macro Ops.unop[A]
-  //def toDouble(): Double = macro Ops.unop[Double]
+  def truncate(): A = ev.truncate(lhs)
 }
 
+class IntegerOps[A <: Data](lhs: A)(implicit ev: Integer[A]) {
+  def mod(rhs: A): A = ev.mod(lhs, rhs)
+  def %(rhs: A): A = mod(rhs)
+  def isOdd(): Bool = ev.isOdd(lhs) 
+  def isEven(): Bool = ev.isEven(lhs)
+}
+
+class ConvertableToOps[A <: Data](lhs: A)(implicit ev: ConvertableTo[A]) {
+  def fromInt(i: Int): A = fromDouble(i.toDouble)
+  def fromIntWithFixedWidth(i: Int): A = fromDoubleWithFixedWidth(i.toDouble)
+  def fromDouble(d: Double): A = ev.fromDouble(d, lhs)
+  def fromDoubleWithFixedWidth(d: Double): A = ev.fromDoubleWithFixedWidth(d, lhs)
+}
+
+class ChiselConvertableFromOps[A <: Data](lhs: A)(implicit ev: ChiselConvertableFrom[A]) {
+  def intPart(): SInt = ev.intPart(lhs)
+  def asFixed(proto: FixedPoint): FixedPoint = ev.asFixed(lhs, proto)
+  def asReal(): DspReal = ev.asReal(lhs)
+}
+
+class ChiselBaseNum[A <: Data](lhs: A)(implicit ev: ChiselBaseNum[A]) {
+  def <<(n: Int): A = ev.shl(lhs, n)
+  def <<(n: UInt): A = ev.shl(lhs, n)
+  def >>(n: Int): A = ev.shr(lhs, n)
+  def >>(n: UInt): A = ev.shr(lhs, n)
+  def signBit(): Bool = ev.signBit(lhs)
+}
