@@ -7,15 +7,15 @@ import chisel3.Data
 import scala.language.implicitConversions
 
 trait EqSyntax {
-  implicit def eqOps[A <: Data:Eq](a:A): EqOps[A] = new EqOps(a)
+  implicit def eqOps[A <: Data:Eq](a: A): EqOps[A] = new EqOps(a)
 }
 
 trait PartialOrderSyntax extends EqSyntax {
-  implicit def partialOrderOps[A <: Data:PartialOrder](a:A): PartialOrderOps[A] = new PartialOrderOps(a)
+  implicit def partialOrderOps[A <: Data:PartialOrder](a: A): PartialOrderOps[A] = new PartialOrderOps(a)
 }
 
 trait OrderSyntax extends PartialOrderSyntax {
-  implicit def orderOps[A <: Data:Order](a:A): OrderOps[A] = new OrderOps(a)
+  implicit def orderOps[A <: Data:Order](a: A): OrderOps[A] = new OrderOps(a)
 }
 
 trait SignedSyntax {
@@ -23,7 +23,11 @@ trait SignedSyntax {
 }
 
 trait IsRealSyntax extends OrderSyntax with SignedSyntax {
-  implicit def isRealOps[A <: Data:IsReal](a:A): IsRealOps[A] = new IsRealOps(a)
+  implicit def isRealOps[A <: Data:IsReal](a: A): IsRealOps[A] = new IsRealOps(a)
+}
+
+trait IsIntegerSyntax extends IsRealSyntax {
+  implicit def isIntegerOps[A <: Data:IsIntegral](a: A): IntegerOps[A] = new IntegerOps(a)
 }
 
 trait ConvertableToSyntax {
