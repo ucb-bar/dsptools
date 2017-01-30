@@ -27,7 +27,7 @@ trait IsReal[A <: Data] extends Any with Order[A] with Signed[A] {
 
   /**
     * Rounds `a` to the nearest integer 
-    * (When the fractional part is 0.5, the tie breaking method is determined by the DSP Context)
+    * (When the fractional part is 0.5, tie breaking rounds to positive infinity i.e. round half up)
     */
   def round(a: A): A
 
@@ -35,6 +35,8 @@ trait IsReal[A <: Data] extends Any with Order[A] with Signed[A] {
     * Returns `true` iff `a` is a an integer.
     */
   def isWhole(a: A): Bool
+
+  def truncate(a: A): A
 
 }
 
@@ -65,6 +67,7 @@ trait IsIntegral[A <: Data] extends Any with IsRational[A] {
 
   def isOdd(a: A): Bool
   def isEven(a: A): Bool = !isOdd(a)
+  def truncate(a: A): A = a
 }
 
 object IsIntegral {

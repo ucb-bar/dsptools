@@ -11,12 +11,16 @@ Here, we list number types that can be represented with Chisel base numbers.
 # IsReal
 * ceil
 * floor
-* round (0.5 fractional part -> tie breaking set by DSP Context)
+* truncate (integer portion)
+* round (0.5 fractional part -> tie breaking to positive infinity i.e. round half up)
 * isWhole
+
+> See [Rounding Modes Wiki](https://en.wikipedia.org/wiki/Rounding) for properties. 
 
 # IsIntegral
 * ceil
 * floor
+* truncate
 * round
 * isWhole
 * mod
