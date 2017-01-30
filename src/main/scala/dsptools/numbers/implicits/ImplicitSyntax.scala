@@ -30,3 +30,10 @@ trait ConvertableToSyntax {
   implicit def convertableToOps[A <: Data:ConvertableTo](a: A): ConvertableToOps[A] = new ConvertableToOps(a)
 }
 
+trait ChiselConvertableFromSyntax {
+  implicit def chiselConvertableFromOps[A <: Data:ChiselConvertableFrom](a: A): ChiselConvertableFromOps[A] = new ChiselConvertableFromOps(a)
+}
+
+trait ChiselBaseNumSyntax {
+  implicit def chiselBaseNumOps[A <: Data:ChiselBaseNum](a: A): ChiselBaseNumOps[A] = new ChiselBaseNumOps(a)
+}
