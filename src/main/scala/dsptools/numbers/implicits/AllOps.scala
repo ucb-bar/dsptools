@@ -7,6 +7,8 @@ import spire.macros.Ops
 
 import scala.language.experimental.macros
 
+import chisel3.experimental.FixedPoint
+
 /**
   * Much of this is drawn from non/spire, but using Chisel Bools instead of
   * Java Bools. I suppose a more general solution would be generic in
@@ -87,7 +89,7 @@ final class IsRealOps[A <: Data](lhs: A)(implicit ev: IsReal[A]) {
   def truncate(): A = ev.truncate(lhs)
 }
 
-class IntegerOps[A <: Data](lhs: A)(implicit ev: Integer[A]) {
+class IsIntegerOps[A <: Data](lhs: A)(implicit ev: IsIntegral[A]) {
   def mod(rhs: A): A = ev.mod(lhs, rhs)
   def %(rhs: A): A = mod(rhs)
   def isOdd(): Bool = ev.isOdd(lhs) 

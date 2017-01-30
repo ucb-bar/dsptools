@@ -1,6 +1,6 @@
 package dsptools.numbers
 
-import chisel3.Data
+import chisel3.{Data, UInt, Bool}
 
 object ChiselBaseNum {
   def apply[A <: Data](implicit A: ChiselBaseNum[A]): ChiselBaseNum[A] = A

@@ -27,7 +27,7 @@ trait IsRealSyntax extends OrderSyntax with SignedSyntax {
 }
 
 trait IsIntegerSyntax extends IsRealSyntax {
-  implicit def isIntegerOps[A <: Data:IsIntegral](a: A): IntegerOps[A] = new IntegerOps(a)
+  implicit def isIntegerOps[A <: Data:IsIntegral](a: A): IsIntegerOps[A] = new IsIntegerOps(a)
 }
 
 trait ConvertableToSyntax {

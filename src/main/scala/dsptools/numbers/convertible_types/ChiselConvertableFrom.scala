@@ -1,6 +1,7 @@
 package dsptools.numbers
 
-import chisel3.{Data, SInt, FixedPoint, DspReal}
+import chisel3.{Data, SInt}
+import chisel3.experimental.FixedPoint
 
 object ChiselConvertableFrom {
   def apply[A <: Data](implicit A: ChiselConvertableFrom[A]): ChiselConvertableFrom[A] = A
