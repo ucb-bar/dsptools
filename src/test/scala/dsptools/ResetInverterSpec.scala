@@ -25,7 +25,7 @@ class ResetNSpec extends FreeSpec with Matchers {
       firrtlOptions = firrtlOptions.copy(compilerName = "low")
     }
     chisel3.Driver.execute(optionsManager, () => new ExampleModuleNeedsResetInverted) match {
-      case ChiselExecutionSucccess(_, chirrtl, Some(FirrtlExecutionSuccess(_, firrtl))) =>
+      case ChiselExecutionSuccess(_, chirrtl, Some(FirrtlExecutionSuccess(_, firrtl))) =>
         chirrtl should include ("input reset :")
         chirrtl should not include "input reset_n :"
         chirrtl should not include "node reset = not(reset_n)"
