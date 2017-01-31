@@ -78,14 +78,17 @@ trait UIntIsReal extends Any with IsIntegral[UInt] with UIntOrder with UIntSigne
 
 trait ConvertableToUInt extends ConvertableTo[UInt] with hasContext {
   // Note: Double converted to Int via round first!
-  def fromShort(n: Short): UInt = n.toInt.U
-  def fromBigInt(n: BigInt): UInt = n.U
-  def fromByte(n: Byte): UInt = n.toInt.U
-  def fromInt(n: Int): UInt = n.U
-  def fromFloat(n: Float): UInt = n.round.toInt.U
-  def fromBigDecimal(n: BigDecimal): UInt = n.doubleValue.round.toInt.U
-  def fromLong(n: Long): UInt = n.U
-  def fromType[B](n: B)(implicit c: ConvertableFrom[B]): UInt = c.toBigInt(n).U
+  def fromShort(n: Short): UInt = fromInt(n.toInt)
+  def fromByte(n: Byte): UInt = fromInt(n.toInt)
+  def fromInt(n: Int): UInt = fromBigInt(BigInt(n))
+  def fromFloat(n: Float): UInt = fromDouble(n.toDouble)
+  def fromBigDecimal(n: BigDecimal): UInt = fromDouble(n.doubleValue)
+  def fromLong(n: Long): UInt = fromBigInt(BigInt(n))
+  def fromType[B](n: B)(implicit c: ConvertableFrom[B]): UInt = fromBigInt(c.toBigInt(n))
+  def fromBigInt(n: BigInt): UInt = {
+    require(n >= 0, "Literal to UInt needs to be >= 0")
+    n.U
+  }
   def fromDouble(n: Double): UInt = {
     require(n >= 0, "Double literal to UInt needs to be >= 0")
     n.round.toInt.U  
