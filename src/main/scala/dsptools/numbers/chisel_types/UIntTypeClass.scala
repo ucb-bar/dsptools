@@ -68,6 +68,7 @@ trait UIntIsReal extends Any with IsIntegral[UInt] with UIntOrder with UIntSigne
   // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself; 
   // isWhole always true
   
+  // Unsure what happens if you have a zero-width wire
   def isOdd(a: UInt): Bool = a(0)
   // isEven derived from isOdd
   // Note: whatever Chisel does
