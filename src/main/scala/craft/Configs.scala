@@ -53,7 +53,7 @@ object ConfigBuilder {
   }
   def buildDSP(id: String, func: Parameters => LazyDspBlock): Config = new Config(
     (pname, site, here) => pname match {
-      case BuildDSP => func
+      case BuildDSPBlock => func
       case NastiKey => NastiParameters(64, 32, 1)
       case PAddrBits => 32
       case CacheBlockOffsetBits => 6

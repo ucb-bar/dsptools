@@ -11,9 +11,9 @@ import rocketchip._
 import junctions._
 import cde.Parameters
 
-class NastiParameters(implicit val p: Parameters) extends HasNastiParameters {}
 
-object Generator extends GeneratorApp {
+object DspChainGenerator extends GeneratorApp {
+  class NastiParameters(implicit val p: Parameters) extends HasNastiParameters {}
   def toCollection[T](seq: Seq[T]): Collection[T] =
     JavaConverters.asJavaCollectionConverter(seq).asJavaCollection
 
@@ -97,7 +97,7 @@ object Generator extends GeneratorApp {
   def makePort(name: String, direction: Boolean, width: Int): PortType = {
     val port = new PortType
     val wire = new PortWireType
-    
+
     wire.setDirection(
       if (direction) ComponentPortDirectionType.OUT
       else ComponentPortDirectionType.IN)
@@ -368,6 +368,6 @@ object Generator extends GeneratorApp {
   val longName = names.topModuleProject + "." + names.configs
   generateFirrtl
   generateTestSuiteMakefrags // TODO: Needed only for legacy make targets
-  generateParameterDump // TODO: Needed only for legacy make targets
-  generateIPXact
+  generateParameterDump      // TODO: Needed only for legacy make targets
+  // generateIPXact
 }

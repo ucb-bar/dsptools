@@ -1,4 +1,4 @@
-package fft
+package craft
 
 import util.GeneratorApp
 import org.accellera.spirit.v1685_2009.{File => SpiritFile, Parameters => SpiritParameters, _}
@@ -17,7 +17,7 @@ import dsptools._
 class NastiConfig(implicit val p: Parameters) extends HasNastiParameters {}
 
 // includes IPXact generation
-trait DspGeneratorApp extends GeneratorApp {
+trait DspBlockGeneratorApp extends GeneratorApp {
 
   def toCollection[T](seq: Seq[T]): Collection[T] =
     JavaConverters.asJavaCollectionConverter(seq).asJavaCollection
@@ -347,8 +347,7 @@ trait DspGeneratorApp extends GeneratorApp {
 
   def makeParameters(factory: ObjectFactory): SpiritParameters = {
     val parameters = new SpiritParameters()
-    val config = new sam.DspConfig()
-    for ( (name, value) <- config.getIPXACTParameters) {
+    for ( (name, value) <- params(IPXACTParameters(params(DspBlockId))) ) {
       println("parameter: %s, value: %s".format(name, value))
       val nameValuePairType = new NameValuePairType
       nameValuePairType.setName(name)
@@ -361,8 +360,10 @@ trait DspGeneratorApp extends GeneratorApp {
   }
 
   def generateIPXact {
-    val bits_in = params(DspBlockKey(params(DspBlockId))).inputWidth
-    val bits_out = params(DspBlockKey(params(DspBlockId))).outputWidth
+    val lazyMod = params(BuildDSPBlock)(params)
+    val mod = chisel3.Module(lazyMod.module)
+    val bits_in = mod.inputWidth
+    val bits_out = mod.outputWidth
     val factory = new ObjectFactory
     val memMapName = "mm"
 
@@ -414,8 +415,8 @@ trait DspGeneratorApp extends GeneratorApp {
   }
 }
 
-object Generator extends DspGeneratorApp {
+object DspBlockGenerator extends DspBlockGeneratorApp {
   val longName = names.fullTopModuleClass + "." + names.configs
   generateFirrtl
-  generateIPXact
+  // generateIPXact
 }

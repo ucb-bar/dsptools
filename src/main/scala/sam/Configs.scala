@@ -19,10 +19,10 @@ import scala.math._
 import org.scalatest.Tag
 
 import cde._
+import diplomacy._
 import junctions._
 import uncore.tilelink._
 import uncore.coherence._
-import sam.Generator.params
 
 import dsptools._
 import dspjunctions._
@@ -33,52 +33,29 @@ trait HasIPXACTParameters {
 }
 
 // create a new DSP Configuration
-class DspConfig extends Config(
-  (pname, site, here) => pname match {
-    case BuildDSP => { (q: Parameters) => {
-      implicit val p = q
-      Module(new SAMWrapper(null))
-    }}
-    case SAMKey => SAMConfig(10, 10, 0)
-	  case NastiKey => NastiParameters(64, 32, 1)
-    case PAddrBits => 32
-    case CacheBlockOffsetBits => 6
-    case AmoAluOperandBits => 64
-    case TLId => "SAM"
-    case TLKey("SAM") =>
-      TileLinkParameters(
-        coherencePolicy = new MEICoherence(
-          new NullRepresentation(2)),
-        nManagers = 1,
-        nCachingClients = 0,
-        nCachelessClients = 1,
-        maxClientXacts = 4,
-        maxClientsPerPort = 1,
-        maxManagerXacts = 1,
-        dataBeats = 8,
-        dataBits = 64 * 8)
-    case DspBlockId => "sam"
-    case DspBlockKey("sam") => DspBlockParameters(1024, 1024)
-    case GenKey("sam") => new GenParameters {
-      // these are not used for the SAM block
-      def genIn [T <: Data] = UInt(1.W).asInstanceOf[T]
-      val lanesIn = 1
-    }
-    case _ => throw new CDEMatchError
-  }) with HasIPXACTParameters {
-  def getIPXACTParameters: Map[String, String] = {
-
-    val parameterMap = Map[String, String]()
-
-    // Conjure up some IPXACT synthsized parameters.
-    parameterMap ++= List(("InputLanes", params(GenKey(params(DspBlockId))).lanesIn.toString))
-    parameterMap ++= List(("InputTotalBits", params(DspBlockKey(params(DspBlockId))).inputWidth.toString))
-
-    parameterMap
-  }
+object SAMConfigBuilder {
+  def apply(id: String, wordSize: Int, samConfig: SAMConfig): Config =
+    ConfigBuilder.dspBlockParams(id, 1, () => UInt(wordSize.W)) ++
+    new Config(
+      (pname, site, here) => pname match {
+        case SAMKey => samConfig
+        case IPXACTParameters(id) => {
+          val parameterMap = Map[String, String]()
+      
+          // Conjure up some IPXACT synthsized parameters.
+          parameterMap ++= List(("InputLanes", site(GenKey(site(DspBlockId))).lanesIn.toString))
+          parameterMap ++= List(("InputTotalBits", site(DspBlockKey(site(DspBlockId))).inputWidth.toString))
+      
+          parameterMap
+        }
+        case _ => throw new CDEMatchError
+      })
+  def standalone(id: String, wordSize: Int, samConfig: SAMConfig): Config =
+    ConfigBuilder.buildDSP(id, {implicit p => LazyModule(new LazySAM())}) ++
+    apply(id, wordSize, samConfig)
 }
 
-case object SAMKey extends Field[SAMConfig]
+case class SAMKey(id: String) extends Field[SAMConfig]
 
 // subpackets = basically how many cycles it takes for sync to repeat
 // bufferDepth = how many packets to store

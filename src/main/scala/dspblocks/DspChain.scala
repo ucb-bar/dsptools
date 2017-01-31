@@ -26,7 +26,7 @@ case object DspChainId extends Field[String]
 case class DspChainKey(id: String) extends Field[DspChainParameters]
 
 trait HasDspChainParameters {
-  implicit val p: Parameters
+  val p: Parameters
   val dspChainExternal = p(DspChainKey(p(DspChainId)))
   val blocks           = dspChainExternal.blocks
   val ctrlBaseAddr     = dspChainExternal.ctrlBaseAddr
@@ -44,15 +44,23 @@ class DspChainIO()(implicit val p: Parameters) extends Bundle {
 class DspChain(
   b: => Option[DspChainIO] = None,
   override_clock: Option[Clock]=None,
-  override_reset: Option[Bool]=None)(implicit val p: Parameters)
+  override_reset: Option[Bool]=None)(val p: Parameters)
   extends Module(override_clock, override_reset)
   with HasDspChainParameters {
+  val tlid = p(TLId)
+  println(s"TLId is $tlid")
+  val tlkey = p(TLKey(tlid))
+  implicit val overrideParams = p.alterPartial({
+    case TLKey(tlid) => tlkey.copy(
+    //  dataBits = 4 * 64,
+      overrideDataBitsPerBeat = Some(64)
+      )})
   val io = IO(b.getOrElse(new DspChainIO))
 
   require(blocks.length > 0)
   var addr = 0
   val lazy_mods = blocks.map(b => {
-    val modParams = p.alterPartial({
+    val modParams = overrideParams.alterPartial({
       case BaseAddr => addr
       case DspBlockId => b._2
     })
@@ -79,10 +87,11 @@ class DspChain(
 
   val lazySams = modules.map(mod => {
     val samWidth = mod.io.out.bits.getWidth
-    val samParams = p.alterPartial({
-      case SAMKey => oldSamConfig.copy(baseAddr = addr)
-      case DspBlockId => "sam"
-      case DspBlockKey("sam") => DspBlockParameters(samWidth, samWidth)
+    val samName = overrideParams(DspBlockId) + ":" + mod.name + ":sam"
+    val samParams = overrideParams.alterPartial({
+      case SAMKey(samName) => oldSamConfig.copy(baseAddr = addr)
+      case DspBlockId => samName
+      case DspBlockKey(samName) => DspBlockParameters(samWidth, samWidth)
       case BaseAddr => addr
     })
     val lazySam = LazyModule( new LazySAM()(samParams) )
@@ -115,6 +124,7 @@ class DspChain(
   val inPorts = 1
   val ctrlXbarParams = p.alterPartial({
     case TLKey("XBar") => p(TLKey("MCtoEdge")).copy(
+      overrideDataBitsPerBeat = Some(64),
       nCachingClients = 0,
       nCachelessClients = ctrlOutPorts,
       maxClientXacts = 4,
@@ -131,6 +141,7 @@ class DspChain(
   })
   val dataXbarParams = p.alterPartial({
     case TLKey("XBar") => p(TLKey("MCtoEdge")).copy(
+      overrideDataBitsPerBeat = Some(64),
       nCachingClients = 0,
       nCachelessClients = dataOutPorts,
       maxClientXacts = 4,
