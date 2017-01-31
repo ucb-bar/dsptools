@@ -118,7 +118,7 @@ trait ChiselBaseNumUInt extends ChiselBaseNum[UInt] with hasContext {
   def shl(a: UInt, n: Int): UInt = a << n
   def shl(a: UInt, n: UInt): UInt = a << n
   def shr(a: UInt, n: Int): UInt = a >> n
-  def shr(a :UInt, n: UInt): UInt = a >> n
+  def shr(a: UInt, n: UInt): UInt = a >> n
   // signBit relies on Signed
  }
 
