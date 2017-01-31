@@ -34,6 +34,7 @@ trait UIntRing extends Any with Ring[UInt] with hasContext {
   }
   def negate(f: UInt): UInt = throw DspException("Can't negate UInt and get UInt")
   def times(f: UInt, g: UInt): UInt = {
+    // TODO: Overflow via ranging in FIRRTL?
     ShiftRegister(f * g, context.numMulPipes)
   }  
 }
@@ -69,26 +70,29 @@ trait UIntIsReal extends Any with IsIntegral[UInt] with UIntOrder with UIntSigne
   
   def isOdd(a: UInt): Bool = a(0)
   // isEven derived from isOdd
-  // Note: whatever Chisel does -- is there overflow?
+  // Note: whatever Chisel does
   // Generally better to use your own mod if you know input bounds
   def mod(a: UInt, b: UInt): UInt = a % b
 }
 
 trait ConvertableToUInt extends ConvertableTo[UInt] with hasContext {
+  // Note: Double converted to Int via round first!
   def fromShort(n: Short): UInt = n.toInt.U
   def fromBigInt(n: BigInt): UInt = n.U
   def fromByte(n: Byte): UInt = n.toInt.U
-  def fromDouble(n: Double): UInt = n.round.toInt.U
   def fromInt(n: Int): UInt = n.U
   def fromFloat(n: Float): UInt = n.round.toInt.U
   def fromBigDecimal(n: BigDecimal): UInt = n.doubleValue.round.toInt.U
   def fromLong(n: Long): UInt = n.U
   def fromType[B](n: B)(implicit c: ConvertableFrom[B]): UInt = c.toBigInt(n).U
-  override def fromDouble(d: Double, a: UInt): UInt = {
-    require(d >= 0, "Double literal to UInt needs to be >= 0")
-    d.round.toInt.U
+  def fromDouble(n: Double): UInt = {
+    require(n >= 0, "Double literal to UInt needs to be >= 0")
+    n.round.toInt.U  
   }
+  // Second argument needed for fixed pt binary point (unused here)
+  override def fromDouble(d: Double, a: UInt): UInt = fromDouble(d)
   override def fromDoubleWithFixedWidth(d: Double, a: UInt): UInt = {
+    require(a.widthKnown, "UInt width not known!")
     require(d >= 0, "Double literal to UInt needs to be >= 0")
     val intVal = d.round.toInt  
     val intBits = BigInt(intVal).bitLength
@@ -97,22 +101,30 @@ trait ConvertableToUInt extends ConvertableTo[UInt] with hasContext {
   }
 }
 
-
-// To finish:
 trait ConvertableFromUInt extends ChiselConvertableFrom[UInt] with hasContext {
   // Bit grow by 1, but always positive to maintain correctness
   def intPart(a: UInt): SInt = Cat(false.B, a).asSInt
+  // Converts to FixedPoint with 0 fractional bits
   def asFixed(a: UInt, proto: FixedPoint): FixedPoint = intPart(a).asFixedPoint(0.BP)
-  //def asReal(a: A): DspReal = 
+  // Converts to (signed) DspReal
+  def asReal(a: UInt): DspReal = DspReal(intPart(a))
 }
 
-//Chiselbasenum
+trait ChiselBaseNumUInt extends ChiselBaseNum[UInt] with hasContext {
+  def shl(a: UInt, n: Int): UInt = a << n
+  def shl(a: UInt, n: UInt): UInt = a << n
+  def shr(a: UInt, n: Int): UInt = a >> n
+  def shr(a :UInt, n: UInt): UInt = a >> n
+  // signBit relies on Signed
+ }
+
+trait UIntInteger extends UIntRing with UIntIsReal with ConvertableToUInt with 
+    ConvertableFromUInt with ChiselBaseNumUInt with IntegerBits[UInt] with hasContext {
+  def signBit(a: UInt): Bool = isSignNegative(a)
+  // fromUInt also included in Ring
+  override def fromInt(n: Int): UInt = super[ConvertableToUInt].fromInt(n)
+}
+
 trait UIntImpl {
   implicit object UIntIntegerImpl extends UIntInteger
-  //implicit def fromInt(x: Double): UInt = x.toInt.U
-}
-
-trait UIntInteger extends UIntRing with ConvertableToUInt with UIntIsReal with Integer[UInt] with hasContext {
-  override def fromInt(n: Int): UInt = super[UIntRing].fromInt(n)
-  
 }
