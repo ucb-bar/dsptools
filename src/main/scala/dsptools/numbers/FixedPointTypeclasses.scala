@@ -65,6 +65,9 @@ trait FixedPointIsReal extends Any with IsReal[FixedPoint] with FixedPointOrder 
   def round(a: FixedPoint): FixedPoint = {
     (a + 0.5.F(1)).setBinaryPoint(0)
   }
+
+  def truncate(a: FixedPoint): FixedPoint = ???
+
 }
 
 trait ConvertableToFixedPoint extends ConvertableTo[FixedPoint] with hasContext {
@@ -79,6 +82,15 @@ trait ConvertableToFixedPoint extends ConvertableTo[FixedPoint] with hasContext 
   def fromFloat(n: Float): FixedPoint = FixedPoint.fromDouble(n.toDouble)
   def fromBigDecimal(n: BigDecimal): FixedPoint = FixedPoint.fromDouble(n.toDouble)
   def fromLong(n: Long): FixedPoint = FixedPoint.fromBigInt(n)
+
+// SHOULD ERROR if binary pt not known
+    override def fromDouble(d: Double, a: FixedPoint): FixedPoint= FixedPoint.fromDouble(d, binaryPoint = a.binaryPoint.get)
+  override def fromDoubleWithFixedWidth(d: Double, a: FixedPoint): FixedPoint = {
+    val sintBits = BigInt(d.toInt).bitLength + 1
+          require(sintBits + a.binaryPoint.get <= a.getWidth, "errMsg")
+          FixedPoint.fromDouble(d, width = a.getWidth, binaryPoint = a.binaryPoint.get)
+  }
+
 }
 
 trait FixedPointReal extends FixedPointRing with ConvertableToFixedPoint with FixedPointIsReal with Real[FixedPoint] with hasContext {

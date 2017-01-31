@@ -2,8 +2,9 @@ module BBFFromInt(
     input  [63:0] in,
     output reg [63:0] out
 );
+  //assign out = in + 64'd1;
   always @* begin
-  out <= $realtobits($itor(in));
+  out <= $realtobits($itor($signed(in)));
   end
 endmodule
 

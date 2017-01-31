@@ -51,9 +51,18 @@ trait DspRealIsReal extends Any with IsReal[DspReal] with DspRealOrder with DspR
       floor(a + DspReal(0.5)),
       ceil (a + DspReal(0.5))
       )
+
+  def truncate(a: DspReal): DspReal = ???
 }
 
 trait ConvertableToDspReal extends ConvertableTo[DspReal] with hasContext {
+  
+
+
+  override def fromDouble(d: Double, a: DspReal): DspReal = DspReal(d)
+  override def fromDoubleWithFixedWidth(d: Double, a: DspReal): DspReal = DspReal(d)
+
+
   def fromShort(n: Short): DspReal = DspReal(n.toInt)
   //def fromAlgebraic(n: Algebraic): DspReal = DspReal(n.toInt)
   def fromBigInt(n: BigInt): DspReal = DspReal(n.toInt)

@@ -27,6 +27,8 @@ class DspTester[T <: Module](c: T,
   //scalastyle:off cyclomatic.complexity
   def dspPoke(bundle: Data, value: Double): Unit = {
     bundle match {
+      case u: UInt => 
+        poke(u, BigInt(math.abs(value.round).toInt))
       case s: SInt =>
         val a: BigInt = BigInt(value.round.toInt)
         poke(s, a)

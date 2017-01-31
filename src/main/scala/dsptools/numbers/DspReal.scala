@@ -298,9 +298,11 @@ object DspReal {
   /**
     * Creates a Real by doing integer conversion from a (up to) DspReal.UnderlyingWidth-bit UInt.
     */
-  def apply(value: UInt): DspReal = {
+  def apply(value: SInt): DspReal = {
     val blackbox = Module(new BBFFromInt)
-    blackbox.io.in := value
+    val extendedSInt = Wire(SInt(64.W))
+    extendedSInt := value
+    blackbox.io.in := value.asUInt //extendedSInt.asUInt
     val out = Wire(new DspReal())
     out.node := blackbox.io.out
     out

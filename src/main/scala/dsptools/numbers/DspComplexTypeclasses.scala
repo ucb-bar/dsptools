@@ -48,6 +48,11 @@ class ConvertableToDspComplex[T <: Data : Ring : ConvertableTo] extends Converta
   def fromAlgebraic(n: spire.math.Algebraic): DspComplex[T] = fromDouble(n.toDouble)
   def fromReal(n: spire.math.Real): DspComplex[T] = fromDouble(n.toDouble)
   def fromRational(n: spire.math.Rational): DspComplex[T] = fromDouble(n.toDouble)
+
+  def fromDouble(d: Double,a: dsptools.numbers.DspComplex[T]): dsptools.numbers.DspComplex[T] = ???
+def fromDoubleWithFixedWidth(d: Double,a: dsptools.numbers.DspComplex[T]): dsptools.numbers.DspComplex[T] = ???
+
+
 }
 
 trait DspComplexImpl {
