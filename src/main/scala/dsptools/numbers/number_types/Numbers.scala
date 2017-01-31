@@ -44,20 +44,7 @@ object IsReal {
   def apply[A <: Data](implicit A: IsReal[A]): IsReal[A] = A
 }
 
-trait IsAlgebraic[A <: Data] extends Any with IsReal[A] {
-}
-object IsAlgebraic {
-  def apply[A <: Data](implicit A: IsAlgebraic[A]): IsAlgebraic[A] = A
-}
-
-trait IsRational[A <: Data] extends Any with IsAlgebraic[A] {
-}
-
-object IsRational {
-  def apply[A <: Data](implicit A: IsRational[A]): IsRational[A] = A
-}
-
-trait IsIntegral[A <: Data] extends Any with IsRational[A] {
+trait IsIntegral[A <: Data] extends Any with IsReal[A] {
   def ceil(a: A): A = a
   def floor(a: A): A = a
   def round(a: A): A = a
