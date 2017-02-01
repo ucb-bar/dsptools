@@ -159,7 +159,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     require(a.binaryPoint.known, "Binary point must be known for asReal")
     val n = a.binaryPoint.get
     val normalizedInt = a << n
-    DspReal(normalizedInt.asSInt)/DspReal((1 << n).toDouble)
+    DspReal(floor(normalizedInt).asSInt)/DspReal((1 << n).toDouble)
   }
 }
 
