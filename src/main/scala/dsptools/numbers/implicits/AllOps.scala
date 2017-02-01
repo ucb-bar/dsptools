@@ -116,4 +116,6 @@ class ChiselBaseNumOps[A <: Data](lhs: A)(implicit ev: ChiselBaseNum[A]) {
   def >>(n: Int): A = ev.shr(lhs, n)
   def >>(n: UInt): A = ev.shr(lhs, n)
   def signBit(): Bool = ev.signBit(lhs)
+  def div2(n: Int): A = ev.div2(lhs, n)
+  def mul2(n: Int): A = ev.mul2(lhs, n)
 }

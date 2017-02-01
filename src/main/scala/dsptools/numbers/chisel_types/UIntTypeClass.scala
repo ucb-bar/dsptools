@@ -64,7 +64,6 @@ trait UIntSigned extends Any with Signed[UInt] with hasContext {
 }
 
 trait UIntIsReal extends Any with IsIntegral[UInt] with UIntOrder with UIntSigned with hasContext {
-  def toDouble(a: UInt): DspReal = ???
   // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself; 
   // isWhole always true
   
@@ -121,6 +120,7 @@ trait ChiselBaseNumUInt extends ChiselBaseNum[UInt] with hasContext {
   def shr(a: UInt, n: Int): UInt = a >> n
   def shr(a: UInt, n: UInt): UInt = a >> n
   // signBit relies on Signed
+  // mul2, div2 consistent with shl, shr
  }
 
 trait UIntInteger extends UIntRing with UIntIsReal with ConvertableToUInt with 

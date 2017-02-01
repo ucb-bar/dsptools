@@ -66,7 +66,6 @@ trait SIntSigned extends Any with Signed[SInt] with hasContext {
 }
 
 trait SIntIsReal extends Any with IsIntegral[SInt] with SIntOrder with SIntSigned with hasContext {
-  def toDouble(a: SInt): DspReal = ???
   // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself; 
   // isWhole always true
   // -5, -3, -1, 1, 3, 5, etc.
@@ -111,9 +110,11 @@ trait ConvertableFromSInt extends ChiselConvertableFrom[SInt] with hasContext {
 trait ChiselBaseNumSInt extends ChiselBaseNum[SInt] with hasContext {
   def shl(a: SInt, n: Int): SInt = a << n
   def shl(a: SInt, n: UInt): SInt = a << n
+  // Note: This rounds to negative infinity (smallest abs. value for negative #'s is -1)
   def shr(a: SInt, n: Int): SInt = a >> n
   def shr(a: SInt, n: UInt): SInt = a >> n
-  // signBit relies on Signed
+  // mul2 consistent with shl
+  // signBit relies on Signed, div2 relies on ChiselConvertableFrom
  }
 
 trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with 
@@ -123,6 +124,16 @@ trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with
   override def fromInt(n: Int): SInt = super[ConvertableToSInt].fromInt(n)
   // Overflow only on most negative
   def abs(a: SInt): SInt = Mux(isSignNegative(a), super[SIntRing].minus(0.S, a), a)
+  // Rounds result to nearest int (half up) for more math-y division
+  override def div2(a: SInt, n: Int): SInt = a.widthOption match {
+    // If shifting more than width, guaranteed to be closer to 0
+    case Some(w) if n > w => 0.S
+    // TODO: Is this too conservative?, Include more rounding mode options?
+    case _ => {
+      import dsptools.numbers.implicits._
+      asFixed(a).div2(n).round().asSInt
+    }
+  }
 }
 
 trait SIntImpl {
