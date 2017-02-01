@@ -12,6 +12,8 @@ Listed here are hierarchically presented type classes and operations associated 
 * one
 * zero
 
+> Note: +, -, negate, * all have associated pipelining amounts [+, -, negate associated with numAddPipes; * associated with numMulPipes set in DspContext]. Additionally, you can control the overflow behavior of +, -, negate via overflowType in DspContext. Finally, for *, you can control binary trim behavior for FixedPoint #'s via trimType and binaryPointGrowth in DspContext.
+
 # Eq
 * eqv (===)
 * neqv (=!=)

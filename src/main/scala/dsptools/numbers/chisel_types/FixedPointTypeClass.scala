@@ -117,12 +117,15 @@ trait BinaryRepresentationFixedPoint extends BinaryRepresentation[FixedPoint] wi
     require(a.binaryPoint.known, "Binary point must be known for div2")
     val newBP = a.binaryPoint.get + n
     // Normal shift loses significant digits; this version doesn't
-    val inLong = Wire(FixedPoint((a.getWidth + n).W, newBP.BP))
-    inLong := a
-    val outFull = Wire(FixedPoint(a.getWidth.W, newBP.BP))
+    //val inLong = Wire(FixedPoint((a.getWidth + n).W, newBP.BP))
+    //inLong := a
+    //val outFull = Wire(FixedPoint(a.getWidth.W, newBP.BP))
     // Upper n bits don't contain meaningful data following shift, so remove
-    outFull := inLong >> n
-    outFull
+    //outFull := inLong >> n
+    //outFull
+    // Note: The above doesn't rely on tools to expand, shrink correctly; the version below does
+    // Assumes setBinaryPoint zero-extends
+    a.setBinaryPoint(newBP) >> n
     // TODO: Truncate!!!
   }
 
