@@ -2,6 +2,7 @@ package dsptools.numbers
 
 import chisel3.{Data, SInt}
 import chisel3.experimental.FixedPoint
+import dsptools.DspException
 
 object ChiselConvertableFrom {
   def apply[A <: Data](implicit A: ChiselConvertableFrom[A]): ChiselConvertableFrom[A] = A

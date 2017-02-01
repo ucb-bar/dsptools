@@ -25,10 +25,7 @@ trait Signed[A] extends Any {
   def abs(a: A): A
 
   def isSignZero(a: A): Bool = signum(a).eq
-  def isSignPositive(a: A): Bool = {
-    val s = signum(a)
-    !s.eq && !s.lt
-  }
+  def isSignPositive(a: A): Bool = !isSignZero(a) && !isSignNegative(a)
   def isSignNegative(a: A): Bool = signum(a).lt
 
   def isSignNonZero(a: A): Bool = !isSignZero(a)

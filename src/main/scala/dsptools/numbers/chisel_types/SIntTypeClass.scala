@@ -57,12 +57,11 @@ trait SIntSigned extends Any with Signed[SInt] with hasContext {
     ComparisonHelper(a === 0.S, a < 0.S)
   }
   override def isSignZero(a: SInt): Bool = a === 0.S
-  override def isSignPositive(a: SInt): Bool = !isSignZero(a) && !isSignNegative(a)
   override def isSignNegative(a:SInt): Bool = {
     if (a.widthKnown) a(a.getWidth-1)
     else a < 0.S
   }
-  // isSignNonZero, isSignNonPositive, isSignNonNegative derived from above (!)
+  // isSignPositive, isSignNonZero, isSignNonPositive, isSignNonNegative derived from above (!)
   // abs requires ring (for overflow) so overridden later
 }
 
@@ -103,7 +102,7 @@ trait ConvertableToSInt extends ConvertableTo[SInt] with hasContext {
 trait ConvertableFromSInt extends ChiselConvertableFrom[SInt] with hasContext {
   def intPart(a: SInt): SInt = a
   // Converts to FixedPoint with 0 fractional bits (Note: proto only used for real)
-  override def asFixed(a: SInt): SInt = a.asFixedPoint(0.BP)
+  override def asFixed(a: SInt): FixedPoint = a.asFixedPoint(0.BP)
   def asFixed(a: SInt, proto: FixedPoint): FixedPoint = asFixed(a)
   // Converts to (signed) DspReal
   def asReal(a: SInt): DspReal = DspReal(a)
