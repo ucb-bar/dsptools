@@ -105,6 +105,7 @@ class ConvertableToOps[A <: Data](lhs: A)(implicit ev: ConvertableTo[A]) {
 
 class ChiselConvertableFromOps[A <: Data](lhs: A)(implicit ev: ChiselConvertableFrom[A]) {
   def intPart(): SInt = ev.intPart(lhs)
+  def asFixed(): FixedPoint = ev.asFixed(lhs)
   def asFixed(proto: FixedPoint): FixedPoint = ev.asFixed(lhs, proto)
   def asReal(): DspReal = ev.asReal(lhs)
 }

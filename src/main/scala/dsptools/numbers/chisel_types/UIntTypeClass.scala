@@ -108,8 +108,9 @@ trait ConvertableToUInt extends ConvertableTo[UInt] with hasContext {
 trait ConvertableFromUInt extends ChiselConvertableFrom[UInt] with hasContext {
   // Bit grow by 1, but always positive to maintain correctness
   def intPart(a: UInt): SInt = Cat(false.B, a).asSInt
-  // Converts to FixedPoint with 0 fractional bits
-  def asFixed(a: UInt, proto: FixedPoint): FixedPoint = intPart(a).asFixedPoint(0.BP)
+  // Converts to FixedPoint with 0 fractional bits (second arg only used for DspReal)
+  override def asFixed(a: UInt): FixedPoint = intPart(a).asFixedPoint(0.BP)
+  def asFixed(a: UInt, proto: FixedPoint): FixedPoint = asFixed(a)
   // Converts to (signed) DspReal
   def asReal(a: UInt): DspReal = DspReal(intPart(a))
 }

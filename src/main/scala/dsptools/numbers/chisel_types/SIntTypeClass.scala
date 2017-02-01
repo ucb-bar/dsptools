@@ -102,8 +102,9 @@ trait ConvertableToSInt extends ConvertableTo[SInt] with hasContext {
 
 trait ConvertableFromSInt extends ChiselConvertableFrom[SInt] with hasContext {
   def intPart(a: SInt): SInt = a
-  // Converts to FixedPoint with 0 fractional bits
-  def asFixed(a: SInt, proto: FixedPoint): FixedPoint = a.asFixedPoint(0.BP)
+  // Converts to FixedPoint with 0 fractional bits (Note: proto only used for real)
+  override def asFixed(a: SInt): SInt = a.asFixedPoint(0.BP)
+  def asFixed(a: SInt, proto: FixedPoint): FixedPoint = asFixed(a)
   // Converts to (signed) DspReal
   def asReal(a: SInt): DspReal = DspReal(a)
 }
@@ -121,39 +122,10 @@ trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with
   def signBit(a: SInt): Bool = isSignNegative(a)
   // fromSInt also included in Ring
   override def fromInt(n: Int): SInt = super[ConvertableToSInt].fromInt(n)
-
-
-
-
-
-
-// does invert -8 work for 4b
   // Overflow only on most negative
   def abs(a: SInt): SInt = Mux(isSignNegative(a), super[SIntRing].minus(0.S, a), a)
 }
 
-
-
-
-
 trait SIntImpl {
   implicit object SIntIntegerImpl extends SIntInteger
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
