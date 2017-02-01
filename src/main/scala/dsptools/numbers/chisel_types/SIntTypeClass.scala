@@ -107,7 +107,7 @@ trait ConvertableFromSInt extends ChiselConvertableFrom[SInt] with hasContext {
   def asReal(a: SInt): DspReal = DspReal(a)
 }
 
-trait ChiselBaseNumSInt extends ChiselBaseNum[SInt] with hasContext {
+trait BinaryRepresentationSInt extends BinaryRepresentation[SInt] with hasContext {
   def shl(a: SInt, n: Int): SInt = a << n
   def shl(a: SInt, n: UInt): SInt = a << n
   // Note: This rounds to negative infinity (smallest abs. value for negative #'s is -1)
@@ -118,7 +118,7 @@ trait ChiselBaseNumSInt extends ChiselBaseNum[SInt] with hasContext {
  }
 
 trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with 
-    ConvertableFromSInt with ChiselBaseNumSInt with IntegerBits[SInt] with hasContext {
+    ConvertableFromSInt with BinaryRepresentationSInt with IntegerBits[SInt] with hasContext {
   def signBit(a: SInt): Bool = isSignNegative(a)
   // fromSInt also included in Ring
   override def fromInt(n: Int): SInt = super[ConvertableToSInt].fromInt(n)

@@ -38,6 +38,6 @@ trait ChiselConvertableFromSyntax {
   implicit def chiselConvertableFromOps[A <: Data:ChiselConvertableFrom](a: A): ChiselConvertableFromOps[A] = new ChiselConvertableFromOps(a)
 }
 
-trait ChiselBaseNumSyntax {
-  implicit def chiselBaseNumOps[A <: Data:ChiselBaseNum](a: A): ChiselBaseNumOps[A] = new ChiselBaseNumOps(a)
+trait BinaryRepresentationSyntax {
+  implicit def binaryRepresentationOps[A <: Data:BinaryRepresentation](a: A): BinaryRepresentationOps[A] = new BinaryRepresentationOps(a)
 }

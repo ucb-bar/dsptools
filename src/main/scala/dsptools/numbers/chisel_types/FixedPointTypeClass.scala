@@ -100,7 +100,7 @@ trait ConvertableFromFixedPoint extends ChiselConvertableFrom[FixedPoint] with h
   def asFixed(a: FixedPoint, proto: FixedPoint): FixedPoint = asFixed(a)
 }
 
-trait ChiselBaseNumFixedPoint extends ChiselBaseNum[FixedPoint] with hasContext {
+trait BinaryRepresentationFixedPoint extends BinaryRepresentation[FixedPoint] with hasContext {
   def shl(a: FixedPoint, n: Int): FixedPoint = a << n
   def shl(a: FixedPoint, n: UInt): FixedPoint = a << n
 
@@ -129,7 +129,7 @@ trait ChiselBaseNumFixedPoint extends ChiselBaseNum[FixedPoint] with hasContext 
  }
 
 trait FixedPointReal extends FixedPointRing with FixedPointIsReal with ConvertableToFixedPoint with 
-    ConvertableFromFixedPoint with ChiselBaseNumFixedPoint with RealBits[FixedPoint] with hasContext {
+    ConvertableFromFixedPoint with BinaryRepresentationFixedPoint with RealBits[FixedPoint] with hasContext {
 
   def signum(a: FixedPoint): ComparisonBundle = {
     ComparisonHelper(a === zero, a < zero)

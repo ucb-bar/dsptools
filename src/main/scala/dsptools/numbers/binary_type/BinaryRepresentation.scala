@@ -2,11 +2,11 @@ package dsptools.numbers
 
 import chisel3.{Data, UInt, Bool}
 
-object ChiselBaseNum {
-  def apply[A <: Data](implicit A: ChiselBaseNum[A]): ChiselBaseNum[A] = A
+object BinaryRepresentation {
+  def apply[A <: Data](implicit A: BinaryRepresentation[A]): BinaryRepresentation[A] = A
 }
 
-trait ChiselBaseNum[A <: Data] extends Any {
+trait BinaryRepresentation[A <: Data] extends Any {
   def shl(a: A, n: Int): A
   def shl(a: A, n: UInt): A
   // For negative signed #'s, this is actually round to negative infinity

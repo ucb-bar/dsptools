@@ -114,7 +114,7 @@ trait ConvertableFromUInt extends ChiselConvertableFrom[UInt] with hasContext {
   def asReal(a: UInt): DspReal = DspReal(intPart(a))
 }
 
-trait ChiselBaseNumUInt extends ChiselBaseNum[UInt] with hasContext {
+trait BinaryRepresentationUInt extends BinaryRepresentation[UInt] with hasContext {
   def shl(a: UInt, n: Int): UInt = a << n
   def shl(a: UInt, n: UInt): UInt = a << n
   def shr(a: UInt, n: Int): UInt = a >> n
@@ -124,7 +124,7 @@ trait ChiselBaseNumUInt extends ChiselBaseNum[UInt] with hasContext {
  }
 
 trait UIntInteger extends UIntRing with UIntIsReal with ConvertableToUInt with 
-    ConvertableFromUInt with ChiselBaseNumUInt with IntegerBits[UInt] with hasContext {
+    ConvertableFromUInt with BinaryRepresentationUInt with IntegerBits[UInt] with hasContext {
   def signBit(a: UInt): Bool = isSignNegative(a)
   // fromUInt also included in Ring
   override def fromInt(n: Int): UInt = super[ConvertableToUInt].fromInt(n)
