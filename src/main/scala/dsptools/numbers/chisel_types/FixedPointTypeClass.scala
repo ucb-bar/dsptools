@@ -17,18 +17,18 @@ trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
   def one: FixedPoint= FixedPoint.fromDouble(1.0, binaryPoint = 0)
   def plus(f: FixedPoint, g: FixedPoint): FixedPoint = {
     // TODO: Saturating mux should be outside of ShiftRegister
-    val sum = {
-      if(context.overflowType == Grow) f +& g
-      else if (context.overflowType == Wrap)  f +% g
-      else throw DspException("Saturating add hasn't been implemented")
+    val sum = context.overflowType match {
+      case Grow => f +& g
+      case Wrap => f +% g
+      case _ => throw DspException("Saturating add hasn't been implemented")
     }
     ShiftRegister(sum, context.numAddPipes)
   }
   override def minus(f: FixedPoint, g: FixedPoint): FixedPoint = {
-    val diff = {
-      if(context.overflowType == Grow) f -& g
-      else if (context.overflowType == Wrap) f -% g
-      else throw DspException("Saturating subtractor hasn't been implemented")
+    val diff = context.overflowType match {
+      case Grow => f -& g
+      case Wrap => f -% g
+      case _ => throw DspException("Saturating subtractor hasn't been implemented")
     }
     ShiftRegister(diff, context.numAddPipes)
   }

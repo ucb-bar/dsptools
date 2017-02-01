@@ -17,18 +17,18 @@ trait UIntRing extends Any with Ring[UInt] with hasContext {
   def one: UInt = 1.U
   def plus(f: UInt, g: UInt): UInt = {
     // TODO: Saturating mux should be outside of ShiftRegister
-    val sum = {
-      if(context.overflowType == Grow) f +& g
-      else if (context.overflowType == Wrap)  f +% g
-      else throw DspException("Saturating add hasn't been implemented")
+    val sum = context.overflowType match {
+      case Grow => f +& g
+      case Wrap => f +% g
+      case _ => throw DspException("Saturating add hasn't been implemented")
     }
     ShiftRegister(sum, context.numAddPipes)
   }
   override def minus(f: UInt, g: UInt): UInt = {
-    val diff = {
-      if(context.overflowType == Grow) f -& g
-      else if (context.overflowType == Wrap) f -% g
-      else throw DspException("Saturating subtractor hasn't been implemented")
+    val diff = context.overflowType match {
+      case Grow => f -& g
+      case Wrap => f -% g
+      case _ => throw DspException("Saturating subtractor hasn't been implemented")
     }
     ShiftRegister(diff, context.numAddPipes)
   }
