@@ -1,23 +1,21 @@
-//// See LICENSE for license details.
+// See LICENSE for license details.
 
 package dsptools.numbers
 
-import java.nio.file.Files
-
 import chisel3._
-import chisel3.util._
+import chisel3.iotesters.{ChiselFlatSpec, TesterOptionsManager}
 import chisel3.testers.BasicTester
-import chisel3.iotesters.{ChiselFlatSpec, PeekPokeTester, TesterOptionsManager}
+import chisel3.util._
 import dsptools.DspTester
 
 //scalastyle:off magic.number regex
 
 class BlackBoxFloatTester extends BasicTester {
   val (cnt, _) = Counter(true.B, 10)
-  val accum = Reg(init=Wire(DspReal(1.0)))
+  val accum = RegInit(Wire(DspReal(1.0)))
 
-  val addOut = accum + DspReal(1.0)
-  val mulOut = addOut * DspReal(2.0)
+  private val addOut = accum + DspReal(1.0)
+  private val mulOut = addOut * DspReal(2.0)
 
   accum := addOut
 
@@ -256,20 +254,6 @@ class BlackBoxFloatSpec extends ChiselFlatSpec {
   "float ops" should "work with verilator" in {
     val optionsManager = new TesterOptionsManager {
         testerOptions = testerOptions.copy(backendName = "verilator")
-    }
-
-    //TODO: Fix this really ugly way of getting black box to verilator ASAP
-    optionsManager.setTargetDirName( "test_run_dir/floatops_verilator/")
-    optionsManager.setTopName("FloatOps")
-    optionsManager.makeTargetDir()
-
-    println(s"Dir is ${optionsManager.commonOptions.targetDirName}")
-    val blackBoxFile = new java.io.File("src/main/resources/BlackBoxFloat.v")
-    val resourceTarget = new java.io.File(optionsManager.targetDirName + "/" + "BBFAdd.v")
-    println(s"${blackBoxFile.getAbsolutePath} exists ${blackBoxFile.exists()}")
-    println(s"${resourceTarget.getAbsolutePath} exists ${resourceTarget.exists()}")
-    if(! resourceTarget.exists()) {
-      Files.copy(blackBoxFile.toPath, resourceTarget.toPath)
     }
 
     dsptools.Driver.execute(() => new FloatOpsWithoutTrig, optionsManager) { c =>
