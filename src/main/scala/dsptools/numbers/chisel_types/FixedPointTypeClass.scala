@@ -4,8 +4,9 @@ package dsptools.numbers
 
 import chisel3._
 import chisel3.util.{ShiftRegister, Cat}
-import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, DspException}
+import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floor, NoTrim, DspException}
 import chisel3.experimental.FixedPoint
+import chisel3.internal.firrtl.KnownBinaryPoint
 
 import scala.language.implicitConversions
 
@@ -33,15 +34,7 @@ trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
     ShiftRegister(diff, context.numAddPipes)
   }
   def negate(f: FixedPoint): FixedPoint = minus(zero, f)
-  def times(f: FixedPoint, g: FixedPoint): FixedPoint = {
-    // TODO: Overflow via ranging in FIRRTL?
-    val outTemp = ShiftRegister(f * g, context.numMulPipes)   
-    val newBP = (f.binaryPoint, g.binaryPoint) match {
-      case (None, None) => None
-      case (Some(i), Some(j)) => Some(i.max(j) + context.binaryPointGrowth)
-    }
-    trimBinary(outTemp, newBP)
-  }  
+  // Times moved later b/c need trim binary
 }
 
 trait FixedPointOrder extends Any with Order[FixedPoint] with hasContext {
@@ -139,20 +132,30 @@ trait BinaryRepresentationFixedPoint extends BinaryRepresentation[FixedPoint] wi
 trait FixedPointReal extends FixedPointRing with FixedPointIsReal with ConvertableToFixedPoint with 
     ConvertableFromFixedPoint with BinaryRepresentationFixedPoint with RealBits[FixedPoint] with hasContext {
 
-
-
-
-
-
-    context.trimType match {
-      case NoTrim => outFull
-      case Floor => outFull.setBinaryPoint(a.binaryPoint.get + context.binaryPointGrowth)
+  def trimBinary(a: FixedPoint, n: Option[Int]): FixedPoint = {
+    // TODO: Support other modes?
+    n match {
+      case None => a
+      case Some(b) => context.trimType match {
+        case NoTrim => a
+        case Floor => a.setBinaryPoint(b)
+        case RoundHalfUp => {
+          val roundBp = b + 1
+          plus(a, FixedPoint.fromDouble(math.pow(2, -roundBp), binaryPoint = roundBp).setBinaryPoint(b))
+        }
+      }
     }
+  }
 
-
-
-
-
+  def times(f: FixedPoint, g: FixedPoint): FixedPoint = {
+    // TODO: Overflow via ranging in FIRRTL?
+    val outTemp = ShiftRegister(f * g, context.numMulPipes)   
+    val newBP = (f.binaryPoint, g.binaryPoint) match {
+      case (KnownBinaryPoint(i), KnownBinaryPoint(j)) => Some(i.max(j) + context.binaryPointGrowth)
+      case (_, _) => None
+    }
+    trimBinary(outTemp, newBP)
+  }  
 
   def signum(a: FixedPoint): ComparisonBundle = {
     ComparisonHelper(a === zero, a < zero)

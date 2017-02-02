@@ -13,8 +13,9 @@ case object Grow extends OverflowType
 /** Different trim methods */
 abstract class TrimType
 case object Truncate extends TrimType
-case object Round extends TrimType
+case object RoundHalfUp extends TrimType
 case object NoTrim extends TrimType
+case object Floor extends TrimType
 
 object DspContext {
   val DefaultOverflowType              = Wrap

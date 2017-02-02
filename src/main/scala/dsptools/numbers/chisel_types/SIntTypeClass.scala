@@ -4,7 +4,7 @@ package dsptools.numbers
 
 import chisel3._
 import chisel3.util.{ShiftRegister, Cat}
-import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, DspException}
+import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, NoTrim, DspException}
 import chisel3.experimental.FixedPoint
 
 import scala.language.implicitConversions
@@ -114,7 +114,8 @@ trait BinaryRepresentationSInt extends BinaryRepresentation[SInt] with hasContex
   def shr(a: SInt, n: Int): SInt = a >> n
   def shr(a: SInt, n: UInt): SInt = a >> n
   // Doesn't affect anything except FixedPoint (no such thing as negative n)
-  def trimBinary(a: SInt, n: Int): SInt = a
+  override def trimBinary(a: SInt, n: Int): SInt = a
+  def trimBinary(a: SInt, n: Option[Int]): SInt = a
   // mul2 consistent with shl
   // signBit relies on Signed, div2 relies on ChiselConvertableFrom
  }

@@ -14,13 +14,13 @@ object Utilities {
       case dspReal: DspReal=>
         trim match {
           case Truncate => dspReal.intPart().asInstanceOf[T]
-          case Round => (dspReal + DspReal(0.5)).intPart().asInstanceOf[T]
+          case RoundHalfUp => (dspReal + DspReal(0.5)).intPart().asInstanceOf[T]
           case _ => throw DspException(s"removeMantissa: unsupported trim operation $trim on $dspReal")
         }
       case fixedPoint: FixedPoint =>
         trim match {
           case Truncate => fixedPoint.asInstanceOf[T]//.setBinaryPoint(0).asInstanceOf[T]
-          case Round => (fixedPoint + FixedPoint.fromDouble(0.5, binaryPoint = 1)).asInstanceOf[T]//.setBinaryPoint(0).asInstanceOf[T]
+          case RoundHalfUp => (fixedPoint + FixedPoint.fromDouble(0.5, binaryPoint = 1)).asInstanceOf[T]//.setBinaryPoint(0).asInstanceOf[T]
           case _ => throw DspException(s"removeMantissa: unsupported trim operation $trim on $fixedPoint")
         }
       case _ => throw DspException(s"removeMantissa: unsupported number type $number")
