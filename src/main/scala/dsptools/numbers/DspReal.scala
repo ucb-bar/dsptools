@@ -262,9 +262,9 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
     oneOperandOperator(Module(new BBFATanh()))
   }
 
-  def intPart(dummy: Int = 0): DspReal = {
+  /*def intPart(dummy: Int = 0): DspReal = {
     oneOperandOperator(Module(new BBFIntPart()))
-  }
+  }*/
   /** Returns this Real's value truncated to an integer, as a DspReal.UnderlyingWidth-bit UInt.
     * Behavior on overflow (possible with large exponent terms) is undefined.
     */

@@ -59,8 +59,8 @@ class Demod[T <: Data:Ring](gen: => T, p: DemodParams) extends Module {
 
 
   //check if the integer part of the inputs are odd
-  val real_odd = Utilities.isOdd(io.symbolIn.real, Truncate)
-  val imag_odd = Utilities.isOdd(io.symbolIn.imaginary, Truncate)
+  //val real_odd = Utilities.isOdd(io.symbolIn.real, Truncate)
+  //val imag_odd = Utilities.isOdd(io.symbolIn.imaginary, Truncate)
 
   //Set up the vector for each constellation.
   val bpsk_out0 = Bool()

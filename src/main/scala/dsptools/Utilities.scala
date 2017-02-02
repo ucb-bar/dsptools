@@ -8,31 +8,7 @@ import dsptools.numbers.DspReal
 import spire.algebra.Ring
 
 object Utilities {
-  //Todo: I'm very dissatisfied with the name removeMantissa
-  def removeMatissa[T <: Data:Ring](number: T, trim: TrimType): T = {
-    number match {
-      case dspReal: DspReal=>
-        trim match {
-          case Truncate => dspReal.intPart().asInstanceOf[T]
-          case RoundHalfUp => (dspReal + DspReal(0.5)).intPart().asInstanceOf[T]
-          case _ => throw DspException(s"removeMantissa: unsupported trim operation $trim on $dspReal")
-        }
-      case fixedPoint: FixedPoint =>
-        trim match {
-          case Truncate => fixedPoint.asInstanceOf[T]//.setBinaryPoint(0).asInstanceOf[T]
-          case RoundHalfUp => (fixedPoint + FixedPoint.fromDouble(0.5, binaryPoint = 1)).asInstanceOf[T]//.setBinaryPoint(0).asInstanceOf[T]
-          case _ => throw DspException(s"removeMantissa: unsupported trim operation $trim on $fixedPoint")
-        }
-      case _ => throw DspException(s"removeMantissa: unsupported number type $number")
-    }
-  }
-
-  def isOdd[T <: Data:Ring](number: T, trim: TrimType = Truncate): Bool = {
-    (removeMatissa(number, trim).asUInt() & 1.U) === 1.U
-  }
-
-  def isEven[T <: Data:Ring](number: T, trim: TrimType = Truncate): Bool = ! isEven(number, trim)
-
+ 
   // [stevo]: converts negative values to their 2's complement version
   // also works for positive numbers
   // sign extends to totalWidth

@@ -83,7 +83,7 @@ trait BinaryRepresentationDspReal extends BinaryRepresentation[DspReal] with has
   def shl(a: DspReal, n: Int): DspReal = a * DspReal(math.pow(2, n))
   def shl(a: DspReal, n: UInt): DspReal = {
     require(n.widthKnown, "n Width must be known for shl with DspReal")
-    val max = (1 << a.getWidth) - 1
+    val max = (1 << n.getWidth) - 1
     val lut = Vec((0 to max).map(x => DspReal(math.pow(2, x))))
     a * lut(n)
   }
@@ -96,18 +96,19 @@ trait BinaryRepresentationDspReal extends BinaryRepresentation[DspReal] with has
 
 trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspReal with 
     ConvertableFromDspReal with BinaryRepresentationDspReal with RealBits[DspReal] with hasContext {
+  import dsptools.numbers.implicits._
   def signBit(a: DspReal): Bool = isSignNegative(a)
   override def fromInt(n: Int): DspReal = super[ConvertableToDspReal].fromInt(n)
   def intPart(a: DspReal): SInt = truncate(a).toSInt()
   // TODO: Implement? Will it ever be used? instead of div2?
   def shr(a: DspReal, n: Int): DspReal = throw DspException(">> for DspReal is unimplemented")
   def shr(a: DspReal, n: UInt): DspReal = throw DspException(">> for DspReal is unimplemented")
+  // WARNING: Beware of overflow(!)
   def asFixed(a: DspReal, proto: FixedPoint): FixedPoint = {
     require(proto.binaryPoint.known, "Binary point must be known for DspReal -> FixedPoint")
     val bp = proto.binaryPoint.get
     // WARNING: Round half up!
-    import dsptools.numbers.implicits._
-    val out = proto.chiselCloneType
+    val out = Wire(proto.cloneType)
     out := DspContext.withTrimType(NoTrim) {
       round(a * DspReal((1 << bp).toDouble)).toSInt().asFixed.div2(bp)
     }
