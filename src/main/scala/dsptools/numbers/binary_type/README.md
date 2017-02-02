@@ -13,4 +13,5 @@ This adds additional functions to Chisel base numeric types (i.e. UInt, SInt, Fi
 
 * div2 (More proper division than shr i.e. rounds [choice via DSP Context] for SInt and adds more binary points for FixedPoint [Can be trimmed via context])
 * mul2 (identical to shl by an Int amount)
+* trimBinary (trim fractional bits with rounding mode selected via DspContext; doesn't affect DspReal)
 

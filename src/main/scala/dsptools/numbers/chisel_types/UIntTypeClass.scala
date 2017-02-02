@@ -119,6 +119,8 @@ trait BinaryRepresentationUInt extends BinaryRepresentation[UInt] with hasContex
   def shl(a: UInt, n: UInt): UInt = a << n
   def shr(a: UInt, n: Int): UInt = a >> n
   def shr(a: UInt, n: UInt): UInt = a >> n
+  // Ignores negative trims (n not used for anything except Fixed)
+  def trimBinary(a: UInt, n: Int): UInt = a
   // signBit relies on Signed
   // mul2, div2 consistent with shl, shr
  }

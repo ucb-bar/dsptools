@@ -72,4 +72,6 @@ case class DspContext(
     val complexUse4Multiplies:     Boolean      = true,
     val numMulPipes: Int          = DspContext.DefaultRegistersForFixedMultiply,
     val numAddPipes:      Int          = DspContext.DefaultRegistersForFixedAdd,
-    val multiplyBinaryPointGrowth: Int          = 1)
+    val binaryPointGrowth: Int          = 1){
+  require(binaryPointGrowth >= 0, "Binary point growth must be non-negative")
+}

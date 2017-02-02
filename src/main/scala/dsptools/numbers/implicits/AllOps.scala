@@ -118,4 +118,5 @@ class BinaryRepresentationOps[A <: Data](lhs: A)(implicit ev: BinaryRepresentati
   def signBit(): Bool = ev.signBit(lhs)
   def div2(n: Int): A = ev.div2(lhs, n)
   def mul2(n: Int): A = ev.mul2(lhs, n)
+  def trimBinary(n: Int): A = ev.trimBinary(lhs, n)
 }

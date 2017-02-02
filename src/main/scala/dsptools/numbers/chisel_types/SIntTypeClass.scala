@@ -113,6 +113,8 @@ trait BinaryRepresentationSInt extends BinaryRepresentation[SInt] with hasContex
   // Note: This rounds to negative infinity (smallest abs. value for negative #'s is -1)
   def shr(a: SInt, n: Int): SInt = a >> n
   def shr(a: SInt, n: UInt): SInt = a >> n
+  // Doesn't affect anything except FixedPoint (no such thing as negative n)
+  def trimBinary(a: SInt, n: Int): SInt = a
   // mul2 consistent with shl
   // signBit relies on Signed, div2 relies on ChiselConvertableFrom
  }
@@ -128,10 +130,11 @@ trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with
   override def div2(a: SInt, n: Int): SInt = a.widthOption match {
     // If shifting more than width, guaranteed to be closer to 0
     case Some(w) if n > w => 0.S
-    // TODO: Is this too conservative?, Include more rounding mode options?
+    // TODO: Is this too conservative?
     case _ => {
       import dsptools.numbers.implicits._
-      asFixed(a).div2(n).round().asSInt
+      val div2Out = DspContext.withTrimType(NoTrim) { asFixed(a).div2(n) }
+      div2Out.trimBinary(0).asSInt
     }
   }
 }
