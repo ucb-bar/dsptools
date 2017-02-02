@@ -268,10 +268,10 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
   /** Returns this Real's value truncated to an integer, as a DspReal.UnderlyingWidth-bit UInt.
     * Behavior on overflow (possible with large exponent terms) is undefined.
     */
-  def toUInt(dummy: Int = 0): UInt = {
+  def toSInt(dummy: Int = 0): SInt = {
     val blackbox = Module(new BBFToInt)
     blackbox.io.in := node
-    blackbox.io.out
+    blackbox.io.out.asSInt
   }
 
   /** Returns this Real's value as its bit representation in DspReal.UnderlyingWidth-bit floating point.
