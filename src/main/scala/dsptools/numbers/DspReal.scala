@@ -1,18 +1,11 @@
-
 package dsptools.numbers
 import chisel3._
 
-
-
-
-
-
-
-
 class DspReal(lit: Option[BigInt] = None) extends Bundle {
+  
   val node: UInt = lit match {
-    case Some(x) => x.U(DspReal.UnderlyingWidth.W)
-    case _ => Output(UInt(DspReal.UnderlyingWidth.W))
+    case Some(x) => x.U(DspReal.underlyingWidth.W)
+    case _ => Output(UInt(DspReal.underlyingWidth.W))
   }
 
   private def oneOperandOperator(blackbox_gen: => BlackboxOneOperand) : DspReal = {
@@ -109,7 +102,8 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
     oneOperandOperator(Module(new BBFCeil()))
   }
 
-/*
+  // The following are currently not supported with Verilator
+  /*
   def sin (dummy: Int = 0): DspReal = {
     oneOperandOperator(Module(new BBFSin()))
   }
@@ -167,19 +161,24 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
   }
   */
 
-  /*def intPart(dummy: Int = 0): DspReal = {
+  // Not use directly -- there's an equivalent in the type classes (was causing some confusion)
+  /*
+  def intPart(dummy: Int = 0): DspReal = {
     oneOperandOperator(Module(new BBFIntPart()))
-  }*/
-  /** Returns this Real's value truncated to an integer, as a DspReal.UnderlyingWidth-bit UInt.
+  }
+  */
+
+  /** Returns this Real's value rounded to a signed integer.
     * Behavior on overflow (possible with large exponent terms) is undefined.
     */
   def toSInt(dummy: Int = 0): SInt = {
     val blackbox = Module(new BBFToInt)
     blackbox.io.in := node
+    // BB output always UInt -- need to cast
     blackbox.io.out.asSInt
   }
 
-  /** Returns this Real's value as its bit representation in DspReal.UnderlyingWidth-bit floating point.
+  /** Returns this Real's value as its bit representation in DspReal.underlyingWidth-bit floating point.
     */
   def toDoubleBits(dummy: Int = 0): UInt = {
     node
@@ -187,37 +186,34 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
 }
 
 object DspReal {
-  val UnderlyingWidth = 64
-  // [stevo]: this doesn't work for UnderlyingWidth = 64...it produces 18446744073709552000 instead of 18446744073709551616
-  // val bigInt2powUnderlying = BigInt(f"${math.pow(2.0, UnderlyingWidth)}%.0f")
-  val bigInt2powUnderlying = BigInt(f"${math.pow(2.0, UnderlyingWidth/2)}%.0f")*BigInt(f"${math.pow(2.0, UnderlyingWidth/2)}%.0f")
+  val underlyingWidth = 64
+  // Need to separate out, otherwise answer is incorrect (?)
+  def width2NextBigInt = BigInt(f"${math.pow(2.0, underlyingWidth/2)}%.0f") * BigInt(f"${math.pow(2.0, underlyingWidth/2)}%.0f")
 
   /** Creates a Real with a constant value.
     */
   def apply(value: Double): DspReal = {
-    def longAsUnsignedBigInt(in: Long) = (BigInt(in >>> 1) << 1) + (in & 1)
-    def doubleToBits(in: Double) = longAsUnsignedBigInt(java.lang.Double.doubleToRawLongBits(value))
+    // See http://stackoverflow.com/questions/21212993/unsigned-variables-in-scala
+    def longAsUnsignedBigInt(in: Long): BigInt = (BigInt(in >>> 1) << 1) + (in & 1)
+    def doubleToBits(in: Double): BigInt = longAsUnsignedBigInt(java.lang.Double.doubleToRawLongBits(in))
     new DspReal(Some(doubleToBits(value)))
   }
 
   /**
-    * Creates a Real by doing integer conversion from a (up to) DspReal.UnderlyingWidth-bit UInt.
+    * Creates a Real from an SInt
     */
   def apply(value: SInt): DspReal = {
-    //add warning here
     val blackbox = Module(new BBFFromInt)
-    val extendedSInt = Wire(SInt(64.W))
+    val extendedSInt = Wire(SInt(underlyingWidth.W))
     extendedSInt := value
+    // Black box expects 64-bit UInt input
     blackbox.io.in := extendedSInt.asUInt
     val out = Wire(new DspReal())
     out.node := blackbox.io.out
     out
   }
 
-  // just the typ
   def apply(): DspReal = new DspReal()
 
-  
-//  val BlackBoxFloatVerilog = "/BBFAdd.v"
 }
 

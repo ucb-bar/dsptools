@@ -15,23 +15,23 @@ trait BlackBoxWithVerilog extends BlackBox with HasBlackBoxResource {
 
 class BlackboxOneOperand extends BlackBoxWithVerilog {
   val io = IO(new Bundle() {
-    val in = Input(UInt(DspReal.UnderlyingWidth.W))
-    val out = Output(UInt(DspReal.UnderlyingWidth.W))
+    val in = Input(UInt(DspReal.underlyingWidth.W))
+    val out = Output(UInt(DspReal.underlyingWidth.W))
   })
 }
 
 class BlackboxTwoOperand extends BlackBoxWithVerilog {
   val io = IO(new Bundle() {
-    val in1 = Input(UInt(DspReal.UnderlyingWidth.W))
-    val in2 = Input(UInt(DspReal.UnderlyingWidth.W))
-    val out = Output(UInt(DspReal.UnderlyingWidth.W))
+    val in1 = Input(UInt(DspReal.underlyingWidth.W))
+    val in2 = Input(UInt(DspReal.underlyingWidth.W))
+    val out = Output(UInt(DspReal.underlyingWidth.W))
   })
 }
 
 class BlackboxTwoOperandBool extends BlackBoxWithVerilog {
   val io = IO(new Bundle() {
-    val in1 = Input(UInt(DspReal.UnderlyingWidth.W))
-    val in2 = Input(UInt(DspReal.UnderlyingWidth.W))
+    val in1 = Input(UInt(DspReal.underlyingWidth.W))
+    val in2 = Input(UInt(DspReal.underlyingWidth.W))
     val out = Output(Bool())
   })
 }
@@ -104,16 +104,16 @@ class BBFATanh extends BlackboxOneOperand { addVerilog() }
 
 class BBFFromInt extends BlackBoxWithVerilog {
   val io = IO(new Bundle() {
-    val in = Input(UInt(DspReal.UnderlyingWidth.W))
-    val out = Output(UInt(DspReal.UnderlyingWidth.W))
+    val in = Input(UInt(DspReal.underlyingWidth.W))
+    val out = Output(UInt(DspReal.underlyingWidth.W))
   })
   addVerilog()
 }
 
 class BBFToInt extends BlackBoxWithVerilog {
   val io = IO(new Bundle() {
-    val in = Input(UInt(DspReal.UnderlyingWidth.W))
-    val out = Output(UInt(DspReal.UnderlyingWidth.W))
+    val in = Input(UInt(DspReal.underlyingWidth.W))
+    val out = Output(UInt(DspReal.underlyingWidth.W))
   })
   addVerilog()
 }

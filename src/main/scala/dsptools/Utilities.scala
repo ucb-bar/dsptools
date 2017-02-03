@@ -42,7 +42,7 @@ object Utilities {
     if(ret >= 0) { 
       ret 
     } else  {
-      DspReal.bigInt2powUnderlying + ret
+      DspReal.width2NextBigInt + ret
     }
   }
 
