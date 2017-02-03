@@ -346,24 +346,41 @@ class SimpleTBSpec extends FlatSpec with Matchers {
   val optionsPassTB = TestSetup.optionsPassTB
   val optionsFail = TestSetup.optionsFail
 
+  // Note: Verilator simulation is silly. Concurrent testing gets confused when things are in the same directory.
+
   behavior of "simple module lits"
 
   it should "properly read lits with gen = sint (reals rounded) and expect tolerance set to 1 bit" in {
-    dsptools.Driver.execute(() => new SimpleLitModule(p.genShortS, p.genLongS, includeR = true, p), optionsPass) { c =>
+    val opt = new VerboseDspTesterOptionsManager {
+      verboseDspTesterOptions = optionsPass.verboseDspTesterOptions
+      testerOptions = optionsPass.testerOptions
+      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/lit_sint")
+    }
+    dsptools.Driver.execute(() => new SimpleLitModule(p.genShortS, p.genLongS, includeR = true, p), opt) { c =>
       new PassLitTester(c)
     } should be (true)
   }
 
   it should "properly read lits with gen = fixed and expect tolerance set to 1 bit " +
       "(even with finite fractional bits)" in {
-    dsptools.Driver.execute(() => new SimpleLitModule(p.genShortF, p.genLongF, includeR = true, p), optionsPass) { c =>
+    val opt = new VerboseDspTesterOptionsManager {
+      verboseDspTesterOptions = optionsPass.verboseDspTesterOptions
+      testerOptions = optionsPass.testerOptions
+      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/lit_fix")
+    }  
+    dsptools.Driver.execute(() => new SimpleLitModule(p.genShortF, p.genLongF, includeR = true, p), opt) { c =>
       new PassLitTester(c)
     } should be (true)
   }
 
   it should "*fail* to read all lits with gen = fixed when expect tolerance is set to 0 bits " + 
       "(due to not having enough fractional bits to represent #s)" in {
-    dsptools.Driver.execute(() => new SimpleLitModule(p.genShortF, p.genLongF, includeR = true, p), optionsFail) { c =>
+    val opt = new VerboseDspTesterOptionsManager {
+      verboseDspTesterOptions = optionsFail.verboseDspTesterOptions
+      testerOptions = optionsFail.testerOptions
+      commonOptions = optionsFail.commonOptions.copy(targetDirName = "test_run_dir/lit_fix")
+    }
+    dsptools.Driver.execute(() => new SimpleLitModule(p.genShortF, p.genLongF, includeR = true, p), opt) { c =>
       new FailLitTester(c)
     } should be (false)
   }
@@ -372,22 +389,37 @@ class SimpleTBSpec extends FlatSpec with Matchers {
 
   it should "properly poke/peek io delayed 1 cycle with gen = sint (reals rounded) " +
       "and expect tolerance set to 1 bit" in {
-    dsptools.Driver.execute(() => new SimpleIOModule(p.genShortS, p.genLongS, includeR = true, p), optionsPass) { c =>
+    val opt = new VerboseDspTesterOptionsManager {
+      verboseDspTesterOptions = optionsPass.verboseDspTesterOptions
+      testerOptions = optionsPass.testerOptions
+      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/io_sint")
+    }
+    dsptools.Driver.execute(() => new SimpleIOModule(p.genShortS, p.genLongS, includeR = true, p), opt) { c =>
       new PassIOTester(c)
     } should be (true)
   }
 
   it should "properly poke/peek io delayed 1 cycle with gen = fixed and expect tolerance set to 1 bit" in {
-    dsptools.Driver.execute(() => new SimpleIOModule(p.genShortF, p.genLongF, includeR = true, p), optionsPass) { c =>
+    val opt = new VerboseDspTesterOptionsManager {
+      verboseDspTesterOptions = optionsPass.verboseDspTesterOptions
+      testerOptions = optionsPass.testerOptions
+      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/io_fix")
+    }
+    dsptools.Driver.execute(() => new SimpleIOModule(p.genShortF, p.genLongF, includeR = true, p), opt) { c =>
       new PassIOTester(c)
     } should be (true)
   }
 
   it should "properly poke/peek io delayed 1 cycle with gen = fixed + print TB (no reals)" in {
     this.synchronized {
+      val opt = new VerboseDspTesterOptionsManager {
+        verboseDspTesterOptions = optionsPassTB.verboseDspTesterOptions
+        testerOptions = optionsPassTB.testerOptions
+        commonOptions = optionsPassTB.commonOptions.copy(targetDirName = "test_run_dir/io_fix_tb")
+      }
       var tbFileLoc: String = ""
       dsptools.Driver.execute(() => new SimpleIOModule(p.genShortF, p.genLongF, includeR = false, p), 
-          optionsPassTB) { c => {
+          opt) { c => {
         val tester = new PassIOTester(c)
         tbFileLoc = tester.tbFileName
         tester
