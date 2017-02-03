@@ -1,4 +1,6 @@
-package SimpleTB
+// See LICENSE for license details.
+
+package dsptools
 
 import chisel3._
 import chisel3.internal.firrtl.{Width, BinaryPoint}
@@ -7,7 +9,6 @@ import chisel3.util.RegNext
 import breeze.math.Complex
 import dsptools.numbers.{Real, DspReal, DspComplex}
 import dsptools.numbers.implicits._
-import dsptools.{VerboseDspTester, VerboseDspTesterOptionsManager, VerboseDspTesterOptions}
 import org.scalatest.{FlatSpec, Matchers}
 import chisel3.iotesters.TesterOptions
 
@@ -161,7 +162,7 @@ class SimpleLitModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boo
     val litF = FixedPoint.fromDouble(negLit, binaryPoint = bp)
   }
 
-  val litB = Bool(true)
+  val litB = true.B
   val litU = posLit.round.toInt.U
   val litC = DspComplex(
       FixedPoint.fromDouble(posLit, binaryPoint = bp), 
@@ -356,7 +357,15 @@ class SimpleTBSpec extends FlatSpec with Matchers {
 
   it should "properly read lits with gen = fixed and expect tolerance set to 1 bit " +
       "(even with finite fractional bits)" in {
-    dsptools.Driver.execute(() => new SimpleLitModule(p.genShortF, p.genLongF, includeR = true, p), optionsPass) { c =>
+    val optionsPass1 = new VerboseDspTesterOptionsManager {
+      verboseDspTesterOptions = VerboseDspTesterOptions(
+        fixTolLSBs = 1,
+        genVerilogTb = false,
+        isVerbose = true)
+      testerOptions = TestSetup.testerOptionsGlobal
+      commonOptions = commonOptions.copy(targetDirName = "test_run_dir/simple-tp-spec-2", topName = "SimpleLitModule")
+    }
+    dsptools.Driver.execute(() => new SimpleLitModule(p.genShortF, p.genLongF, includeR = true, p), optionsPass1) { c =>
       new PassLitTester(c)
     } should be (true)
   }
@@ -378,7 +387,16 @@ class SimpleTBSpec extends FlatSpec with Matchers {
   }
 
   it should "properly poke/peek io delayed 1 cycle with gen = fixed and expect tolerance set to 1 bit" in {
-    dsptools.Driver.execute(() => new SimpleIOModule(p.genShortF, p.genLongF, includeR = true, p), optionsPass) { c =>
+    val optionsPass2 = new VerboseDspTesterOptionsManager {
+      verboseDspTesterOptions = VerboseDspTesterOptions(
+        fixTolLSBs = 1,
+        genVerilogTb = false,
+        isVerbose = true)
+      testerOptions = TestSetup.testerOptionsGlobal
+      commonOptions = commonOptions.copy(targetDirName = "test_run_dir/simple-tp-spec-3", topName = "SimpleIOModule")
+    }
+
+    dsptools.Driver.execute(() => new SimpleIOModule(p.genShortF, p.genLongF, includeR = true, p), optionsPass2) { c =>
       new PassIOTester(c)
     } should be (true)
   }
