@@ -5,6 +5,8 @@ object TrigUtility {
   // Sets how accurate things can be
   val numTaylorTerms = 8
   val aTanM = 5
+  // Double calcs have difficulty with small numbers
+  val err = 1e6
 
   // Calculates Bernoulli numbers via the Akiyama–Tanigawa algorithm
   // @ https://en.wikipedia.org/wiki/Bernoulli_number
@@ -27,8 +29,15 @@ object TrigUtility {
   def combination(n: Int, k: Int): Double = factorial(n).toDouble / factorial(k) / factorial(n - k) 
 
   // See Taylor series for trig functions @ https://en.wikipedia.org/wiki/Taylor_series
-  def sinCoeff(nmax: Int): Seq[Double] = {
-    (0 to nmax).map(n => math.pow(-1, n) / factorial(2 * n + 1))
+  def sinCoeff(nmax: Int): Seq[(Double, Double)] = {
+    (0 to nmax) map { n => {
+      val fact = factorial(2 * n + 1)
+      val factOutOfBounds = fact / err
+      // If you divide by too large of a number, things go crazy
+      val scaleFactor = if (factOutOfBounds <= 1) 1.0 else fact.toDouble / err
+      val denom = if (factOutOfBounds <= 1) fact else err
+      (math.pow(-1, n) / denom, scaleFactor)
+    } }
   }
   def cosCoeff(nmax: Int): Seq[Double] = {
     (0 to nmax).map(n => math.pow(-1, n) / factorial(2 * n))

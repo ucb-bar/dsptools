@@ -116,15 +116,21 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
   private def negPi = DspReal(-math.Pi)
   private def negHalfPi = DspReal(-math.Pi / 2)
   private def zero = DspReal(0.0)
+  private def one = DspReal(1.0)
 
+  // TODO: Check out http://www.netlib.org/fdlibm/k_sin.c
+  // Swept in increments of 0.0001pi, and got ~11 decimal digits of accuracy
   def sin (dummy: Int = 0): DspReal = {
     if (backendIsVerilator) {
       // Taylor series; Works best close to 0 (-pi/2, pi/2) -- so normalize! 
       def sinPiOver2(in: DspReal): DspReal = {
         val nmax = TrigUtility.numTaylorTerms - 1
-        val xpow = (0 to nmax).map(n => in.pow(DspReal(2 * n + 1)))
-        val terms = TrigUtility.sinCoeff(nmax).zip(xpow) map { case (c, x) => DspReal(c) * x }
-        terms.reduceRight(_ + _)
+        //val xpow = (0 to nmax).map(n => in.pow(DspReal(2 * n + 1)))
+        // Multiply by extra x later improves accuracy
+        val xpow = (0 to nmax).map(n => in.pow(DspReal(2 * n)))
+        // Break coefficient into two step process b/c of precision limitations
+        val terms = TrigUtility.sinCoeff(nmax).zip(xpow) map { case ((c, scale), x) => DspReal(c) * x / DspReal(scale)}
+        terms.reduceRight(_ + _) * in
       }
       import dsptools.numbers.implicits._
       val num2Pi = (this / twoPi).truncate()
@@ -138,8 +144,28 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
       // sin(pi - x) = sin(x)
       val temp2 = Mux(q2, pi - normalizedPi, normalizedPi)
       val normalizedHalfPi= Mux(q3, pi + normalizedPi, temp2)
-      val outTemp = sinPiOver2(normalizedHalfPi)
-      Mux(q3, zero - outTemp, outTemp)
+
+      // Half angle -> sin(x/2) = (-1)^(floor(x/(2pi)) * sqrt((1-cosx)/2))
+      // x negative -> sin(x/2) = -1 * sqrt((1-cosx)/2))
+      // x positive -> sin(x/2) = sqrt((1-cosx)/2))
+      // 2*sin^2(x/2) = 1-cosx
+      // cosx = 1 - 2*sin^2(x/2)
+      // Use for x > pi/4
+      // sinx = cos(x - pi/2) = 1 - 2 * sin^2(x/2 - pi/4)
+      // Use for x < -pi/4
+      // sinx = -cos(x + pi/2) = -1 * [1 - 2*sin^2(x/2 + pi/4)]
+      // Closer to 0 -> more accurate!
+      val sinPiOver4Out = sinPiOver2((normalizedHalfPi - halfPi) / DspReal(2.0))
+      val sinNegPiOver4Out = sinPiOver2((normalizedHalfPi + halfPi) / DspReal(2.0))
+      val sinPiOver2Out = sinPiOver2(normalizedHalfPi)
+
+      val outTemp1 = Mux( normalizedHalfPi > pi/DspReal(4), 
+                          one - DspReal(2) * sinPiOver4Out * sinPiOver4Out, 
+                          sinPiOver2Out)
+      val outTemp2 = Mux(normalizedHalfPi < pi/DspReal(-4), 
+                        DspReal(-1) * (one - DspReal(2) * sinNegPiOver4Out * sinNegPiOver4Out),
+                        outTemp1)
+      Mux(q3, zero - outTemp2, outTemp2)
     }
     else oneOperandOperator(Module(new BBFSin()))
   }
@@ -174,7 +200,7 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
       val normalizedHalfPi = Mux(normalizedPi < negHalfPi, normalizedPi + pi, temp1)
       tanPiOver2(normalizedHalfPi)
 //tan blows up tooquickly
-      //this.sin()/this.cos()
+      this.sin()/this.cos()
 
     }
     else oneOperandOperator(Module(new BBFTan()))
