@@ -110,6 +110,7 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
     // WARNING: Round half up!
     val out = Wire(proto.cloneType)
     out := DspContext.withTrimType(NoTrim) {
+      // round is round half up
       round(a * DspReal((1 << bp).toDouble)).toSInt().asFixed.div2(bp)
     }
     out
