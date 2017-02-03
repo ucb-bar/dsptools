@@ -117,6 +117,7 @@ class FloatOpsWithTrig extends FloatOps {
     is(Pow.U) { io.out := io.in1.pow(io.in2) }
     is(Floor.U) { io.out := io.in1.floor() }
     is(Ceil.U) { io.out := io.in1.ceil() }
+/*
     is(Sin.U) { io.out := io.in1.sin() }
     is(Cos.U) { io.out := io.in1.cos() }
     is(Tan.U) { io.out := io.in1.tan() }
@@ -131,6 +132,7 @@ class FloatOpsWithTrig extends FloatOps {
     is(ASinh.U) { io.out := io.in1.asinh() }
     is(ACosh.U) { io.out := io.in1.acosh() }
     is(ATanh.U) { io.out := io.in1.atanh() }
+*/
   }
 }
 
@@ -183,7 +185,7 @@ class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends 
   dspExpect(c.io.out, math.floor(a), "floor should work on reals")
   poke(c.io.opsel, Ceil)
   dspExpect(c.io.out, math.ceil(a), "ceil should work on reals")
-
+/*
   if(testTrigFuncs) {
     poke(c.io.opsel, Sin)
     dspExpect(c.io.out, math.sin(a), "sin should work on reals")
@@ -220,6 +222,7 @@ class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends 
     // not defined
     // dspExpect(c.io.out, math.atanh(a), "atanh should work on reals")
   }
+*/
 }
 
 class BlackBoxFloatSpec extends ChiselFlatSpec {

@@ -30,8 +30,6 @@ abstract class DspRealTwoArgumentToDouble extends BlackBoxImplementation {
     val doubleResult = twoOp(doubleArg1, doubleArg2)
     val result = doubleToBigIntBits(doubleResult)
     ConcreteSInt(result, DspReal.UnderlyingWidth, arg1.poisoned || arg2.poisoned).asUInt
-
-//    TypeInstanceFactory(tpe, result)
   }
 }
 
@@ -82,16 +80,13 @@ abstract class DspRealTwoArgumentToBoolean extends BlackBoxImplementation {
     val doubleArg1 = bigIntBitsToDouble(arg1.value)
     val doubleArg2 = bigIntBitsToDouble(arg2.value)
     val booleanResult = twoOp(doubleArg1, doubleArg2)
-    val result = if(booleanResult) Big1 else Big0
+    val result = if (booleanResult) Big1 else Big0
     TypeInstanceFactory(tpe, result, arg1.poisoned || arg2.poisoned)
   }
 }
 
 class DspRealAdd(val name: String) extends DspRealTwoArgumentToDouble {
-  def twoOp(double1: Double, double2: Double): Double = {
-    val result = double1 + double2
-    result
-  }
+  def twoOp(double1: Double, double2: Double): Double = double1 + double2
 }
 
 class DspRealSubtract(val name: String) extends DspRealTwoArgumentToDouble {
@@ -130,9 +125,12 @@ class DspRealNotEquals(val name: String) extends DspRealTwoArgumentToBoolean {
   def twoOp(double1: Double, double2: Double): Boolean = double1 != double2
 }
 
+// Angie: Let's rely on type classes to get this behavior instead
+/*
 class DspRealIntPart(val name: String) extends DspRealOneArgumentToDouble {
   def oneOp(double1: Double): Double = double1.toInt.toDouble
 }
+*/
 
 /** Math operations from IEEE.1364-2005 **/
 class DspRealLn(val name: String)  extends DspRealOneArgumentToDouble {
@@ -249,7 +247,6 @@ class DspRealFromInt(val name: String) extends BlackBoxImplementation {
   }
 }
 
-//scalastyle:off cyclomatic.complexity
 class DspRealFactory extends BlackBoxFactory {
   def createInstance(instanceName: String, blackBoxName: String): Option[BlackBoxImplementation] = {
     blackBoxName match {
@@ -265,7 +262,7 @@ class DspRealFactory extends BlackBoxFactory {
       case "BBFNotEquals"         => Some(add(new DspRealNotEquals(instanceName)))
       case "BBFFromInt"           => Some(add(new DspRealFromInt(instanceName)))
       case "BBFToInt"             => Some(add(new DspRealToInt(instanceName)))
-      case "BBFIntPart"           => Some(add(new DspRealIntPart(instanceName)))
+      //case "BBFIntPart"           => Some(add(new DspRealIntPart(instanceName)))
       case "BBFLn"                => Some(add(new DspRealLn(instanceName)))
       case "BBFLog10"             => Some(add(new DspRealLog10(instanceName)))
       case "BBFExp"               => Some(add(new DspRealExp(instanceName)))
@@ -291,4 +288,3 @@ class DspRealFactory extends BlackBoxFactory {
     }
   }
 }
-//scalastyle:on cyclomatic.complexity
