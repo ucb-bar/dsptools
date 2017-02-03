@@ -72,7 +72,6 @@ class BBFFloor extends BlackboxOneOperand { addVerilog() }
 class BBFCeil extends BlackboxOneOperand { addVerilog() }
 
 // Not supported by Verilator -- need to build out own approximation
-/*
 class BBFSin extends BlackboxOneOperand { addVerilog() }
 
 class BBFCos extends BlackboxOneOperand { addVerilog() }
@@ -100,7 +99,6 @@ class BBFASinh extends BlackboxOneOperand { addVerilog() }
 class BBFACosh extends BlackboxOneOperand { addVerilog() }
 
 class BBFATanh extends BlackboxOneOperand { addVerilog() }
-*/
 
 class BBFFromInt extends BlackBoxWithVerilog {
   val io = IO(new Bundle() {

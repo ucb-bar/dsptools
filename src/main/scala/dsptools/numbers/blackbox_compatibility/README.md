@@ -15,19 +15,23 @@ Black boxes useful functions that operate on "real" number types.
 * Ceil
 
 # Conversion functions between synthesizable Chisel number types + DspReal (use with caution!)
+
 > Note: These are only good for golden model testing. They should *never* be used in your final design. 
+
 * SInt -> Real
 * Real -> SInt
 
 # Non-synthesizable operations that don't have Chisel number type equivalents
+
 > Note: These work with Verilator + FIRRTL interpreter, but can't be used with type classes.
+
 * Ln
 * Log10
 * Exp
 * Sqrt
 * Pow
 
-# Non-synthesizable operations that don't have Chisel number type equivalents and *only* work with FIRRTL interpreter. (Verilog doesn't support these :( -- we'll build out approximation functions and update as they get added...)
+# Non-synthesizable operations that don't have Chisel number type equivalents and *only* work with FIRRTL interpreter. (Verilator doesn't support these :( -- we'll build out approximation functions and update as they get added... = Should be all of them, but with potentially less precision...)
 * Sin
 * Cos
 * Tan

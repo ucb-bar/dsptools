@@ -11,7 +11,7 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
   private def oneOperandOperator(blackbox_gen: => BlackboxOneOperand) : DspReal = {
     val blackbox = blackbox_gen
     blackbox.io.in := node
-    val out = Wire(new DspReal())
+    val out = Wire(DspReal())
     out.node := blackbox.io.out
     out
   }
@@ -20,7 +20,7 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
     val blackbox = blackbox_gen
     blackbox.io.in1 := node
     blackbox.io.in2 := arg1.node
-    val out = Wire(new DspReal())
+    val out = Wire(DspReal())
     out.node := blackbox.io.out
     out
   }
@@ -29,7 +29,7 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
     val blackbox = blackbox_gen
     blackbox.io.in1 := node
     blackbox.io.in2 := arg1.node
-    val out = Wire(Output(new Bool()))
+    val out = Wire(Output(Bool()))
     out := blackbox.io.out
     out
   }
@@ -102,19 +102,87 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
     oneOperandOperator(Module(new BBFCeil()))
   }
 
-  // The following are currently not supported with Verilator
-  /*
+  // Assumes you're using chisel testers
+  private def backendIsVerilator: Boolean = {
+    chisel3.iotesters.Driver.optionsManager.testerOptions.backendName == "verilator"  
+  }
+
+  // The following are currently not supported with Verilator, so they've been implemented through other means
+  // with approximately 6 decimal points of precision
+
+  private def pi = DspReal(math.Pi)
+  private def twoPi = DspReal(2 * math.Pi)
+  private def halfPi = DspReal(math.Pi / 2)
+  private def negPi = DspReal(-math.Pi)
+  private def negHalfPi = DspReal(-math.Pi / 2)
+  private def zero = DspReal(0.0)
+
   def sin (dummy: Int = 0): DspReal = {
-    oneOperandOperator(Module(new BBFSin()))
+    if (backendIsVerilator) {
+      // Taylor series; Works best close to 0 (-pi/2, pi/2) -- so normalize! 
+      def sinPiOver2(in: DspReal): DspReal = {
+        val nmax = TrigUtility.numTaylorTerms - 1
+        val xpow = (0 to nmax).map(n => in.pow(DspReal(2 * n + 1)))
+        val terms = TrigUtility.sinCoeff(nmax).zip(xpow) map { case (c, x) => DspReal(c) * x }
+        terms.reduceRight(_ + _)
+      }
+      import dsptools.numbers.implicits._
+      val num2Pi = (this / twoPi).truncate()
+      // Repeats every 2*pi, so normalize to -pi, pi
+      val normalized2Pi= this - num2Pi * twoPi
+      val temp1 = Mux(normalized2Pi > pi, normalized2Pi - twoPi, normalized2Pi)
+      val normalizedPi = Mux(normalized2Pi < negPi, normalized2Pi + twoPi, temp1)
+      val q2 = normalizedPi > halfPi
+      val q3 = normalizedPi < negHalfPi
+      // sin(x + pi) = -sin(x)
+      // sin(pi - x) = sin(x)
+      val temp2 = Mux(q2, pi - normalizedPi, normalizedPi)
+      val normalizedHalfPi= Mux(q3, pi + normalizedPi, temp2)
+      val outTemp = sinPiOver2(normalizedHalfPi)
+      Mux(q3, zero - outTemp, outTemp)
+    }
+    else oneOperandOperator(Module(new BBFSin()))
   }
 
   def cos (dummy: Int = 0): DspReal = {
-    oneOperandOperator(Module(new BBFCos()))
+    if (backendIsVerilator) (this + halfPi).sin()
+    else oneOperandOperator(Module(new BBFCos()))
   }
 
+
+
+
+
+
+
+  // 5 dec bots
   def tan (dummy: Int = 0): DspReal = {
-    oneOperandOperator(Module(new BBFTan()))
+    if (backendIsVerilator) {
+      // Taylor series; Works best close to 0 (-pi/2, pi/2) -- so normalize! 
+      def tanPiOver2(in: DspReal): DspReal = {
+        val nmax = TrigUtility.numTaylorTerms
+        val xpow = (1 to nmax).map(n => in.pow(DspReal(2 * n - 1)))
+        val terms = TrigUtility.tanCoeff(nmax).zip(xpow) map { case (c, x) => DspReal(c) * x }
+        terms.reduceRight(_ + _)
+      }
+      import dsptools.numbers.implicits._
+      val numPi = (this / pi).truncate()
+      // Repeats every pi, so normalize to -pi/2, pi/2
+      // tan(x + pi) = tan(x)
+      val normalizedPi= this - numPi * pi
+      val temp1 = Mux(normalizedPi > halfPi, normalizedPi - pi, normalizedPi)
+      val normalizedHalfPi = Mux(normalizedPi < negHalfPi, normalizedPi + pi, temp1)
+      tanPiOver2(normalizedHalfPi)
+//tan blows up tooquickly
+      //this.sin()/this.cos()
+
+    }
+    else oneOperandOperator(Module(new BBFTan()))
   }
+
+
+
+
 
   def asin (dummy: Int = 0): DspReal = {
     oneOperandOperator(Module(new BBFASin()))
@@ -159,7 +227,10 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
   def atanh (dummy: Int = 0): DspReal = {
     oneOperandOperator(Module(new BBFATanh()))
   }
-  */
+  
+
+
+
 
   // Not use directly -- there's an equivalent in the type classes (was causing some confusion)
   /*
@@ -195,8 +266,8 @@ object DspReal {
   def apply(value: Double): DspReal = {
     // See http://stackoverflow.com/questions/21212993/unsigned-variables-in-scala
     def longAsUnsignedBigInt(in: Long): BigInt = (BigInt(in >>> 1) << 1) + (in & 1)
-    def doubleToBits(in: Double): BigInt = longAsUnsignedBigInt(java.lang.Double.doubleToRawLongBits(in))
-    new DspReal(Some(doubleToBits(value)))
+    def doubleToBigInt(in: Double): BigInt = longAsUnsignedBigInt(java.lang.Double.doubleToRawLongBits(in))
+    new DspReal(Some(doubleToBigInt(value)))
   }
 
   /**
@@ -208,7 +279,7 @@ object DspReal {
     extendedSInt := value
     // Black box expects 64-bit UInt input
     blackbox.io.in := extendedSInt.asUInt
-    val out = Wire(new DspReal())
+    val out = Wire(DspReal())
     out.node := blackbox.io.out
     out
   }
@@ -216,4 +287,3 @@ object DspReal {
   def apply(): DspReal = new DspReal()
 
 }
-
