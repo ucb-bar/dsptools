@@ -31,7 +31,10 @@ Black boxes useful functions that operate on "real" number types.
 * Sqrt
 * Pow
 
-# Non-synthesizable operations that don't have Chisel number type equivalents and *only* work with FIRRTL interpreter. (Verilator doesn't support these :( -- we'll build out approximation functions and update as they get added... = Should be all of them, but with potentially less precision...)
+# Non-synthesizable operations 
+
+> These don't have Chisel number type equivalents and work with FIRRTL interpreter. Verilator doesn't support these :( but we built out approximation functions with no guarantees on precision...)
+
 * Sin
 * Cos
 * Tan
