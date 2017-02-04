@@ -4,7 +4,7 @@ object TrigUtility {
 
   // Sets how accurate things can be
   val numTaylorTerms = 8
-  val aTanM = 5
+  val atanM = 3
   // Double calcs have difficulty with small numbers
   val err = 1e6
 
