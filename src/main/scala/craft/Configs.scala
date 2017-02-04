@@ -13,10 +13,6 @@ import dspblocks._
 import dsptools.numbers.{Field =>_, _}
 import dsptools.numbers.implicits._
 
-trait HasIPXACTParameters {
-  def getIPXACTParameters: Map[String, String]
-}
-
 case class IPXACTParameters(id: String) extends Field[Map[String, String]]
 
 object ConfigBuilder {

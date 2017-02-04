@@ -9,7 +9,7 @@ import java.util.Collection
 import java.math.BigInteger
 import rocketchip._
 import junctions._
-import cde.Parameters
+import cde._
 import dspjunctions._
 import dspblocks._
 import dsptools._
@@ -347,6 +347,7 @@ trait DspBlockGeneratorApp extends GeneratorApp {
 
   def makeParameters(factory: ObjectFactory): SpiritParameters = {
     val parameters = new SpiritParameters()
+    println(s"DspBlock ID is ${params(DspBlockId)}")
     for ( (name, value) <- params(IPXACTParameters(params(DspBlockId))) ) {
       println("parameter: %s, value: %s".format(name, value))
       val nameValuePairType = new NameValuePairType
@@ -360,10 +361,28 @@ trait DspBlockGeneratorApp extends GeneratorApp {
   }
 
   def generateIPXact {
-    val lazyMod = params(BuildDSPBlock)(params)
-    val mod = chisel3.Module(lazyMod.module)
-    val bits_in = mod.inputWidth
-    val bits_out = mod.outputWidth
+    // first try GenKey
+    val genExternal = try {
+      Some(params(GenKey(params(DspBlockId))))
+    } catch {
+      case e: ParameterUndefinedException => None
+    }
+    // then try DspBlockKey
+    val dspBlockExternal = try {
+      Some(params(DspBlockKey(params(DspBlockId))))
+    } catch {
+      // case e: MatchError => None
+      case e: ParameterUndefinedException => None
+    }
+    val (bits_in, bits_out) = (genExternal, dspBlockExternal) match {
+      case (Some(gen), _) =>
+        (gen.lanesIn * gen.genIn[chisel3.Data].getWidth, gen.lanesOut * gen.genOut[chisel3.Data].getWidth)
+      case (None, Some(dsp)) =>
+        (dsp.inputWidth, dsp.outputWidth)
+      case (None, None) => throw new Exception("Didn't set parameters correctly for block-level IPXact generation")
+    }
+    // val bits_in = mod.inputWidth
+    // val bits_out = mod.outputWidth
     val factory = new ObjectFactory
     val memMapName = "mm"
 
@@ -418,5 +437,5 @@ trait DspBlockGeneratorApp extends GeneratorApp {
 object DspBlockGenerator extends DspBlockGeneratorApp {
   val longName = names.fullTopModuleClass + "." + names.configs
   generateFirrtl
-  // generateIPXact
+  generateIPXact
 }
