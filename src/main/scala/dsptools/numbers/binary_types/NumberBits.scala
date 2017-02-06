@@ -9,7 +9,7 @@ object RealBits {
   def apply[A <: Data](implicit A: RealBits[A]): RealBits[A] = A
 }
 
-trait IntegerBits[A <: Data] extends Any with Integer[A] with ChiselConvertableFrom[A] with BinaryRepresentation[A] {
+trait IntegerBits[A <: Data] extends Any with RealBits[A] with Integer[A] {
 }
 
 object IntegerBits {

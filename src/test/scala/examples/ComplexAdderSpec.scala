@@ -24,7 +24,7 @@ class SimpleComplexAdder extends Module {
   val register1 = Reg(io.c.cloneType)
 
 //  val registerReal = Reg(io.a1.real)
-//  val registerImaginary = Reg(io.a1.imaginary)
+//  val registerimag = Reg(io.a1.imag)
 
   register1 := io.a1 * io.a2
 
@@ -38,9 +38,9 @@ class SimpleComplexAdderTester(c: SimpleComplexAdder) extends DspTester(c) {
     val expected = i * j
 
     poke(c.io.a1.real, i)
-    poke(c.io.a1.imaginary, 0.0)
+    poke(c.io.a1.imag, 0.0)
     poke(c.io.a2.real, j)
-    poke(c.io.a2.imaginary, 0.0)
+    poke(c.io.a2.imag, 0.0)
     step(1)
 
     println(s"SimpleComplexAdder: $i * $j should make $expected got ${peek(c.io.c.real)}")

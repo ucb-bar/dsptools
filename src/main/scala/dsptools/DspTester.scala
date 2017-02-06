@@ -60,13 +60,13 @@ class DspTester[T <: Module](c: T,
     c.underlyingType() match {
       case "fixed" =>
         dspPoke(c.real.asInstanceOf[FixedPoint], value.real)
-        dspPoke(c.imaginary.asInstanceOf[FixedPoint], value.imag)
+        dspPoke(c.imag.asInstanceOf[FixedPoint], value.imag)
       case "real"  =>
         dspPoke(c.real.asInstanceOf[DspReal], value.real)
-        dspPoke(c.imaginary.asInstanceOf[DspReal], value.imag)
+        dspPoke(c.imag.asInstanceOf[DspReal], value.imag)
       case "SInt" =>
         poke(c.real.asInstanceOf[SInt], value.real.round.toInt)
-        poke(c.imaginary.asInstanceOf[SInt], value.imag.round.toInt)
+        poke(c.imag.asInstanceOf[SInt], value.imag.round.toInt)
       case _ =>
         throw DspException(
           s"poke($c, $value): c DspComplex has unknown underlying type ${c.getClass.getName}")
@@ -133,15 +133,15 @@ class DspTester[T <: Module](c: T,
         c.underlyingType() match {
           case "fixed" =>
             val real      = dspPeek(c.real.asInstanceOf[FixedPoint]).left.get
-            val imaginary = dspPeek(c.imaginary.asInstanceOf[FixedPoint]).left.get
-            Right(Complex(real, imaginary))
+            val imag = dspPeek(c.imag.asInstanceOf[FixedPoint]).left.get
+            Right(Complex(real, imag))
           case "real"  =>
             val bigIntReal      = dspPeek(c.real.asInstanceOf[DspReal]).left.get
-            val bigIntImaginary = dspPeek(c.imaginary.asInstanceOf[DspReal]).left.get
-            Right(Complex(bigIntReal, bigIntImaginary))
+            val bigIntimag = dspPeek(c.imag.asInstanceOf[DspReal]).left.get
+            Right(Complex(bigIntReal, bigIntimag))
           case "SInt" =>
             val real = peek(c.real.asInstanceOf[SInt]).toDouble
-            val imag = peek(c.imaginary.asInstanceOf[SInt]).toDouble
+            val imag = peek(c.imag.asInstanceOf[SInt]).toDouble
             Right(Complex(real, imag))
           case _ =>
             throw DspException(
@@ -170,15 +170,15 @@ class DspTester[T <: Module](c: T,
           //  c.underlyingType() match {
           //    case "fixed" =>
           //      val real      = dspPeek(c.real.asInstanceOf[FixedPoint]).left.get
-          //      val imaginary = dspPeek(c.imaginary.asInstanceOf[FixedPoint]).left.get
-          //      Right(Complex(real, imaginary))
+          //      val imag = dspPeek(c.imag.asInstanceOf[FixedPoint]).left.get
+          //      Right(Complex(real, imag))
           //    case "real"  =>
           //      val bigIntReal      = dspPeek(c.real.asInstanceOf[DspReal]).left.get
-          //      val bigIntImaginary = dspPeek(c.imaginary.asInstanceOf[DspReal]).left.get
-          //      Right(Complex(bigIntReal, bigIntImaginary))
+          //      val bigIntimag = dspPeek(c.imag.asInstanceOf[DspReal]).left.get
+          //      Right(Complex(bigIntReal, bigIntimag))
           //    case "SInt" =>
           //      val real = peek(c.real.asInstanceOf[SInt]).toDouble
-          //      val imag = peek(c.imaginary.asInstanceOf[SInt]).toDouble
+          //      val imag = peek(c.imag.asInstanceOf[SInt]).toDouble
           //      Right(Complex(real, imag))
           //    case _ =>
           //      throw DspException(

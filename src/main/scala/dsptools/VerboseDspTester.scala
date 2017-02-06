@@ -284,7 +284,7 @@ class VerboseDspTester[T <: Module](dut: T,
   def dspExpect(data: DspComplex[_], expected: Complex): Boolean = dspExpect(data, expected, msg = "")
   override def dspExpect(data: DspComplex[_], expected: Complex, msg: String): Boolean = {
     val dataReal = data.real.asInstanceOf[Data]
-    val dataImag = data.imaginary.asInstanceOf[Data]
+    val dataImag = data.imag.asInstanceOf[Data]
     val expectedNewR = roundExpected(dataReal, expected.real)
     val expectedNewI = roundExpected(dataImag, expected.imag)
     val path = getName(data)

@@ -55,9 +55,9 @@ module testbench_v;
   reg signed [7:0] io_i_short_f = 0;
   reg signed [7:0] io_i_short_s = 0;
   reg signed [7:0] io_i_short_gen = 0;
-  reg signed [15:0] io_i_cFS_imaginary = 0;
+  reg signed [15:0] io_i_cFS_imag = 0;
   reg signed [15:0] io_i_cFS_real = 0;
-  reg signed [15:0] io_i_cGenL_imaginary = 0;
+  reg signed [15:0] io_i_cGenL_imag = 0;
   reg signed [15:0] io_i_cGenL_real = 0;
   reg[0:0] io_i_b = 0;
   wire signed [15:0] io_o_vF_0;
@@ -98,9 +98,9 @@ module testbench_v;
   wire signed [7:0] io_o_short_f;
   wire signed [7:0] io_o_short_s;
   wire signed [7:0] io_o_short_gen;
-  wire signed [15:0] io_o_cFS_imaginary;
+  wire signed [15:0] io_o_cFS_imag;
   wire signed [15:0] io_o_cFS_real;
-  wire signed [15:0] io_o_cGenL_imaginary;
+  wire signed [15:0] io_o_cGenL_imag;
   wire signed [15:0] io_o_cGenL_real;
   wire[0:0] io_o_b;
 
@@ -152,9 +152,9 @@ module testbench_v;
     .io_i_short_f(io_i_short_f),
     .io_i_short_s(io_i_short_s),
     .io_i_short_gen(io_i_short_gen),
-    .io_i_cFS_imaginary(io_i_cFS_imaginary),
+    .io_i_cFS_imag(io_i_cFS_imag),
     .io_i_cFS_real(io_i_cFS_real),
-    .io_i_cGenL_imaginary(io_i_cGenL_imaginary),
+    .io_i_cGenL_imag(io_i_cGenL_imag),
     .io_i_cGenL_real(io_i_cGenL_real),
     .io_i_b(io_i_b),
     .io_o_vF_0(io_o_vF_0),
@@ -195,9 +195,9 @@ module testbench_v;
     .io_o_short_f(io_o_short_f),
     .io_o_short_s(io_o_short_s),
     .io_o_short_gen(io_o_short_gen),
-    .io_o_cFS_imaginary(io_o_cFS_imaginary),
+    .io_o_cFS_imag(io_o_cFS_imag),
     .io_o_cFS_real(io_o_cFS_real),
-    .io_o_cGenL_imaginary(io_o_cGenL_imaginary),
+    .io_o_cGenL_imag(io_o_cGenL_imag),
     .io_o_cGenL_real(io_o_cGenL_real),
     .io_o_b(io_o_b));
 
@@ -213,9 +213,9 @@ module testbench_v;
     io_i_long_gen = -845;
     io_i_b = 1'd1;
     io_i_cGenL_real = -845;
-    io_i_cGenL_imaginary = 10'd845;
+    io_i_cGenL_imag = 10'd845;
     io_i_cFS_real = -53;
-    io_i_cFS_imaginary = 6'd53;
+    io_i_cFS_imag = 6'd53;
     #(1*`CLK_PERIOD)     io_i_short_u = 2'd2;
     io_i_short_f = -35;
     io_i_short_s = -2;
@@ -226,9 +226,9 @@ module testbench_v;
     io_i_long_gen = -563;
     io_i_b = 1'd1;
     io_i_cGenL_real = -563;
-    io_i_cGenL_imaginary = 10'd563;
+    io_i_cGenL_imag = 10'd563;
     io_i_cFS_real = -35;
-    io_i_cFS_imaginary = 6'd35;
+    io_i_cFS_imag = 6'd35;
     `expect("io_o_short_u",io_o_short_u,3,cycle)
     `expect("io_o_short_u",io_o_short_u,3,cycle)
     `expect("io_o_short_f",io_o_short_f,-53,cycle)
@@ -240,13 +240,13 @@ module testbench_v;
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,-845,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,845,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,845,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,-845,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,845,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,845,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,-53,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,53,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,53,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,-53,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,53,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,53,cycle)
     `expect("io_o_long_u",io_o_long_u,3,cycle)
     `expect("io_o_long_u",io_o_long_u,3,cycle)
     `expect("io_o_long_f",io_o_long_f,-848,cycle)
@@ -265,9 +265,9 @@ module testbench_v;
     io_i_long_gen = -282;
     io_i_b = 1'd1;
     io_i_cGenL_real = -282;
-    io_i_cGenL_imaginary = 9'd282;
+    io_i_cGenL_imag = 9'd282;
     io_i_cFS_real = -18;
-    io_i_cFS_imaginary = 5'd18;
+    io_i_cFS_imag = 5'd18;
     `expect("io_o_short_u",io_o_short_u,2,cycle)
     `expect("io_o_short_u",io_o_short_u,2,cycle)
     `expect("io_o_short_f",io_o_short_f,-36,cycle)
@@ -279,13 +279,13 @@ module testbench_v;
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,-563,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,563,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,563,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,-563,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,563,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,563,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,-35,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,35,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,35,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,-35,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,35,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,35,cycle)
     `expect("io_o_long_u",io_o_long_u,2,cycle)
     `expect("io_o_long_u",io_o_long_u,2,cycle)
     `expect("io_o_long_f",io_o_long_f,-560,cycle)
@@ -304,9 +304,9 @@ module testbench_v;
     io_i_long_gen = -141;
     io_i_b = 1'd1;
     io_i_cGenL_real = -141;
-    io_i_cGenL_imaginary = 8'd141;
+    io_i_cGenL_imag = 8'd141;
     io_i_cFS_real = -9;
-    io_i_cFS_imaginary = 4'd9;
+    io_i_cFS_imag = 4'd9;
     `expect("io_o_short_u",io_o_short_u,1,cycle)
     `expect("io_o_short_u",io_o_short_u,1,cycle)
     `expect("io_o_short_f",io_o_short_f,-18,cycle)
@@ -318,13 +318,13 @@ module testbench_v;
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,-282,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,282,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,282,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,-282,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,282,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,282,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,-18,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,18,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,18,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,-18,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,18,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,18,cycle)
     `expect("io_o_long_u",io_o_long_u,1,cycle)
     `expect("io_o_long_u",io_o_long_u,1,cycle)
     `expect("io_o_long_f",io_o_long_f,-288,cycle)
@@ -343,9 +343,9 @@ module testbench_v;
     io_i_long_gen = -102;
     io_i_b = 1'd1;
     io_i_cGenL_real = -102;
-    io_i_cGenL_imaginary = 7'd102;
+    io_i_cGenL_imag = 7'd102;
     io_i_cFS_real = -6;
-    io_i_cFS_imaginary = 3'd6;
+    io_i_cFS_imag = 3'd6;
     `expect("io_o_short_u",io_o_short_u,1,cycle)
     `expect("io_o_short_u",io_o_short_u,1,cycle)
     `expect("io_o_short_f",io_o_short_f,-9,cycle)
@@ -357,13 +357,13 @@ module testbench_v;
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,-141,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,141,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,141,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,-141,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,141,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,141,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,-9,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,9,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,9,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,-9,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,9,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,9,cycle)
     `expect("io_o_long_u",io_o_long_u,1,cycle)
     `expect("io_o_long_u",io_o_long_u,1,cycle)
     `expect("io_o_long_f",io_o_long_f,-144,cycle)
@@ -382,9 +382,9 @@ module testbench_v;
     io_i_long_gen = 7'd102;
     io_i_b = 1'd1;
     io_i_cGenL_real = 7'd102;
-    io_i_cGenL_imaginary = -102;
+    io_i_cGenL_imag = -102;
     io_i_cFS_real = 3'd6;
-    io_i_cFS_imaginary = -6;
+    io_i_cFS_imag = -6;
     `expect("io_o_short_u",io_o_short_u,0,cycle)
     `expect("io_o_short_u",io_o_short_u,0,cycle)
     `expect("io_o_short_f",io_o_short_f,-7,cycle)
@@ -396,13 +396,13 @@ module testbench_v;
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,-102,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,102,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,102,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,-102,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,102,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,102,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,-6,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,6,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,6,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,-6,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,6,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,6,cycle)
     `expect("io_o_long_u",io_o_long_u,0,cycle)
     `expect("io_o_long_u",io_o_long_u,0,cycle)
     `expect("io_o_long_f",io_o_long_f,-96,cycle)
@@ -421,9 +421,9 @@ module testbench_v;
     io_i_long_gen = 8'd141;
     io_i_b = 1'd1;
     io_i_cGenL_real = 8'd141;
-    io_i_cGenL_imaginary = -141;
+    io_i_cGenL_imag = -141;
     io_i_cFS_real = 4'd9;
-    io_i_cFS_imaginary = -9;
+    io_i_cFS_imag = -9;
     `expect("io_o_short_u",io_o_short_u,0,cycle)
     `expect("io_o_short_u",io_o_short_u,0,cycle)
     `expect("io_o_short_f",io_o_short_f,6,cycle)
@@ -435,13 +435,13 @@ module testbench_v;
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,102,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,-102,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,-102,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,102,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,-102,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,-102,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,6,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,-6,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,-6,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,6,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,-6,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,-6,cycle)
     `expect("io_o_long_u",io_o_long_u,0,cycle)
     `expect("io_o_long_u",io_o_long_u,0,cycle)
     `expect("io_o_long_f",io_o_long_f,96,cycle)
@@ -460,9 +460,9 @@ module testbench_v;
     io_i_long_gen = 9'd282;
     io_i_b = 1'd1;
     io_i_cGenL_real = 9'd282;
-    io_i_cGenL_imaginary = -282;
+    io_i_cGenL_imag = -282;
     io_i_cFS_real = 5'd18;
-    io_i_cFS_imaginary = -18;
+    io_i_cFS_imag = -18;
     `expect("io_o_short_u",io_o_short_u,1,cycle)
     `expect("io_o_short_u",io_o_short_u,1,cycle)
     `expect("io_o_short_f",io_o_short_f,8,cycle)
@@ -474,13 +474,13 @@ module testbench_v;
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,141,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,-141,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,-141,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,141,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,-141,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,-141,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,9,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,-9,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,-9,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,9,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,-9,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,-9,cycle)
     `expect("io_o_long_u",io_o_long_u,1,cycle)
     `expect("io_o_long_u",io_o_long_u,1,cycle)
     `expect("io_o_long_f",io_o_long_f,144,cycle)
@@ -499,9 +499,9 @@ module testbench_v;
     io_i_long_gen = 10'd563;
     io_i_b = 1'd1;
     io_i_cGenL_real = 10'd563;
-    io_i_cGenL_imaginary = -563;
+    io_i_cGenL_imag = -563;
     io_i_cFS_real = 6'd35;
-    io_i_cFS_imaginary = -35;
+    io_i_cFS_imag = -35;
     `expect("io_o_short_u",io_o_short_u,1,cycle)
     `expect("io_o_short_u",io_o_short_u,1,cycle)
     `expect("io_o_short_f",io_o_short_f,17,cycle)
@@ -513,13 +513,13 @@ module testbench_v;
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,282,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,-282,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,-282,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,282,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,-282,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,-282,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,18,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,-18,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,-18,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,18,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,-18,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,-18,cycle)
     `expect("io_o_long_u",io_o_long_u,1,cycle)
     `expect("io_o_long_u",io_o_long_u,1,cycle)
     `expect("io_o_long_f",io_o_long_f,288,cycle)
@@ -538,9 +538,9 @@ module testbench_v;
     io_i_long_gen = 10'd845;
     io_i_b = 1'd1;
     io_i_cGenL_real = 10'd845;
-    io_i_cGenL_imaginary = -845;
+    io_i_cGenL_imag = -845;
     io_i_cFS_real = 6'd53;
-    io_i_cFS_imaginary = -53;
+    io_i_cFS_imag = -53;
     `expect("io_o_short_u",io_o_short_u,2,cycle)
     `expect("io_o_short_u",io_o_short_u,2,cycle)
     `expect("io_o_short_f",io_o_short_f,35,cycle)
@@ -552,13 +552,13 @@ module testbench_v;
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,563,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,-563,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,-563,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,563,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,-563,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,-563,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,35,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,-35,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,-35,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,35,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,-35,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,-35,cycle)
     `expect("io_o_long_u",io_o_long_u,2,cycle)
     `expect("io_o_long_u",io_o_long_u,2,cycle)
     `expect("io_o_long_f",io_o_long_f,560,cycle)
@@ -577,9 +577,9 @@ module testbench_v;
     io_i_long_gen = -845;
     io_i_b = 1'd1;
     io_i_cGenL_real = -845;
-    io_i_cGenL_imaginary = 10'd845;
+    io_i_cGenL_imag = 10'd845;
     io_i_cFS_real = -53;
-    io_i_cFS_imaginary = 6'd53;
+    io_i_cFS_imag = 6'd53;
     `expect("io_o_short_u",io_o_short_u,3,cycle)
     `expect("io_o_short_u",io_o_short_u,3,cycle)
     `expect("io_o_short_f",io_o_short_f,52,cycle)
@@ -591,13 +591,13 @@ module testbench_v;
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_b",io_o_b,1,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,845,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,-845,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,-845,cycle)
     `expect("io_o_cGenL_real",io_o_cGenL_real,845,cycle)
-    `expect("io_o_cGenL_imaginary",io_o_cGenL_imaginary,-845,cycle)
+    `expect("io_o_cGenL_imag",io_o_cGenL_imag,-845,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,53,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,-53,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,-53,cycle)
     `expect("io_o_cFS_real",io_o_cFS_real,53,cycle)
-    `expect("io_o_cFS_imaginary",io_o_cFS_imaginary,-53,cycle)
+    `expect("io_o_cFS_imag",io_o_cFS_imag,-53,cycle)
     `expect("io_o_long_u",io_o_long_u,3,cycle)
     `expect("io_o_long_u",io_o_long_u,3,cycle)
     `expect("io_o_long_f",io_o_long_f,848,cycle)
