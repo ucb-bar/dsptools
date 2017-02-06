@@ -28,7 +28,7 @@ class DspComplexRing[T <: Data:Ring] extends Ring[DspComplex[T]] with hasContext
       DspComplex.wire(ac_p_ad - ad_p_bd, ac_p_ad + bc_m_ac)
     }
   }
-  def one: DspComplex[T] = DspComplex.wire(Ring[T].one, Ring[T].zero)
+  def one: DspComplex[T] = DspComplex(Ring[T].one, Ring[T].zero)
   // Only assigns real part as x
   override def fromInt(x: Int): DspComplex[T] = DspComplex(Ring[T].fromInt(x), Ring[T].zero)
   def zero: DspComplex[T] = DspComplex(Ring[T].zero, Ring[T].zero)
