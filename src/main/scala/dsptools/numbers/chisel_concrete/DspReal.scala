@@ -319,6 +319,7 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
     * Behavior on overflow (possible with large exponent terms) is undefined.
     */
   def toSInt(dummy: Int = 0): SInt = {
+    println(Console.YELLOW + "WARNING: Real -> SInt === THIS DESIGN IS NOT SYNTHESIZABLE!" + Console.RESET)
     val blackbox = Module(new BBFToInt)
     blackbox.io.in := node
     // BB output always UInt -- need to cast
@@ -350,6 +351,7 @@ object DspReal {
     * Creates a Real from an SInt
     */
   def apply(value: SInt): DspReal = {
+    println(Console.YELLOW + "WARNING: SInt -> Real === THIS DESIGN IS NOT SYNTHESIZABLE!" + Console.RESET)
     val blackbox = Module(new BBFFromInt)
     val extendedSInt = Wire(SInt(underlyingWidth.W))
     extendedSInt := value
