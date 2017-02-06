@@ -45,7 +45,7 @@ object DspContext {
   }
 
   def withUse4Multiples[T](newUse4Multiples: Boolean)(blk: => T): T = {
-    dynamicDspContextVar.withValue(current.copy(complexUse4Multiplies = newUse4Multiples)) {
+    dynamicDspContextVar.withValue(current.copy(complexUse4Muls = newUse4Multiples)) {
       blk
     }
   }
@@ -70,9 +70,11 @@ case class DspContext(
     val trimType:                  TrimType     = NoTrim,
     val binaryPoint:               Option[Int]  = Some(DspContext.DefaultBinaryPoint),
     val numberOfBits:              Option[Int]  = Some(DspContext.DefaultNumberOfBits),
-    val complexUse4Multiplies:     Boolean      = true,
+    val complexUse4Muls:     Boolean      = true,
     val numMulPipes: Int          = DspContext.DefaultRegistersForFixedMultiply,
     val numAddPipes:      Int          = DspContext.DefaultRegistersForFixedAdd,
     val binaryPointGrowth: Int          = 1){
   require(binaryPointGrowth >= 0, "Binary point growth must be non-negative")
+
+  // adde mul delay for complex = add,mul, 4,mull -- see that it changes
 }

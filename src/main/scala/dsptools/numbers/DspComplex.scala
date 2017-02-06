@@ -6,6 +6,7 @@ import chisel3._
 import chisel3.experimental.FixedPoint
 import dsptools.DspException
 import implicits._
+import breeze.math.Complex
 
 object DspComplex {
 
@@ -34,6 +35,23 @@ object DspComplex {
 
   // Constant j
   def j[T <: Data:Ring] : DspComplex[T] = DspComplex(Ring[T].zero, Ring[T].one)
+
+  // Creates a DspComplex literal of type DspComplex[T] from a Breeze Complex
+  // Note: when T is FixedPoint, the # of fractional bits is determined via DspContext
+  def apply[T <: Data:Ring:ConvertableTo](c: Complex): DspComplex[T] = {
+    DspComplex(ConvertableTo[T].fromDouble(c.real), ConvertableTo[T].fromDouble(c.imag))
+  }
+  // Creates a DspComplex literal where real and imaginary parts have type T (and binary point 
+  // determined by binaryPoint of t)
+  def proto[T <: Data:Ring:ConvertableTo](c: Complex, t: T): DspComplex[T] = {
+    DspComplex(ConvertableTo[T].fromDouble(c.real, t), ConvertableTo[T].fromDouble(c.imag, t))
+  }
+  // Creates a DspComplex literal where real and imaginary parts have type T (width/binary point 
+  // determined by width/binaryPoint of t)
+  def protoWithFixedWidth[T <: Data:Ring:ConvertableTo](c: Complex, t: T): DspComplex[T] = {
+    DspComplex(ConvertableTo[T].fromDoubleWithFixedWidth(c.real, t), 
+      ConvertableTo[T].fromDoubleWithFixedWidth(c.imag, t))
+  }
 
 }
 
