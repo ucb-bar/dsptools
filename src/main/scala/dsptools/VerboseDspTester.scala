@@ -7,7 +7,6 @@ import dsptools.numbers.{DspComplex, DspReal, Real}
 import chisel3._
 import chisel3.experimental._
 import chisel3.iotesters.TestersCompatibility
-import dsptools.Utilities.bigIntBitsToDouble
 import chisel3.internal.InstanceId
 
 import scala.util.DynamicVariable
@@ -205,7 +204,7 @@ class VerboseDspTester[T <: Module](dut: T,
       node match {
         case r: DspReal => {
           val bi = peek(r.node)                             // unsigned bigint
-          (Utilities.bigIntBitsToDouble(bi), bi)  
+          (DspTesterUtilities.bigIntBitsToDouble(bi), bi)  
         }
         case f: FixedPoint => {
           val bi = peek(f.asInstanceOf[Bits])
@@ -230,7 +229,7 @@ class VerboseDspTester[T <: Module](dut: T,
     val expected0 = if (math.abs(expected) < floTolDec/100) 0.0 else expected
     val dblVal0 = if (math.abs(dblVal) < floTolDec/100) 0.0 else dblVal
     val expectedBits = data match {
-      case r: DspReal => Utilities.doubleToBigIntBits(expected0)  // unsigned BigInt
+      case r: DspReal => DspTesterUtilities.doubleToBigIntBits(expected0)  // unsigned BigInt
       case f: FixedPoint => FixedPoint.toBigInt(expected0, f.binaryPoint.get)
       case s: SInt => BigInt(expected0.round.toInt)
     }
@@ -245,7 +244,7 @@ class VerboseDspTester[T <: Module](dut: T,
     val (tolerance, tolDec) = data match {
       case f: FixedPoint => (fixTolInt, FixedPoint.toDouble(fixTolInt, f.binaryPoint.get))
       case s: SInt => (fixTolInt, fixTolInt.toDouble)
-      case _ => (Utilities.doubleToBigIntBits(floTolDec), floTolDec)
+      case _ => (DspTesterUtilities.doubleToBigIntBits(floTolDec), floTolDec)
     }
     val good = {
       if (dblVal0 != expected0) {

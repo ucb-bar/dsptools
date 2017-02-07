@@ -4,7 +4,7 @@ package examples
 
 import chisel3._
 import chisel3.util.log2Up
-import dsptools.{Utilities, Truncate}
+import dsptools.{Truncate}
 import dsptools.numbers.{DspComplex, RealBits}
 import dsptools.numbers.implicits._
 

@@ -40,7 +40,7 @@ object DspTesterUtilities {
   def doubleToBigIntBits(double: Double): BigInt = {
     val ret = BigInt(java.lang.Double.doubleToLongBits(double))
     if (ret >= 0) ret
-    else (BigInt(1) << DspReal.underlyingWidth) + rest
+    else (BigInt(1) << DspReal.underlyingWidth) + ret
   }
 
   // For DspReal represented as BigInt back to Double
