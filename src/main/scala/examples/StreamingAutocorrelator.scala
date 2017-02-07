@@ -3,7 +3,7 @@
 package examples
 
 import chisel3._
-import dsptools.{hasContext, DspContext, Saturate}
+import dsptools.{hasContext, DspContext, Grow}
 import dsptools.examples.TransposedStreamingFIR
 import spire.algebra.Ring
 
@@ -24,7 +24,7 @@ class StreamingAutocorrelator[T <: Data:Ring](inputGenerator: => T, outputGenera
 
   val window = delays.drop(delay + 1).reverse
 
-  val firFilter = DspContext.withOverflowType(Saturate) {
+  val firFilter = DspContext.withOverflowType(Grow) {
     Module(new TransposedStreamingFIR(inputGenerator, outputGenerator, inputGenerator, windowSize))
   }
 

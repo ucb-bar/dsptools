@@ -9,21 +9,21 @@ import org.scalatest.{Matchers, FreeSpec}
 class DspContextSpec extends FreeSpec with Matchers {
   "Context handling should be unobtrusive and convenient" - {
     "There should be a default available at all times" in {
-      DspContext.current.binaryPoint should be (Some(DspContext.defaultBinaryPoint))
+      DspContext.current.binaryPoint should be (DspContext.defaultBinaryPoint)
     }
 
     "it can be very to override for simple alterations" in {
-      DspContext.current.binaryPoint should be (Some(DspContext.defaultBinaryPoint))
+      DspContext.current.binaryPoint should be (DspContext.defaultBinaryPoint)
 
       DspContext.withBinaryPoint(-22) {
         DspContext.current.binaryPoint.get should be (-22)
       }
 
-      DspContext.current.binaryPoint should be (Some(DspContext.defaultBinaryPoint))
+      DspContext.current.binaryPoint should be (DspContext.defaultBinaryPoint)
     }
 
     "it should be easy to override when using multiples" in {
-      DspContext.current.binaryPoint should be (Some(DspContext.defaultBinaryPoint))
+      DspContext.current.binaryPoint should be (DspContext.defaultBinaryPoint)
       DspContext.current.overflowType should be (DspContext.defaultOverflowType)
 
       DspContext.alter(DspContext.current.copy(binaryPoint = Some(77), overflowType = Saturate)) {
@@ -31,22 +31,22 @@ class DspContextSpec extends FreeSpec with Matchers {
         DspContext.current.overflowType should be (Saturate)
       }
 
-      DspContext.current.binaryPoint should be (Some(DspContext.defaultBinaryPoint))
+      DspContext.current.binaryPoint should be (DspContext.defaultBinaryPoint)
       DspContext.current.overflowType should be (DspContext.defaultOverflowType)
     }
 
     "it should work multi-threaded and return values of block" in {
-      DspContext.current.numBits should be (Some(DspContext.defaultNumBits))
+      DspContext.current.numBits should be (DspContext.defaultNumBits)
 
-      val points = (0 to 100).toParArray.map { n =>
+      val points = (1 to 100).toParArray.map { n =>
         DspContext.withNumBits(n) {
           DspContext.current.numBits.get should be (n)
           n * n
         }
       }
-      points.zipWithIndex.foreach { case (p: Int, i: Int) => p should be (i * i)}
+      points.zipWithIndex.foreach { case (p: Int, i: Int) => p should be (math.pow(i + 1, 2))}
 
-      DspContext.current.numBits should be (Some(DspContext.defaultNumBits))
+      DspContext.current.numBits should be (DspContext.defaultNumBits)
     }
   }
 }

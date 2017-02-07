@@ -10,6 +10,7 @@ import dsptools.DspTester
 import org.scalatest.{FreeSpec, Matchers}
 import dsptools.numbers._
 import dsptools.numbers.implicits._
+import dsptools._
 
 //scalastyle:off magic.number
 
@@ -30,7 +31,7 @@ class ParameterizedNumberOperation[T <: Data:Ring](
     op match {
       case "+" => io.a1 + io.a2
       case "-" => io.a1 - io.a2
-      case "*" => io.a1 * io.a2
+      case "*" => DspContext.withTrimType(NoTrim) { io.a1 * io.a2 }
 //      case "/" => io.a1 / io.a2
       case _ => throw new Exception(s"Bad operator $op passed to ParameterizedNumberOperation")
     }
