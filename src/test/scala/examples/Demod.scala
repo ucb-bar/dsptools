@@ -5,7 +5,8 @@ package examples
 import chisel3._
 import chisel3.util.log2Up
 import dsptools.{Utilities, Truncate}
-import dsptools.numbers.{DspComplex, Ring}
+import dsptools.numbers.{DspComplex, RealBits}
+import dsptools.numbers.implicits._
 
 //scalastyle:off magic.number
 
@@ -23,7 +24,7 @@ case class DemodParams (
   graycode_256_QAM: List[Int] = List(0, 1, 3, 2, 6, 7, 5, 4, 12, 13, 15, 14, 10, 11, 9, 8)
 )
 
-class Demod[T <: Data:Ring](gen: => T, p: DemodParams) extends Module {
+class Demod[T <: Data:RealBits](gen: => T, p: DemodParams) extends Module {
   class DemodIO(numberOfOutputs: Int) extends Bundle {
     // Input either signed DSPFixed or DSPDbl, as set by gen
     val symbolIn = Input(DspComplex(gen, gen))
@@ -59,8 +60,8 @@ class Demod[T <: Data:Ring](gen: => T, p: DemodParams) extends Module {
 
 
   //check if the integer part of the inputs are odd
-  //val real_odd = Utilities.isOdd(io.symbolIn.real, Truncate)
-  //val imag_odd = Utilities.isOdd(io.symbolIn.imaginary, Truncate)
+  val real_odd = io.symbolIn.real.intPart.isOdd
+  val imag_odd = io.symbolIn.imag.intPart.isOdd 
 
   //Set up the vector for each constellation.
   val bpsk_out0 = Bool()
