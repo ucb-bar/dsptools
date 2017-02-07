@@ -3,5 +3,4 @@
 package dsptools
 
 case class DspException(message: String) extends Exception(message) {
-
 }
