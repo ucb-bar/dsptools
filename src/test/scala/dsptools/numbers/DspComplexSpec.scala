@@ -18,7 +18,7 @@ class DspComplexExamples extends Module {
 
   io.outJ := DspComplex.j[SInt]
   io.inByJ := io.in * DspComplex.j[SInt]
-  io.inByJShortcut := io.in.j
+  io.inByJShortcut := io.in.mulj()
 }
 
 class DspComplexExamplesTester extends BasicTester {

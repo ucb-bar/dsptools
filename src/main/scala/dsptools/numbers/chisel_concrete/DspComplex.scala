@@ -56,15 +56,19 @@ object DspComplex {
 }
 
 class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Bundle {
+  
+  // So old DSP code doesn't break
+  def imaginary(dummy: Int = 0): T = imag
+
   // Multiply by j
-  def j: DspComplex[T] = DspComplex.wire(-imag, real)
+  def mulj(dummy: Int = 0): DspComplex[T] = DspComplex.wire(-imag, real)
   // Divide by j
-  def divj: DspComplex[T] = DspComplex.wire(imag, -real)
+  def divj(dummy: Int = 0): DspComplex[T] = DspComplex.wire(imag, -real)
   // Complex conjugate
-  def conj: DspComplex[T] = DspComplex.wire(real, -imag)
+  def conj(dummy: Int = 0): DspComplex[T] = DspComplex.wire(real, -imag)
   // Absolute square (squared norm) = x^2 + y^2
   // Uses implicits
-  def abssq: T = (real * real) + (imag * imag)
+  def abssq(dummy: Int = 0): T = (real * real) + (imag * imag)
 
   override def cloneType: this.type = {
     new DspComplex(real.cloneType, imag.cloneType).asInstanceOf[this.type]

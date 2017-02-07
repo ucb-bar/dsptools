@@ -156,13 +156,13 @@
 # Additional operations for Complex[T] where T is UInt, SInt, FixedPoint, or DspReal
   * DspComplex.j[T]
     * Creates a DspComplex literal j where the real and imaginary parts are of type T
-  * a.j
+  * a.mulj()
     * Multiplies the complex value a by j
-  * a.divj
+  * a.divj()
     * Divides the complex value a by j
-  * a.conj
+  * a.conj()
     * Returns the complex conjugate of a
-  * a.abssq
+  * a.abssq()
     * Returns the squared norm of a (If a = x + y * i, returns x^2 + y^2)
 
 # Creating Literals 
@@ -234,27 +234,27 @@
 * Inside an IO Bundle, you should wrap these declarations (or at some higher Aggregate level) as Input or Output i.e. Input(Bool()) or Output(Bool())
 * If you're trying to make a wire of type T that you later assign to, you must use something like Wire(Bool()) or Wire(Vec(n, gen))
 
-
-
-
-
-
-
-
-
-
-
-
-
-TODO:
-Reg, 
-Clk
-ranging
-Mux
-gen module -- parameterized
-Bundle (need clone type)
-override reset, clk
-* asuint, asfixedpoint, etc.
+TODO (now):
+gen module -- parameterized Module needs wrapper
+Bundle (need clone type) val io = Bundle
+AsUInt
 ConvertableFrom: intPart, asFixed, asReal
 Tester options: peek, poke, expect, how to change tolerance, etc.
 other options
+
+TODO (sometime -- not DSP specific; will go in Chisel3DspExample):
+ROM
+RegNext, RegEnable, etc.
+Passing custom clk, reset
+How to use ranges
+Mux, Mux1H https://github.com/ucb-bar/chisel3/wiki/Muxes%20and%20Input%20Selection
+Cat
+Bitwise ops (&, |, ^, etc.) https://github.com/ucb-bar/chisel3/wiki/Builtin%20Operators
+:= , <>
+Black box https://github.com/ucb-bar/chisel3/wiki/BlackBoxes
+Annotation https://github.com/ucb-bar/chisel3/wiki/Annotations%20Extending%20Chisel%20and%20Firrtl
+Mem, SeqMem https://github.com/ucb-bar/chisel3/wiki/Memories
+When
+Driver/tester: https://github.com/ucb-bar/chisel3/wiki/Running%20Stuff
+Enum: https://github.com/ucb-bar/chisel3/wiki/Cookbook
+ValidIO, DecoupledIO
