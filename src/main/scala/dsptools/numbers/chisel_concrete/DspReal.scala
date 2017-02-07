@@ -335,9 +335,7 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
 
 object DspReal {
   val underlyingWidth = 64
-  // Need to separate out, otherwise answer is incorrect (?)
-  def width2NextBigInt = BigInt(f"${math.pow(2.0, underlyingWidth/2)}%.0f") * BigInt(f"${math.pow(2.0, underlyingWidth/2)}%.0f")
-
+  
   /** Creates a Real with a constant value.
     */
   def apply(value: Double): DspReal = {
