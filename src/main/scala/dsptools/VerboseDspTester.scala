@@ -9,11 +9,18 @@ import chisel3.experimental._
 import chisel3.iotesters.TestersCompatibility
 import chisel3.internal.InstanceId
 
+
+// Old stuff
+import chisel3.internal.firrtl.KnownBinaryPoint
+import chisel3.experimental.FixedPoint
+import chisel3.iotesters.PeekPokeTester
+import dsptools.DspTesterUtilities._
+
 import scala.util.DynamicVariable
 
-class VerboseDspTester[T <: Module](dut: T,
+class DspTester[T <: Module](dut: T,
     base: Int = 16,
-    logFile: Option[java.io.File] = None) extends DspTester(dut, base, logFile) with VerilogTbDump {
+    logFile: Option[java.io.File] = None) extends PeekPokeTester(dut, base, logFile) with VerilogTbDump {
 
   val updatableBase = new DynamicVariable[Int](_base)
   private def dispBase = updatableBase.value
@@ -146,27 +153,27 @@ class VerboseDspTester[T <: Module](dut: T,
 
   // TODO: Clean up naming, consolidate methods
 
-  override def poke(signal: FixedPoint, value: Double): Unit = {
+  def poke(signal: FixedPoint, value: Double): Unit = {
     dspPoke(signal, value)
   }
 
-  override def dspPoke(bundle: Data, value: Double): Unit = {
+  def dspPoke(bundle: Data, value: Double): Unit = {
     updatableDSPVerbose.withValue(dispBits) {
-      super.dspPoke(bundle, value)
+      dspPokeOld(bundle, value)
     }
     if (dispDSP) logger println s"  POKE ${getName(bundle)} <- ${value}" 
   }
 
-  override def dspPoke(c: DspComplex[_], value: Complex): Unit = {
+  def dspPoke(c: DspComplex[_], value: Complex): Unit = {
     updatableDSPVerbose.withValue(dispBits) {
-      super.dspPoke(c, value)
+      dspPokeOld(c, value)
     }
     if (dispDSP) logger println s"  POKE ${getName(c)} <- ${value.toString}" 
   }
 
-  override def dspPeek(data: Data): Either[Double, Complex] = {
+  def dspPeek(data: Data): Either[Double, Complex] = {
     val peekedVal = updatableDSPVerbose.withValue(dispBits) {
-      super.dspPeek(data)
+      dspPeekOld(data)
     }
     if (dispDSP) {
       val value = peekedVal match {
@@ -178,25 +185,27 @@ class VerboseDspTester[T <: Module](dut: T,
     peekedVal
   }
 
-  override def dspPeekDouble(data: Data): Double = {
+  def dspPeekDouble(data: Data): Double = {
     dspPeek(data) match {
       case Left(dbl) => dbl
       case _ => throw DspException(s"dspPeekDouble data type can't be DSPComplex")
     }  
   }
 
-  override def dspPeekComplex(data: Data): Complex = {
+  def dspPeekComplex(data: Data): Complex = {
     dspPeek(data) match {
       case Right(cplx) => cplx
       case _ => throw DspException(s"dspPeekComplex data type can't be T <: Data:Real")
     } 
   }
 
-  override def peek(signal: FixedPoint): Double = {
+  def peek(signal: FixedPoint): Double = {
     dspPeekDouble(signal)
   }
 
   ///////////////// SPECIALIZED DSP EXPECT /////////////////
+
+  // TODO; eliminate silly peek/pokes above
 
   // For custom DSP expect to work, need BigInt value too (not provided by original method)
   def expectDspPeek(node: Data): (Double, BigInt) = {
@@ -268,7 +277,7 @@ class VerboseDspTester[T <: Module](dut: T,
   }
 
   def dspExpect(data: Data, expected: Double): Boolean = dspExpect(data, expected, msg = "")
-  override def dspExpect(data: Data, expected: Double, msg: String): Boolean = {
+  def dspExpect(data: Data, expected: Double, msg: String): Boolean = {
     val expectedNew = roundExpected(data, expected)
     val path = getName(data)
     val (dblVal, bitVal) = expectDspPeek(data)
@@ -281,7 +290,7 @@ class VerboseDspTester[T <: Module](dut: T,
   }
 
   def dspExpect(data: DspComplex[_], expected: Complex): Boolean = dspExpect(data, expected, msg = "")
-  override def dspExpect(data: DspComplex[_], expected: Complex, msg: String): Boolean = {
+  def dspExpect(data: DspComplex[_], expected: Complex, msg: String): Boolean = {
     val dataReal = data.real.asInstanceOf[Data]
     val dataImag = data.imag.asInstanceOf[Data]
     val expectedNewR = roundExpected(dataReal, expected.real)
@@ -299,5 +308,94 @@ class VerboseDspTester[T <: Module](dut: T,
     if (!good) fail
     good 
   }
+
+//////////////////////////////////////
+
+def dspPokeOld(bundle: Data, value: Double): Unit = {
+    bundle match {
+      case u: UInt => 
+        poke(u, BigInt(math.abs(value.round).toInt))
+      case s: SInt =>
+        val a: BigInt = BigInt(value.round.toInt)
+        poke(s, a)
+      case f: FixedPoint =>
+        f.binaryPoint match {
+          case KnownBinaryPoint(binaryPoint) =>
+            val bigInt = FixedPoint.toBigInt(value, binaryPoint)
+            poke(f, bigInt)
+          case _ =>
+            throw DspException(s"Error: poke: Can't create FixedPoint for $value, from signal template $bundle")
+        }
+      case r: DspReal =>
+        poke(r.node, doubleToBigIntBits(value))
+      case c: DspComplex[_]  => c.underlyingType() match {
+        case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
+        case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
+        case "SInt" => poke(c.real.asInstanceOf[SInt], value.round.toInt)
+        case _ =>
+          throw DspException(
+            s"poke($bundle, $value): bundle DspComplex has unknown underlying type ${bundle.getClass.getName}")
+      }
+      case _ =>
+        throw DspException(s"poke($bundle, $value): bundle has unknown type ${bundle.getClass.getName}")
+    }
+  }
+
+  def dspPokeOld(c: DspComplex[_], value: Complex): Unit = {
+    c.underlyingType() match {
+      case "fixed" =>
+        dspPoke(c.real.asInstanceOf[FixedPoint], value.real)
+        dspPoke(c.imag.asInstanceOf[FixedPoint], value.imag)
+      case "real"  =>
+        dspPoke(c.real.asInstanceOf[DspReal], value.real)
+        dspPoke(c.imag.asInstanceOf[DspReal], value.imag)
+      case "SInt" =>
+        poke(c.real.asInstanceOf[SInt], value.real.round.toInt)
+        poke(c.imag.asInstanceOf[SInt], value.imag.round.toInt)
+      case _ =>
+        throw DspException(
+          s"poke($c, $value): c DspComplex has unknown underlying type ${c.getClass.getName}")
+    }
+    //scalastyle:off regex
+    if (_verbose) {
+      println(s"DspPoke($c, $value)")
+    }
+    //scalastyle:on regex
+  }
+
+def dspPeekOld(data: Data): Either[Double, Complex] = {
+    data match {
+      case c: DspComplex[_] =>
+        c.underlyingType() match {
+          case "fixed" =>
+            val real      = dspPeek(c.real.asInstanceOf[FixedPoint]).left.get
+            val imag = dspPeek(c.imag.asInstanceOf[FixedPoint]).left.get
+            Right(Complex(real, imag))
+          case "real"  =>
+            val bigIntReal      = dspPeek(c.real.asInstanceOf[DspReal]).left.get
+            val bigIntimag = dspPeek(c.imag.asInstanceOf[DspReal]).left.get
+            Right(Complex(bigIntReal, bigIntimag))
+          case "SInt" =>
+            val real = peek(c.real.asInstanceOf[SInt]).toDouble
+            val imag = peek(c.imag.asInstanceOf[SInt]).toDouble
+            Right(Complex(real, imag))
+          case _ =>
+            throw DspException(
+              s"peek($c): c DspComplex has unknown underlying type ${c.getClass.getName}")
+        }
+      case r: DspReal =>
+        val bigInt = peek(r.node)
+        Left(bigIntBitsToDouble(bigInt))
+      case r: FixedPoint =>
+        val bigInt = peek(r.asInstanceOf[Bits])
+        Left(FixedPoint.toDouble(bigInt, r.binaryPoint.get))
+      case s: SInt =>
+        Left(peek(s).toDouble)
+      case _ =>
+        throw DspException(s"peek($data): data has unknown type ${data.getClass.getName}")
+    }
+  }
+
+  
   
 }

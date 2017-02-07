@@ -7,14 +7,14 @@ import chisel3.util.RegNext
 import breeze.math.Complex
 import dsptools.numbers.{Real, DspReal, DspComplex}
 import dsptools.numbers.implicits._
-import dsptools.{VerboseDspTester, VerboseDspTesterOptionsManager, VerboseDspTesterOptions}
+import dsptools.{DspTester, VerboseDspTesterOptionsManager, VerboseDspTesterOptions}
 import org.scalatest.{FlatSpec, Matchers}
 import chisel3.iotesters.TesterOptions
 
 // TODO: Make utility!
 trait EasyPeekPoke {
 
-  self: VerboseDspTester[_] => 
+  self: DspTester[_] => 
 
   def feed(d: Data, value: Double) = {
     d match {
@@ -179,7 +179,7 @@ class SimpleLitModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boo
 
 }
 
-class PassIOTester[R <: Data:Real](c: SimpleIOModule[R]) extends VerboseDspTester(c) with EasyPeekPoke {
+class PassIOTester[R <: Data:Real](c: SimpleIOModule[R]) extends DspTester(c) with EasyPeekPoke {
   
   val lutVals = c.p.lutVals
   val io = c.io
@@ -241,7 +241,7 @@ class PassIOTester[R <: Data:Real](c: SimpleIOModule[R]) extends VerboseDspTeste
 
 }
 
-class PassLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends VerboseDspTester(c) with EasyPeekPoke {
+class PassLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) with EasyPeekPoke {
   
   val posLit = c.posLit
   val negLit = c.negLit
@@ -282,7 +282,7 @@ class PassLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends VerboseDspTes
   dspPeek(c.lutSSeq(0))
 }
 
-class FailLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends VerboseDspTester(c) {
+class FailLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) {
   
   val posLit = c.posLit
   val negLit = c.negLit
