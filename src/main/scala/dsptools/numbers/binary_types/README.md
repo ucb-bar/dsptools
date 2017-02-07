@@ -1,5 +1,5 @@
 * *RealBits* extends *Real* with *BinaryRepresentation* and *ChiselConvertableFrom*
-* *IntegerBits* extends *Integer* with *BinaryRepresentation* and *ChiselConvertableFrom*
+* *IntegerBits* extends *RealBits* with *Integer*
 
 These form the underlying types of all Chisel numeric type classes. 
 

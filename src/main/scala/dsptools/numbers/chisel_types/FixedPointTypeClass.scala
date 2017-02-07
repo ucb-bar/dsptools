@@ -143,6 +143,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
           val roundBp = b + 1
           plus(a, FixedPoint.fromDouble(math.pow(2, -roundBp), binaryPoint = roundBp).setBinaryPoint(b))
         }
+        case _ => throw DspException("Desired trim type not implemented!")
       }
     }
   }

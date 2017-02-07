@@ -18,9 +18,9 @@ case object NoTrim extends TrimType
 case object Floor extends TrimType
 
 object DspContext {
-  val DefaultOverflowType              = Wrap
-  val DefaultBinaryPoint               = 15
-  val DefaultNumberOfBits              = 16
+  val DefaultOverflowType              = Grow
+  val DefaultBinaryPoint               = 14
+  val DefaultNumBits              = 16
   val DefaultRegistersForFixedMultiply = 0
   val DefaultRegistersForFixedAdd      = 0
 
@@ -38,13 +38,13 @@ object DspContext {
       blk
     }
   }
-  def withNumberOfBits[T](newNumberOfBits: Int)(blk: => T): T = {
-    dynamicDspContextVar.withValue(current.copy(numberOfBits = Some(newNumberOfBits))) {
+  def withNumBits[T](newNumberOfBits: Int)(blk: => T): T = {
+    dynamicDspContextVar.withValue(current.copy(numBits = Some(newNumberOfBits))) {
       blk
     }
   }
 
-  def withUse4Multiples[T](newUse4Multiples: Boolean)(blk: => T): T = {
+  def withComplexUse4Muls[T](newUse4Multiples: Boolean)(blk: => T): T = {
     dynamicDspContextVar.withValue(current.copy(complexUse4Muls = newUse4Multiples)) {
       blk
     }
@@ -59,6 +59,16 @@ object DspContext {
       blk
     }
   }
+
+  def withBinaryPointGrowth[T](newBinaryPointGrowth: Int)(blk: => T): T = {
+    dynamicDspContextVar.withValue(current.copy(binaryPointGrowth = newBinaryPointGrowth)) {
+      blk
+    }
+  }
+
+  //withNumMulPipes
+  //withNumAddPipes
+
 }
 
 trait hasContext extends Any {
@@ -69,12 +79,12 @@ case class DspContext(
     val overflowType:              OverflowType = DspContext.DefaultOverflowType,
     val trimType:                  TrimType     = NoTrim,
     val binaryPoint:               Option[Int]  = Some(DspContext.DefaultBinaryPoint),
-    val numberOfBits:              Option[Int]  = Some(DspContext.DefaultNumberOfBits),
+    val numBits:              Option[Int]  = Some(DspContext.DefaultNumBits),
     val complexUse4Muls:     Boolean      = true,
     val numMulPipes: Int          = DspContext.DefaultRegistersForFixedMultiply,
     val numAddPipes:      Int          = DspContext.DefaultRegistersForFixedAdd,
     val binaryPointGrowth: Int          = 1){
   require(binaryPointGrowth >= 0, "Binary point growth must be non-negative")
-
+// complexMulDly
   // adde mul delay for complex = add,mul, 4,mull -- see that it changes
 }
