@@ -53,16 +53,6 @@ class DspTester[T <: Module](dut: T,
       throw DspException(s"Poke/Expect value of ${getName(signal)} is not in node range")
   }
 
-  // TODO: Get rid of duplication in chisel-testers
-  private def signConvert(signal: Bits, bigInt: BigInt): BigInt = {
-    val width = signal.getWidth
-    val signFix = {
-      if(bigInt.bitLength >= width) - ((BigInt(1) << width) - bigInt)
-      else bigInt
-    }
-    if (isSigned(signal)) signFix else bigInt
-  }
-
   ///////////////// OVERRIDE UNDERLYING FUNCTIONS FROM PEEK POKE TESTER /////////////////
 
   override def step(n: Int) {
@@ -151,17 +141,15 @@ class DspTester[T <: Module](dut: T,
 
   ///////////////// UNDERLYING FUNCTIONS FROM DSP TESTER /////////////////
 
-  // TODO: Clean up naming, consolidate methods
-
   def poke(signal: FixedPoint, value: Double): Unit = {
     dspPoke(signal, value)
   }
 
-  def dspPoke(bundle: Data, value: Double): Unit = {
+  def dspPoke(signal: Data, value: Double): Unit = {
     updatableDSPVerbose.withValue(dispBits) {
-      dspPokeOld(bundle, value)
+      dspPokeOld(signal, value)
     }
-    if (dispDSP) logger println s"  POKE ${getName(bundle)} <- ${value}" 
+    if (dispDSP) logger println s"  POKE ${getName(signal)} <- ${value}" 
   }
 
   def dspPoke(c: DspComplex[_], value: Complex): Unit = {
@@ -203,9 +191,12 @@ class DspTester[T <: Module](dut: T,
     dspPeekDouble(signal)
   }
 
-  ///////////////// SPECIALIZED DSP EXPECT /////////////////
+  def peek(signal: DspReal): Double = {
+    println("sss")
+    1.0
+  }
 
-  // TODO; eliminate silly peek/pokes above
+  ///////////////// SPECIALIZED DSP EXPECT /////////////////
 
   // For custom DSP expect to work, need BigInt value too (not provided by original method)
   def expectDspPeek(node: Data): (Double, BigInt) = {
