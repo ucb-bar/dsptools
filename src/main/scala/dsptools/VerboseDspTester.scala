@@ -51,6 +51,8 @@ class DspTester[T <: Module](dut: T,
     val neededLen = if (isSigned(signal)) len + 1 else len
     if (neededLen > signal.getWidth) 
       throw DspException(s"Poke/Expect value of ${getName(signal)} is not in node range")
+    if (!isSigned(signal) && value < 0)
+      throw DspException("Poking negative value to an unsigned input")
   }
 
   ///////////////// OVERRIDE UNDERLYING FUNCTIONS FROM PEEK POKE TESTER /////////////////
@@ -141,27 +143,58 @@ class DspTester[T <: Module](dut: T,
 
   ///////////////// UNDERLYING FUNCTIONS FROM DSP TESTER /////////////////
 
+  // Has priority over Bits (FixedPoint extends Bits)
   def poke(signal: FixedPoint, value: Double): Unit = {
     dspPoke(signal, value)
   }
 
+  // DspReal extends Bundle extends Aggregate extends Data
+  // If poking DspReal with Double, can only go here
+  // Type classes are all Data:RealBits
   def dspPoke(signal: Data, value: Double): Unit = {
     updatableDSPVerbose.withValue(dispBits) {
-      dspPokeOld(signal, value)
+      signal match {
+        case f: FixedPoint => {
+          f.binaryPoint match {
+            case KnownBinaryPoint(bp) => poke(f, FixedPoint.toBigInt(value, bp))
+            case _ => throw DspException("Must poke FixedPoint with known binary point")
+          }
+        }
+        case r: DspReal => poke(r.node, DspTesterUtilities.doubleToBigIntBits(value))
+        // UInt + SInt
+        case b: Bits => poke(b, BigInt(value.round.toInt))
+        case _ => throw DspException("Illegal poke value for node of type Data and value of type Double")
+      }      
     }
     if (dispDSP) logger println s"  POKE ${getName(signal)} <- ${value}" 
   }
 
   def dspPoke(c: DspComplex[_], value: Complex): Unit = {
     updatableDSPVerbose.withValue(dispBits) {
-      dspPokeOld(c, value)
+      (c.real, c.imag) match {
+        case (real: Data, imag: Data) => {
+          dspPoke(real, value.real)
+          dspPoke(imag, value.imag)
+        }
+      }
     }
     if (dispDSP) logger println s"  POKE ${getName(c)} <- ${value.toString}" 
   }
 
+
+
+
+
+
+
+
+
+
+
+
   def dspPeek(data: Data): Either[Double, Complex] = {
     val peekedVal = updatableDSPVerbose.withValue(dispBits) {
-      dspPeekOld(data)
+      Left(0.0)//dspPeekOld(data)
     }
     if (dispDSP) {
       val value = peekedVal match {
@@ -180,6 +213,7 @@ class DspTester[T <: Module](dut: T,
     }  
   }
 
+  // make this complex[_]
   def dspPeekComplex(data: Data): Complex = {
     dspPeek(data) match {
       case Right(cplx) => cplx
@@ -187,16 +221,24 @@ class DspTester[T <: Module](dut: T,
     } 
   }
 
+  // > bits
   def peek(signal: FixedPoint): Double = {
     dspPeekDouble(signal)
   }
 
-  def peek(signal: DspReal): Double = {
+  // problem with bundle?; get trapped in bundle before data
+  /*def peek(signal: DspReal): Double = {
     println("sss")
     1.0
-  }
+  }*/
+
+  // does peek complex go to aggregate or complex
+  // does peek dspreal go to aggregate dspreal (how about as R <: Data)? does it go to data?
+  //def peek(data: Data): Bool = true
 
   ///////////////// SPECIALIZED DSP EXPECT /////////////////
+
+  // add uint
 
   // For custom DSP expect to work, need BigInt value too (not provided by original method)
   def expectDspPeek(node: Data): (Double, BigInt) = {
@@ -302,59 +344,15 @@ class DspTester[T <: Module](dut: T,
 
 //////////////////////////////////////
 
-def dspPokeOld(bundle: Data, value: Double): Unit = {
-    bundle match {
-      case u: UInt => 
-        poke(u, BigInt(math.abs(value.round).toInt))
-      case s: SInt =>
-        val a: BigInt = BigInt(value.round.toInt)
-        poke(s, a)
-      case f: FixedPoint =>
-        f.binaryPoint match {
-          case KnownBinaryPoint(binaryPoint) =>
-            val bigInt = FixedPoint.toBigInt(value, binaryPoint)
-            poke(f, bigInt)
-          case _ =>
-            throw DspException(s"Error: poke: Can't create FixedPoint for $value, from signal template $bundle")
-        }
-      case r: DspReal =>
-        poke(r.node, doubleToBigIntBits(value))
-      case c: DspComplex[_]  => c.underlyingType() match {
-        case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
-        case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
-        case "SInt" => poke(c.real.asInstanceOf[SInt], value.round.toInt)
-        case _ =>
-          throw DspException(
-            s"poke($bundle, $value): bundle DspComplex has unknown underlying type ${bundle.getClass.getName}")
-      }
-      case _ =>
-        throw DspException(s"poke($bundle, $value): bundle has unknown type ${bundle.getClass.getName}")
-    }
-  }
 
-  def dspPokeOld(c: DspComplex[_], value: Complex): Unit = {
-    c.underlyingType() match {
-      case "fixed" =>
-        dspPoke(c.real.asInstanceOf[FixedPoint], value.real)
-        dspPoke(c.imag.asInstanceOf[FixedPoint], value.imag)
-      case "real"  =>
-        dspPoke(c.real.asInstanceOf[DspReal], value.real)
-        dspPoke(c.imag.asInstanceOf[DspReal], value.imag)
-      case "SInt" =>
-        poke(c.real.asInstanceOf[SInt], value.real.round.toInt)
-        poke(c.imag.asInstanceOf[SInt], value.imag.round.toInt)
-      case _ =>
-        throw DspException(
-          s"poke($c, $value): c DspComplex has unknown underlying type ${c.getClass.getName}")
-    }
-    //scalastyle:off regex
-    if (_verbose) {
-      println(s"DspPoke($c, $value)")
-    }
-    //scalastyle:on regex
-  }
 
-def dspPeekOld(data: Data): Either[Double, Complex] = {
+
+
+
+
+ 
+
+/*def dspPeekOld(data: Data): Either[Double, Complex] = {
     data match {
       case c: DspComplex[_] =>
         c.underlyingType() match {
@@ -386,7 +384,8 @@ def dspPeekOld(data: Data): Either[Double, Complex] = {
         throw DspException(s"peek($data): data has unknown type ${data.getClass.getName}")
     }
   }
+*/
 
-  
+// check when precedence stomps on each other  (see dsptester)
   
 }
