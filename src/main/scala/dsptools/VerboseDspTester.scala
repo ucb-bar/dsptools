@@ -186,15 +186,39 @@ class DspTester[T <: Module](dut: T,
 
 
 
+//sint, uint -> bits
+// fixed -> need own
+// dspreal -> data
+// complex -> complex
 
 
 
 
+//need logger
+def dspPeekDouble(data: Data): Double = {
+   expectDspPeek(data)._1
+  }
 
+  def dspPeekComplex(c: DspComplex[_]): Complex = {
+    (c.real, c.imag) match {
+        case (real: Data, imag: Data) => {
+
+
+    Complex(expectDspPeek(real)._1, expectDspPeek(imag)._1)
+  }
+  }}
+
+
+
+def dspPeek(c: DspComplex[_]) = dspPeekComplex(c)
+def dspPeek(d: Data) = dspPeekDouble(d)
+
+
+/*
 
   def dspPeek(data: Data): Either[Double, Complex] = {
     val peekedVal = updatableDSPVerbose.withValue(dispBits) {
-      Left(0.0)//dspPeekOld(data)
+      dspPeekOld(data)
     }
     if (dispDSP) {
       val value = peekedVal match {
@@ -205,21 +229,12 @@ class DspTester[T <: Module](dut: T,
     }
     peekedVal
   }
-
-  def dspPeekDouble(data: Data): Double = {
-    dspPeek(data) match {
-      case Left(dbl) => dbl
-      case _ => throw DspException(s"dspPeekDouble data type can't be DSPComplex")
-    }  
-  }
+*/
+  
 
   // make this complex[_]
-  def dspPeekComplex(data: Data): Complex = {
-    dspPeek(data) match {
-      case Right(cplx) => cplx
-      case _ => throw DspException(s"dspPeekComplex data type can't be T <: Data:Real")
-    } 
-  }
+  
+
 
   // > bits
   def peek(signal: FixedPoint): Double = {
@@ -252,8 +267,9 @@ class DspTester[T <: Module](dut: T,
           val bi = peek(f.asInstanceOf[Bits])
           (FixedPoint.toDouble(bi, f.binaryPoint.get), bi)
         }
-        case s: SInt => {
-          val bi = peek(s)
+        // UInt + SInt = Bits
+        case b: Bits => {
+          val bi = peek(b)
           (bi.toDouble, bi)
         }
         case _ => throw DspException("Peeked node ${getName(node)} has incorrect type ${node.getClass.getName}")
@@ -273,19 +289,16 @@ class DspTester[T <: Module](dut: T,
     val expectedBits = data match {
       case r: DspReal => DspTesterUtilities.doubleToBigIntBits(expected0)  // unsigned BigInt
       case f: FixedPoint => FixedPoint.toBigInt(expected0, f.binaryPoint.get)
-      case s: SInt => BigInt(expected0.round.toInt)
+      case b: Bits => BigInt(expected0.round.toInt)
     }
 
-    data match {
-      case _: FixedPoint | _: SInt => 
-        if (expectedBits.bitLength > data.getWidth-1) throw DspException("Expected value is out of output node range")
-      case _ =>
-    }
+    if (isSigned(data) && expectedBits.bitLength > (data.getWidth - 1))
+      throw DspException("Expected value is out of output node range")
 
     // Allow for some tolerance in error checking
     val (tolerance, tolDec) = data match {
       case f: FixedPoint => (fixTolInt, FixedPoint.toDouble(fixTolInt, f.binaryPoint.get))
-      case s: SInt => (fixTolInt, fixTolInt.toDouble)
+      case _: SInt | _: UInt => (fixTolInt, fixTolInt.toDouble)
       case _ => (DspTesterUtilities.doubleToBigIntBits(floTolDec), floTolDec)
     }
     val good = {
@@ -304,10 +317,15 @@ class DspTester[T <: Module](dut: T,
   // Keep consistent with poke
   private def roundExpected(data: Data, expected: Double): Double = {
     data match {
-      case s: SInt => expected.round
+      case _: SInt | _: UInt => expected.round
       case _ => expected
     }
   }
+
+
+// sint, uint ok
+// fixed need separate
+// dspreal defers here
 
   def dspExpect(data: Data, expected: Double): Boolean = dspExpect(data, expected, msg = "")
   def dspExpect(data: Data, expected: Double, msg: String): Boolean = {
@@ -342,49 +360,6 @@ class DspTester[T <: Module](dut: T,
     good 
   }
 
-//////////////////////////////////////
-
-
-
-
-
-
-
- 
-
-/*def dspPeekOld(data: Data): Either[Double, Complex] = {
-    data match {
-      case c: DspComplex[_] =>
-        c.underlyingType() match {
-          case "fixed" =>
-            val real      = dspPeek(c.real.asInstanceOf[FixedPoint]).left.get
-            val imag = dspPeek(c.imag.asInstanceOf[FixedPoint]).left.get
-            Right(Complex(real, imag))
-          case "real"  =>
-            val bigIntReal      = dspPeek(c.real.asInstanceOf[DspReal]).left.get
-            val bigIntimag = dspPeek(c.imag.asInstanceOf[DspReal]).left.get
-            Right(Complex(bigIntReal, bigIntimag))
-          case "SInt" =>
-            val real = peek(c.real.asInstanceOf[SInt]).toDouble
-            val imag = peek(c.imag.asInstanceOf[SInt]).toDouble
-            Right(Complex(real, imag))
-          case _ =>
-            throw DspException(
-              s"peek($c): c DspComplex has unknown underlying type ${c.getClass.getName}")
-        }
-      case r: DspReal =>
-        val bigInt = peek(r.node)
-        Left(bigIntBitsToDouble(bigInt))
-      case r: FixedPoint =>
-        val bigInt = peek(r.asInstanceOf[Bits])
-        Left(FixedPoint.toDouble(bigInt, r.binaryPoint.get))
-      case s: SInt =>
-        Left(peek(s).toDouble)
-      case _ =>
-        throw DspException(s"peek($data): data has unknown type ${data.getClass.getName}")
-    }
-  }
-*/
 
 // check when precedence stomps on each other  (see dsptester)
   

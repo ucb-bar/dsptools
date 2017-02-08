@@ -24,7 +24,7 @@ trait VerilogTbDump {
   if (verilogTb) initVerilogTbFile()
   else deleteVerilogTbFile
 
-  def isSigned(e: Element): Boolean = {
+  def isSigned(e: Data): Boolean = {
     e match {
       case _: SInt | _: FixedPoint => true
       case _ => false

@@ -115,7 +115,7 @@ class ComplexOpTester[T<:DspComplex[_]](c: ParameterizedNumberOperation[T]) exte
     dspPoke(c.io.a2, c2)
     step(1)
 
-    val result = dspPeek(c.io.c).right.get
+    val result = dspPeek(c.io.c)
 
     dspExpect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
   }
