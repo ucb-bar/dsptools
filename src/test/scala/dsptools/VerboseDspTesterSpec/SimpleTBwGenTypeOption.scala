@@ -7,7 +7,7 @@ import chisel3.util.RegNext
 import breeze.math.Complex
 import dsptools.numbers.{Real, DspReal, DspComplex}
 import dsptools.numbers.implicits._
-import dsptools.{DspTester, VerboseDspTesterOptionsManager, VerboseDspTesterOptions}
+import dsptools.{DspTester, DspTesterOptionsManager, DspTesterOptions}
 import org.scalatest.{FlatSpec, Matchers}
 import chisel3.iotesters.TesterOptions
 
@@ -319,21 +319,21 @@ object TestSetup {
       backendName = "verilator",
       isGenVerilog = true)
 
-  val optionsPass = new VerboseDspTesterOptionsManager {
-      verboseDspTesterOptions = VerboseDspTesterOptions(
+  val optionsPass = new DspTesterOptionsManager {
+      dspTesterOptions = DspTesterOptions(
           fixTolLSBs = 1,
           genVerilogTb = false,
           isVerbose = true)
       testerOptions = testerOptionsGlobal
     }
 
-  val optionsFail = new VerboseDspTesterOptionsManager {
-    verboseDspTesterOptions = optionsPass.verboseDspTesterOptions.copy(fixTolLSBs = 0)
+  val optionsFail = new DspTesterOptionsManager {
+    dspTesterOptions = optionsPass.dspTesterOptions.copy(fixTolLSBs = 0)
     testerOptions = testerOptionsGlobal
   }
 
-  val optionsPassTB = new VerboseDspTesterOptionsManager {
-    verboseDspTesterOptions = optionsPass.verboseDspTesterOptions.copy(genVerilogTb = true)
+  val optionsPassTB = new DspTesterOptionsManager {
+    dspTesterOptions = optionsPass.dspTesterOptions.copy(genVerilogTb = true)
     testerOptions = testerOptionsGlobal
   }
 
@@ -351,8 +351,8 @@ class SimpleTBSpec extends FlatSpec with Matchers {
   behavior of "simple module lits"
 
   it should "properly read lits with gen = sint (reals rounded) and expect tolerance set to 1 bit" in {
-    val opt = new VerboseDspTesterOptionsManager {
-      verboseDspTesterOptions = optionsPass.verboseDspTesterOptions
+    val opt = new DspTesterOptionsManager {
+      dspTesterOptions = optionsPass.dspTesterOptions
       testerOptions = optionsPass.testerOptions
       commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/lit_sint")
     }
@@ -363,8 +363,8 @@ class SimpleTBSpec extends FlatSpec with Matchers {
 
   it should "properly read lits with gen = fixed and expect tolerance set to 1 bit " +
       "(even with finite fractional bits)" in {
-    val opt = new VerboseDspTesterOptionsManager {
-      verboseDspTesterOptions = optionsPass.verboseDspTesterOptions
+    val opt = new DspTesterOptionsManager {
+      dspTesterOptions = optionsPass.dspTesterOptions
       testerOptions = optionsPass.testerOptions
       commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/lit_fix")
     }  
@@ -375,8 +375,8 @@ class SimpleTBSpec extends FlatSpec with Matchers {
 
   it should "*fail* to read all lits with gen = fixed when expect tolerance is set to 0 bits " + 
       "(due to not having enough fractional bits to represent #s)" in {
-    val opt = new VerboseDspTesterOptionsManager {
-      verboseDspTesterOptions = optionsFail.verboseDspTesterOptions
+    val opt = new DspTesterOptionsManager {
+      dspTesterOptions = optionsFail.dspTesterOptions
       testerOptions = optionsFail.testerOptions
       commonOptions = optionsFail.commonOptions.copy(targetDirName = "test_run_dir/lit_fix")
     }
@@ -389,8 +389,8 @@ class SimpleTBSpec extends FlatSpec with Matchers {
 
   it should "properly poke/peek io delayed 1 cycle with gen = sint (reals rounded) " +
       "and expect tolerance set to 1 bit" in {
-    val opt = new VerboseDspTesterOptionsManager {
-      verboseDspTesterOptions = optionsPass.verboseDspTesterOptions
+    val opt = new DspTesterOptionsManager {
+      dspTesterOptions = optionsPass.dspTesterOptions
       testerOptions = optionsPass.testerOptions
       commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/io_sint")
     }
@@ -400,8 +400,8 @@ class SimpleTBSpec extends FlatSpec with Matchers {
   }
 
   it should "properly poke/peek io delayed 1 cycle with gen = fixed and expect tolerance set to 1 bit" in {
-    val opt = new VerboseDspTesterOptionsManager {
-      verboseDspTesterOptions = optionsPass.verboseDspTesterOptions
+    val opt = new DspTesterOptionsManager {
+      dspTesterOptions = optionsPass.dspTesterOptions
       testerOptions = optionsPass.testerOptions
       commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/io_fix")
     }
@@ -412,8 +412,8 @@ class SimpleTBSpec extends FlatSpec with Matchers {
 
   it should "properly poke/peek io delayed 1 cycle with gen = fixed + print TB (no reals)" in {
     this.synchronized {
-      val opt = new VerboseDspTesterOptionsManager {
-        verboseDspTesterOptions = optionsPassTB.verboseDspTesterOptions
+      val opt = new DspTesterOptionsManager {
+        dspTesterOptions = optionsPassTB.dspTesterOptions
         testerOptions = optionsPassTB.testerOptions
         commonOptions = optionsPassTB.commonOptions.copy(targetDirName = "test_run_dir/io_fix_tb")
       }

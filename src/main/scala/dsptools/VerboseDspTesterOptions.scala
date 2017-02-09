@@ -3,7 +3,7 @@ package dsptools
 import firrtl.{ComposableOptions, ExecutionOptionsManager}
 import chisel3.iotesters.TesterOptionsManager
 
-case class VerboseDspTesterOptions(
+case class DspTesterOptions(
     isVerbose: Boolean = true,
     fixTolLSBs: Int = 1,
     realTolDecPts: Int = 8,
@@ -24,57 +24,57 @@ case class VerboseDspTesterOptions(
 
 }
 
-trait HasVerboseDspTesterOptions {
+trait HasDspTesterOptions {
 
   self: ExecutionOptionsManager =>
 
-  var verboseDspTesterOptions = VerboseDspTesterOptions()
+  var dspTesterOptions = DspTesterOptions()
 
   parser.note("verbose dsp tester options")
 
   parser.opt[Unit]("verbose-tester-is-verbose")
     .abbr("vtiv")
-    .foreach { _ => verboseDspTesterOptions = verboseDspTesterOptions.copy(isVerbose = true) }
-    .text(s"set verbose flag on VerboseDspTesters, default is ${verboseDspTesterOptions.isVerbose}")
+    .foreach { _ => dspTesterOptions = dspTesterOptions.copy(isVerbose = true) }
+    .text(s"set verbose flag on DspTesters, default is ${dspTesterOptions.isVerbose}")
 
   parser.opt[Unit]("gen-verilog-tb")
     .abbr("gvtb")
-    .foreach { _ => verboseDspTesterOptions = verboseDspTesterOptions.copy(genVerilogTb = true) }
-    .text(s"set flag to generate tb .v file mimicking peek/poke, default is ${verboseDspTesterOptions.genVerilogTb}")
+    .foreach { _ => dspTesterOptions = dspTesterOptions.copy(genVerilogTb = true) }
+    .text(s"set flag to generate tb .v file mimicking peek/poke, default is ${dspTesterOptions.genVerilogTb}")
 
   parser.opt[Int]("fix-tol-lsb")
     .abbr("ftlsb")
-    .foreach { x => verboseDspTesterOptions = verboseDspTesterOptions.copy(fixTolLSBs = x) }
-    .text(s"fixed pt. expect tolerance (# wrong LSBs OK), default is ${verboseDspTesterOptions.fixTolLSBs}")
+    .foreach { x => dspTesterOptions = dspTesterOptions.copy(fixTolLSBs = x) }
+    .text(s"fixed pt. expect tolerance (# wrong LSBs OK), default is ${dspTesterOptions.fixTolLSBs}")
 
   parser.opt[Int]("real-tol-dec-pts")
     .abbr("rtdec")
-    .foreach { x => verboseDspTesterOptions = verboseDspTesterOptions.copy(realTolDecPts = x) }
-    .text(s"real expect error tolerance (1e-n), default is ${verboseDspTesterOptions.realTolDecPts}")
+    .foreach { x => dspTesterOptions = dspTesterOptions.copy(realTolDecPts = x) }
+    .text(s"real expect error tolerance (1e-n), default is ${dspTesterOptions.realTolDecPts}")
 
   parser.opt[Int]("tb-time-unit-ps")
     .abbr("tbunitps")
-    .foreach { x => verboseDspTesterOptions = verboseDspTesterOptions.copy(tbTimeUnitPs = x) }
-    .text(s"tb time unit (# x) in ps, default is ${verboseDspTesterOptions.tbTimeUnitPs}")
+    .foreach { x => dspTesterOptions = dspTesterOptions.copy(tbTimeUnitPs = x) }
+    .text(s"tb time unit (# x) in ps, default is ${dspTesterOptions.tbTimeUnitPs}")
 
   parser.opt[Int]("tb-time-prec-ps")
     .abbr("tbprecps")
-    .foreach { x => verboseDspTesterOptions = verboseDspTesterOptions.copy(tbTimePrecisionPs = x) }
-    .text(s"tb time precision in ps, default is ${verboseDspTesterOptions.tbTimePrecisionPs}")
+    .foreach { x => dspTesterOptions = dspTesterOptions.copy(tbTimePrecisionPs = x) }
+    .text(s"tb time precision in ps, default is ${dspTesterOptions.tbTimePrecisionPs}")
 
   parser.opt[Int]("clk-mul")
     .abbr("clkm")
-    .foreach { x => verboseDspTesterOptions = verboseDspTesterOptions.copy(clkMul = x) }
-    .text(s"clk period = clk-mul * time unit (ps), default is ${verboseDspTesterOptions.clkMul}")
+    .foreach { x => dspTesterOptions = dspTesterOptions.copy(clkMul = x) }
+    .text(s"clk period = clk-mul * time unit (ps), default is ${dspTesterOptions.clkMul}")
 
   parser.opt[Int]("init-clk-periods")
     .abbr("initt")
-    .foreach { x => verboseDspTesterOptions = verboseDspTesterOptions.copy(initClkPeriods = x) }
-    .text(s"initial reset time (# of clk periods), default is ${verboseDspTesterOptions.initClkPeriods}")
+    .foreach { x => dspTesterOptions = dspTesterOptions.copy(initClkPeriods = x) }
+    .text(s"initial reset time (# of clk periods), default is ${dspTesterOptions.initClkPeriods}")
 
 }
 
-class VerboseDspTesterOptionsManager
+class DspTesterOptionsManager
   extends TesterOptionsManager
-    with HasVerboseDspTesterOptions {
+    with HasDspTesterOptions {
 }

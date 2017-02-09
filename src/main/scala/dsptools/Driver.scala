@@ -13,8 +13,8 @@ import scala.util.DynamicVariable
 
 object Driver {
 
-  private val optionsManagerVar = new DynamicVariable[Option[VerboseDspTesterOptionsManager]](None)
-  def optionsManager = optionsManagerVar.value.getOrElse(new VerboseDspTesterOptionsManager)
+  private val optionsManagerVar = new DynamicVariable[Option[DspTesterOptionsManager]](None)
+  def optionsManager = optionsManagerVar.value.getOrElse(new DspTesterOptionsManager)
 
   def execute[T <: Module](
                             dutGenerator: () => T,
@@ -25,7 +25,7 @@ object Driver {
                           ): Boolean = {
 
     val om = optionsManager match {
-      case v: VerboseDspTesterOptionsManager => Some(v)
+      case v: DspTesterOptionsManager => Some(v)
       case t => None
     }                       
 
@@ -51,7 +51,7 @@ object Driver {
                             testerGen: T => PeekPokeTester[T]
                           ): Boolean = {
 
-    val optionsManager = new VerboseDspTesterOptionsManager {
+    val optionsManager = new DspTesterOptionsManager {
       interpreterOptions = interpreterOptions.copy(
         blackBoxFactories = interpreterOptions.blackBoxFactories :+ new DspRealFactory)
     }

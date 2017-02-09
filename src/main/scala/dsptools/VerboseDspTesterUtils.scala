@@ -16,7 +16,7 @@ trait VerilogTbDump {
   val tbFileName = s"${targetDir}/tb.v"
   val tb = new BufferedWriter(new FileWriter(tbFileName))
 
-  val dsptestersOpt = dsptools.Driver.optionsManager.verboseDspTesterOptions
+  val dsptestersOpt = dsptools.Driver.optionsManager.dspTesterOptions
   val verilogTb = dsptestersOpt.genVerilogTb
 
   val (inputs, outputs) = TestersCompatibility.getDataNames("io", dut.io) partition (_._1.dir == chisel3.INPUT)
