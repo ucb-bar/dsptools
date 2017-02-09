@@ -3,22 +3,19 @@
 package dsptools
 
 import breeze.math.Complex
-import dsptools.numbers.{DspComplex, DspReal, Real}
+import dsptools.numbers.{DspComplex, DspReal}
 import chisel3._
-import chisel3.experimental._
-import chisel3.iotesters.TestersCompatibility
-import chisel3.internal.InstanceId
-
-
-// Old stuff
-import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3.experimental.FixedPoint
+import chisel3.internal.InstanceId
+import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3.iotesters.PeekPokeTester
-import dsptools.DspTesterUtilities._
-
 import scala.util.DynamicVariable
 
-class DspTester[T <: Module](dut: T,
+// TODO: Get rid of
+import chisel3.iotesters.TestersCompatibility
+
+class DspTester[T <: Module](
+    dut: T,
     base: Int = 16,
     logFile: Option[java.io.File] = None) extends PeekPokeTester(dut, base, logFile) with VerilogTbDump {
 
@@ -26,8 +23,8 @@ class DspTester[T <: Module](dut: T,
   private def dispBase = updatableBase.value
 
   // Verbosity @ DSP level (different from chisel-testers verbosity)
-  val updatableDSPVerbose = new DynamicVariable[Boolean](dsptestersOpt.isVerbose)
-  private def dispDSP = updatableDSPVerbose.value
+  val updatableDspVerbose = new DynamicVariable[Boolean](dsptestersOpt.isVerbose)
+  private def dispDsp = updatableDspVerbose.value
 
   // Verbosity @ normal peek/poke level (chisel-testers verbosity) -- for additionally displaying as bits
   val updatableBitVerbose = new DynamicVariable[Boolean](iotestersOM.testerOptions.isVerbose)
@@ -58,14 +55,14 @@ class DspTester[T <: Module](dut: T,
   ///////////////// OVERRIDE UNDERLYING FUNCTIONS FROM PEEK POKE TESTER /////////////////
 
   override def step(n: Int) {
-    if (dispDSP) logger println s"STEP ${n}x -> ${t+n}"
+    if (dispDsp) logger println s"STEP ${n}x -> ${t+n}"
     stepPrint(n)
     backend.step(n)
     incTime(n)
   }
 
   override def reset(n: Int = 1) {
-    if (dispDSP) logger println s"RESET ${n}x -> ${t+n}"
+    if (dispDsp) logger println s"RESET ${n}x -> ${t+n}"
     resetPrint(n)
     backend.reset(n)
     incTime(n)
@@ -73,33 +70,33 @@ class DspTester[T <: Module](dut: T,
 
   override def poke(path: String, value: BigInt): Unit = {
     if (verilogTb) throw DspException("Don't use poke path (String) when printing verilog tb")
-    backend.poke(path, value)(logger, dispDSP, dispBase)
+    backend.poke(path, value)(logger, dispDsp, dispBase)
   }
 
   override def poke(signal: Bits, value: BigInt): Unit = {
     // bit-level poke is displayed as unsigned
     validRangeTest(signal, value)
-    if (!signal.isLit) backend.poke(signal, value, None)(logger, dispDSP, dispBase)
+    if (!signal.isLit) backend.poke(signal, value, None)(logger, dispDsp, dispBase)
     pokePrint(signal, value)
   }
 
   // Poke at does not involve external signals -- no VerilogTB print
   override def pokeAt[TT <: Bits](data: Mem[TT], value: BigInt, off: Int): Unit = {
-    backend.poke(data, value, Some(off))(logger, dispDSP, dispBase)
+    backend.poke(data, value, Some(off))(logger, dispDsp, dispBase)
   }
 
   override def peek(path: String) = {
     if (verilogTb) throw DspException("Don't use peek path (String) when printing verilog tb")
-    backend.peek(path)(logger, dispDSP, dispBase)
+    backend.peek(path)(logger, dispDsp, dispBase)
   }
 
   override def peek(signal: Bits): BigInt = {
     val o = {
       // bit-level peek is displayed as unsigned
-      if (!signal.isLit) backend.peek(signal, None)(logger, dispDSP, dispBase) 
+      if (!signal.isLit) backend.peek(signal, None)(logger, dispDsp, dispBase)
       else {
         val litVal = signal.litValue()
-        if (dispDSP) 
+        if (dispDsp)
           logger println s"  PEEK ${getName(signal)} -> ${TestersCompatibility.bigIntToStr(litVal, dispBase)}"
         litVal
       }
@@ -114,11 +111,11 @@ class DspTester[T <: Module](dut: T,
 
   // Peek at does not involve external signals -- no VerilogTB print
   override def peekAt[TT <: Bits](data: Mem[TT], off: Int): BigInt = {
-    backend.peek(data, Some(off))(logger, dispDSP, dispBase)
+    backend.peek(data, Some(off))(logger, dispDsp, dispBase)
   }
 
   override def expect(good: Boolean, msg: => String): Boolean = {
-    if (dispDSP || !good) logger println ( { if (!good) Console.RED else "" } +
+    if (dispDsp || !good) logger println ( { if (!good) Console.RED else "" } +
       s"""EXPECT AT $t $msg ${if (good) "PASS" else "FAIL"}""" + Console.RESET)
     if (!good) fail
     good
@@ -127,9 +124,9 @@ class DspTester[T <: Module](dut: T,
   override def expect(signal: Bits, expected: BigInt, msg: => String = ""): Boolean = {
     validRangeTest(signal, expected)
     val path = getName(signal)
-    val got = updatableDSPVerbose.withValue(false) { peek(signal) }
+    val got = updatableDspVerbose.withValue(false) { peek(signal) }
     val good = got == expected  
-    if (dispDSP || !good) logger println ( { if (!good) Console.RED else "" } +
+    if (dispDsp || !good) logger println ( { if (!good) Console.RED else "" } +
       s"""${msg}  EXPECT ${path} -> ${TestersCompatibility.bigIntToStr(got, dispBase)} == """ +
         s"""${TestersCompatibility.bigIntToStr(expected, dispBase)} ${if (good) "PASS" else "FAIL"}""" + Console.RESET)
     if (!good) fail
@@ -156,7 +153,7 @@ class DspTester[T <: Module](dut: T,
   // If poking DspReal with Double, can only go here
   // Type classes are all Data:RealBits
   def poke(signal: Data, value: Double): Unit = {
-    updatableDSPVerbose.withValue(dispBits) {
+    updatableDspVerbose.withValue(dispBits) {
       signal match {
         case f: FixedPoint => {
           f.binaryPoint match {
@@ -170,11 +167,11 @@ class DspTester[T <: Module](dut: T,
         case _ => throw DspException("Illegal poke value for node of type Data and value of type Double")
       }      
     }
-    if (dispDSP) logger println s"  POKE ${getName(signal)} <- ${value}" 
+    if (dispDsp) logger println s"  POKE ${getName(signal)} <- ${value}"
   }
 
   def poke(c: DspComplex[_], value: Complex): Unit = {
-    updatableDSPVerbose.withValue(dispBits) {
+    updatableDspVerbose.withValue(dispBits) {
       (c.real, c.imag) match {
         case (real: Data, imag: Data) => {
           poke(real, value.real)
@@ -182,7 +179,7 @@ class DspTester[T <: Module](dut: T,
         }
       }
     }
-    if (dispDSP) logger println s"  POKE ${getName(c)} <- ${value.toString}" 
+    if (dispDsp) logger println s"  POKE ${getName(c)} <- ${value.toString}"
   }
 
 
@@ -262,7 +259,7 @@ def peek(data: Data): Double = {
 
   // For custom DSP expect to work, need BigInt value too (not provided by original method)
   def expectDspPeek(node: Data): (Double, BigInt) = {
-    updatableDSPVerbose.withValue(dispBits) {
+    updatableDspVerbose.withValue(dispBits) {
       node match {
         case r: DspReal => {
           val bi = peek(r.node)                             // unsigned bigint
@@ -338,7 +335,7 @@ def peek(data: Data): Double = {
     val path = getName(data)
     val (dblVal, bitVal) = expectDspPeek(data)
     val (good, tolerance) = checkDecimal(data, expectedNew, dblVal, bitVal)
-    if (dispDSP || !good) logger println ( { if (!good) Console.RED else "" } + 
+    if (dispDsp || !good) logger println ( { if (!good) Console.RED else "" } +
       s"""${msg}  EXPECT ${path} -> $dblVal == """ +
         s"""$expectedNew ${if (good) "PASS" else "FAIL"}, tolerance = $tolerance""" + Console.RESET)
     if (!good) fail
@@ -357,7 +354,7 @@ def peek(data: Data): Double = {
     val (goodR, toleranceR) = checkDecimal(dataReal, expectedNewR, dblValR, bitValR)
     val (goodI, toleranceI) = checkDecimal(dataImag, expectedNewI, dblValI, bitValI)
     val good = goodR & goodI
-    if (dispDSP || !good) logger println ( { if (!good) Console.RED else "" } + 
+    if (dispDsp || !good) logger println ( { if (!good) Console.RED else "" } +
       s"""${msg}  EXPECT ${path} -> $dblValR + $dblValI i == """ +
         s"""$expectedNewR + $expectedNewI i ${if (good) "PASS" else "FAIL"}, tolerance = $toleranceR""" + 
           Console.RESET)   
