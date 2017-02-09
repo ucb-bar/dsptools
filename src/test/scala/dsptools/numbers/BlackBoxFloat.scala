@@ -57,8 +57,8 @@ class BlackBoxFloatAdder extends Module {
 }
 
 class BlackBoxFloatAdderTester(c: BlackBoxFloatAdder) extends DspTester(c) {
-  dspPoke(c.io.a, 2.1)
-  dspPoke(c.io.b, 3.0)
+  poke(c.io.a, 2.1)
+  poke(c.io.b, 3.0)
 
   dspExpect(c.io.c, 5.1, "reals should add")
   dspExpect(c.io.d, 4.2, "reals should add")
@@ -160,8 +160,8 @@ class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends 
   // scala doesn't have inverse hyperbolic functions, hardcode them
   val asinh_a = 1.9378792776645006
   val acosh_a = 1.8945590126722978042798892652
-  dspPoke(c.io.in1, a)
-  dspPoke(c.io.in2, b)
+  poke(c.io.in1, a)
+  poke(c.io.in2, b)
 
   poke(c.io.opsel, Add)
   dspExpect(c.io.out, a + b, "reals should add")
@@ -195,13 +195,13 @@ class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends 
     dspExpect(c.io.out, math.tan(a), "tan should work on reals")
 
     val arcArg = 0.5
-    dspPoke(c.io.in1, arcArg)
+    poke(c.io.in1, arcArg)
     poke(c.io.opsel, ASin)
     dspExpect(c.io.out, math.asin(arcArg), "asin should work on reals")
     poke(c.io.opsel, ACos)
     dspExpect(c.io.out, math.acos(arcArg), "acos should work on reals")
 
-    dspPoke(c.io.in1, a)
+    poke(c.io.in1, a)
     poke(c.io.opsel, ATan)
     dspExpect(c.io.out, math.atan(a), "atan should work on reals")
     poke(c.io.opsel, ATan2)

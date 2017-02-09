@@ -19,8 +19,8 @@ class LnModule extends Module {
 }
 
 class LnTester(c: LnModule) extends DspTester(c) {
-  dspPoke(c.io.num,11.0)
-  private val x = dspPeek(c.io.ln)
+  poke(c.io.num,11.0)
+  private val x = peek(c.io.ln)
   println(s"poked 1.0 got $x expected ${math.log(11.0)}")
 
 }

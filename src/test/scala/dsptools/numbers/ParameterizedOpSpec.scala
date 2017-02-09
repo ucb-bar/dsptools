@@ -51,11 +51,11 @@ class ParameterizedOpTester[T<:Data:Ring](c: ParameterizedNumberOperation[T]) ex
       case "*" => i * j
       case _ => i + j
     }
-    dspPoke(c.io.a1, i)
-    dspPoke(c.io.a2, j)
+    poke(c.io.a1, i)
+    poke(c.io.a2, j)
     step(1)
 
-    val result = dspPeekDouble(c.io.c)
+    val result = peek(c.io.c)
 
     dspExpect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
   }
@@ -111,11 +111,11 @@ class ComplexOpTester[T<:DspComplex[_]](c: ParameterizedNumberOperation[T]) exte
       case "*" => c1 * c2
       case _ => c1 + c2
     }
-    dspPoke(c.io.a1, c1)
-    dspPoke(c.io.a2, c2)
+    poke(c.io.a1, c1)
+    poke(c.io.a2, c2)
     step(1)
 
-    val result = dspPeek(c.io.c)
+    val result = peek(c.io.c)
 
     dspExpect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
   }

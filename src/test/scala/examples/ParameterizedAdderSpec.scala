@@ -31,11 +31,11 @@ class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends D
     i <- -2.0 to 1.0 by 0.25
     j <- -2.0 to 4.0 by 0.5
   } {
-    dspPoke(c.io.a1, i)
-    dspPoke(c.io.a2, j)
+    poke(c.io.a1, i)
+    poke(c.io.a2, j)
     step(1)
 
-    val result = dspPeekDouble(c.io.c)
+    val result = peek(c.io.c)
 
     dspExpect(c.io.c, i + j, s"parameterize adder tester $i + $j => $result should have been ${i + j}")
   }

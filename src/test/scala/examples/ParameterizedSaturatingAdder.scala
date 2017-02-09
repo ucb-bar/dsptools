@@ -49,12 +49,12 @@ class ParameterizedSaturatingAdderTester[T<:Data:Integer](c: ParameterizedSatura
     j <- min to max
   } {
     println(s"I=$i and J=$j")
-    dspPoke(c.io.a1, i)
-    dspPoke(c.io.a2, j)
+    poke(c.io.a1, i)
+    poke(c.io.a2, j)
     step(1)
 
-    val resultNormal = dspPeekDouble(c.io.normalSum)
-    val resultSaturated = dspPeekDouble(c.io.saturatedSum)
+    val resultNormal = peek(c.io.normalSum)
+    val resultSaturated = peek(c.io.saturatedSum)
 
     dspExpect(c.io.normalSum, overflowint(i+j), s"parameterized normal adder $i + $j => $resultNormal should have been ${overflowint(i+j)}")
     dspExpect(c.io.saturatedSum, saturateint(i+j), s"parameterized saturating adder $i + $j => $resultSaturated should have been ${saturateint(i+j)}")

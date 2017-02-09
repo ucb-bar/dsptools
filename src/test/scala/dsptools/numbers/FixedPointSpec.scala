@@ -30,7 +30,7 @@ class FixedRing1Tester(c: FixedRing1) extends DspTester(c) {
   for(i <- -2.0 to 3.0 by increment) {
     println(s"Testing value $i")
 
-    dspPoke(c.io.in, i)
+    poke(c.io.in, i)
 
     dspExpect(c.io.floor, breeze.numerics.floor(i), s"floor of $i should be ${breeze.numerics.floor(i)}")
     dspExpect(c.io.ceil, breeze.numerics.ceil(i), s"ceil of $i should be ${breeze.numerics.ceil(i)}")

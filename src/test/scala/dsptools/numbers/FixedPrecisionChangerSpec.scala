@@ -21,9 +21,9 @@ class FixedPrecisionChanger(inWidth: Int, inBinaryPoint: Int, outWidth: Int, out
 }
 
 class FixedPointTruncatorTester(c: FixedPrecisionChanger, inValue: Double, outValue: Double) extends DspTester(c) {
-  dspPoke(c.io.in, inValue)
+  poke(c.io.in, inValue)
   step(1)
-  dspExpect(c.io.out, outValue, s"got ${dspPeekDouble(c.io.out)} should have $outValue")
+  dspExpect(c.io.out, outValue, s"got ${peek(c.io.out)} should have $outValue")
 }
 
 class RemoveMantissa(inWidth: Int, inBinaryPoint: Int, outWidth: Int, outBinaryPoint: Int) extends Module {
@@ -38,9 +38,9 @@ class RemoveMantissa(inWidth: Int, inBinaryPoint: Int, outWidth: Int, outBinaryP
 }
 
 class RemoveMantissaTester(c: RemoveMantissa, inValue: Double, outValue: Double) extends DspTester(c) {
-  dspPoke(c.io.in, inValue)
+  poke(c.io.in, inValue)
   step(1)
-  dspExpect(c.io.out, outValue, s"got ${dspPeekDouble(c.io.out)} should have $outValue")
+  dspExpect(c.io.out, outValue, s"got ${peek(c.io.out)} should have $outValue")
 }
 
 class FixedPrecisionChangerSpec extends FreeSpec with Matchers {

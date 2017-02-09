@@ -20,17 +20,17 @@ trait EasyPeekPoke {
     d match {
       case b: Bool => poke(b, if (value == 0.0) 0 else 1)
       case u: UInt => poke(u, math.abs(value.round).toInt)
-      case r => dspPoke(r, value)
+      case r => poke(r, value)
     }
   }
-  def feed(d: DspComplex[_], value: Complex) = dspPoke(d, value)
+  def feed(d: DspComplex[_], value: Complex) = poke(d, value)
 
   // TB Debug only [otherwise, just use expect for any *real* tb!]
   def checkP(d: Data, value: Double) {
     d match {
       case b: Bool => peek(b)
       case u: UInt => peek(u)
-      case r => dspPeek(r)
+      case r => peek(r)
     }
     // SInts are perfect in this case b/c they're just passed through (no loss of precision)
     d match {
@@ -41,7 +41,7 @@ trait EasyPeekPoke {
     }
   }
   def checkP(d: DspComplex[_], value: Complex) = {
-    dspPeek(d)
+    peek(d)
     d.real match {
       case s: SInt => fixTolLSBs.withValue(0) {
         check(d, value)
@@ -278,8 +278,8 @@ class PassLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) 
 
   }}
 
-  dspPeek(c.lutGenSeq(0))
-  dspPeek(c.lutSSeq(0))
+  peek(c.lutGenSeq(0))
+  peek(c.lutSSeq(0))
 }
 
 class FailLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) {

@@ -36,11 +36,11 @@ class RealAdderTester(c: RealAdder) extends DspTester(c) {
     i <- 0.0 to 1.0 by 0.25
     j <- 0.0 to 4.0 by 0.5
   } {
-    dspPoke(c.io.a1, i)
-    dspPoke(c.io.a2, j)
+    poke(c.io.a1, i)
+    poke(c.io.a2, j)
     step(1)
 
-    val result = dspPeek(c.io.c)
+    val result = peek(c.io.c)
 
     println(s"peek $result")
   }

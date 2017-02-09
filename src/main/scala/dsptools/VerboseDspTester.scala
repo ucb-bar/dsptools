@@ -145,13 +145,17 @@ class DspTester[T <: Module](dut: T,
 
   // Has priority over Bits (FixedPoint extends Bits)
   def poke(signal: FixedPoint, value: Double): Unit = {
-    dspPoke(signal, value)
+    poke(signal.asInstanceOf[Data], value)
   }
+
+  def poke(signal: UInt, value: Int): Unit = poke(signal, BigInt(value))
+  def poke(signal: SInt, value: Int): Unit = poke(signal, BigInt(value))
+
 
   // DspReal extends Bundle extends Aggregate extends Data
   // If poking DspReal with Double, can only go here
   // Type classes are all Data:RealBits
-  def dspPoke(signal: Data, value: Double): Unit = {
+  def poke(signal: Data, value: Double): Unit = {
     updatableDSPVerbose.withValue(dispBits) {
       signal match {
         case f: FixedPoint => {
@@ -169,12 +173,12 @@ class DspTester[T <: Module](dut: T,
     if (dispDSP) logger println s"  POKE ${getName(signal)} <- ${value}" 
   }
 
-  def dspPoke(c: DspComplex[_], value: Complex): Unit = {
+  def poke(c: DspComplex[_], value: Complex): Unit = {
     updatableDSPVerbose.withValue(dispBits) {
       (c.real, c.imag) match {
         case (real: Data, imag: Data) => {
-          dspPoke(real, value.real)
-          dspPoke(imag, value.imag)
+          poke(real, value.real)
+          poke(imag, value.imag)
         }
       }
     }
@@ -195,11 +199,11 @@ class DspTester[T <: Module](dut: T,
 
 
 //need logger
-def dspPeekDouble(data: Data): Double = {
+def peek(data: Data): Double = {
    expectDspPeek(data)._1
   }
 
-  def dspPeekComplex(c: DspComplex[_]): Complex = {
+  def peek(c: DspComplex[_]): Complex = {
     (c.real, c.imag) match {
         case (real: Data, imag: Data) => {
 
@@ -209,9 +213,10 @@ def dspPeekDouble(data: Data): Double = {
   }}
 
 
+  def peek(d: DspReal): Double = {
+    expectDspPeek(d)._1
+  }
 
-def dspPeek(c: DspComplex[_]) = dspPeekComplex(c)
-def dspPeek(d: Data) = dspPeekDouble(d)
 
 
 /*
@@ -238,7 +243,7 @@ def dspPeek(d: Data) = dspPeekDouble(d)
 
   // > bits
   def peek(signal: FixedPoint): Double = {
-    dspPeekDouble(signal)
+    peek(signal.asInstanceOf[Data])
   }
 
   // problem with bundle?; get trapped in bundle before data
@@ -323,7 +328,7 @@ def dspPeek(d: Data) = dspPeekDouble(d)
   }
 
 
-// sint, uint ok
+// sint, uint ok; needs a cast fir int to bigint or double??  bigint consrvative
 // fixed need separate
 // dspreal defers here
 
