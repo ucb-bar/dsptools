@@ -20,7 +20,7 @@ import _root_.util._
 import testchipip._
 
 class SAMIO()(implicit p: Parameters) extends NastiBundle()(p) {
-  val config = p(SAMKey)
+  val config = p(SAMKey(p(DspBlockId)))
   val w = (ceil(p(DspBlockKey(p(DspBlockId))).inputWidth*1.0/nastiXDataBits)*nastiXDataBits).toInt
 
   val in = Input(ValidWithSync(UInt(w.W)))
@@ -37,7 +37,7 @@ class SAMIO()(implicit p: Parameters) extends NastiBundle()(p) {
 
 class SAM()(implicit p: Parameters) extends NastiModule()(p) {
   val io = IO(new SAMIO)
-  val config = p(SAMKey)
+  val config = p(SAMKey(p(DspBlockId)))
   // [stevo]: make width a multiple of nastiDataWidth
   val w = (ceil(p(DspBlockKey(p(DspBlockId))).inputWidth*1.0/nastiXDataBits)*nastiXDataBits).toInt
 
@@ -170,7 +170,7 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) {
 }
 
 class SAMWrapperIO()(implicit p: Parameters) extends BasicDspBlockIO()(p) {
-  val config = p(SAMKey)
+  val config = p(SAMKey(p(DspBlockId)))
 
   val axi_out = Flipped(new NastiIO())
 }
@@ -193,7 +193,7 @@ class SAMWrapper(outer: LazySAM)(implicit p: Parameters) extends DspBlock(outer,
   // SCR
   val baseAddr = BigInt(0)
   val sam = Module(new SAM)
-  val config = p(SAMKey)
+  val config = p(SAMKey(p(DspBlockId)))
 
 
 
