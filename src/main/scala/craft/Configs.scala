@@ -10,6 +10,7 @@ import uncore.agents.CacheBlockBytes
 import junctions._
 
 import dspblocks._
+import dspjunctions._
 import dsptools.numbers.{Field =>_, _}
 import dsptools.numbers.implicits._
 

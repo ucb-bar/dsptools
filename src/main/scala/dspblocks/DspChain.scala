@@ -395,8 +395,8 @@ class DspChain(
   println(s"We have ${dataXbarParams(GlobalAddrMap).numSlaves} data slaves in the AddrMap")
 
 
-  val ctrlXbar = Module(new CraftXBar(ctrlXbarParams))
-  val dataXbar = Module(new CraftXBar(dataXbarParams))
+  val ctrlXbar = Module(new NastiXBar(ctrlXbarParams))
+  val dataXbar = Module(new NastiXBar(dataXbarParams))
 
   ctrlXbar.io.in(0) <> io.control_axi
   ctrlXbar.io.out.zip(control_axis).foreach{ case (xbar_axi, control_axi) => xbar_axi <> control_axi }
