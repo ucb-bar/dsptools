@@ -67,7 +67,7 @@ object ConfigBuilder {
             maxManagerXacts = 1,
             dataBeats = 1,
             dataBits = 64)
-      case BaseAddr => 0
+      case BaseAddr(id) => 0
       case _ => throw new CDEMatchError
     })
 }

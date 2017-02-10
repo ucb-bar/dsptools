@@ -17,7 +17,7 @@ import junctions._
 import rocketchip._
 
 case class DspChainParameters (
-  blocks: Seq[(Parameters => LazyDspBlock, String)],
+  val blocks: Seq[(Parameters => LazyDspBlock, String)],
   logicAnalyzerSamples: Int,
   logicAnalyzerUseCombinationalTrigger: Boolean,
   patternGeneratorSamples: Int,
@@ -79,7 +79,7 @@ class DspChain(
   var addr = 0
   val lazy_mods = blocks.map(b => {
     val modParams = overrideParams.alterPartial({
-      case BaseAddr => addr
+      case BaseAddr(b._2) => addr
       case DspBlockId => b._2
     })
     val mod = LazyModule(b._1(modParams))
@@ -110,7 +110,7 @@ class DspChain(
       case SAMKey(samName) => oldSamConfig.copy(baseAddr = addr)
       case DspBlockId => samName
       case DspBlockKey(samName) => DspBlockParameters(samWidth, samWidth)
-      case BaseAddr => addr
+      case BaseAddr(samName) => addr
     })
     val lazySam = LazyModule( new LazySAM()(samParams) )
     addr += lazySam.size

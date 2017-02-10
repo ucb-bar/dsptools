@@ -75,11 +75,11 @@ class BasicDspBlockIO()(implicit val p: Parameters) extends Bundle with HasDspBl
   override def cloneType: this.type = new BasicDspBlockIO()(p).asInstanceOf[this.type]
 }
 
-case object BaseAddr extends Field[Int]
+case class BaseAddr(id: String) extends Field[Int]
 
 trait HasLazyDspBlockParameters {
   implicit val p: Parameters
-  def baseAddr: Int = p(BaseAddr)
+  def baseAddr: Int = p(BaseAddr(p(DspBlockId)))
 }
 
 abstract class LazyDspBlock()(implicit val p: Parameters) extends LazyModule with HasLazyDspBlockParameters {
