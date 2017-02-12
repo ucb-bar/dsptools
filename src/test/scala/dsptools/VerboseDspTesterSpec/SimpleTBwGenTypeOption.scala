@@ -11,14 +11,13 @@ import dsptools.{DspTester, DspTesterOptionsManager, DspTesterOptions}
 import org.scalatest.{FlatSpec, Matchers}
 import chisel3.iotesters.TesterOptions
 
-// TODO: Make utility!
 trait EasyPeekPoke {
 
   self: DspTester[_] => 
 
   def feed(d: Data, value: Double) = {
     d match {
-      case b: Bool => poke(b, if (value == 0.0) 0 else 1)
+      case b: Bool => poke(b, if (value == 0.0) false else true)
       case u: UInt => poke(u, math.abs(value.round).toInt)
       case r => poke(r, value)
     }
@@ -27,23 +26,18 @@ trait EasyPeekPoke {
 
   // TB Debug only [otherwise, just use expect for any *real* tb!]
   def checkP(d: Data, value: Double) {
-    d match {
-      case b: Bool => peek(b)
-      case u: UInt => peek(u)
-      case r => peek(r)
-    }
+    peek(d)
     // SInts are perfect in this case b/c they're just passed through (no loss of precision)
     d match {
-      case s: SInt => fixTolLSBs.withValue(0) {
-        check(d, value)
-      }
+      case _: SInt | _: UInt | _: Bool => fixTolLSBs.withValue(0) { check(d, value) }
       case _ => check(d, value)
     }
   }
+
   def checkP(d: DspComplex[_], value: Complex) = {
     peek(d)
     d.real match {
-      case s: SInt => fixTolLSBs.withValue(0) {
+      case _: SInt | _: UInt | _: Bool => fixTolLSBs.withValue(0) {
         check(d, value)
       }
       case _ => check(d, value)
@@ -53,8 +47,12 @@ trait EasyPeekPoke {
   // TODO: Add runtime tolerance change here as a shortcut?
   def check(d: Data, value: Double) {
     d match {
-      case b: Bool => expect(b, if (value == 0.0) 0 else 1)
+      case b: Bool => expect(b, if (value == 0.0) false else true)
       case u: UInt => expect(u, math.abs(value.round).toInt)
+      case f: FixedPoint => {
+        expect(f, value)
+        require(f.binaryPoint.get > 0, "Fixed points used in this test have >0 fractional bits!")
+      }
       case r => expect(r, value)
     }
   }
@@ -98,7 +96,7 @@ class Interface[R <: Data:Real](genShort: R, genLong: R, includeR: Boolean, p: T
   val r = if (includeR) Some(DspReal()) else None
   val b = Bool()
   val cGenL = DspComplex(genLong)
-  val cFS = DspComplex(FixedPoint(bigW, smallBP))
+  val cFS = DspComplex(FixedPoint(smallW, smallBP))
   val cR = if (includeR) Some(DspComplex(DspReal())) else None
 
   val short = new DataTypeBundle(genShort, smallW, smallBP)
@@ -106,7 +104,7 @@ class Interface[R <: Data:Real](genShort: R, genLong: R, includeR: Boolean, p: T
 
   val vU = Vec(vecLen, UInt(smallW))
   val vS = Vec(vecLen, SInt(smallW))  
-  val vF = Vec(vecLen, FixedPoint(bigW, smallBP))  
+  val vF = Vec(vecLen, FixedPoint(smallW, smallBP))  
   
   override def cloneType: this.type = new Interface(genShort, genLong, includeR, p).asInstanceOf[this.type]
 }
