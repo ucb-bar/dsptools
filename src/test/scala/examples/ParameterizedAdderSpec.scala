@@ -37,7 +37,7 @@ class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends D
 
     val result = peek(c.io.c)
 
-    dspExpect(c.io.c, i + j, s"parameterize adder tester $i + $j => $result should have been ${i + j}")
+    expect(c.io.c, i + j, s"parameterize adder tester $i + $j => $result should have been ${i + j}")
   }
 }
 

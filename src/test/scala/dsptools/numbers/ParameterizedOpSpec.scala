@@ -57,7 +57,7 @@ class ParameterizedOpTester[T<:Data:Ring](c: ParameterizedNumberOperation[T]) ex
 
     val result = peek(c.io.c)
 
-    dspExpect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
+    expect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
   }
 }
 
@@ -117,7 +117,7 @@ class ComplexOpTester[T<:DspComplex[_]](c: ParameterizedNumberOperation[T]) exte
 
     val result = peek(c.io.c)
 
-    dspExpect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
+    expect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
   }
 }
 

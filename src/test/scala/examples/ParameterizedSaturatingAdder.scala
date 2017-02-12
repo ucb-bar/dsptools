@@ -56,8 +56,8 @@ class ParameterizedSaturatingAdderTester[T<:Data:Integer](c: ParameterizedSatura
     val resultNormal = peek(c.io.normalSum)
     val resultSaturated = peek(c.io.saturatedSum)
 
-    dspExpect(c.io.normalSum, overflowint(i+j), s"parameterized normal adder $i + $j => $resultNormal should have been ${overflowint(i+j)}")
-    dspExpect(c.io.saturatedSum, saturateint(i+j), s"parameterized saturating adder $i + $j => $resultSaturated should have been ${saturateint(i+j)}")
+    expect(c.io.normalSum, overflowint(i+j), s"parameterized normal adder $i + $j => $resultNormal should have been ${overflowint(i+j)}")
+    expect(c.io.saturatedSum, saturateint(i+j), s"parameterized saturating adder $i + $j => $resultSaturated should have been ${saturateint(i+j)}")
   }
 }
 

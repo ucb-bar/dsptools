@@ -135,7 +135,7 @@ class DspTester[T <: Module](
   }
 
   override def peek(signal: Aggregate): IndexedSeq[BigInt] =  {
-    // Flatten returns IndexSeq[Bits], so will use above peek
+    // Flatten returns IndexSeq[BigInt], so will use above peek
     TestersCompatibility.flatten(signal) map { x => peek(x) }
   }
 
@@ -146,7 +146,7 @@ class DspTester[T <: Module](
 
   override def expect(good: Boolean, msg: => String): Boolean = {
     if (dispDsp || !good) logger println ( { if (!good) Console.RED else "" } +
-      s"""EXPECT AT $t $msg ${if (good) "PASS" else "FAIL"}""" + Console.RESET)
+      s"EXPECT AT $t $msg ${if (good) "PASS" else "FAIL"}" + Console.RESET)
     if (!good) fail
     good
   }
@@ -154,11 +154,11 @@ class DspTester[T <: Module](
   override def expect(signal: Bits, expected: BigInt, msg: => String = ""): Boolean = {
     validRangeTest(signal, expected)
     val path = getName(signal)
-    val got = updatableDspVerbose.withValue(false) { peek(signal) }
+    val got = updatableDspVerbose.withValue(dispSub) { peek(signal) }
     val good = got == expected  
     if (dispDsp || !good) logger println ( { if (!good) Console.RED else "" } +
-      s"""${msg}  EXPECT ${path} -> ${TestersCompatibility.bigIntToStr(got, dispBase)} == """ +
-        s"""${TestersCompatibility.bigIntToStr(expected, dispBase)} ${if (good) "PASS" else "FAIL"}""" + Console.RESET)
+      s"${msg}  EXPECT ${path} -> ${TestersCompatibility.bigIntToStr(got, dispBase)} == " +
+        s"${TestersCompatibility.bigIntToStr(expected, dispBase)} ${if (good) "PASS" else "FAIL"}" + Console.RESET)
     if (!good) fail
     good
   }
@@ -178,6 +178,7 @@ class DspTester[T <: Module](
   def poke(signal: SInt, value: Int): Unit = poke(signal, value.toDouble)
 
   // Has priority over Bits (FixedPoint extends Bits)
+  def poke(signal: FixedPoint, value: Int): Unit = poke(signal, value.toDouble)
   def poke(signal: FixedPoint, value: Double): Unit = poke(signal.asInstanceOf[Data], value)
   
   // DspReal extends Bundle extends Aggregate extends Data
@@ -198,7 +199,7 @@ class DspTester[T <: Module](
         case _ => throw DspException("Illegal poke value for node of type Data and value of type Double")
       }      
     }
-    if (dispDsp) logger println s"  POKE ${getName(signal)} <- ${value} \t ${bitInfo(signal)}"
+    if (dispDsp) logger println s"  POKE ${getName(signal)} <- ${value}, ${bitInfo(signal)}"
   }
 
   // Will only print individual real/imag peek information if dispSub is true!
@@ -207,7 +208,7 @@ class DspTester[T <: Module](
       poke(c.real.asInstanceOf[Data], value.real)
       poke(c.imag.asInstanceOf[Data], value.imag)
     }
-    if (dispDsp) logger println s"  POKE ${getName(c)} <- ${value.toString} \t ${bitInfo(c)}"
+    if (dispDsp) logger println s"  POKE ${getName(c)} <- ${value.toString}, ${bitInfo(c)}"
   }
 
   private def dspPeek(node: Data): (Double, BigInt) = {
@@ -228,7 +229,7 @@ class DspTester[T <: Module](
       case b: Bits => (bi.doubleValue, bi)
       case _ => throw DspException("Peeked node ${getName(node)} has incorrect type ${node.getClass.getName}")
     }
-    if (dispDsp) logger println s"  PEEK ${getName(node)} -> ${dblOut} \t ${bitInfo(node)}" 
+    if (dispDsp) logger println s"  PEEK ${getName(node)} -> ${dblOut}, ${bitInfo(node)}" 
     (dblOut, bigIntOut)
   }
 
@@ -249,7 +250,7 @@ class DspTester[T <: Module](
     val out = updatableDspVerbose.withValue(dispSub) {
       Complex(dspPeek(c.real.asInstanceOf[Data])._1, dspPeek(c.imag.asInstanceOf[Data])._1)
     }
-    if (dispDsp) logger println s"  PEEK ${getName(c)} <- ${out.toString} \t ${bitInfo(c)}"
+    if (dispDsp) logger println s"  PEEK ${getName(c)} <- ${out.toString}, ${bitInfo(c)}"
     out
   }
 
@@ -258,46 +259,24 @@ class DspTester[T <: Module](
     expect(signal, if (expected) BigInt(1) else BigInt(0))
   }
 
+  // If expecting directly on UInt or SInt (rather than generic type class), 
+  // set tolerance to be 0 bits (i.e. must match exactly)
+  def expect(signal: UInt, expected: Int): Boolean = expect(signal, expected, "")
+  def expect(signal: UInt, expected: Int, msg: String): Boolean = fixTolLSBs.withValue(0) {
+    expect(signal.asInstanceOf[Data], expected.toDouble, msg)
+  }
+  def expect(signal: SInt, expected: Int): Boolean = expect(signal, expected, "")
+  def expect(signal: SInt, expected: Int, msg: String): Boolean = fixTolLSBs.withValue(0) {
+    expect(signal.asInstanceOf[Data], expected.toDouble, msg)
+  }
 
-
-
-
-
-
- 
-
-
-  // Need to specify what happens when you poke with an Int
-  // Display as Double (so you can separate out number representation vs. bit representation)
-  //def poke(signal: UInt, value: Int): Unit = poke(signal, value.toDouble)
-  //def poke(signal: SInt, value: Int): Unit = poke(signal, value.toDouble)
-
-  // Has priority over Bits (FixedPoint extends Bits)
-  //def poke(signal: FixedPoint, value: Double): Unit = signal match {
-  //  case d: Data => poke(d.asInstanceOf[Data], value)
-  //}
-
-
-// sint expect exact? 
-  //addbitinfo
-    
-    // sint, uint ok; needs a cast fir int to bigint or double??  bigint consrvative
-// fixed need separate
-// dspreal defers here
-  
-
-
-  
-
-
-
-
- 
-  
-
-  
-  
-  
+  // Priority over Bits
+  def expect(signal: FixedPoint, expected: Int): Boolean = expect(signal, expected, "")
+  def expect(signal: FixedPoint, expected: Int, msg: String): Boolean = expect(signal, expected.toDouble, msg) 
+  def expect(signal: FixedPoint, expected: Double): Boolean = expect(signal, expected, "")
+  def expect(signal: FixedPoint, expected: Double, msg: String): Boolean = {
+    expect(signal.asInstanceOf[Data], expected, msg)
+  }
 
   ///////////////// SPECIALIZED DSP EXPECT /////////////////
 
@@ -345,6 +324,7 @@ class DspTester[T <: Module](
     }
   }
 
+  // Expect on DspReal goes straight to here
   def expect(data: Data, expected: Double): Boolean = expect(data, expected, msg = "")
   def expect(data: Data, expected: Double, msg: String): Boolean = {
     val expectedNew = roundExpected(data, expected)
@@ -352,8 +332,9 @@ class DspTester[T <: Module](
     val (dblVal, bitVal) = updatableDspVerbose.withValue(dispSub) { dspPeek(data) }
     val (good, tolerance) = checkDecimal(data, expectedNew, dblVal, bitVal)
     if (dispDsp || !good) logger println ( { if (!good) Console.RED else "" } +
-      s"""${msg}  EXPECT ${path} -> $dblVal == """ +
-        s"""$expectedNew ${if (good) "PASS" else "FAIL"}, tolerance = $tolerance""" + Console.RESET)
+        s"${msg}  EXPECT ${path} -> $dblVal == " +
+        s"$expectedNew ${if (good) "PASS" else "FAIL"}, tolerance = $tolerance, ${bitInfo(data)}" + 
+        Console.RESET)
     if (!good) fail
     good
   }
@@ -365,15 +346,19 @@ class DspTester[T <: Module](
     val expectedNewR = roundExpected(dataReal, expected.real)
     val expectedNewI = roundExpected(dataImag, expected.imag)
     val path = getName(data)
-    val (dblValR, bitValR) = updatableDspVerbose.withValue(dispSub) { dspPeek(dataReal) }
-    val (dblValI, bitValI) = updatableDspVerbose.withValue(dispSub) { dspPeek(dataImag) }
-    val (goodR, toleranceR) = checkDecimal(dataReal, expectedNewR, dblValR, bitValR)
-    val (goodI, toleranceI) = checkDecimal(dataImag, expectedNewI, dblValI, bitValI)
-    val good = goodR & goodI
-    if (dispDsp || !good) logger println ( { if (!good) Console.RED else "" } +
-      s"""${msg}  EXPECT ${path} -> $dblValR + $dblValI i == """ +
-        s"""$expectedNewR + $expectedNewI i ${if (good) "PASS" else "FAIL"}, tolerance = $toleranceR""" + 
+    val good = updatableDspVerbose.withValue(dispSub) {
+      val (dblValR, bitValR) = dspPeek(dataReal)
+      val (dblValI, bitValI) = dspPeek(dataImag)
+      val (goodR, toleranceR) = checkDecimal(dataReal, expectedNewR, dblValR, bitValR)
+      val (goodI, toleranceI) = checkDecimal(dataImag, expectedNewI, dblValI, bitValI)
+      val good = goodR & goodI
+      if (dispDsp || !good) logger println ( { if (!good) Console.RED else "" } +
+          s"${msg}  EXPECT ${path} -> $dblValR + $dblValI i == " +
+          s"$expectedNewR + $expectedNewI i ${if (good) "PASS" else "FAIL"}, tolerance = $toleranceR, " + 
+          s"${bitInfo(data)}" + 
           Console.RESET)   
+      good
+    }
     if (!good) fail
     good 
   }  
