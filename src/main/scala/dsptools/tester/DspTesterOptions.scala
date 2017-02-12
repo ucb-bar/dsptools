@@ -4,14 +4,22 @@ import firrtl.{ComposableOptions, ExecutionOptionsManager}
 import chisel3.iotesters.TesterOptionsManager
 
 case class DspTesterOptions(
+    // Top-level TB verbosity
     isVerbose: Boolean = true,
-    fixTolLSBs: Int = 1,
+    // Expect Tolerance in LSBs for FixedPoint, SInt, UInt
+    fixTolLSBs: Int = 0,
+    // 10^(-realTolDecPts) tolerance for expect on DspReal
     realTolDecPts: Int = 8,
+    // Generated mirroed Verilog TB from peek/poke
     genVerilogTb: Boolean = false,
+    // clk period in ps = clkMul * tbTimeUnitPs
     clkMul: Int = 1,
+    // Time unit in ps
     tbTimeUnitPs: Int = 100,
+    // Time precision in ps
     // Note: tb checking occurs 1 precision step after clk
     tbTimePrecisionPs: Int = 10,
+    // # clk periods for initial reset
     initClkPeriods: Int = 5) extends ComposableOptions {
 
     val clkPeriodPs = tbTimeUnitPs * clkMul
@@ -30,12 +38,17 @@ trait HasDspTesterOptions {
 
   var dspTesterOptions = DspTesterOptions()
 
-  parser.note("verbose dsp tester options")
+  parser.note("dsp tester options")
 
-  parser.opt[Unit]("verbose-tester-is-verbose")
-    .abbr("vtiv")
+  parser.opt[Unit]("dsp-tester-is-verbose")
+    .abbr("dtiv")
     .foreach { _ => dspTesterOptions = dspTesterOptions.copy(isVerbose = true) }
     .text(s"set verbose flag on DspTesters, default is ${dspTesterOptions.isVerbose}")
+
+  parser.opt[Unit]("dsp-tester-is-not-verbose")
+    .abbr("dtinv")
+    .foreach { _ => dspTesterOptions = dspTesterOptions.copy(isVerbose = false) }
+    .text(s"unset verbose flag on DspTesters, default is ${dspTesterOptions.isVerbose}")
 
   parser.opt[Unit]("gen-verilog-tb")
     .abbr("gvtb")
@@ -45,7 +58,7 @@ trait HasDspTesterOptions {
   parser.opt[Int]("fix-tol-lsb")
     .abbr("ftlsb")
     .foreach { x => dspTesterOptions = dspTesterOptions.copy(fixTolLSBs = x) }
-    .text(s"fixed pt. expect tolerance (# wrong LSBs OK), default is ${dspTesterOptions.fixTolLSBs}")
+    .text(s"fixed pt, sint, uint expect tolerance (# wrong LSBs OK), default is ${dspTesterOptions.fixTolLSBs}")
 
   parser.opt[Int]("real-tol-dec-pts")
     .abbr("rtdec")
