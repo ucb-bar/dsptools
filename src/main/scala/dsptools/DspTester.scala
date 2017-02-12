@@ -19,20 +19,26 @@ class DspTester[T <: Module](
     base: Int = 16,
     logFile: Option[java.io.File] = None) extends PeekPokeTester(dut, base, logFile) with VerilogTbDump {
 
+  // Changes displayed base of standard PeekPokeTester info text
+  // Note: base is not relevant to Doubles
   val updatableBase = new DynamicVariable[Int](_base)
   private def dispBase = updatableBase.value
 
-  // Verbosity @ DSP level (different from chisel-testers verbosity)
+  // Verbosity @ highest DSP level (different from chisel-testers verbosity = standard peek/poke)
   val updatableDspVerbose = new DynamicVariable[Boolean](dsptestersOpt.isVerbose)
   private def dispDsp = updatableDspVerbose.value
 
   // Verbosity @ normal peek/poke level (chisel-testers verbosity) -- for additionally displaying as bits
-  val updatableBitVerbose = new DynamicVariable[Boolean](iotestersOM.testerOptions.isVerbose)
-  private def dispBits = updatableBitVerbose.value
+  // and also all sub levels of abstraction i.e. expect relies on peek, but peek string won't be printed 
+  // if dispSub = false
+  val updatableSubVerbose = new DynamicVariable[Boolean](iotestersOM.testerOptions.isVerbose)
+  private def dispSub = updatableSubVerbose.value
 
+  // UInt, SInt, FixedPoint tolerance in LSBs
   val fixTolLSBs = new DynamicVariable[Int](dsptestersOpt.fixTolLSBs)
   private def fixTol = fixTolLSBs.value
 
+  // DspReal tolerance in decimal point precision
   val realTolDecPts = new DynamicVariable[Int](dsptestersOpt.realTolDecPts)
   private def realTol = realTolDecPts.value
 
@@ -43,13 +49,36 @@ class DspTester[T <: Module](
     s"${signal.parentPathName}.${TestersCompatibility.validName(signal.instanceName)}"
   }
 
-  private def validRangeTest(signal: Bits, value: BigInt) {
+  private def validRangeTest(signal: Data, value: BigInt) {
     val len = value.bitLength
     val neededLen = if (isSigned(signal)) len + 1 else len
+    require(signal.widthOption.nonEmpty, "Cannot Poke/Expect node of unknown width!")
     if (neededLen > signal.getWidth) 
       throw DspException(s"Poke/Expect value of ${getName(signal)} is not in node range")
     if (!isSigned(signal) && value < 0)
-      throw DspException("Poking negative value to an unsigned input")
+      throw DspException("Poking/Expecting negative value to an unsigned input")
+  }
+
+  def bitInfo(signal: Data): String = signal.widthOption match {
+    case Some(width) => {
+      signal match {
+        case f: FixedPoint => f.binaryPoint match {
+          // Q integer . fractional bits
+          case KnownBinaryPoint(bp) => s"Q${width - 1 - bp}.$bp"
+          case _ => s"${width}-bit F"
+        }
+        case r: DspReal => "R"
+        case u: UInt => s"${width}-bit U"
+        case s: SInt => s"${width}-bit S"
+        case c: DspComplex[_] => {
+          val realInfo = bitInfo(c.real.asInstanceOf[Data])
+          val imagInfo = bitInfo(c.imag.asInstanceOf[Data])
+          s"[$realInfo, $imagInfo]"
+        }
+        case _ => throw DspException("Can't get bit info! Invalid type!")
+      }
+    }
+    case None => ""
   }
 
   ///////////////// OVERRIDE UNDERLYING FUNCTIONS FROM PEEK POKE TESTER /////////////////
@@ -106,6 +135,7 @@ class DspTester[T <: Module](
   }
 
   override def peek(signal: Aggregate): IndexedSeq[BigInt] =  {
+    // Flatten returns IndexSeq[Bits], so will use above peek
     TestersCompatibility.flatten(signal) map { x => peek(x) }
   }
 
@@ -140,20 +170,21 @@ class DspTester[T <: Module](
 
   ///////////////// UNDERLYING FUNCTIONS FROM DSP TESTER /////////////////
 
+  def poke(signal: Bool, value: Boolean): Unit = poke(signal, if (value) BigInt(1) else BigInt(0))
+
+  // Need to specify what happens when you poke with an Int
+  // Display as Double (so you can separate out number representation vs. bit representation)
+  def poke(signal: UInt, value: Int): Unit = poke(signal, value.toDouble)
+  def poke(signal: SInt, value: Int): Unit = poke(signal, value.toDouble)
+
   // Has priority over Bits (FixedPoint extends Bits)
-  def poke(signal: FixedPoint, value: Double): Unit = {
-    poke(signal.asInstanceOf[Data], value)
-  }
-
-  def poke(signal: UInt, value: Int): Unit = poke(signal, BigInt(value))
-  def poke(signal: SInt, value: Int): Unit = poke(signal, BigInt(value))
-
-
+  def poke(signal: FixedPoint, value: Double): Unit = poke(signal.asInstanceOf[Data], value)
+  
   // DspReal extends Bundle extends Aggregate extends Data
   // If poking DspReal with Double, can only go here
   // Type classes are all Data:RealBits
   def poke(signal: Data, value: Double): Unit = {
-    updatableDspVerbose.withValue(dispBits) {
+    updatableDspVerbose.withValue(dispSub) {
       signal match {
         case f: FixedPoint => {
           f.binaryPoint match {
@@ -167,117 +198,108 @@ class DspTester[T <: Module](
         case _ => throw DspException("Illegal poke value for node of type Data and value of type Double")
       }      
     }
-    if (dispDsp) logger println s"  POKE ${getName(signal)} <- ${value}"
+    if (dispDsp) logger println s"  POKE ${getName(signal)} <- ${value} \t ${bitInfo(signal)}"
   }
 
+  // Will only print individual real/imag peek information if dispSub is true!
   def poke(c: DspComplex[_], value: Complex): Unit = {
-    updatableDspVerbose.withValue(dispBits) {
-      (c.real, c.imag) match {
-        case (real: Data, imag: Data) => {
-          poke(real, value.real)
-          poke(imag, value.imag)
-        }
+    updatableDspVerbose.withValue(dispSub) {
+      poke(c.real.asInstanceOf[Data], value.real)
+      poke(c.imag.asInstanceOf[Data], value.imag)
+    }
+    if (dispDsp) logger println s"  POKE ${getName(c)} <- ${value.toString} \t ${bitInfo(c)}"
+  }
+
+  private def dspPeek(node: Data): (Double, BigInt) = {
+    val bi: BigInt = updatableDspVerbose.withValue(dispSub) {
+      node match {
+        // Unsigned bigint
+        case r: DspReal => peek(r.node.asInstanceOf[Bits])
+        case b: Bits => peek(b.asInstanceOf[Bits])
       }
     }
-    if (dispDsp) logger println s"  POKE ${getName(c)} <- ${value.toString}"
+    val (dblOut, bigIntOut) = node match {
+      case r: DspReal => (DspTesterUtilities.bigIntBitsToDouble(bi), bi)  
+      case f: FixedPoint => f.binaryPoint match {
+        case KnownBinaryPoint(bp) => (FixedPoint.toDouble(bi, bp), bi)
+        case _ => throw DspException("Cannot peek FixedPoint with unknown binary point location")
+      }
+      // UInt + SInt = Bits
+      case b: Bits => (bi.doubleValue, bi)
+      case _ => throw DspException("Peeked node ${getName(node)} has incorrect type ${node.getClass.getName}")
+    }
+    if (dispDsp) logger println s"  PEEK ${getName(node)} -> ${dblOut} \t ${bitInfo(node)}" 
+    (dblOut, bigIntOut)
   }
 
-
-
-
-
-
-//sint, uint -> bits
-// fixed -> need own
-// dspreal -> data
-// complex -> complex
-
-
-
-
-//need logger
-def peek(data: Data): Double = {
-   expectDspPeek(data)._1
+  // Takes precedence over Bits
+  def peek(node: Bool): Boolean = {
+    if (peek(node.asInstanceOf[Bits]) == 1) true else false
   }
+  def peek(node: UInt): Int = dspPeek(node)._1.toInt
+  def peek(node: SInt): Int = dspPeek(node)._1.toInt
+  def peek(node: FixedPoint): Double = dspPeek(node)._1
+  // Takes precedence over Aggregate
+  def peek(node: DspReal): Double = dspPeek(node)._1
+
+  // General type returns Double
+  def peek(node: Data): Double = dspPeek(node)._1
 
   def peek(c: DspComplex[_]): Complex = {
-    (c.real, c.imag) match {
-        case (real: Data, imag: Data) => {
-
-
-    Complex(expectDspPeek(real)._1, expectDspPeek(imag)._1)
-  }
-  }}
-
-
-  def peek(d: DspReal): Double = {
-    expectDspPeek(d)._1
-  }
-
-
-
-/*
-
-  def dspPeek(data: Data): Either[Double, Complex] = {
-    val peekedVal = updatableDSPVerbose.withValue(dispBits) {
-      dspPeekOld(data)
+    val out = updatableDspVerbose.withValue(dispSub) {
+      Complex(dspPeek(c.real.asInstanceOf[Data])._1, dspPeek(c.imag.asInstanceOf[Data])._1)
     }
-    if (dispDSP) {
-      val value = peekedVal match {
-        case Left(dbl) => dbl.toString
-        case Right(cplx) => cplx.toString
-      }
-      logger println s"  PEEK ${getName(data)} -> ${value}" 
-    }
-    peekedVal
+    if (dispDsp) logger println s"  PEEK ${getName(c)} <- ${out.toString} \t ${bitInfo(c)}"
+    out
   }
-*/
+
+  def expect(signal: Bool, expected: Boolean): Boolean = expect(signal, expected, "")
+  def expect(signal: Bool, expected: Boolean, msg: String): Boolean = {
+    expect(signal, if (expected) BigInt(1) else BigInt(0))
+  }
+
+
+
+
+
+
+
+ 
+
+
+  // Need to specify what happens when you poke with an Int
+  // Display as Double (so you can separate out number representation vs. bit representation)
+  //def poke(signal: UInt, value: Int): Unit = poke(signal, value.toDouble)
+  //def poke(signal: SInt, value: Int): Unit = poke(signal, value.toDouble)
+
+  // Has priority over Bits (FixedPoint extends Bits)
+  //def poke(signal: FixedPoint, value: Double): Unit = signal match {
+  //  case d: Data => poke(d.asInstanceOf[Data], value)
+  //}
+
+
+// sint expect exact? 
+  //addbitinfo
+    
+    // sint, uint ok; needs a cast fir int to bigint or double??  bigint consrvative
+// fixed need separate
+// dspreal defers here
   
 
-  // make this complex[_]
+
   
 
 
-  // > bits
-  def peek(signal: FixedPoint): Double = {
-    peek(signal.asInstanceOf[Data])
-  }
 
-  // problem with bundle?; get trapped in bundle before data
-  /*def peek(signal: DspReal): Double = {
-    println("sss")
-    1.0
-  }*/
 
-  // does peek complex go to aggregate or complex
-  // does peek dspreal go to aggregate dspreal (how about as R <: Data)? does it go to data?
-  //def peek(data: Data): Bool = true
+ 
+  
+
+  
+  
+  
 
   ///////////////// SPECIALIZED DSP EXPECT /////////////////
-
-  // add uint
-
-  // For custom DSP expect to work, need BigInt value too (not provided by original method)
-  def expectDspPeek(node: Data): (Double, BigInt) = {
-    updatableDspVerbose.withValue(dispBits) {
-      node match {
-        case r: DspReal => {
-          val bi = peek(r.node)                             // unsigned bigint
-          (DspTesterUtilities.bigIntBitsToDouble(bi), bi)  
-        }
-        case f: FixedPoint => {
-          val bi = peek(f.asInstanceOf[Bits])
-          (FixedPoint.toDouble(bi, f.binaryPoint.get), bi)
-        }
-        // UInt + SInt = Bits
-        case b: Bits => {
-          val bi = peek(b)
-          (bi.toDouble, bi)
-        }
-        case _ => throw DspException("Peeked node ${getName(node)} has incorrect type ${node.getClass.getName}")
-      }
-    }
-  }
 
   def checkDecimal(data: Data, expected: Double, dblVal: Double, bitVal: BigInt): (Boolean, Double) = {
     def toMax(w: Int): BigInt = (BigInt(1) << w) - 1
@@ -294,8 +316,7 @@ def peek(data: Data): Double = {
       case b: Bits => BigInt(expected0.round.toInt)
     }
 
-    if (isSigned(data) && expectedBits.bitLength > (data.getWidth - 1))
-      throw DspException("Expected value is out of output node range")
+    validRangeTest(data, expectedBits)
 
     // Allow for some tolerance in error checking
     val (tolerance, tolDec) = data match {
@@ -324,16 +345,11 @@ def peek(data: Data): Double = {
     }
   }
 
-
-// sint, uint ok; needs a cast fir int to bigint or double??  bigint consrvative
-// fixed need separate
-// dspreal defers here
-
-  def dspExpect(data: Data, expected: Double): Boolean = dspExpect(data, expected, msg = "")
-  def dspExpect(data: Data, expected: Double, msg: String): Boolean = {
+  def expect(data: Data, expected: Double): Boolean = expect(data, expected, msg = "")
+  def expect(data: Data, expected: Double, msg: String): Boolean = {
     val expectedNew = roundExpected(data, expected)
     val path = getName(data)
-    val (dblVal, bitVal) = expectDspPeek(data)
+    val (dblVal, bitVal) = updatableDspVerbose.withValue(dispSub) { dspPeek(data) }
     val (good, tolerance) = checkDecimal(data, expectedNew, dblVal, bitVal)
     if (dispDsp || !good) logger println ( { if (!good) Console.RED else "" } +
       s"""${msg}  EXPECT ${path} -> $dblVal == """ +
@@ -342,15 +358,15 @@ def peek(data: Data): Double = {
     good
   }
 
-  def dspExpect(data: DspComplex[_], expected: Complex): Boolean = dspExpect(data, expected, msg = "")
-  def dspExpect(data: DspComplex[_], expected: Complex, msg: String): Boolean = {
+  def expect(data: DspComplex[_], expected: Complex): Boolean = expect(data, expected, msg = "")
+  def expect(data: DspComplex[_], expected: Complex, msg: String): Boolean = {
     val dataReal = data.real.asInstanceOf[Data]
     val dataImag = data.imag.asInstanceOf[Data]
     val expectedNewR = roundExpected(dataReal, expected.real)
     val expectedNewI = roundExpected(dataImag, expected.imag)
     val path = getName(data)
-    val (dblValR, bitValR) = expectDspPeek(dataReal) 
-    val (dblValI, bitValI) = expectDspPeek(dataImag)
+    val (dblValR, bitValR) = updatableDspVerbose.withValue(dispSub) { dspPeek(dataReal) }
+    val (dblValI, bitValI) = updatableDspVerbose.withValue(dispSub) { dspPeek(dataImag) }
     val (goodR, toleranceR) = checkDecimal(dataReal, expectedNewR, dblValR, bitValR)
     val (goodI, toleranceI) = checkDecimal(dataImag, expectedNewI, dblValI, bitValI)
     val good = goodR & goodI
@@ -360,9 +376,5 @@ def peek(data: Data): Double = {
           Console.RESET)   
     if (!good) fail
     good 
-  }
-
-
-// check when precedence stomps on each other  (see dsptester)
-  
+  }  
 }

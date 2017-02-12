@@ -55,10 +55,10 @@ trait EasyPeekPoke {
     d match {
       case b: Bool => expect(b, if (value == 0.0) 0 else 1)
       case u: UInt => expect(u, math.abs(value.round).toInt)
-      case r => dspExpect(r, value)
+      case r => expect(r, value)
     }
   }
-  def check(d: DspComplex[_], value: Complex) = dspExpect(d, value)
+  def check(d: DspComplex[_], value: Complex) = expect(d, value)
 }
 
 case class TestParams(
@@ -252,7 +252,7 @@ class PassLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) 
     checkP(c.litRN.get, negLit)
   }
   
-  // dspExpect properly rounds doubles to ints for SInt
+  // expect properly rounds doubles to ints for SInt
   c.pos.elements foreach { case (s, d) => checkP(d, posLit) }
   c.neg.elements foreach { case (s, d) => checkP(d, negLit) }
 
@@ -262,7 +262,7 @@ class PassLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) 
   checkP(c.litC, Complex(posLit, negLit))
 
   // peek(c.lutS) doesn't work -- can't peek elements of Vec[Lit]
-  // dspExpect auto rounds SInts
+  // expect auto rounds SInts
   c.lutSSeq.zipWithIndex foreach { case (x, i) => checkP(x, lutVals(i)) }
   c.lutGenSeq.zipWithIndex foreach { case (x, i) => checkP(x, lutVals(i)) }
 
@@ -271,7 +271,7 @@ class PassLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) 
     checkP(c.io.o.short.gen, x)
 
     // How to change expect tolerance (for Lits; SInts should match exactly)
-    // dspExpect automatically rounds when data is SInt (whereas expect doesn't)
+    // expect automatically rounds when data is SInt (whereas expect doesn't)
     fixTolLSBs.withValue(0) {
       checkP(c.io.o.short.s, x)
     }
@@ -290,22 +290,22 @@ class FailLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) 
 
   c.pos.elements foreach { case (s, d) => {
     d match {
-      case f: FixedPoint => dspExpect(f, posLit)
+      case f: FixedPoint => expect(f, posLit)
       case _ => } } }
 
   c.neg.elements foreach { case (s, d) => {
     d match {
-      case f: FixedPoint => dspExpect(f, negLit)
+      case f: FixedPoint => expect(f, negLit)
       case _ => } } }
 
-  dspExpect(c.litC, Complex(posLit, negLit))
+  expect(c.litC, Complex(posLit, negLit))
 
   c.lutGenSeq.zipWithIndex foreach { case (x, i) => {
-    dspExpect(x, lutVals(i)) }}
+    expect(x, lutVals(i)) }}
 
   c.lutVals.zipWithIndex foreach { case (x, i) => {
     poke(c.io.i.short.u, i)
-    dspExpect(c.io.o.short.gen, x)
+    expect(c.io.o.short.gen, x)
   }}
 
 }
