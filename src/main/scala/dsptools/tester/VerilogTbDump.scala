@@ -3,6 +3,10 @@ package dsptools
 import chisel3._
 import chisel3.experimental._
 import java.io.{File, FileWriter, BufferedWriter}
+
+import DspTesterUtilities._
+
+// TODO: Get rid of
 import chisel3.iotesters.TestersCompatibility
 
 // Note: This will dump as long as genVerilogTb is true (even if you're peeking/poking DspReal)
@@ -23,19 +27,6 @@ trait VerilogTbDump {
 
   if (verilogTb) initVerilogTbFile()
   else deleteVerilogTbFile
-
-  def isSigned(e: Data): Boolean = {
-    e match {
-      case _: SInt | _: FixedPoint => true
-      case _ => false
-    }
-  }
-
-  private def signPrefix(e: Element): String = {
-    def signed = isSigned(e)
-    if (signed) " signed "
-    else ""
-  }
 
   def initVerilogTbFile() {
     val dutName = dut.name
