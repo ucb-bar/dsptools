@@ -433,98 +433,21 @@ trait IPXactGeneratorApp extends GeneratorApp {
 
   def generateIPXact {
 
-    // check if this is a chain
-    val (blockIDs, chain) = try {
-      val chain = params(DspChainKey(params(DspChainId)))
-      (chain.asInstanceOf[DspChainParameters].blocks.map{case (f, id) => id }, true)
-    } catch {
-      // if not, assume it's just a DSP block
-      case e: ParameterUndefinedException => 
-        try {
-          (Seq(params(DspBlockId)), false)
-        } catch {
-          // if not, what is this?
-          case e: ParameterUndefinedException => throw new Exception("Can't find any DSP block IDs in your design")
-        }
-    }
-
-    blockIDs.foreach(generateBlockIPXact(_))
-  }
-  def generateIPXact {
-    //val dspblockid = try {
-    //  Some(params(DspBlockId))
+    //// check if this is a chain
+    //val (blockIDs, chain) = try {
+    //  val chain = params(DspChainKey(params(DspChainId)))
+    //  (chain.asInstanceOf[DspChainParameters].blocks.map{case (f, id) => id }, true)
     //} catch {
-    //  case e: ParameterUndefinedException => None
+    //  // if not, assume it's just a DSP block
+    //  case e: ParameterUndefinedException => 
+    //    try {
+    //      (Seq(params(DspBlockId)), false)
+    //    } catch {
+    //      // if not, what is this?
+    //      case e: ParameterUndefinedException => throw new Exception("Can't find any DSP block IDs in your design")
+    //    }
     //}
-    //// first try GenKey
-    //val genExternal = try {
-    //  Some(params(GenKey(dspblockid)))
-    //} catch {
-    //  case e: ParameterUndefinedException => None
-    //}
-    //// then try DspBlockKey
-    //val dspBlockExternal = try {
-    //  Some(params(DspBlockKey(dspblockid)))
-    //} catch {
-    //  // case e: MatchError => None
-    //  case e: ParameterUndefinedException => None
-    //}
-    //val (bits_in, bits_out) = (genExternal, dspBlockExternal) match {
-    //  case (Some(gen), _) =>
-    //    (gen.lanesIn * gen.genIn[chisel3.Data].getWidth, gen.lanesOut * gen.genOut[chisel3.Data].getWidth)
-    //  case (None, Some(dsp)) =>
-    //    (dsp.inputWidth, dsp.outputWidth)
-    //  case (None, None) => throw new Exception("Didn't set parameters correctly for block-level IPXact generation")
-    //}
-    //// val bits_in = mod.inputWidth
-    //// val bits_out = mod.outputWidth
-    //val factory = new ObjectFactory
-    //val memMapName = "mm"
 
-    //val busInterfaces = new BusInterfaces
-    //busInterfaces.getBusInterface().addAll(toCollection(Seq(makeAXI4StreamInputInterface, makeAXI4StreamOutputInterface, makeAXI4SlaveInterface(memMapName))))
-
-    ////val addressSpaces = new AddressSpaces
-    ////addressSpaces.getAddressSpace.addAll(toCollection(
-    ////  (0 until nOutputs).map(i => makeAddressSpace(s"s${i}_as", regionSize))
-    ////))
-    //val memoryMaps = new MemoryMaps
-    //memoryMaps.getMemoryMap().add(makeMemoryMap(memMapName, BigInt(0)))
-
-    //val model = new ModelType
-    //val views = new ModelType.Views
-    //var view = new ViewType
-    //var envIds = view.getEnvIdentifier
-    //view.setName("RTL")
-    //envIds.add("::")
-    //var verilogSource = new FileSetRef
-    //verilogSource.setLocalName("hdlSource")
-    //var fileSetRefs = view.getFileSetRef
-    //fileSetRefs.add(verilogSource)
-    //views.getView.add(view)
-    //model.setViews(views)
-    //model.setPorts(makeDspBlockPorts(bits_in, bits_out))
-
-    //val componentType = new ComponentType
-    //componentType.setLibrary("craft")
-    //componentType.setName(s"$dspblockid")
-    //componentType.setVendor("edu.berkeley.cs")
-    //componentType.setVersion("1.0")
-    //componentType.setBusInterfaces(busInterfaces)
-    ////componentType.setAddressSpaces(addressSpaces)
-    //componentType.setMemoryMaps(memoryMaps)
-    //componentType.setModel(model)
-    //componentType.setFileSets(makeFileSets(factory))
-    //componentType.setParameters(makeParameters)
-
-    //val component = factory.createComponent(componentType)
-
-    //val of = new File(td, s"$longName.xml")
-    //of.getParentFile().mkdirs()
-    //val fos = new FileOutputStream(of)
-    //val context = JAXBContext.newInstance(classOf[ComponentInstance])
-    //val marshaller = context.createMarshaller()
-    //marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true)
-    //marshaller.marshal(component, fos)
+    //blockIDs.foreach(generateBlockIPXact(_))
   }
 }
