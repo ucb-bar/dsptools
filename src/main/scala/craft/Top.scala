@@ -20,7 +20,8 @@ class DspTop(p: Parameters) extends Module {
     val module     = lazyModule.module
     module
   }
-  val io = IO(Flipped(module.io.cloneType))
+  val io = IO(module.io.cloneType)
+  io <> module.io
 }
 
 class DspBlockTop(p: Parameters) extends LazyModule {

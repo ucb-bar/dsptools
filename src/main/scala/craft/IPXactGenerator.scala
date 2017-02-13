@@ -16,8 +16,7 @@ import dsptools._
 
 class NastiConfig(implicit val p: Parameters) extends HasNastiParameters {}
 
-// includes IPXact generation
-trait DspBlockGeneratorApp extends GeneratorApp {
+trait IPXactGeneratorApp extends GeneratorApp {
 
   def toCollection[T](seq: Seq[T]): Collection[T] =
     JavaConverters.asJavaCollectionConverter(seq).asJavaCollection
@@ -42,7 +41,8 @@ trait DspBlockGeneratorApp extends GeneratorApp {
     portmaps
   }
 
-  def makeAXIStreamPortMaps(prefix: String): BusInterfaceType.PortMaps = {
+  // Assumes you use ValidWithSync Chisel bundle for AXI4-Stream
+  def makeAXI4StreamPortMaps(prefix: String): BusInterfaceType.PortMaps = {
     makePortMaps(Seq(
       "ACLK"     -> "clock",
       "ARESETn"  -> "reset",
@@ -51,7 +51,8 @@ trait DspBlockGeneratorApp extends GeneratorApp {
       "TDATA"    -> s"${prefix}_bits"))
   }
 
-  def makeAXIPortMaps(prefix: String): BusInterfaceType.PortMaps = {
+  // Assumes you use NastiIO Chisel bundle for AXI4
+  def makeAXI4PortMaps(prefix: String): BusInterfaceType.PortMaps = {
     makePortMaps(Seq(
       "ACLK"     -> "clock",
       "ARESETn"  -> "reset",
@@ -124,7 +125,7 @@ trait DspBlockGeneratorApp extends GeneratorApp {
     port
   }
 
-  def makeAXIStreamPorts(prefix: String, direction: Boolean, bits: Int): Seq[PortType] = {
+  def makeAXI4StreamPorts(prefix: String, direction: Boolean, bits: Int): Seq[PortType] = {
     val ports = Seq(
       ("valid", direction, 1),
       ("sync", direction, 1),
@@ -134,7 +135,7 @@ trait DspBlockGeneratorApp extends GeneratorApp {
       makePort(s"${prefix}_${name}", portdir, width) }
   }
 
-  def makeAXIPorts(prefix: String, direction: Boolean, config: HasNastiParameters): Seq[PortType] = {
+  def makeAXI4Ports(prefix: String, direction: Boolean, config: HasNastiParameters): Seq[PortType] = {
     val ports = Seq(
       ("ar_valid", direction, 1),
       ("ar_ready", !direction, 1),
@@ -185,11 +186,11 @@ trait DspBlockGeneratorApp extends GeneratorApp {
       makePort(s"${prefix}_${name}", portdir, width) }
   }
 
-  def makeAllPorts(bits_in: Int, bits_out: Int): ModelType.Ports = {
+  def makeDspBlockPorts(bits_in: Int, bits_out: Int): ModelType.Ports = {
     val config = new NastiConfig()(params)
-    val streamInPorts = makeAXIStreamPorts(s"io_in", false, bits_in)
-    val streamOutPorts = makeAXIStreamPorts(s"io_out", true, bits_out)
-    val axiInPorts = makeAXIPorts(s"io_axi", false, config)
+    val streamInPorts = makeAXI4StreamPorts(s"io_in", false, bits_in)
+    val streamOutPorts = makeAXI4StreamPorts(s"io_out", true, bits_out)
+    val axiInPorts = makeAXI4Ports(s"io_axi", false, config)
     val globalPorts = Seq(
       makePort("clock", false, 1),
       makePort("reset", false, 1))
@@ -198,7 +199,7 @@ trait DspBlockGeneratorApp extends GeneratorApp {
     ports
   }
 
-  def makeInputInterface: BusInterfaceType = {
+  def makeAXI4StreamInputInterface: BusInterfaceType = {
     val busType = new LibraryRefType
     busType.setVendor("amba.com")
     busType.setLibrary("AMBA4")
@@ -211,12 +212,12 @@ trait DspBlockGeneratorApp extends GeneratorApp {
     abstractionType.setName("AXI4Stream_rtl")
     abstractionType.setVersion("r0p0_1")
 
-    val portMaps = makeAXIStreamPortMaps(s"io_in")
+    val portMaps = makeAXI4StreamPortMaps(s"io_in")
 
     val slave = new BusInterfaceType.Slave
 
     val busif = new BusInterfaceType
-    busif.setName(s"io_in")
+    busif.setName(s"data_in")
     busif.setBusType(busType)
     busif.setAbstractionType(abstractionType)
     busif.setPortMaps(portMaps)
@@ -224,7 +225,7 @@ trait DspBlockGeneratorApp extends GeneratorApp {
     busif
   }
 
-  def makeOutputInterface: BusInterfaceType = {
+  def makeAXI4StreamOutputInterface: BusInterfaceType = {
     val busType = new LibraryRefType
     busType.setVendor("amba.com")
     busType.setLibrary("AMBA4")
@@ -237,12 +238,12 @@ trait DspBlockGeneratorApp extends GeneratorApp {
     abstractionType.setName("AXI4Stream_rtl")
     abstractionType.setVersion("r0p0_1")
 
-    val portMaps = makeAXIStreamPortMaps(s"io_out")
+    val portMaps = makeAXI4StreamPortMaps(s"io_out")
 
     val master = new BusInterfaceType.Master
 
     val busif = new BusInterfaceType
-    busif.setName(s"io_out")
+    busif.setName(s"data_out")
     busif.setBusType(busType)
     busif.setAbstractionType(abstractionType)
     busif.setPortMaps(portMaps)
@@ -250,7 +251,7 @@ trait DspBlockGeneratorApp extends GeneratorApp {
     busif
   }
 
-  def makeAXIInterface(mmref: String): BusInterfaceType = {
+  def makeAXI4SlaveInterface(mmref: String): BusInterfaceType = {
     val busType = new LibraryRefType
     busType.setVendor("amba.com")
     busType.setLibrary("AMBA4")
@@ -269,10 +270,10 @@ trait DspBlockGeneratorApp extends GeneratorApp {
     val slave = new BusInterfaceType.Slave
     slave.setMemoryMapRef(mmRefType)
 
-    val portMaps = makeAXIPortMaps(s"io_axi")
+    val portMaps = makeAXI4PortMaps(s"io_axi")
 
     val busif = new BusInterfaceType
-    busif.setName(s"io_axi")
+    busif.setName(s"axi4_slave")
     busif.setBusType(busType)
     busif.setAbstractionType(abstractionType)
     busif.setPortMaps(portMaps)
@@ -345,7 +346,7 @@ trait DspBlockGeneratorApp extends GeneratorApp {
     fileSets
   }
 
-  def makeParameters(factory: ObjectFactory): SpiritParameters = {
+  def makeParameters: SpiritParameters = {
     val parameters = new SpiritParameters()
     println(s"DspBlock ID is ${params(DspBlockId)}")
     for ( (name, value) <- params(IPXACTParameters(params(DspBlockId))) ) {
@@ -361,81 +362,80 @@ trait DspBlockGeneratorApp extends GeneratorApp {
   }
 
   def generateIPXact {
-    // first try GenKey
-    val genExternal = try {
-      Some(params(GenKey(params(DspBlockId))))
-    } catch {
-      case e: ParameterUndefinedException => None
-    }
-    // then try DspBlockKey
-    val dspBlockExternal = try {
-      Some(params(DspBlockKey(params(DspBlockId))))
-    } catch {
-      // case e: MatchError => None
-      case e: ParameterUndefinedException => None
-    }
-    val (bits_in, bits_out) = (genExternal, dspBlockExternal) match {
-      case (Some(gen), _) =>
-        (gen.lanesIn * gen.genIn[chisel3.Data].getWidth, gen.lanesOut * gen.genOut[chisel3.Data].getWidth)
-      case (None, Some(dsp)) =>
-        (dsp.inputWidth, dsp.outputWidth)
-      case (None, None) => throw new Exception("Didn't set parameters correctly for block-level IPXact generation")
-    }
-    // val bits_in = mod.inputWidth
-    // val bits_out = mod.outputWidth
-    val factory = new ObjectFactory
-    val memMapName = "mm"
+    //val dspblockid = try {
+    //  Some(params(DspBlockId))
+    //} catch {
+    //  case e: ParameterUndefinedException => None
+    //}
+    //// first try GenKey
+    //val genExternal = try {
+    //  Some(params(GenKey(dspblockid)))
+    //} catch {
+    //  case e: ParameterUndefinedException => None
+    //}
+    //// then try DspBlockKey
+    //val dspBlockExternal = try {
+    //  Some(params(DspBlockKey(dspblockid)))
+    //} catch {
+    //  // case e: MatchError => None
+    //  case e: ParameterUndefinedException => None
+    //}
+    //val (bits_in, bits_out) = (genExternal, dspBlockExternal) match {
+    //  case (Some(gen), _) =>
+    //    (gen.lanesIn * gen.genIn[chisel3.Data].getWidth, gen.lanesOut * gen.genOut[chisel3.Data].getWidth)
+    //  case (None, Some(dsp)) =>
+    //    (dsp.inputWidth, dsp.outputWidth)
+    //  case (None, None) => throw new Exception("Didn't set parameters correctly for block-level IPXact generation")
+    //}
+    //// val bits_in = mod.inputWidth
+    //// val bits_out = mod.outputWidth
+    //val factory = new ObjectFactory
+    //val memMapName = "mm"
 
-    val busInterfaces = new BusInterfaces
-    busInterfaces.getBusInterface().addAll(toCollection(Seq(makeInputInterface, makeOutputInterface, makeAXIInterface(memMapName))))
+    //val busInterfaces = new BusInterfaces
+    //busInterfaces.getBusInterface().addAll(toCollection(Seq(makeAXI4StreamInputInterface, makeAXI4StreamOutputInterface, makeAXI4SlaveInterface(memMapName))))
 
-    //val addressSpaces = new AddressSpaces
-    //addressSpaces.getAddressSpace.addAll(toCollection(
-    //  (0 until nOutputs).map(i => makeAddressSpace(s"s${i}_as", regionSize))
-    //))
-    val memoryMaps = new MemoryMaps
-    memoryMaps.getMemoryMap().add(makeMemoryMap(memMapName, BigInt(0)))
+    ////val addressSpaces = new AddressSpaces
+    ////addressSpaces.getAddressSpace.addAll(toCollection(
+    ////  (0 until nOutputs).map(i => makeAddressSpace(s"s${i}_as", regionSize))
+    ////))
+    //val memoryMaps = new MemoryMaps
+    //memoryMaps.getMemoryMap().add(makeMemoryMap(memMapName, BigInt(0)))
 
-    val model = new ModelType
-    val views = new ModelType.Views
-    var view = new ViewType
-    var envIds = view.getEnvIdentifier
-    view.setName("RTL")
-    envIds.add("::")
-    var verilogSource = new FileSetRef
-    verilogSource.setLocalName("hdlSource")
-    var fileSetRefs = view.getFileSetRef
-    fileSetRefs.add(verilogSource)
-    views.getView.add(view)
-    model.setViews(views)
-    model.setPorts(makeAllPorts(bits_in, bits_out))
+    //val model = new ModelType
+    //val views = new ModelType.Views
+    //var view = new ViewType
+    //var envIds = view.getEnvIdentifier
+    //view.setName("RTL")
+    //envIds.add("::")
+    //var verilogSource = new FileSetRef
+    //verilogSource.setLocalName("hdlSource")
+    //var fileSetRefs = view.getFileSetRef
+    //fileSetRefs.add(verilogSource)
+    //views.getView.add(view)
+    //model.setViews(views)
+    //model.setPorts(makeDspBlockPorts(bits_in, bits_out))
 
-    val componentType = new ComponentType
-    componentType.setLibrary("ucb-art")
-    componentType.setName("CraftDSPModule")
-    componentType.setVendor("edu.berkeley.cs")
-    componentType.setVersion("1.0")
-    componentType.setBusInterfaces(busInterfaces)
-    //componentType.setAddressSpaces(addressSpaces)
-    componentType.setMemoryMaps(memoryMaps)
-    componentType.setModel(model)
-    componentType.setFileSets(makeFileSets(factory))
-    componentType.setParameters(makeParameters(factory))
+    //val componentType = new ComponentType
+    //componentType.setLibrary("craft")
+    //componentType.setName(s"$dspblockid")
+    //componentType.setVendor("edu.berkeley.cs")
+    //componentType.setVersion("1.0")
+    //componentType.setBusInterfaces(busInterfaces)
+    ////componentType.setAddressSpaces(addressSpaces)
+    //componentType.setMemoryMaps(memoryMaps)
+    //componentType.setModel(model)
+    //componentType.setFileSets(makeFileSets(factory))
+    //componentType.setParameters(makeParameters)
 
-    val component = factory.createComponent(componentType)
+    //val component = factory.createComponent(componentType)
 
-    val of = new File(td, s"$longName.xml")
-    of.getParentFile().mkdirs()
-    val fos = new FileOutputStream(of)
-    val context = JAXBContext.newInstance(classOf[ComponentInstance])
-    val marshaller = context.createMarshaller()
-    marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true)
-    marshaller.marshal(component, fos)
+    //val of = new File(td, s"$longName.xml")
+    //of.getParentFile().mkdirs()
+    //val fos = new FileOutputStream(of)
+    //val context = JAXBContext.newInstance(classOf[ComponentInstance])
+    //val marshaller = context.createMarshaller()
+    //marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true)
+    //marshaller.marshal(component, fos)
   }
-}
-
-object DspBlockGenerator extends DspBlockGeneratorApp {
-  val longName = names.fullTopModuleClass + "." + names.configs
-  generateFirrtl
-  generateIPXact
 }
