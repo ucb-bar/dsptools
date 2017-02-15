@@ -23,7 +23,7 @@ object ConfigBuilder {
     lanesOut_ : Option[Int] = None, genOutFunc: Option[() => T] = None): Config = new Config(
     (pname, site, here) => pname match {
       case DspBlockId => id
-      case GenKey(id) => new GenParameters {
+      case GenKey(_id) if _id == id => new GenParameters {
         def genIn[T <: Data] = (genInFunc()).asInstanceOf[T]
         override def genOut[T <: Data] = (genOutFunc.getOrElse(genInFunc))().asInstanceOf[T]
         val lanesIn = lanesIn_
@@ -56,7 +56,7 @@ object ConfigBuilder {
       case CacheBlockOffsetBits => 6
       case AmoAluOperandBits => 64
       case TLId => id
-      case TLKey(id) =>
+      case TLKey(_id) if _id == id =>
           TileLinkParameters(
             coherencePolicy = new MICoherence(
               new NullRepresentation(1)),
@@ -68,7 +68,7 @@ object ConfigBuilder {
             maxManagerXacts = 1,
             dataBeats = 1,
             dataBits = 64)
-      case BaseAddr(id) => 0
+      case BaseAddr(_id) if _id == id => 0
       case _ => throw new CDEMatchError
     })
 }

@@ -79,7 +79,7 @@ class DspChain(
   var addr = 0
   val lazy_mods = blocks.map(b => {
     val modParams = overrideParams.alterPartial({
-      case BaseAddr(b._2) => addr
+      case BaseAddr(_id) if _id == b._2 => addr
       case DspBlockId => b._2
     })
     val mod = LazyModule(b._1(modParams))
@@ -105,12 +105,12 @@ class DspChain(
 
   val lazySams = modules.map(mod => {
     val samWidth = mod.io.out.bits.getWidth
-    val samName = overrideParams(DspBlockId) + ":" + mod.name + ":sam"
+    val samName = overrideParams(DspBlockId) + ":" + mod.id + ":sam"
     val samParams = overrideParams.alterPartial({
-      case SAMKey(samName) => oldSamConfig.copy(baseAddr = addr)
+      case SAMKey(_id) if _id == samName => oldSamConfig.copy(baseAddr = addr)
       case DspBlockId => samName
-      case DspBlockKey(samName) => DspBlockParameters(samWidth, samWidth)
-      case BaseAddr(samName) => addr
+      case DspBlockKey(_id) if _id == samName => DspBlockParameters(samWidth, samWidth)
+      case BaseAddr(_id) if _id == samName => addr
     })
     val lazySam = LazyModule( new LazySAM()(samParams) )
     addr += lazySam.size
@@ -142,7 +142,8 @@ class DspChain(
   scrbuilder.addStatus("patternGeneratorControlFinished")
   scrbuilder.addControl("patternGeneratorWriteAddr")
 
-  val dataWidthWords = (biggestWidth + 63) / 64
+  val wordWidth = 64
+  val dataWidthWords = (biggestWidth + wordWidth-1) / wordWidth
   for (i <- 0 until dataWidthWords) {
     scrbuilder.addControl(s"patternGeneratorWriteData_$i")
   }
@@ -181,12 +182,12 @@ class DspChain(
   scrfile_tl2axi.io.tl <> scrfile.io.tl
 
   val logicAnalyzer    = Module(new LogicAnalyzer(
-                                  biggestWidth, 1,
+                                  dataWidthWords*wordWidth, 1,
                                   logicAnalyzerSamples,
                                   logicAnalyzerUseCombinationalTrigger)
                                 )
   val patternGenerator = Module(new PatternGenerator(
-                                  biggestWidth, 1,
+                                  dataWidthWords*wordWidth, 1,
                                   patternGeneratorSamples,
                                   patternGeneratorUseCombinationalTrigger)
   )
@@ -342,7 +343,7 @@ class DspChain(
   val dataOutPorts = sams.length
 
   val ctrlAddrs = lazy_mods.map(mod =>
-    AddrMapEntry(s"${mod.name}", MemSize(mod.size, MemAttr(AddrMapProt.RWX)))
+    AddrMapEntry(s"${mod.id}", MemSize(mod.size, MemAttr(AddrMapProt.RWX)))
   ) ++ lazySams.zipWithIndex.map({ case(sam, idx) =>
     AddrMapEntry(s"sam${idx}", MemSize(sam.size, MemAttr(AddrMapProt.RWX)))
   }) ++ Seq(

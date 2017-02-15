@@ -363,6 +363,7 @@ trait IPXactGeneratorApp extends GeneratorApp {
 
   def generateBlockIPXact(blockID: String) {
 
+    println(s"Generating IP-Xact for block with ID $blockID")
     // first try GenKey
     val genExternal = try {
       Some(params(GenKey(blockID)))
@@ -391,7 +392,7 @@ trait IPXactGeneratorApp extends GeneratorApp {
 
     // TODO: grab base address 
     val memoryMaps = new MemoryMaps
-   // memoryMaps.getMemoryMap().add(makeMemoryMap(memMapName, params(BaseAddr(blockID))))
+    //memoryMaps.getMemoryMap().add(makeMemoryMap(memMapName, params(BaseAddr(blockID))))
     memoryMaps.getMemoryMap().add(makeMemoryMap(memMapName, BigInt(0)))
 
     val model = new ModelType
@@ -417,7 +418,7 @@ trait IPXactGeneratorApp extends GeneratorApp {
     componentType.setMemoryMaps(memoryMaps)
     componentType.setModel(model)
     componentType.setFileSets(makeFileSets(factory))
-    componentType.setParameters(makeParameters(blockID))
+    //componentType.setParameters(makeParameters(blockID))
 
     val component = factory.createComponent(componentType)
 
@@ -433,21 +434,21 @@ trait IPXactGeneratorApp extends GeneratorApp {
 
   def generateIPXact {
 
-    //// check if this is a chain
-    //val (blockIDs, chain) = try {
-    //  val chain = params(DspChainKey(params(DspChainId)))
-    //  (chain.asInstanceOf[DspChainParameters].blocks.map{case (f, id) => id }, true)
-    //} catch {
-    //  // if not, assume it's just a DSP block
-    //  case e: ParameterUndefinedException => 
-    //    try {
-    //      (Seq(params(DspBlockId)), false)
-    //    } catch {
-    //      // if not, what is this?
-    //      case e: ParameterUndefinedException => throw new Exception("Can't find any DSP block IDs in your design")
-    //    }
-    //}
+    // check if this is a chain
+    val (blockIDs, chain) = try {
+      val chain = params(DspChainKey(params(DspChainId)))
+      (chain.asInstanceOf[DspChainParameters].blocks.map{case (f, id) => id }, true)
+    } catch {
+      // if not, assume it's just a DSP block
+      case e: ParameterUndefinedException => 
+        try {
+          (Seq(params(DspBlockId)), false)
+        } catch {
+          // if not, what is this?
+          case e: ParameterUndefinedException => throw new Exception("Can't find any DSP block IDs in your design")
+        }
+    }
 
-    //blockIDs.foreach(generateBlockIPXact(_))
+    blockIDs.foreach(generateBlockIPXact(_))
   }
 }

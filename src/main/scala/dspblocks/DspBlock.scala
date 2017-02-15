@@ -29,6 +29,7 @@ trait HasDspBlockParameters {
   def dspBlockExternal = p(DspBlockKey(p(DspBlockId)))
   def inputWidth  = dspBlockExternal.inputWidth
   def outputWidth = dspBlockExternal.outputWidth
+  def id: String = p(DspBlockId)
 }
 
 // uses DspBlockId
@@ -80,6 +81,7 @@ case class BaseAddr(id: String) extends Field[Int]
 trait HasLazyDspBlockParameters {
   implicit val p: Parameters
   def baseAddr: Int = p(BaseAddr(p(DspBlockId)))
+  def id: String = p(DspBlockId)
 }
 
 abstract class LazyDspBlock()(implicit val p: Parameters) extends LazyModule with HasLazyDspBlockParameters {

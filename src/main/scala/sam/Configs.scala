@@ -39,7 +39,7 @@ object SAMConfigBuilder {
     new Config(
       (pname, site, here) => pname match {
         case SAMKey => samConfig
-        case IPXACTParameters(id) => {
+        case IPXACTParameters(_id) if _id == id => {
           val parameterMap = Map[String, String]()
       
           // Conjure up some IPXACT synthsized parameters.
