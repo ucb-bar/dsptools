@@ -16,6 +16,7 @@
     * RoundHalfUp: Assumes binaryPoints are well defined, 
       * For *, div2: Rounds half up to a.binaryPoint.get.max(b.binaryPoint.get) + DspContext.binaryPointGrowth # of fractional bits -- looks at the result's next bit
       * For trimBinary: Rounds half up to n fractional bits
+      * **WARNING**: The overflow behavior when you try to round up the largest representable positive FixedPoint value is defined by DspContext.overflowType. It's only guaranteed to be mathematically correct if you grow!
     * Floor: Rounds to negative infinity; # of fractional bits is the same as in RoundHalfUp case
     * Caution: Any time a known binary point is expected, you might run into Chisel/Firrtl bugs. Please let us know if you suspect something is wrong.
   * binaryPointGrowth (type: Int; default: 1)
@@ -63,10 +64,11 @@
     * Affected by DspContext.overflowType, DspContext.numAddPipes
   * -a 
     * Doesn't work for UInt
-    * Affected by DspContext.overflowType, DspContext.numAddPipes
+    * Affected by DspContext.overflowType (i.e. negating the most negative value for SInt, Fixedpoint causes overflow if you don't Grow), DspContext.numAddPipes
   * a * b 
     * Affected by DspContext.numMulPipes
     * For FixedPoint only: additionally affected by DspContext.trimType, DspContext.binaryPointGrowth (adds more fractional bits on top of the input amount)
+      * If RoundhalfUp is selected for the trimType, be aware of the overflow behavior when you try to round to a # larger than what's supported by the input bitwidth! 
     * For Complex[T]: Additionally affected by DspContext.numAddPipes, DspConext.complexUse4Muls (true -> 4 real multiplies; false -> 3 real multiplies); the previous statement statement applies for Complex[T] if T is FixedPoint!
   * Ring[T].zero 
     * Zero literal of type T (or DspComplex[T])
@@ -86,13 +88,14 @@
   * a.div2(n) 
     * a/2^n
     * UInt: Consistent with a >> n (i.e. rounds 1/2 to 0)
-    * SInt: Round output to nearest SInt via DspContext.trimType
+    * SInt: Round output to nearest SInt via DspContext.trimType 
     * FixedPoint: Adjusts decimal point; up to you how much precision to keep via DspContext.trimType and DspContext.binaryPointGrowth (adds more fractional bits on top of the input amount)
+    * For both FixedPoint and SInt, again, be aware of overflow behavior when RoundHalfUp is used for the most positive input
   * a.mul2(n) 
     * a*2^n
   * a.trimBinary(n)
     * Only affects FixedPoint; otherwise returns a
-    * Trims to n fractional bits with rounding specified by DspContext.trimType
+    * Trims to n fractional bits with rounding specified by DspContext.trimType. Be aware of overflow behavior!
     * DspComplex[T]: Trims both real and imaginary values to the same # of fractional bits (only for FixedPoint T)
 
 # Additional operations supported by T of UInt, SInt, FixedPoint, DspReal
@@ -105,7 +108,7 @@
   * a.max(b)
 * Signed Type
   * a.abs
-    * Overflow behavior when a is the most negative value supported by width (For FixedPoint and SInt) is determined by DspContext
+    * Overflow behavior when a is the most negative value supported by width (For FixedPoint and SInt) is determined by DspContext.overflowType
   * a.isSignZero
   * a.isSignPositive
   * a.isSignNegative
@@ -114,9 +117,11 @@
   * a.isSignNonNegative
 * IsReal Type
   * a.ceil
+    * Overflow for taking a ceil of the most positive # (for FixedPoint) behavior specify via DspContext.overflowType
   * a.floor
   * a.round 
     * Round half up to positive infinity (biased!)
+    * For FixedPoint, overflow for taking a ceil of the most positive # (for FixedPoint) behavior specify via DspContext.overflowType
   * a.truncate
   * a.isWhole
 
@@ -165,6 +170,7 @@
     * Returns the complex conjugate of a
   * a.abssq()
     * Returns the squared norm of a (If a = x + y * i, returns x^2 + y^2)
+    * Context behavior goverened by the context behavior of add and multiply operations above (See Ring)
 
 # Special operations supported by T of UInt, SInt, FixedPoint, DspReal for type conversion [ChiselConvertableFrom type class]
   * a.intPart()
