@@ -34,7 +34,7 @@
     * # of pipeline registers to add after an add operation between two inputs of type [T <: Data:RealBits]
 * How to Use
   * You must have `import dsptools._`
-  * You can change the DspContext @ any level (Top, Module, local operations)
+  * You can change the DspContext @ any level (Top, Module, local operations) based off of where you wrap the change i.e. what you surround by `DspContext.with...{ whatever_code_you_want_to_use_this_context }` where { might be found at the top of a module and } might be at the bottom,e tc.
   * Changing the local +, - overflow behavior (while keeping other options the same; only for the operations inside the braces -- otherwise use defaults)
     ```
     val sum = DspContext.withOverflowType(Wrap) { a + b }
@@ -290,7 +290,7 @@ class SimpleDspIo[T <: Data:RealBits](gen: T) extends Bundle {
 class SimpleDspModule[T <: Data:RealBits](gen: T, val addPipes: Int) extends Module {
   // This is how you declare an IO with parameters
   val io = IO(new SimpleDspIo(gen))
-  // Output will be current x + y addPipes clk cycles later
+  // Output will be current x + y addPipes clock cycles later
   // Note that this relies on the fact that type classes have a special + that
   // add addPipes # of ShiftRegister after the sum. If you don't wrap the sum in 
   // DspContext.withNumAddPipes(addPipes), the default # of addPipes is used.
@@ -352,12 +352,14 @@ class SimpleDspModuleSpec extends FlatSpec with Matchers {
   behavior of "simple dsp module"
 
   it should "properly add fixed point types" in {
-    // Run the dsp tester by following this style: You need to pass in the module to test and your created DspTesterOptionsManager.
-    // Note that here, you're testing the module with inputs/outputs of FixedPoint type (Q15.12) and 3 registers (for retiming) at the output.
-    // You could alternatively use DspReal()
-    // Scala keeps track of which tests pass/fail.
-    // Supposedly, Chisel3 testing infrastructure might be overhauled to reduce the amount of boilerplate, but this is currently
-    // the endorsed way to do things.
+    // Run the dsp tester by following this style: You need to pass in the Chisel Module [SimpleDspModule] 
+    // to test and your created DspTesterOptionsManager [testOptions]. You must also specify the tester 
+    // [SimpleDspModuleTester] to run with the module. This tester should be something that extends DspTester. 
+    // Note that here, you're testing the module with inputs/outputs of FixedPoint type (Q15.12) 
+    // and 3 registers (for retiming) at the output. You could alternatively use DspReal()
+    // Scala keeps track of which tests pass/fail; the execute method returns true if the test passes. 
+    // Supposedly, Chisel3 testing infrastructure might be overhauled to reduce the amount of boilerplate, 
+    // but this is currently the endorsed way to do things.
     dsptools.Driver.execute(() => new SimpleDspModule(FixedPoint(16.W, 12.BP), addPipes = 3), testOptions) { c =>
       new SimpleDspModuleTester(c)
     } should be (true)
@@ -376,37 +378,189 @@ The example also shows you how a tester interacts with the DUT via peek and expe
 
 To run this single test, you can use the command `sbt "test-only SimpleDsp.SimpleDspModuleSpec"`. Note that `sbt test` runs all tests in *src/test/scala*. 
 
+---
 
+# Details on DspTesterOptionsManager
+* As in the example above, the DspTesterOptionsManager manages the following category of options listed hierarchically [objectName = caseClass] (Case class files linked):
+  * dspTesterOptions = DspTesterOptions() [file](https://github.com/ucb-bar/dsptools/blob/add_ops/src/main/scala/dsptools/tester/DspTesterOptions.scala)
+  * testerOptions = TesterOptions() [file](https://github.com/ucb-bar/chisel-testers/blob/master/src/main/scala/chisel3/iotesters/TesterOptions.scala)
+  * interpreterOptions = InterpreterOptions() [file](https://github.com/ucb-bar/firrtl-interpreter/blob/master/src/main/scala/firrtl_interpreter/Driver.scala)
+  * chiselOptions = ChiselExecutionOptions() [file](https://github.com/ucb-bar/chisel3/blob/master/src/main/scala/chisel3/ChiselExecutionOptions.scala)
+  * firrtlOptions = FirrtlExecutionOptions() [file](https://github.com/ucb-bar/firrtl/blob/master/src/main/scala/firrtl/ExecutionOptionsManager.scala)
+  * commonOptions = CommonOptions() [file](https://github.com/ucb-bar/firrtl/blob/master/src/main/scala/firrtl/ExecutionOptionsManager.scala)
+    * All XOptionsManager s have this.
+* Default options are used if you don't reassign to the object (var), which is already part of the DspTesterOptionsManager
+* Below, I've listed the options + their defaults that you'll likely change for some of the case classes mentioned above (for the full list of options, look through the linked files). See the example above on how to override defaults.
+  * DspTesterOptions
+    * isVerbose
+      * Default = true
+      * Top-level DspTester verbosity (peek, poke, expect, step, reset prints on console)
+    * fixTolLSBs
+      * Default = 0 (Int)
+      * Expect tolerance in terms of LSBs for FixedPoint, SInt, UInt
+    * realTolDecPts
+      * Default = 8 (Int)
+      * 10^(-realTolDecPts) toerance for expect on DspReal
+    * genVerilogTb
+      * Default = false
+      * Generate Verilog TB (in the target directory and called tb.v) that mirrors Chisel tester's peek/poke/expect/step/reset for use with outside simulators
+    * clkMul
+      * Default = 1 (Int)
+      * clock period in ps = clkMul * tbTimeUnitPs
+    * tbTimeUnitPs
+      * Default = 100 (Int)
+      * Test bench time unit in ps
+    * tbTimePrecisionPs
+      * Default = 10 (Int)
+      * Time precision in ps
+    * initClkPeriods
+      * Default = 5 (Int)
+      * # clock periods for initial reset (for use with TB generation)
+    * inOutDelay
+      * Default = 0.5 (Double) i.e. half a clock period
+      * Input/output delay after which to peek/poke values (some fraction of clkMul)
+      * Note that this # affects whether the TB will pass post-synthesis or post-PR and should match the input/output delay constraints #
+  * TesterOptions
+    * isVerbose
+      * Default = false
+      * Whether to print out sub-peek/poke/expect info onto the console (i.e. for Complex, prints the individual real/imaginary peek or for UInt, print with the default PeekPokeTester representation via displayBase)
+    * displayBase
+      * Default = 10 (Int)
+      * Base to print out sub-peek/poke/expect info (converts raw bits into the specified base)
+    * backendName
+      * Default = "firrtl"
+      * Either "firrtl" for Firrtl-Interpreter or "verilator" for Verilator (preferred) [also supports VCS? untested]
+  * FirrtlExecutionOptions
+    * compilerName
+      * Default = "verilog"
+      * If using the testers, this will be automatically set to "low" with Firrtl-Interpreter and "verilog" with Verilator
+      * If you want to only compile your code without running tests, you can use something like `chisel3.Driver.execute(optionsManager, dut)` where dut is a Chisel Module and optionsManager is of type: *ExecutionOptionsManager with HasChiselExecutionOptions with HasFirrtlOptions*. This optionsManager also has commonOptions.
+      * When only doing compilation, this supports outputting the circuit in "high", "middle", or "low" Firrtl or "verilog".
+    * customTransforms - Seq[Transform]
+      * Default = Empty
+      * See below for an example
+    * annotations - List[Annotation]
+      * Default = Empty
+      * See below for an example (tends to go hand in hand with customTransforms + this method is really only for InferReadWrite and ReplSeqMem -- an alternative method is currently being made for more tapeout-y Firrtl transforms)
+  * CommonOptions
+    * targetDirName
+      * If not specified, test outputs will be dumped to test_run_dir, otherwise, outputs will be dumped in specified directory, as in the example above!   
 
+Let's say you create a Chisel Module called CustomMemory (circuit class name) which contains some SeqMem's that you want to replace with black boxes + infer readwrite ports so you can use single-ported SRAMs instead of dual-ported ones if reads are deemed to never occur simultaneously with writes. Two Firrtl transforms can do this for you: ReplSeqMem and InferReadWrite. In order to run these transforms, you'll need to use custom FirrtlExecutionOptions. Note that black box substitution should only occur when compiling (and not testing) the Chisel code, *unless* you provide a black box resource to match the outputted black boxes. Otherwise, Verilator won't be able to find the memory black boxes, and it'll be sad. 
 
+Note: A configuration file to be able to run the ucb-bar vlsi_mem_gen Python script is output with ReplSeqMem. The file name/location is, in this case, vlsi_mem_gen.conf in your top level directory (you need to specify the location as opposed to just the name; this is legacy because "targetDirName" didn't exist when the transform was written)
 
+Your code (either inside a Scala test Spec if you want to run `sbt test` or inside a Scala main function if you want to run `sbt run`) might look something like this:
 
+```
+  val opts = new ExecutionOptionsManager("chisel3") with HasChiselExecutionOptions with HasFirrtlOptions {
+    firrtlOptions = FirrtlExecutionOptions(
+      compilerName = "verilog",
+      customTransforms = Seq(
+        new passes.memlib.InferReadWrite(),
+        new passes.memlib.ReplSeqMem()),
+      annotations = List(
+        passes.memlib.InferReadWriteAnnotation("CustomMemory"),
+        passes.memlib.ReplSeqMemAnnotation(s"-c:CustomMemory:-o:vlsi_mem_gen.conf"))
+    )
+  }
 
+  chisel3.Driver.execute(opts, () => new CustomMemory())
 
+```
 
+---
 
+# DspTester Functions
+* step(n)
+  * Step the clock forward by n cycles
+* reset(n)
+  * Hold reset for n clock cycles
+* poke(input, value) -- Input, Value types given below
+  * Bool, Boolean
+  * UInt, Int -- prints width
+  * SInt, Int -- prints width
+  * FixedPoint, Double -- prints Qn.m notation
+  * DspReal, Double
+  * T <: Data:RealBits, Double
+  * DspComplex[T], breeze.math.Complex -- prints a + bi
+* peek(node) -- Node, Output types given below
+  * Bool, Boolean
+  * UInt, Int -- prints width
+  * SInt, Int -- prints width
+  * FixedPoint, Double -- prints Qn.m notation
+  * DspReal, Double
+  * T <: Data:RealBits, Double
+  * DspComplex[T], breeze.math.Complex -- prints a + bi
+* expect(node, expectedValue, message: String) -- Node, expectedValue types given below 
+  * Returns true if node value = expectedValue, otherwise false
+  * message is optional
+  * Prints tolerance
+  * Will always print if the expect failed (regardless of display flag)
+  * Bool, Boolean
+  * UInt, Int -- prints width
+  * SInt, Int -- prints width
+  * FixedPoint, Double -- prints Qn.m
+  * DspReal, Double
+  * T <: Data:RealBits, Double
+  * DspComplex[T], breeze.math.Complex -- prints a + bi
 
+# Other Tester Functions (from PeekPokeTester)
+* pokeAt[T <: Bits](memory: Mem[T], value: BigInt, offset: Int)
+  * Updates memory[offset] = value via tester, not valid when a Verilog TB is printed
+  * Not something you should usually use with DspTester, since everything is BigInt bit representation
+* peek(signal: Aggregate): IndexedSeq[BigInt]
+  * Peeks elements of a generic Aggregate (Bundle, Vec) one by one and returns the bit representation as a BigInt
+  * Not something you should usually use with DspTester
+* peekAt[T <: Bits](memory: Mem[T], offset: Int): BigInt
+  * Peeks the value at memory[offset] as a BigInt bit representation
+  * Not something you should usually use with DspTester
+* expect(pass: Boolean, message: String)
+  * Prints PASS if pass is true, otherwise FAIL, along with message
 
+Example console printout:
 
+```
+STEP 5x -> 16
+  POKE SimpleIOModule.io_i_vU_0 <- 3.0, 8-bit U
+  POKE SimpleIOModule.io_i_vS_0 <- 3.3, 8-bit S
+  POKE SimpleIOModule.io_i_vF_0 <- 3.3, Q3.4
+  PEEK SimpleIOModule.io_o_vU_0 -> 3.0, 8-bit U
+  EXPECT SimpleIOModule.io_o_vU_0 -> 3.0 == E 3.0 PASS, tolerance = 0.0, 8-bit U
+  PEEK SimpleIOModule.io_o_vS_0 -> -3.0, 8-bit S
+  EXPECT SimpleIOModule.io_o_vS_0 -> -3.0 == E -3.0 PASS, tolerance = 0.0, 8-bit S
+  PEEK SimpleIOModule.io_o_vF_0 -> -3.3125, Q3.4
+  EXPECT SimpleIOModule.io_o_vF_0 -> -3.3125 == E -3.3 PASS, tolerance = 0.0625, Q3.4
+```
 
+A couple of the DspTesterOptions can be updated locally within your DspTester by wrapping the region in which the change should apply in much the way DspContext changes were done. Earlier code showed you how to update the verbosity locally. You can locally change the verbosity for debugging. Additionally, you can locally weaken or strengthen expect tolerances if you know certain operations are more prone to quantization error, etc. 
 
-Tester options: peek, poke, expect, how to change tolerance, etc.
-other options
+* DspTesterOptions.isVerbose
+  * `updatableDspVerbose.withValue(false) { /* code here */ }`
+* TesterOptions.isVerbose
+  * `updatableSubVerbose.withValue(true) { /* code here */ }`
+* TesterOptions.displayBase
+ * `updatableBase.withValue(2) { /* code here */ }`
+* DspTesterOptions.fixTolLSBs
+ * `fixTolLSBs.withValue(3) { /* code here */ }`
+* DspTesterOptions.realTolDecPts
+ * `realTolDecPts.withValue(5) { /* code here */ }`
 
-TODO (sometime -- not DSP specific; will go in Chisel3DspExample):
-AsUInt
-ROM
-RegNext, RegEnable, etc.
-Passing custom clk, reset
-How to use ranges
-Mux, Mux1H https://github.com/ucb-bar/chisel3/wiki/Muxes%20and%20Input%20Selection
-Cat
-Bitwise ops (&, |, ^, etc.) https://github.com/ucb-bar/chisel3/wiki/Builtin%20Operators
-:= , <>
-Black box https://github.com/ucb-bar/chisel3/wiki/BlackBoxes
-Annotation https://github.com/ucb-bar/chisel3/wiki/Annotations%20Extending%20Chisel%20and%20Firrtl
-Mem, SeqMem https://github.com/ucb-bar/chisel3/wiki/Memories
-When
-Driver/tester: https://github.com/ucb-bar/chisel3/wiki/Running%20Stuff
-Enum: https://github.com/ucb-bar/chisel3/wiki/Cookbook
-ValidIO, DecoupledIO
+---
+
+# Documentation TODO (not DSP specific)
+* AsUInt
+* ROM
+* RegNext, RegEnable, etc.
+* Passing custom clk, reset
+* How to use ranges
+* [Mux, Mux1H](https://github.com/ucb-bar/chisel3/wiki/Muxes%20and%20Input%20Selection) 
+* Cat
+* [Bitwise ops](https://github.com/ucb-bar/chisel3/wiki/Builtin%20Operators) (&, |, ^, etc.) 
+* := , <>
+* [Black box](https://github.com/ucb-bar/chisel3/wiki/BlackBoxes)
+* [Annotation](https://github.com/ucb-bar/chisel3/wiki/Annotations%20Extending%20Chisel%20and%20Firrtl)
+* [Mem, SeqMem](https://github.com/ucb-bar/chisel3/wiki/Memories)
+* When
+* [Enum](https://github.com/ucb-bar/chisel3/wiki/Cookbook)
+* ValidIO, DecoupledIO

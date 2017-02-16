@@ -17,8 +17,9 @@ case class DspTesterOptions(
     // Time unit in ps
     tbTimeUnitPs: Int = 100,
     // Time precision in ps
-    // Note: tb checking occurs 1 precision step after clk
     tbTimePrecisionPs: Int = 10,
+    // Input/output delay after which to peek/poke values (some fraction of clkMul)
+    inOutDelay: Double = 0.5,
     // # clk periods for initial reset
     initClkPeriods: Int = 5) extends ComposableOptions {
 

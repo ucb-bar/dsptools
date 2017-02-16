@@ -5,8 +5,7 @@
 
 `define HALF_CLK_PERIOD 0.5
 `define RESET_TIME 5
-`define CLK_DELTA 0.1
-`define INIT_TIME 5.1
+`define INIT_TIME 5.5
 `define expect(nodeName, nodeVal, expVal, cycle) if (nodeVal !== expVal) begin \
   $display("\t ASSERTION ON %s FAILED @ CYCLE = %d, 0x%h != EXPECTED 0x%h", \
   nodeName,cycle,nodeVal,expVal); $stop; end

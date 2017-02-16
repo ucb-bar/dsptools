@@ -32,7 +32,8 @@ trait VerilogTbDump {
     val dutName = dut.name
 
     val resetTime = dsptestersOpt.initTimeUnits
-    val clkDelta = dsptestersOpt.tbTimePrecisionPs.toDouble/dsptestersOpt.tbTimeUnitPs
+    // Input/output delay after which to peek/poke values
+    val clkDelta = dsptestersOpt.clkMul * dsptestersOpt.inOutDelay
 
     tb write s"// Example VCS Command: $$VCS_HOME/bin/vcs -debug_pp -full64 +define+UNIT_DELAY +rad +v2k +vcs+lic+wait " +
     s"+vc+list +vcs+initreg+random +vcs+dumpvars+out.vcd tb.v ${dutName}.v ... \n"
@@ -41,7 +42,6 @@ trait VerilogTbDump {
     tb write s"\n`define CLK_PERIOD ${dsptestersOpt.clkMul}\n"
     tb write s"\n`define HALF_CLK_PERIOD ${dsptestersOpt.clkMul.toDouble/2}\n"
     tb write s"`define RESET_TIME ${resetTime}\n"
-    tb write s"`define CLK_DELTA ${clkDelta}\n"
     tb write s"`define INIT_TIME ${clkDelta + resetTime}\n"
 
     tb write "`define expect(nodeName, nodeVal, expVal, cycle) if (nodeVal !== expVal) begin " +
