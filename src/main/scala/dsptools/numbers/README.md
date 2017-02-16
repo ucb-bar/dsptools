@@ -105,6 +105,7 @@
   * a.max(b)
 * Signed Type
   * a.abs
+    * Overflow behavior when a is the most negative value supported by width is determined by DspContext
   * a.isSignZero
   * a.isSignPositive
   * a.isSignNegative
