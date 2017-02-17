@@ -14,8 +14,8 @@ import scala.language.implicitConversions
   * Defines basic math functions for FixedPoint numbers
   */
 trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
-  def zero: FixedPoint = FixedPoint.fromDouble(0.0, binaryPoint = 0)
-  def one: FixedPoint= FixedPoint.fromDouble(1.0, binaryPoint = 0)
+  def zero: FixedPoint = 0.0.F(0.BP)
+  def one: FixedPoint= 1.0.F(0.BP)
   def plus(f: FixedPoint, g: FixedPoint): FixedPoint = {
     // TODO: Saturating mux should be outside of ShiftRegister
     val sum = context.overflowType match {
@@ -73,20 +73,20 @@ trait ConvertableToFixedPoint extends ConvertableTo[FixedPoint] with hasContext 
   def fromBigDecimal(n: BigDecimal): FixedPoint = fromDouble(n.doubleValue)
   def fromLong(n: Long): FixedPoint = fromBigInt(BigInt(n))
   def fromType[B](n: B)(implicit c: ConvertableFrom[B]): FixedPoint = fromDouble(c.toDouble(n))
-  def fromBigInt(n: BigInt): FixedPoint = FixedPoint.fromDouble(n.doubleValue, binaryPoint = 0)
+  def fromBigInt(n: BigInt): FixedPoint = n.doubleValue.F(0.BP)
   // If no binary point is specified, use the default one provided by DspContext
   // TODO: Should you instead be specifying a max width so you can get the most resolution for a given width?
-  def fromDouble(n: Double): FixedPoint = FixedPoint.fromDouble(n, binaryPoint = context.binaryPoint.getOrElse(0)) 
+  def fromDouble(n: Double): FixedPoint = n.F(context.binaryPoint.getOrElse(0).BP)
   override def fromDouble(d: Double, a: FixedPoint): FixedPoint = {
     require(a.binaryPoint.known, "Binary point must be known!")
-    FixedPoint.fromDouble(d, binaryPoint = a.binaryPoint.get)
+    d.F(a.binaryPoint)
   }
   override def fromDoubleWithFixedWidth(d: Double, a: FixedPoint): FixedPoint = {
     require(a.binaryPoint.known, "Binary point must be known!")
     require(a.widthKnown, "FixedPoint width not known!")
     val sintBits = BigInt(d.toInt).bitLength + 1
     require(sintBits + a.binaryPoint.get <= a.getWidth, "Lit can't fit in prototype FixedPoint bitwidth")
-    FixedPoint.fromDouble(d, width = a.getWidth, binaryPoint = a.binaryPoint.get)
+    d.F(a.getWidth.W, a.binaryPoint)
   }
 }
 
@@ -141,7 +141,8 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
         case Floor => a.setBinaryPoint(b)
         case RoundHalfUp => {
           val roundBp = b + 1
-          plus(a, FixedPoint.fromDouble(math.pow(2, -roundBp), binaryPoint = roundBp).setBinaryPoint(b))
+          val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
+          plus(a, addAmt).setBinaryPoint(b)
         }
         case _ => throw DspException("Desired trim type not implemented!")
       }
@@ -172,7 +173,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
   def ceil(a: FixedPoint): FixedPoint = Mux(isWhole(a), floor(a), plus(floor(a), one))
   // Round half up: Can potentially overflow [round half towards positive infinity]
   // NOTE: Apparently different from Java for negatives
-  def round(a: FixedPoint): FixedPoint = floor(plus(a, FixedPoint.fromDouble(0.5, binaryPoint = 1)))
+  def round(a: FixedPoint): FixedPoint = floor(plus(a, 0.5.F(1.BP)))
 
   def signBit(a: FixedPoint): Bool = isSignNegative(a)
   // fromFixedPoint also included in Ring

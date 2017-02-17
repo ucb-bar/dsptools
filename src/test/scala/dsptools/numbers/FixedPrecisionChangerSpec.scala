@@ -11,8 +11,8 @@ import org.scalatest.{FreeSpec, Matchers}
 
 class FixedPrecisionChanger(inWidth: Int, inBinaryPoint: Int, outWidth: Int, outBinaryPoint: Int) extends Module {
   val io = IO(new Bundle {
-    val in  = Input(FixedPoint(inWidth, inBinaryPoint))
-    val out = Output(FixedPoint(outWidth, outBinaryPoint))
+    val in  = Input(FixedPoint(inWidth.W, inBinaryPoint.BP))
+    val out = Output(FixedPoint(outWidth.W, outBinaryPoint.BP))
   })
 
   val reg = Reg(FixedPoint())
@@ -28,8 +28,8 @@ class FixedPointTruncatorTester(c: FixedPrecisionChanger, inValue: Double, outVa
 
 class RemoveMantissa(inWidth: Int, inBinaryPoint: Int, outWidth: Int, outBinaryPoint: Int) extends Module {
   val io = IO(new Bundle {
-    val in  = Input(FixedPoint(inWidth, inBinaryPoint))
-    val out = Output(FixedPoint(outWidth, 0))
+    val in  = Input(FixedPoint(inWidth.W, inBinaryPoint.BP))
+    val out = Output(FixedPoint(outWidth.W, 0.BP))
   })
 
   val reg = Reg(FixedPoint())
