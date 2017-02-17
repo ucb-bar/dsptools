@@ -35,7 +35,7 @@ trait HasIPXACTParameters {
 // create a new DSP Configuration
 object SAMConfigBuilder {
   def apply(id: String, wordSize: Int, samConfig: SAMConfig): Config =
-    ConfigBuilder.dspBlockParams(id, 1, () => UInt(wordSize.W)) ++
+    ConfigBuilder.genParams(id, 1, () => UInt(wordSize.W)) ++
     new Config(
       (pname, site, here) => pname match {
         case SAMKey => samConfig

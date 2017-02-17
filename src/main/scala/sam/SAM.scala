@@ -157,11 +157,11 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) {
   // for now
   require(w % nastiXDataBits == 0)
 
-  assert(!io.out.ar.valid ||
-    (io.out.ar.bits.addr(log2Ceil(w/8)-1, 0) === 0.U &&
-     io.out.ar.bits.len(log2Ceil(w/nastiXDataBits)-1, 0).andR &&
-     io.out.ar.bits.size === (log2Up(nastiXDataBits/8)).U),
-   "Invalid read request")
+//  assert(!io.out.ar.valid ||
+//    (io.out.ar.bits.addr(log2Ceil(w/8)-1, 0) === 0.U &&
+//     io.out.ar.bits.len(log2Ceil(w/nastiXDataBits)-1, 0).andR &&
+//     io.out.ar.bits.size === (log2Up(nastiXDataBits/8)).U),
+//   "Invalid read request")
 
   // required by AXI4 spec
   when (reset) {
@@ -175,7 +175,7 @@ class SAMWrapperIO()(implicit p: Parameters) extends BasicDspBlockIO()(p) {
   val axi_out = Flipped(new NastiIO())
 }
 
-class LazySAM()(implicit p: Parameters) extends LazyDspBlock()(p) {
+class LazySAM()(implicit p: Parameters) extends DspBlock()(p) {
   addControl("samWStartAddr", 0.U)
   addControl("samWTargetCount", 0.U)
   addControl("samWTrig", 0.U)
@@ -188,10 +188,9 @@ class LazySAM()(implicit p: Parameters) extends LazyDspBlock()(p) {
   lazy val module = new SAMWrapper(this)
 }
 
-class SAMWrapper(outer: LazySAM)(implicit p: Parameters) extends DspBlock(outer, Some(new SAMWrapperIO))(p) {
+class SAMWrapper(outer: LazySAM)(implicit p: Parameters) extends DspBlockModule(outer, Some(new SAMWrapperIO))(p) {
 
   // SCR
-  val baseAddr = BigInt(0)
   val sam = Module(new SAM)
   val config = p(SAMKey(p(DspBlockId)))
 

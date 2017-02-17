@@ -14,24 +14,28 @@ trait HasPassthroughParameters {
   def passthroughDelay = p(PassthroughDelay)
 }
 
-class LazyPassthrough()(implicit p: Parameters) extends LazyDspBlock()(p) {
-  lazy val module = new Passthrough(this)
+class Passthrough()(implicit p: Parameters) extends DspBlock()(p) {
+  lazy val module = new PassthroughModule(this)
 
   addStatus("delay")
 }
 
-class Passthrough(outer: LazyPassthrough)(implicit p: Parameters) extends DspBlock(outer)(p) with HasPassthroughParameters {
-  status("delay") := passthroughDelay.U
-  io.out          := ShiftRegister(io.in, passthroughDelay)
+class PassthroughModule(outer: Passthrough)(implicit p: Parameters) extends DspBlockModule(outer)(p) with HasPassthroughParameters {
+  val zeroBundle     = Wire(io.in.cloneType)
+  zeroBundle.valid  := false.B
+  zeroBundle.sync   := false.B
+  zeroBundle.bits   := 0.U
+  status("delay")   := passthroughDelay.U
+  io.out            := ShiftRegister(io.in, passthroughDelay, zeroBundle, true.B)
 }
 
-class LazyBarrelShifter()(implicit p: Parameters) extends LazyDspBlock()(p) {
-  lazy val module = new BarrelShifter(this)
+class BarrelShifter()(implicit p: Parameters) extends DspBlock()(p) {
+  lazy val module = new BarrelShifterModule(this)
 
   addControl("shiftBy", 0.U)
 }
 
-class BarrelShifter(outer: LazyBarrelShifter)(implicit p: Parameters) extends DspBlock(outer)(p) {
+class BarrelShifterModule(outer: BarrelShifter)(implicit p: Parameters) extends DspBlockModule(outer)(p) {
   require( inputWidth == outputWidth )
 
   val shiftWidth = util.log2Up(inputWidth)

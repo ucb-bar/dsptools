@@ -26,6 +26,7 @@ case class DspBlockParameters (
 
 trait HasDspBlockParameters {
   implicit val p: Parameters
+  def baseAddr: Int = p(BaseAddr(p(DspBlockId)))
   def dspBlockExternal = p(DspBlockKey(p(DspBlockId)))
   def inputWidth  = dspBlockExternal.inputWidth
   def outputWidth = dspBlockExternal.outputWidth
@@ -42,13 +43,14 @@ trait GenParameters {
   def lanesOut: Int = lanesIn
 }
 
-trait HasGenParameters[T <: Data, V <: Data] {
-  implicit val p: Parameters
-  def genExternal = p(GenKey(p(DspBlockId)))
+trait HasGenParameters[T <: Data, V <: Data] extends HasDspBlockParameters {
+  def genExternal            = p(GenKey(p(DspBlockId)))
   def genIn(dummy: Int = 0)  = genExternal.genIn[T]
   def genOut(dummy: Int = 0) = genExternal.genOut[V]
-  def lanesIn  = genExternal.lanesIn
-  def lanesOut = genExternal.lanesOut
+  def lanesIn                = genExternal.lanesIn
+  def lanesOut               = genExternal.lanesOut
+  override def inputWidth    = lanesIn * genIn().getWidth
+  override def outputWidth   = lanesOut * genOut().getWidth
   // todo some assertions that the width is correct
 }
 
@@ -78,14 +80,8 @@ class BasicDspBlockIO()(implicit val p: Parameters) extends Bundle with HasDspBl
 
 case class BaseAddr(id: String) extends Field[Int]
 
-trait HasLazyDspBlockParameters {
-  implicit val p: Parameters
-  def baseAddr: Int = p(BaseAddr(p(DspBlockId)))
-  def id: String = p(DspBlockId)
-}
-
-abstract class LazyDspBlock()(implicit val p: Parameters) extends LazyModule with HasLazyDspBlockParameters {
-  override def module: DspBlock
+abstract class DspBlock()(implicit val p: Parameters) extends LazyModule with HasDspBlockParameters {
+  override def module: DspBlockModule
   val scrbuilder = new SCRBuilder(name)
 
   def size = scrbuilder.controlNames.length + scrbuilder.statusNames.length
@@ -99,14 +95,14 @@ abstract class LazyDspBlock()(implicit val p: Parameters) extends LazyModule wit
     scrbuilder.addStatus(name)
   }
 
+  def addrMapEntry = AddrMapEntry(name, MemSize(BigInt(1 << 8), MemAttr(AddrMapProt.RW)))
+
   println(s"Base address for $name is $baseAddr")
 }
 
-abstract class DspBlock(val outer: LazyDspBlock, b: => Option[Bundle with DspBlockIO] = None)
+abstract class DspBlockModule(val outer: DspBlock, b: => Option[Bundle with DspBlockIO] = None)
   (implicit val p: Parameters) extends LazyModuleImp(outer) with HasDspBlockParameters {
   val io: Bundle with DspBlockIO = IO(b.getOrElse(new BasicDspBlockIO))
-
-  // override val desiredName = this.name
 
   def addrmap = testchipip.SCRAddressMap(outer.scrbuilder.devName).get
 
@@ -145,7 +141,7 @@ class GenDspBlockIO[T <: Data, V <: Data]()(implicit val p: Parameters)
   override def cloneType = new GenDspBlockIO()(p).asInstanceOf[this.type]
 }
 
-abstract class GenDspBlock[T <: Data, V <: Data]
-  (outer: LazyDspBlock)(implicit p: Parameters) extends DspBlock(outer, Some(new GenDspBlockIO[T, V]))
+abstract class GenDspBlockModule[T <: Data, V <: Data]
+  (outer: DspBlock)(implicit p: Parameters) extends DspBlockModule(outer, Some(new GenDspBlockIO[T, V]))
   with HasGenDspParameters[T, V]
 

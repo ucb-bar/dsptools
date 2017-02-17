@@ -32,6 +32,7 @@ import uncore.coherence._
 import dsptools._
 import dspblocks._
 import diplomacy._
+import craft._
 
 object LocalTest extends Tag("edu.berkeley.tags.LocalTest")
 
@@ -44,8 +45,8 @@ class SAMWrapperTester(c: SAMWrapper)(implicit p: Parameters) extends DspBlockTe
     }
   }
 
-  val config = p(SAMKey)
-  val gk = p(GenKey)
+  val config = p(SAMKey(p(DspBlockId)))
+  val gk = p(GenKey(p(DspBlockId)))
   val scr = testchipip.SCRAddressMap(c.outer.name).get
 
   // custom axiRead for the crossbar side
@@ -115,7 +116,7 @@ class SAMWrapperTester(c: SAMWrapper)(implicit p: Parameters) extends DspBlockTe
 
 
   // setup input streaming data
-  def streamIn = Seq.tabulate(100)(n => BigInt(n))
+  def streamIn = Seq(Seq.tabulate(100)(n => BigInt(n)))
 
   // pause stream while setting up SCR
   pauseStream
@@ -150,7 +151,7 @@ class SAMWrapperSpec extends FlatSpec with Matchers {
   }
 
   it should "work with DspBlockTester" in {
-    implicit val p: Parameters = Parameters.root(new DspConfig().toInstance).alterPartial({
+    implicit val p: Parameters = Parameters.root(ConfigBuilder.fixedPointBlockParams("sam", 1, 1, 10, 9).toInstance).alterPartial({
       case BaseAddr => 0
     })
     val dut = () => {

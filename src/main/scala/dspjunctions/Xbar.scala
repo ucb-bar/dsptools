@@ -22,6 +22,6 @@ class NastiXBar(topParams: Parameters) extends Module {
 
   val bus = Module(new NastiRecursiveInterconnect(
     inPorts, addrMap, p(XBarQueueDepth)))
-  bus.io.masters <> io.in.map(PeripheryUtils.addQueueAXI(_))
-  io.out <> bus.io.slaves.map(PeripheryUtils.addQueueAXI(_))
+  bus.io.masters <> io.in
+  io.out <> bus.io.slaves
 }

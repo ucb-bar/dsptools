@@ -17,7 +17,7 @@ import dsptools.numbers.implicits._
 case class IPXACTParameters(id: String) extends Field[Map[String, String]]
 
 object ConfigBuilder {
-  def dspBlockParams[T <: Data](
+  def genParams[T <: Data](
     id: String,
     lanesIn_ : Int,                 genInFunc: () => T,
     lanesOut_ : Option[Int] = None, genOutFunc: Option[() => T] = None): Config = new Config(
@@ -31,26 +31,43 @@ object ConfigBuilder {
       }
       case _ => throw new CDEMatchError
     })
+  def dspBlockParams(
+    id: String,
+    inputWidth: Int,
+    outputWidth: Option[Int] = None): Config = new Config(
+      (pname, site, here) => pname match {
+        case DspBlockId => id
+        case DspBlockKey(_id) if _id == id =>
+          DspBlockParameters(
+            inputWidth,
+            outputWidth.getOrElse(inputWidth)
+          )
+      })
   def fixedPointBlockParams(id: String, lanesIn: Int, lanesOut: Int, totalWidth: Int, fractionalBits: Int): Config = {
     def getFixedPoint(): FixedPoint = FixedPoint(width=totalWidth, binaryPoint=fractionalBits)
-    dspBlockParams(id, lanesIn, getFixedPoint _, Some(lanesOut), Some(getFixedPoint _))
+    genParams(id, lanesIn, getFixedPoint _, Some(lanesOut), Some(getFixedPoint _))
   }
   def floatingPointBlockParams(id: String, lanesIn: Int, lanesOut: Int, totalWidth: Int, fractionalBits: Int): Config = {
     def getReal(): DspReal = DspReal()
-    dspBlockParams(id, lanesIn, getReal _, Some(lanesOut), Some(getReal _))
+    genParams(id, lanesIn, getReal _, Some(lanesOut), Some(getReal _))
   }
   def fixedPointComplexBlockParams(id: String, lanesIn: Int, lanesOut: Int, totalWidth: Int, fractionalBits: Int): Config = {
     def getFixedPoint(): FixedPoint = FixedPoint(width=totalWidth, binaryPoint=fractionalBits)
     def getComplex(): DspComplex[FixedPoint] = DspComplex(getFixedPoint(), getFixedPoint())
-    dspBlockParams(id, lanesIn, getComplex _, Some(lanesOut), Some(getComplex _))
+    genParams(id, lanesIn, getComplex _, Some(lanesOut), Some(getComplex _))
   }
   def floatingPointComplexBlockParams(id: String, lanesIn: Int, lanesOut: Int, totalWidth: Int, fractionalBits: Int): Config = {
     def getComplex(): DspComplex[DspReal] = DspComplex(DspReal(), DspReal())
-    dspBlockParams(id, lanesIn, getComplex _, Some(lanesOut), Some(getComplex _))
+    genParams(id, lanesIn, getComplex _, Some(lanesOut), Some(getComplex _))
   }
-  def buildDSP(id: String, func: Parameters => LazyDspBlock): Config = new Config(
+  def buildDSP(id: String, func: Parameters => DspBlock): Config = new Config(
     (pname, site, here) => pname match {
       case BuildDSPBlock => func
+      case BaseAddr(_id) if _id == id => 0
+      case _ => throw new CDEMatchError
+    }) ++ nastiTLParams(id)
+  def nastiTLParams(id: String): Config = new Config(
+    (pname, site, here) => pname match {
       case NastiKey => NastiParameters(64, 32, 1)
       case PAddrBits => 32
       case CacheBlockOffsetBits => 6
@@ -66,9 +83,8 @@ object ConfigBuilder {
             maxClientXacts = 4,
             maxClientsPerPort = 1,
             maxManagerXacts = 1,
-            dataBeats = 1,
-            dataBits = 64)
-      case BaseAddr(_id) if _id == id => 0
+            dataBeats = 4,
+            dataBits = 64 * 4)
       case _ => throw new CDEMatchError
     })
 }

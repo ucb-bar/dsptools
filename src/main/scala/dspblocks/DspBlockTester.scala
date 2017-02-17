@@ -18,13 +18,18 @@ import sam._
 import testchipip._
 
 trait InputTester {
-  var streamInValid: Boolean = true
+  var streamInValid: Boolean = false
   def pauseStream(): Unit = streamInValid = false
   def playStream():  Unit = streamInValid = true
-  def restartStream(): Unit = streamInIter = streamIn.iterator
 
-  def streamIn: Seq[BigInt]
-  protected var streamInIter = streamIn.iterator
+  def streamIn: Seq[Seq[BigInt]]
+  def streamInFlat = streamIn.flatten.toSeq
+  def syncIn = streamIn.map(s =>
+      if (s.size > 0)
+        Seq(true) ++ Seq.fill(s.size - 1)(false)
+      else Seq()
+      ).flatten.toSeq
+  protected lazy val streamInIter = streamInFlat.zip(syncIn).iterator
   def done = !streamInIter.hasNext
   def inputStep: Unit
   // handle normal input types
@@ -92,10 +97,14 @@ trait StreamInputTester[T <: Module] extends InputTester { this: DspTester[T] =>
   def in: dspjunctions.ValidWithSync[UInt]
   def inputStep: Unit = {
     if (streamInValid && streamInIter.hasNext) {
+      val next = streamInIter.next
+      println(s"Called next, got $next")
       poke(in.valid, 1)
-      poke(in.bits, streamInIter.next)
+      poke(in.bits, next._1)
+      poke(in.sync, next._2)
     } else {
       poke(in.valid, 0)
+      poke(in.sync,  0)
     }
   }
 }
@@ -168,7 +177,7 @@ trait OutputTester {
   }
 }
 
-trait StreamOutputTester[T <: DspBlock] extends OutputTester { this: DspTester[T] =>
+trait StreamOutputTester[T <: DspBlockModule] extends OutputTester { this: DspTester[T] =>
   def dut: T
   def outputStep: Unit = {
     if (peek(dut.io.out.sync) != BigInt(0)) {
@@ -180,7 +189,7 @@ trait StreamOutputTester[T <: DspBlock] extends OutputTester { this: DspTester[T
   }
 }
 
-trait AXIOutputTester[T <: Module] extends OutputTester with AXIRWTester[T] with InputTester { this: DspTester[T] =>
+trait AXIOutputTester[T <: Module] extends OutputTester with InputTester { this: DspTester[T] with AXIRWTester[T] =>
   // don't begin streaming until SAM is ready
   streamInValid = false
   var axi: NastiIO = ctrlAXI
@@ -244,7 +253,7 @@ trait AXIOutputTester[T <: Module] extends OutputTester with AXIRWTester[T] with
 
 }
 
-trait StreamIOTester[T <: DspBlock] extends StreamInputTester[T] with StreamOutputTester[T] {
+trait StreamIOTester[T <: DspBlockModule] extends StreamInputTester[T] with StreamOutputTester[T] {
   this: DspTester[T] =>
 }
 
@@ -421,7 +430,7 @@ trait AXIRWTester[T <: Module] { this: DspTester[T] =>
   def axiRead(addr: Int): BigInt = axiRead(BigInt(addr))
 }
 
-abstract class DspBlockTester[V <: DspBlock](dut: V, override val maxWait: Int = 100)
+abstract class DspBlockTester[V <: DspBlockModule](dut: V, override val maxWait: Int = 100)
   extends DspTester[V](dut) with StreamIOTester[V] with AXIRWTester[V] {
   def in = dut.io.in
   def axi = dut.io.axi
@@ -460,11 +469,10 @@ abstract class DspBlockTester[V <: DspBlock](dut: V, override val maxWait: Int =
   }
 }
 
-class DspChainTester[V <: DspChain](dut: V) extends DspTester[V](dut) with StreamInputTester[V] with AXIRWTester[V] with AXIOutputTester[V] {
+abstract class DspChainTester[V <: DspChainModule](dut: V) extends DspTester[V](dut) with AXIOutputTester[V] with StreamInputTester[V] with AXIRWTester[V] {
   def in = dut.mod_ios.head.in
   def ctrlAXI = dut.io.control_axi
   def dataAXI = dut.io.data_axi
   def lazySam = dut.lazySams.last
-  def streamIn = (0 until 12).map(x => BigInt(x)).toSeq
 }
 

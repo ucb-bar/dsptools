@@ -33,7 +33,7 @@ class DspBlockTopModule[+L <: DspBlockTop](val p: Parameters, l: L) extends Lazy
     io <> module.io
   }
 
-case object BuildDSPBlock extends Field[Parameters => LazyDspBlock]
+case object BuildDSPBlock extends Field[Parameters => DspBlock]
 
 trait HasDspBlock {
   implicit val p: Parameters
@@ -54,5 +54,5 @@ case object BuildDSPChain extends Field[Parameters => DspChain]
 
 trait HasDspChain {
   implicit val p: Parameters
-  val module = Module(p(BuildDSPChain)(p))//.module
+  val module = Module(p(BuildDSPChain)(p).module)
 }
