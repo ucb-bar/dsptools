@@ -18,7 +18,7 @@ for idx in "${!repos[@]}"; do
     repo=${repos[$idx]}
     branch=${branches[$idx]}
     if [ ! -d $INSTALL_DIR/$repo ]; then
-        git clone --recursive --depth=2 "https://github.com/$org/$repo.git" "$INSTALL_DIR/$repo" -b $branch
+        git clone "https://github.com/$org/$repo.git" "$INSTALL_DIR/$repo" -b $branch
     fi
     cd $INSTALL_DIR/$repo
     if [ ! -e lib ]; then
@@ -29,6 +29,7 @@ for idx in "${!repos[@]}"; do
     git pull
     sbt publish-local
     if [ "$repo" == "rocket-chip" ]; then
+        cat .gitmodules | grep path | awk '{print $3}' | grep -v hwacha | grep -v riscv-tools | xargs git submodule update --init; rm src/main/scala/rocketchip/PrivateConfigs.scala; cd ..
         sbt pack
         cp target/pack/lib/*.jar $TRAVIS_BUILD_DIR/lib
     fi
