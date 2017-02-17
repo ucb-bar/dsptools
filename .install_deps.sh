@@ -10,8 +10,8 @@ if [ ! -d $TRAVIS_BUILD_DIR/lib ]; then
 fi
 
 orgs=( ucb-bar ucb-bar ucb-bar ucb-bar ucb-bar ucb-art grebe )
-repos=( firrtl chisel3 firrtl-interpreter chisel-testers dsptools rocket-chip testchipip )
-branches=( master master master master master craftFork chisel3switch )
+repos=(    firrtl chisel3 firrtl-interpreter chisel-testers dsptools rocket-chip testchipip )
+branches=( master master  master             localflatten   master   craftFork   chisel3switch )
 
 for idx in "${!repos[@]}"; do
     org=${orgs[$idx]}
