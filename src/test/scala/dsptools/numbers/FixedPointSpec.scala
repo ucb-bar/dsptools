@@ -10,11 +10,11 @@ import dsptools.numbers.implicits._
 
 class FixedRing1(val width: Int, val binaryPoint: Int) extends Module {
   val io = IO(new Bundle {
-    val in = Input(FixedPoint(width = width, binaryPoint = binaryPoint))
-    val floor = Output(FixedPoint(width = width, binaryPoint = binaryPoint))
-    val ceil = Output(FixedPoint(width = width, binaryPoint = binaryPoint))
+    val in = Input(FixedPoint(width.W, binaryPoint.BP))
+    val floor = Output(FixedPoint(width.W, binaryPoint.BP))
+    val ceil = Output(FixedPoint(width.W, binaryPoint.BP))
     val isWhole = Output(Bool())
-    val round = Output(FixedPoint(width = width, binaryPoint = binaryPoint))
+    val round = Output(FixedPoint(width.W, binaryPoint.BP))
     val real = Output(DspReal(1.0))
   })
 

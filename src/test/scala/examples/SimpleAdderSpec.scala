@@ -9,9 +9,9 @@ import org.scalatest.{Matchers, FlatSpec}
 
 class SimpleAdder extends Module {
   val io = IO(new Bundle {
-    val a1 = Input(FixedPoint(6, 4))
-    val a2 = Input(FixedPoint(8, 1))
-    val c  = Output(FixedPoint(12, 5))
+    val a1 = Input(FixedPoint(6.W, 4.BP))
+    val a2 = Input(FixedPoint(8.W, 1.BP))
+    val c  = Output(FixedPoint(12.W, 5.BP))
   })
 //  spatialAssert(Seq(io.a1), Seq(io.c), 5)
 //  spatialAssert(Seq(io.a2), Seq(io.c), "group1")

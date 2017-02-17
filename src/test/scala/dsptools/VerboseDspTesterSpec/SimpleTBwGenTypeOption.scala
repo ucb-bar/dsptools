@@ -150,22 +150,19 @@ class SimpleLitModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boo
   val pos = new Bundle {
     val litG = genShort.fromDouble(posLit)
     val litS = posLit.round.toInt.S
-    val litF = FixedPoint.fromDouble(posLit, binaryPoint = bp)
+    val litF = posLit.F(bp.BP)
   }
 
   val neg = new Bundle {
     val litG = genShort.fromDouble(negLit)
     val litS = negLit.round.toInt.S
-    val litF = FixedPoint.fromDouble(negLit, binaryPoint = bp)
+    val litF = negLit.F(bp.BP)
   }
 
-  val litB = Bool(true)
+  val litB = true.B
   val litU = posLit.round.toInt.U
-  val litC = DspComplex(
-      FixedPoint.fromDouble(posLit, binaryPoint = bp), 
-      FixedPoint.fromDouble(negLit, binaryPoint = bp))
-  
-
+  val litC = DspComplex(posLit.F(bp.BP), negLit.F(bp.BP))
+      
   val lutGenSeq = lutVals map {x => genShort.fromDoubleWithFixedWidth(x)}
   val lutSSeq = lutVals map (_.round.toInt.S(p.smallW.W))
 

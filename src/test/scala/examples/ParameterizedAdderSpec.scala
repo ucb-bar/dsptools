@@ -56,7 +56,7 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
   behavior of "parameterized adder circuit on fixed point"
 
   it should "allow registers to be declared that infer widths" in {
-    def getFixed: FixedPoint = FixedPoint(width = 32, binaryPoint = 16)
+    def getFixed: FixedPoint = FixedPoint(32.W, 16.BP)
 
     dsptools.Driver.execute(() => new ParameterizedAdder(getFixed _)) { c =>
       new ParameterizedAdderTester(c)
