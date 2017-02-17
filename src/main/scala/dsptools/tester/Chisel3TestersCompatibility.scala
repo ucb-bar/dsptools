@@ -4,7 +4,18 @@ import chisel3._
 
 // Bring out a bunch of private functions
 object TestersCompatibility {
-  def flatten[T <: Aggregate](d: T): IndexedSeq[Bits] = d.flatten
+
+  // Stolen from chisel-testers hack
+  private def extractElementBits(signal: Data): IndexedSeq[Element] = {
+    signal match {
+      case elt: Aggregate => elt.getElements.toIndexedSeq flatMap {extractElementBits(_)}
+      case elt: Element => IndexedSeq(elt)
+      case elt => throw new Exception(s"Cannot extractElementBits for type ${elt.getClass}")
+    }
+  }
+
+  def flatten[T <: Aggregate](d: T): IndexedSeq[Bits] = extractElementBits(d) map { x => x.asInstanceOf[Bits]}
+  
   def getDataNames(name: String, data: Data): Seq[(Element, String)] = {
     chisel3.iotesters.getDataNames(name, data)
   }
