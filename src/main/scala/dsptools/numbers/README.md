@@ -17,7 +17,7 @@
       * For *, div2: Rounds half up to a.binaryPoint.get.max(b.binaryPoint.get) + DspContext.binaryPointGrowth # of fractional bits -- looks at the result's next bit
       * For trimBinary: Rounds half up to n fractional bits
       * **WARNING**: The overflow behavior when you try to round up the largest representable positive FixedPoint value is defined by DspContext.overflowType. It's only guaranteed to be mathematically correct if you grow!
-    * Floor: Rounds to negative infinity; # of fractional bits is the same as in RoundHalfUp case
+    * Floor: Rounds towards negative infinity; # of fractional bits is the same as in RoundHalfUp case
     * Caution: Any time a known binary point is expected, you might run into Chisel/Firrtl bugs. Please let us know if you suspect something is wrong.
   * binaryPointGrowth (type: Int; default: 1)
     * Use case explained above

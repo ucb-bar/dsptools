@@ -28,10 +28,7 @@ class FixedRing1(val width: Int, val binaryPoint: Int) extends Module {
 
 class FixedRing1Tester(c: FixedRing1) extends DspTester(c) {
   val increment: Double = if(c.binaryPoint == 0) 1.0 else 1.0 / (1 << c.binaryPoint)
-  println(s"Increment is $increment")
   for(i <- -2.0 to 3.0 by increment) {
-    println(s"Testing value $i")
-
     poke(c.io.in, i)
 
     expect(c.io.floor, breeze.numerics.floor(i), s"floor of $i should be ${breeze.numerics.floor(i)}")
@@ -60,23 +57,55 @@ class FixedPointShifter(val width: Int, val binaryPoint: Int, val fixedShiftSize
   io.dynamicShiftRightResult := io.inValue >> io.dynamicShiftValue
 }
 
-class FixedPointShiftTester(c: FixedPointShifter) extends DspTester(c) {
-  val increment: Double = if(c.binaryPoint == 0) 1.0 else 1.0 / (1 << c.binaryPoint)
-  println(s"FixedPointShiftTester increment is $increment, fixedShiftValue is ${c.fixedShiftSize}")
-  val shiftCoefficient = 1 << c.fixedShiftSize
+object FixedPointShifter extends App {
+  iotesters.Driver.executeFirrtlRepl(Array(), () => new FixedPointShifter(8, 4, 3))
+}
 
+class FixedPointShiftTester(c: FixedPointShifter) extends DspTester(c) {
+  val increment: Double = 1.0 / (1 << c.binaryPoint)
+
+  def expectedValue(value: Double, left: Boolean, shift: Int): Double = {
+    val factor = 1 << c.binaryPoint
+    val x = value * factor
+    val y = x.toInt
+    val z = if(left) y << shift else y >> shift
+    val w = z.toDouble / factor
+    w
+  }
+
+  def truncate(value: Double): Double = {
+    val coeff = 1 << c.binaryPoint
+    val x = value * coeff
+    val y = x.toInt.toDouble
+    val z = y / coeff
+    z
+  }
   poke(c.io.dynamicShiftValue, 0)
 
-  for(value <- -2.0 to 3.0 by increment) {
-    println(s"Testing value $value")
+  private val (minSIntValue, maxSIntValue) = firrtl_interpreter.extremaOfSIntOfWidth(c.width)
 
+  private val minValue = minSIntValue.toDouble * increment
+  private val maxValue = maxSIntValue.toDouble * increment
+
+  for(value <- minValue to maxValue by increment) {
     poke(c.io.inValue, value)
-    expect(c.io.shiftLeftResult, value * shiftCoefficient,
-      s"shift left of $value should be ${value * shiftCoefficient}")
-    expect(c.io.shiftRightResult, value / shiftCoefficient,
-      s"shift right of $value should be ${value / shiftCoefficient}")
+    expect(c.io.shiftLeftResult, expectedValue(value, left = true, c.fixedShiftSize),
+      s"shift left ${c.fixedShiftSize} of $value should be ${expectedValue(value, left = true, c.fixedShiftSize)}")
+    expect(c.io.shiftRightResult, expectedValue(value, left = false, c.fixedShiftSize),
+      s"shift right ${c.fixedShiftSize} of $value should be ${expectedValue(value, left = false, c.fixedShiftSize)}")
 
     step(1)
+
+    for(dynamicShiftValue <- 0 until c.width) {
+      poke(c.io.dynamicShiftValue, dynamicShiftValue)
+      step(1)
+      expect(c.io.dynamicShiftLeftResult, expectedValue(value, left = true, dynamicShiftValue),
+        s"dynamic shift left $dynamicShiftValue of $value should " +
+          "be ${expectedValue(value, left = true, dynamicShiftValue)}")
+      expect(c.io.dynamicShiftRightResult, expectedValue(value, left = false, dynamicShiftValue),
+        s"dynamic shift right $dynamicShiftValue of $value should" +
+          s"be ${expectedValue(value, left = false, dynamicShiftValue)}")
+    }
   }
 }
 
@@ -94,7 +123,7 @@ class FixedPointSpec extends FreeSpec with Matchers {
 
     "The shift family" - {
       for (binaryPoint <- 0 to 16 by 2) {
-        s"should work with binary point $binaryPoint" in {
+        s"should work with binary point $binaryPoint, for positives even when binaryPoint > width" in {
           dsptools.Driver.execute(
             () => new FixedPointShifter(8, binaryPoint = binaryPoint, fixedShiftSize = 2),
             Array("-tdb", "2")
@@ -105,6 +134,4 @@ class FixedPointSpec extends FreeSpec with Matchers {
       }
     }
   }
-
-
 }
