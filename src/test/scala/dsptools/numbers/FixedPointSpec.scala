@@ -111,25 +111,33 @@ class FixedPointShiftTester(c: FixedPointShifter) extends DspTester(c) {
 
 class FixedPointSpec extends FreeSpec with Matchers {
   "FixedPoint numbers should work properly for the following mathematical type functions" - {
-    "The ring family" - {
-      for (binaryPoint <- 0 to 4) {
-        s"should work, with binaryPoint $binaryPoint" in {
-          dsptools.Driver.execute(() => new FixedRing1(16, binaryPoint = binaryPoint)) { c =>
-            new FixedRing1Tester(c)
-          } should be(true)
+    for (backendName <- Seq("firrtl", "verilator")) {
+      s"The ring family run with the $backendName simulator" - {
+        for (binaryPoint <- 0 to 4) {
+          s"should work, with binaryPoint $binaryPoint" in {
+            dsptools.Driver.execute(
+              () => new FixedRing1(16, binaryPoint = binaryPoint),
+              Array("--backend-name", backendName)
+            ) { c =>
+              new FixedRing1Tester(c)
+            } should be(true)
+          }
         }
       }
-    }
 
-    "The shift family" - {
-      for (binaryPoint <- 0 to 16 by 2) {
-        s"should work with binary point $binaryPoint, for positives even when binaryPoint > width" in {
-          dsptools.Driver.execute(
-            () => new FixedPointShifter(8, binaryPoint = binaryPoint, fixedShiftSize = 2),
-            Array("-tdb", "2")
-          ) { c =>
-            new FixedPointShiftTester(c)
-          } should be(true)
+      s"The shift family when run with the $backendName simulator" - {
+        for {
+          binaryPoint <- 0 to 16 by 2
+          fixedShiftSize <- 0 to 7
+        } {
+          s"should work with binary point $binaryPoint, with shift $fixedShiftSize " in {
+            dsptools.Driver.execute(
+              () => new FixedPointShifter(8, binaryPoint = binaryPoint, fixedShiftSize = fixedShiftSize),
+              Array("--backend-name", backendName)
+            ) { c =>
+              new FixedPointShiftTester(c)
+            } should be(true)
+          }
         }
       }
     }
