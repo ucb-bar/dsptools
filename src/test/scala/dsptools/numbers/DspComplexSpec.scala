@@ -18,29 +18,29 @@ class DspComplexExamples extends Module {
 
   io.outJ := DspComplex.j[SInt]
   io.inByJ := io.in * DspComplex.j[SInt]
-  io.inByJShortcut := DspComplex.multiplyByJ(io.in)
+  io.inByJShortcut := io.in.mulj()
 }
 
 class DspComplexExamplesTester extends BasicTester {
   val dut = Module(new DspComplexExamples)
 
   dut.io.in.real      := 7.S
-  dut.io.in.imaginary := (-4).S
+  dut.io.in.imag := (-4).S
 
   printf(s"inByJ.real: %d\n", dut.io.inByJ.real)
-  printf(s"inByJ.imaginary: %d\n", dut.io.inByJ.imaginary)
+  printf(s"inByJ.imag: %d\n", dut.io.inByJ.imag)
 
   printf(s"inByJShortcut.real: %d\n", dut.io.inByJShortcut.real)
-  printf(s"inByJShortcut.imaginary: %d\n", dut.io.inByJShortcut.imaginary)
+  printf(s"inByJShortcut.imag: %d\n", dut.io.inByJShortcut.imag)
 
   assert(dut.io.outJ.real === 0.S)
-  assert(dut.io.outJ.imaginary === 1.S)
+  assert(dut.io.outJ.imag === 1.S)
 
   assert(dut.io.inByJ.real === 4.S)
-  assert(dut.io.inByJ.imaginary === 7.S)
+  assert(dut.io.inByJ.imag === 7.S)
 
   assert(dut.io.inByJShortcut.real === 4.S)
-  assert(dut.io.inByJShortcut.imaginary === 7.S)
+  assert(dut.io.inByJShortcut.imag === 7.S)
 
   stop()
 }
@@ -56,7 +56,7 @@ class SIntTester extends BasicTester {
   val y = DspComplex.wire((-4).S, (-1).S)
 
   assert ( y.real === (-4).S)
-  assert (y.imaginary === (-1).S)
+  assert (y.imag === (-1).S)
 
   stop()
 }

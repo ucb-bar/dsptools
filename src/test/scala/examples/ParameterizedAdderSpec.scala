@@ -31,13 +31,13 @@ class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends D
     i <- -2.0 to 1.0 by 0.25
     j <- -2.0 to 4.0 by 0.5
   } {
-    dspPoke(c.io.a1, i)
-    dspPoke(c.io.a2, j)
+    poke(c.io.a1, i)
+    poke(c.io.a2, j)
     step(1)
 
-    val result = dspPeekDouble(c.io.c)
+    val result = peek(c.io.c)
 
-    dspExpect(c.io.c, i + j, s"parameterize adder tester $i + $j => $result should have been ${i + j}")
+    expect(c.io.c, i + j, s"parameterize adder tester $i + $j => $result should have been ${i + j}")
   }
 }
 
@@ -56,7 +56,7 @@ class ParameterizedAdderSpec extends FlatSpec with Matchers {
   behavior of "parameterized adder circuit on fixed point"
 
   it should "allow registers to be declared that infer widths" in {
-    def getFixed: FixedPoint = FixedPoint(width = 32, binaryPoint = 16)
+    def getFixed: FixedPoint = FixedPoint(32.W, 16.BP)
 
     dsptools.Driver.execute(() => new ParameterizedAdder(getFixed _)) { c =>
       new ParameterizedAdderTester(c)
