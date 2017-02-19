@@ -95,9 +95,9 @@ abstract class DspBlock()(implicit val p: Parameters) extends LazyModule with Ha
     scrbuilder.addStatus(name)
   }
 
-  def addrMapEntry = AddrMapEntry(name, MemSize(BigInt(1 << 8), MemAttr(AddrMapProt.RW)))
+  def addrMapEntry = AddrMapEntry(id, MemSize(BigInt(1 << 8), MemAttr(AddrMapProt.RW)))
 
-  println(s"Base address for $name is $baseAddr")
+  println(s"Base address for $id is $baseAddr")
 }
 
 abstract class DspBlockModule(val outer: DspBlock, b: => Option[Bundle with DspBlockIO] = None)

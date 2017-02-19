@@ -302,14 +302,14 @@ class DspChainModule(
       )})
 
   require(blocks.length > 0)
-  val addr = 0
+  var addr = 0
   val lazy_mods = blocks.map(b => {
     val modParams = overrideParams.alterPartial({
       case BaseAddr(_id) if _id == b._2 => addr
       case DspBlockId => b._2
     })
     val mod = LazyModule(b._1(modParams))
-    // addr += mod.size
+    addr += mod.size
     mod
   })
   val modules = lazy_mods.map(mod => Module(mod.module))
@@ -328,19 +328,19 @@ class DspChainModule(
     mod_ios(i + 1).in <> mod_ios(i).out
   }
 
-  val oldSamConfig: SAMConfig = p(SAMKey)
+  val oldSamConfig: SAMConfig = p(DefaultSAMKey)
 
   val lazySams = modules.map(mod => {
     val samWidth = mod.io.out.bits.getWidth
-    val samName = overrideParams(DspBlockId) + ":" + mod.id + ":sam"
+    val samName = mod.id + ":sam"
     val samParams = overrideParams.alterPartial({
-      case SAMKey(_id) if _id == samName => oldSamConfig.copy(baseAddr = addr)
+      case SAMKey(_id) if _id == samName => oldSamConfig.copy()
       case DspBlockId => samName
       case DspBlockKey(_id) if _id == samName => DspBlockParameters(samWidth, samWidth)
       case BaseAddr(_id) if _id == samName => addr
     })
     val lazySam = LazyModule( new LazySAM()(samParams) )
-    // addr += lazySam.size
+    addr += lazySam.size
     lazySam
   })
   val sams = lazySams.map(ls => {

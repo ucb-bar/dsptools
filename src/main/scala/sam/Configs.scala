@@ -38,7 +38,7 @@ object SAMConfigBuilder {
     ConfigBuilder.genParams(id, 1, () => UInt(wordSize.W)) ++
     new Config(
       (pname, site, here) => pname match {
-        case SAMKey => samConfig
+        case SAMKey(_id) if _id == id => samConfig
         case IPXACTParameters(_id) if _id == id => {
           val parameterMap = Map[String, String]()
       
@@ -56,10 +56,11 @@ object SAMConfigBuilder {
 }
 
 case class SAMKey(id: String) extends Field[SAMConfig]
+case object DefaultSAMKey extends Field[SAMConfig]
 
 // subpackets = basically how many cycles it takes for sync to repeat
 // bufferDepth = how many packets to store
-case class SAMConfig(subpackets: Int, bufferDepth: Int, baseAddr: Int) {
+case class SAMConfig(subpackets: Int, bufferDepth: Int) {
   // sanity checks
   val memDepth = subpackets*bufferDepth
   val memAddrBits = log2Up(memDepth)
