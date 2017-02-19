@@ -199,6 +199,19 @@ trait IPXactGeneratorApp extends GeneratorApp {
     ports
   }
 
+  def makeSAMPorts(bits_in: Int): ModelType.Ports = {
+    val config = new NastiConfig()(params)
+    val streamInPorts = makeAXI4StreamPorts(s"io_in", false, bits_in)
+    val ctrlAXIPorts = makeAXI4Ports(s"io_axi", false, config)
+    val dataAXIPorts = makeAXI4Ports(s"io_axi_out", false, config)
+    val globalPorts = Seq(
+      makePort("clock", false, 1),
+      makePort("reset", false, 1))
+    val ports = new ModelType.Ports
+    ports.getPort().addAll(toCollection(globalPorts ++ streamInPorts ++ ctrlAXIPorts ++ dataAXIPorts))
+    ports
+  }
+
   def makeAXI4StreamInputInterface: BusInterfaceType = {
     val busType = new LibraryRefType
     busType.setVendor("amba.com")
@@ -251,7 +264,7 @@ trait IPXactGeneratorApp extends GeneratorApp {
     busif
   }
 
-  def makeAXI4SlaveInterface(mmref: String): BusInterfaceType = {
+  def makeAXI4SlaveInterface(mmref: String, port: String): BusInterfaceType = {
     val busType = new LibraryRefType
     busType.setVendor("amba.com")
     busType.setLibrary("AMBA4")
@@ -270,7 +283,7 @@ trait IPXactGeneratorApp extends GeneratorApp {
     val slave = new BusInterfaceType.Slave
     slave.setMemoryMapRef(mmRefType)
 
-    val portMaps = makeAXI4PortMaps(s"io_axi")
+    val portMaps = makeAXI4PortMaps(port)
 
     val busif = new BusInterfaceType
     busif.setName(s"axi4_slave")
@@ -388,12 +401,16 @@ trait IPXactGeneratorApp extends GeneratorApp {
     val memMapName = "mm"
 
     val busInterfaces = new BusInterfaces
-    busInterfaces.getBusInterface().addAll(toCollection(Seq(makeAXI4StreamInputInterface, makeAXI4StreamOutputInterface, makeAXI4SlaveInterface(memMapName))))
+    busInterfaces.getBusInterface().addAll(toCollection(Seq(makeAXI4StreamInputInterface, makeAXI4StreamOutputInterface, makeAXI4SlaveInterface(memMapName, "io_axi"))))
 
     // TODO: grab base address 
     val memoryMaps = new MemoryMaps
-    //memoryMaps.getMemoryMap().add(makeMemoryMap(memMapName, params(BaseAddr(blockID))))
-    memoryMaps.getMemoryMap().add(makeMemoryMap(memMapName, BigInt(0)))
+    for (key <- DspChain.addrMapIds()) {
+      if (DspChain.addrMap(key).contains(blockID)) {
+        println("Adding memory map")
+        memoryMaps.getMemoryMap().add(makeMemoryMap(memMapName, BigInt(DspChain.addrMap(key).port(blockID))))
+      }
+    }
 
     val model = new ModelType
     val views = new ModelType.Views
@@ -418,7 +435,86 @@ trait IPXactGeneratorApp extends GeneratorApp {
     componentType.setMemoryMaps(memoryMaps)
     componentType.setModel(model)
     componentType.setFileSets(makeFileSets(factory))
-    //componentType.setParameters(makeParameters(blockID))
+    componentType.setParameters(makeParameters(blockID))
+
+    val component = factory.createComponent(componentType)
+
+    val of = new File(td, s"$blockID.xml")
+    of.getParentFile().mkdirs()
+    val fos = new FileOutputStream(of)
+    val context = JAXBContext.newInstance(classOf[ComponentInstance])
+    val marshaller = context.createMarshaller()
+    marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true)
+    marshaller.marshal(component, fos)
+    
+  }
+
+  def generateSAMIPXact(blockID: String) {
+
+    println(s"Generating IP-Xact for SAM with ID $blockID")
+    // first try GenKey
+    val genExternal = try {
+      Some(params(GenKey(blockID)))
+    } catch {
+      case e: ParameterUndefinedException => None
+    }
+    // then try DspBlockKey
+    val dspBlockExternal = try {
+      Some(params(DspBlockKey(blockID)))
+    } catch {
+      // case e: MatchError => None
+      case e: ParameterUndefinedException => None
+    }
+    val bits_in = (genExternal, dspBlockExternal) match {
+      case (Some(gen), _) => gen.lanesIn * gen.genIn[chisel3.Data].getWidth
+      case (None, Some(dsp)) => dsp.inputWidth
+      case (None, None) => throw new Exception("Didn't set parameters correctly for block-level IPXact generation")
+    }
+    val factory = new ObjectFactory
+    val ctrlMemMapName = "cmm"
+    val dataMemMapName = "dmm"
+
+    val busInterfaces = new BusInterfaces
+    busInterfaces.getBusInterface().addAll(toCollection(Seq(makeAXI4StreamInputInterface, makeAXI4SlaveInterface(ctrlMemMapName, "io_axi"), makeAXI4SlaveInterface(dataMemMapName, "io_axi_out"))))
+
+    // TODO: grab base address 
+    val memoryMaps = new MemoryMaps
+    for (key <- DspChain.addrMapIds()) {
+      if (DspChain.addrMap(key).contains(blockID)) {
+        if (key contains "ctrl") {
+          println("Adding control memory map")
+          memoryMaps.getMemoryMap().add(makeMemoryMap(ctrlMemMapName, BigInt(DspChain.addrMap(key).port(blockID))))
+        } else if (key contains "data") {
+          println("Adding data memory map")
+          memoryMaps.getMemoryMap().add(makeMemoryMap(dataMemMapName, BigInt(DspChain.addrMap(key).port(blockID))))
+        }
+      }
+    }
+
+    val model = new ModelType
+    val views = new ModelType.Views
+    var view = new ViewType
+    var envIds = view.getEnvIdentifier
+    view.setName("RTL")
+    envIds.add("::")
+    var verilogSource = new FileSetRef
+    verilogSource.setLocalName("hdlSource")
+    var fileSetRefs = view.getFileSetRef
+    fileSetRefs.add(verilogSource)
+    views.getView.add(view)
+    model.setViews(views)
+    model.setPorts(makeSAMPorts(bits_in))
+
+    val componentType = new ComponentType
+    componentType.setLibrary("craft")
+    componentType.setName(s"$blockID")
+    componentType.setVendor("edu.berkeley.cs")
+    componentType.setVersion("1.0")
+    componentType.setBusInterfaces(busInterfaces)
+    componentType.setMemoryMaps(memoryMaps)
+    componentType.setModel(model)
+    componentType.setFileSets(makeFileSets(factory))
+    componentType.setParameters(makeParameters(blockID))
 
     val component = factory.createComponent(componentType)
 
@@ -450,5 +546,6 @@ trait IPXactGeneratorApp extends GeneratorApp {
     }
 
     blockIDs.foreach(generateBlockIPXact(_))
+    blockIDs.foreach{x: String => generateSAMIPXact(x + ":sam")}
   }
 }
