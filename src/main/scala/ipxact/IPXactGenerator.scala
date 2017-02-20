@@ -22,6 +22,7 @@ trait IPXactGeneratorApp extends GeneratorApp {
     val factory = new ObjectFactory
 
     components.foreach{ componentType => {
+      componentType.setFileSets(IPXact.makeFileSets(s"${longName}.v"))
       val component = factory.createComponent(componentType)
       // create name based off component parameters
       val of = new File(td, 

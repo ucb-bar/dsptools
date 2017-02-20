@@ -409,9 +409,9 @@ trait HasIPXact {
     val fileSet = new FileSetType
     fileSet.setName("hdlSource")
 
-    files.foreach { fileName: String => {
+    files.foreach { fileString: String => {
       val fileName = new SpiritFile.Name
-      fileName.setValue(s"$fileName")
+      fileName.setValue(s"$fileString")
       val file = new SpiritFile
       file.getFileType.add(factory.createFileFileType("verilogSource"))
       file.setName(fileName)
@@ -450,7 +450,6 @@ trait HasIPXact {
     addressSpaces: AddressSpaces, 
     memoryMaps: MemoryMaps, 
     model: ModelType, 
-    files: FileSets, 
     parameters: SpiritParameters
   ): ComponentType = {
     val componentType = new ComponentType
@@ -462,7 +461,6 @@ trait HasIPXact {
     componentType.setAddressSpaces(addressSpaces)
     componentType.setMemoryMaps(memoryMaps)
     componentType.setModel(model)
-    componentType.setFileSets(files)
     componentType.setParameters(parameters)
     componentType
   }

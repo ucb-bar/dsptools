@@ -169,16 +169,13 @@ trait HasDspIPXact extends HasIPXact {
     val bits_in = gk.genIn.getWidth * gk.lanesIn
     val bits_out = gk.genOut.getWidth * gk.lanesOut
     val baseAddress = p(BaseAddr(p(DspBlockId)))
-    // TODO
-    val filename = p(DspBlockId)
     val registers = testchipip.SCRAddressMap.contents.head._2.map{ case (scrName, scrOffset) => scrName }.toArray
     val busInterfaces = makeDspBlockInterfaces(mmref) 
     val addressSpaces = makeDspBlockAddressSpaces
     val memoryMaps = makeDspBlockMemoryMaps(mmref, baseAddress, registers)
     val model = makeModel(makeDspBlockPorts(bits_in, bits_out))
-    val files  = makeFileSets(filename)
     val parameters = makeParameters(p(IPXactParameters(p(DspBlockId))))
-    makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, files, parameters)
+    makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, parameters)
   }
 
   def makeSAMComponent(implicit p: Parameters): ComponentType = {
@@ -190,16 +187,13 @@ trait HasDspIPXact extends HasIPXact {
     val ctrl_baseAddress = p(BaseAddr(p(DspBlockId)))
     // TODO
     val data_baseAddress = 0
-    // TODO
-    val filename = p(DspBlockId)
     val registers = testchipip.SCRAddressMap.contents.head._2.map{ case (scrName, scrOffset) => scrName }.toArray
     val busInterfaces = makeSAMInterfaces(ctrl_mmref, data_mmref) 
     val addressSpaces = makeSAMAddressSpaces
     val memoryMaps = makeSAMMemoryMaps(ctrl_mmref, data_mmref, ctrl_baseAddress, data_baseAddress, registers)
     val model = makeModel(makeSAMPorts(bits_in))
-    val files  = makeFileSets(filename)
     val parameters = makeParameters(p(IPXactParameters(p(DspBlockId))))
-    makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, files, parameters)
+    makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, parameters)
   }
 
   def makeXbarComponent(implicit p: Parameters): ComponentType = {
@@ -210,17 +204,14 @@ trait HasDspIPXact extends HasIPXact {
     val inputs = p(InPorts)
     val outputs = p(OutPorts)
     // TODO
-    val filename = p(DspBlockId)
-    // TODO
     val ctrl_baseAddress = 0
     val data_baseAddress = 0
     val busInterfaces = makeXbarInterfaces(inputs, outputs, mmref, asref) 
     val addressSpaces = makeXbarAddressSpaces(asref, addrMap)
     val memoryMaps = makeXbarMemoryMaps(mmref, inputs, addrMap)
     val model = makeModel(makeXbarPorts(inputs, outputs))
-    val files  = makeFileSets(filename)
     val parameters = makeParameters(scala.collection.mutable.HashMap[String, String]())
-    makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, files, parameters)
+    makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, parameters)
   }
 }
 
