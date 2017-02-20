@@ -14,8 +14,6 @@ import dspjunctions._
 import dsptools.numbers.{Field =>_, _}
 import dsptools.numbers.implicits._
 
-case class IPXACTParameters(id: String) extends Field[Map[String, String]]
-
 object ConfigBuilder {
   def genParams[T <: Data](
     id: String,
@@ -44,7 +42,7 @@ object ConfigBuilder {
           )
       })
   def fixedPointBlockParams(id: String, lanesIn: Int, lanesOut: Int, totalWidth: Int, fractionalBits: Int): Config = {
-    def getFixedPoint(): FixedPoint = FixedPoint(width=totalWidth, binaryPoint=fractionalBits)
+    def getFixedPoint(): FixedPoint = FixedPoint(totalWidth.W, fractionalBits.BP)
     genParams(id, lanesIn, getFixedPoint _, Some(lanesOut), Some(getFixedPoint _))
   }
   def floatingPointBlockParams(id: String, lanesIn: Int, lanesOut: Int, totalWidth: Int, fractionalBits: Int): Config = {
@@ -52,7 +50,7 @@ object ConfigBuilder {
     genParams(id, lanesIn, getReal _, Some(lanesOut), Some(getReal _))
   }
   def fixedPointComplexBlockParams(id: String, lanesIn: Int, lanesOut: Int, totalWidth: Int, fractionalBits: Int): Config = {
-    def getFixedPoint(): FixedPoint = FixedPoint(width=totalWidth, binaryPoint=fractionalBits)
+    def getFixedPoint(): FixedPoint = FixedPoint(totalWidth.W, fractionalBits.BP)
     def getComplex(): DspComplex[FixedPoint] = DspComplex(getFixedPoint(), getFixedPoint())
     genParams(id, lanesIn, getComplex _, Some(lanesOut), Some(getComplex _))
   }

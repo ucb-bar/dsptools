@@ -28,10 +28,6 @@ import dsptools._
 import dspjunctions._
 import scala.collection.mutable.Map
 
-trait HasIPXACTParameters {
-  def getIPXACTParameters: Map[String, String]
-}
-
 // create a new DSP Configuration
 object SAMConfigBuilder {
   def apply(id: String, wordSize: Int, samConfig: SAMConfig): Config =
@@ -39,7 +35,7 @@ object SAMConfigBuilder {
     new Config(
       (pname, site, here) => pname match {
         case SAMKey(_id) if _id == id => samConfig
-        case IPXACTParameters(_id) if _id == id => {
+        case IPXactParameters(_id) if _id == id => {
           val parameterMap = Map[String, String]()
       
           // Conjure up some IPXACT synthsized parameters.

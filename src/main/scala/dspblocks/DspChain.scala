@@ -309,6 +309,7 @@ class DspChainModule(
       case DspBlockId => b._2
     })
     val mod = LazyModule(b._1(modParams))
+    IPXactComponents._ipxactComponents += DspIPXact.makeDspBlockComponent(modParams)
     addr += mod.size
     mod
   })
@@ -338,8 +339,17 @@ class DspChainModule(
       case DspBlockId => samName
       case DspBlockKey(_id) if _id == samName => DspBlockParameters(samWidth, samWidth)
       case BaseAddr(_id) if _id == samName => addr
+      case IPXactParameters(_id) if _id == samName => {
+        val parameterMap = scala.collection.mutable.HashMap[String, String]()
+    
+        // Conjure up some IPXACT synthsized parameters.
+        parameterMap ++= List(("InputTotalBits", samWidth.toString))
+    
+        parameterMap
+      }
     })
     val lazySam = LazyModule( new LazySAM()(samParams) )
+    IPXactComponents._ipxactComponents += DspIPXact.makeSAMComponent(samParams)
     addr += lazySam.size
     lazySam
   })
@@ -419,6 +429,7 @@ class DspChainModule(
     case ExtMemSize => 0x1000L
     case InPorts => inPorts
     case OutPorts => ctrlOutPorts
+    case DspBlockId => s"$id:ctrl"
   })
   val dataXbarParams = p.alterPartial({
     case TLKey("XBar") => p(TLKey("MCtoEdge")).copy(
@@ -436,6 +447,7 @@ class DspChainModule(
     case ExtMemSize => 0x1000L
     case InPorts => inPorts
     case OutPorts => dataOutPorts
+    case DspBlockId => s"$id:data"
   })
 
   DspChain._addrMaps += (s"$id:data" -> new AddrMap(dataAddrs))
@@ -451,7 +463,9 @@ class DspChainModule(
 
 
   val ctrlXbar = Module(new NastiXBar(ctrlXbarParams))
+  IPXactComponents._ipxactComponents += DspIPXact.makeXbarComponent(ctrlXbarParams)
   val dataXbar = Module(new NastiXBar(dataXbarParams))
+  IPXactComponents._ipxactComponents += DspIPXact.makeXbarComponent(dataXbarParams)
 
   ctrlXbar.io.in(0) <> io.control_axi
   ctrlXbar.io.out.zip(control_axis).foreach{ case (xbar_axi, control_axi) => xbar_axi <> control_axi }

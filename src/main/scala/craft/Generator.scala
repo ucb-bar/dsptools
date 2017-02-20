@@ -13,13 +13,14 @@ import cde._
 import dspjunctions._
 import dspblocks._
 import dsptools._
+import ipxact._
 
-trait DspGeneratorApp extends GeneratorApp with IPXactGeneratorApp
+trait DspGeneratorApp extends GeneratorApp
 
-object DspGenerator extends DspGeneratorApp {
+object DspGenerator extends DspGeneratorApp with IPXactGeneratorApp {
   val longName = names.fullTopModuleClass + "." + names.configs
   generateFirrtl
   //generateTestSuiteMakefrags // TODO: Needed only for legacy make targets
   //generateParameterDump      // TODO: Needed only for legacy make targets
-  generateIPXact
+  generateIPXact(IPXactComponents.ipxactComponents())
 }
