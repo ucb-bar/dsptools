@@ -135,8 +135,6 @@ abstract class DspBlockModule(val outer: DspBlock, b: => Option[Bundle with DspB
   def status(name : String) = scr.status(name)
 
   status("uuid") := this.hashCode.U
-
-  IPXactComponents._ipxactComponents += DspIPXact.makeDspBlockComponent
 }
 
 class GenDspBlockIO[T <: Data, V <: Data]()(implicit val p: Parameters)
