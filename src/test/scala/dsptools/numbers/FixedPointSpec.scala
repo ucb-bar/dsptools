@@ -39,20 +39,34 @@ class FixedRing1Tester(c: FixedRing1) extends DspTester(c) {
   }
 }
 
+/**
+  * Shift the inValue right and left, statically and dynamically.
+  * @note shiftRight has a constraint that shift amount must be less than width of inValue
+  * @param width width of shift target
+  * @param binaryPoint the binary point of the shift target
+  * @param fixedShiftSize how much to shift the target
+  */
 class FixedPointShifter(val width: Int, val binaryPoint: Int, val fixedShiftSize: Int) extends Module {
   val dynamicShifterWidth = 3
 
   val io = IO(new Bundle {
     val inValue = Input(FixedPoint(width.W, binaryPoint.BP))
     val dynamicShiftValue = Input(UInt(dynamicShifterWidth.W))
-    val shiftRightResult = Output(FixedPoint((width - fixedShiftSize).W, binaryPoint.BP))
+    val shiftRightResult: Option[FixedPoint] = if(fixedShiftSize < width) {
+      Some(Output(FixedPoint((width - fixedShiftSize).W, binaryPoint.BP)))
+    }
+    else {
+      None
+    }
     val shiftLeftResult = Output(FixedPoint((width + fixedShiftSize).W, binaryPoint.BP))
     val dynamicShiftRightResult = Output(FixedPoint(width.W, binaryPoint.BP))
     val dynamicShiftLeftResult = Output(FixedPoint((width + (1 << dynamicShifterWidth) - 1).W, binaryPoint.BP))
   })
 
   io.shiftLeftResult := io.inValue << fixedShiftSize
-  io.shiftRightResult := io.inValue >> fixedShiftSize
+  io.shiftRightResult.foreach { out =>
+    out := io.inValue >> fixedShiftSize
+  }
   io.dynamicShiftLeftResult := io.inValue << io.dynamicShiftValue
   io.dynamicShiftRightResult := io.inValue >> io.dynamicShiftValue
 }
@@ -74,10 +88,10 @@ class FixedPointShiftTester(c: FixedPointShifter) extends DspTester(c) {
   }
 
   def truncate(value: Double): Double = {
-    val coeff = 1 << c.binaryPoint
-    val x = value * coeff
+    val factor = 1 << c.binaryPoint
+    val x = value * factor
     val y = x.toInt.toDouble
-    val z = y / coeff
+    val z = y / factor
     z
   }
   poke(c.io.dynamicShiftValue, 0)
@@ -91,8 +105,10 @@ class FixedPointShiftTester(c: FixedPointShifter) extends DspTester(c) {
     poke(c.io.inValue, value)
     expect(c.io.shiftLeftResult, expectedValue(value, left = true, c.fixedShiftSize),
       s"shift left ${c.fixedShiftSize} of $value should be ${expectedValue(value, left = true, c.fixedShiftSize)}")
-    expect(c.io.shiftRightResult, expectedValue(value, left = false, c.fixedShiftSize),
-      s"shift right ${c.fixedShiftSize} of $value should be ${expectedValue(value, left = false, c.fixedShiftSize)}")
+    c.io.shiftRightResult.foreach { sro =>
+      expect(sro, expectedValue(value, left = false, c.fixedShiftSize),
+        s"shift right ${c.fixedShiftSize} of $value should be ${expectedValue(value, left = false, c.fixedShiftSize)}")
+    }
 
     step(1)
 
@@ -109,15 +125,37 @@ class FixedPointShiftTester(c: FixedPointShifter) extends DspTester(c) {
   }
 }
 
+class BrokenShifter(n: Int) extends Module {
+  val io = IO(new Bundle {
+    val i = Input(FixedPoint(8.W, 4.BP))
+    val o = Output(FixedPoint(8.W, 4.BP))
+    val si = Input(SInt(8.W))
+    val so = Output(SInt(8.W))
+  })
+  io.o := io.i >> n
+  io.so := io.si >> n
+}
+
+class BrokenShifterTester(c: BrokenShifter) extends DspTester(c) {
+  poke(c.io.i, 1.5)
+  peek(c.io.o)
+  poke(c.io.si, 6)
+  peek(c.io.so)
+}
+
 class FixedPointSpec extends FreeSpec with Matchers {
   "FixedPoint numbers should work properly for the following mathematical type functions" - {
+//    for (backendName <- Seq("verilator")) {
     for (backendName <- Seq("firrtl", "verilator")) {
       s"The ring family run with the $backendName simulator" - {
-        for (binaryPoint <- 0 to 4) {
+        for (binaryPoint <- 0 to 4 by 2) {
           s"should work, with binaryPoint $binaryPoint" in {
             dsptools.Driver.execute(
               () => new FixedRing1(16, binaryPoint = binaryPoint),
-              Array("--backend-name", backendName)
+              Array(
+                "--backend-name", backendName,
+                "--target-dir", s"test_run_dir/fixed-point-ring-tests-$binaryPoint.BP"
+              )
             ) { c =>
               new FixedRing1Tester(c)
             } should be(true)
@@ -126,18 +164,39 @@ class FixedPointSpec extends FreeSpec with Matchers {
       }
 
       s"The shift family when run with the $backendName simulator" - {
+        val defaultWidth = 8
         for {
-          binaryPoint <- 0 to 16 by 2
-          fixedShiftSize <- 0 to 7
+          binaryPoint <- Set(0, 1, 1) ++
+            (defaultWidth - 1 to defaultWidth + 1) ++
+            (defaultWidth * 2 - 1 to defaultWidth * 2 + 1)
+          fixedShiftSize <- Set(0, 1, 2) ++ (defaultWidth - 1 to defaultWidth + 1)
         } {
           s"should work with binary point $binaryPoint, with shift $fixedShiftSize " in {
             dsptools.Driver.execute(
-              () => new FixedPointShifter(8, binaryPoint = binaryPoint, fixedShiftSize = fixedShiftSize),
-              Array("--backend-name", backendName)
+              () => new FixedPointShifter(width = 8, binaryPoint = binaryPoint, fixedShiftSize = fixedShiftSize),
+              Array(
+                "--backend-name", backendName,
+                "--target-dir", s"test_run_dir/shift-test-$fixedShiftSize-$binaryPoint.BP"
+              )
             ) { c =>
               new FixedPointShiftTester(c)
             } should be(true)
           }
+        }
+      }
+
+      //TODO: This error does not seem to be caught at this time.  Firrtl issue #450
+      s"shifting by too big a number causes error with $backendName" ignore {
+        for(shiftSize <- 8 to 10) {
+          dsptools.Driver.execute(
+            () => new BrokenShifter(n = shiftSize),
+            Array(
+              "--backend-name", backendName,
+              "--target-dir", s"test_run_dir/broken-shifter-$shiftSize"
+            )
+          ) { c =>
+            new BrokenShifterTester(c)
+          } should be(true)
         }
       }
     }
