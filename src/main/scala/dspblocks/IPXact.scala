@@ -19,7 +19,8 @@ class NastiConfig(implicit val p: Parameters) extends HasNastiParameters {}
 case class IPXactParameters(id: String) extends Field[Map[String, String]]
 
 object IPXactComponents {
-  private[dspblocks] val _ipxactComponents: scala.collection.mutable.ArrayBuffer[ComponentType] = 
+  //private[dspblocks] val _ipxactComponents: scala.collection.mutable.ArrayBuffer[ComponentType] = 
+  val _ipxactComponents: scala.collection.mutable.ArrayBuffer[ComponentType] = 
     scala.collection.mutable.ArrayBuffer.empty[ComponentType]
   def ipxactComponents(): Seq[ComponentType] = _ipxactComponents
 }
