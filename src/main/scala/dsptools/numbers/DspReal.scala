@@ -27,40 +27,238 @@ class BlackboxTwoOperandBool extends BlackBox {
   })
 }
 
-class BBFAdd extends BlackboxTwoOperand
+class BBFAdd extends BlackboxTwoOperand {
+  setInline("BlackBoxAdd.v", """
+module BBFAdd(
+    input  [63:0] in1,
+    input  [63:0] in2,
+    output reg [63:0] out
+);
+  always @* begin
+  out <= $realtobits($bitstoreal(in1) + $bitstoreal(in2));
+  end
+endmodule
+  """)
+}
 
-class BBFSubtract extends BlackboxTwoOperand
+class BBFSubtract extends BlackboxTwoOperand {
+  setInline("BlackBoxSubtract.v", """
+module BBFSubtract(
+    input  [63:0] in1,
+    input  [63:0] in2,
+    output [63:0] out
+);
+  always @* begin
+  out <= $realtobits($bitstoreal(in1) - $bitstoreal(in2));
+  end
+endmodule
+  """)
+}
 
-class BBFMultiply extends BlackboxTwoOperand
+class BBFMultiply extends BlackboxTwoOperand {
+  setInline("BlackBoxMultiply.v", """
+module BBFMultiply(
+    input  [63:0] in1,
+    input  [63:0] in2,
+    output [63:0] out
+);
+  always @* begin
+  out <= $realtobits($bitstoreal(in1) * $bitstoreal(in2));
+  end
+endmodule
+  """)
+}
 
-class BBFDivide extends BlackboxTwoOperand
+class BBFDivide extends BlackboxTwoOperand {
+  setInline("BlackBoxDivide.v", """
+module BBFDivide(
+    input  [63:0] in1,
+    input  [63:0] in2,
+    output [63:0] out
+);
+  always @* begin
+  out <= $realtobits($bitstoreal(in1) / $bitstoreal(in2));
+  end
+endmodule
+  """)
+}
 
-class BBFGreaterThan extends BlackboxTwoOperandBool
+class BBFGreaterThan extends BlackboxTwoOperandBool {
+  setInline("BBFGreaterThan.v", """
+module BBFGreaterThan(
+    input  [63:0] in1,
+    input  [63:0] in2,
+    output out
+);
+  always @* begin
+  out <= $bitstoreal(in1) > $bitstoreal(in2);
+  end
+endmodule
+  """)
+}
 
-class BBFGreaterThanEquals extends BlackboxTwoOperandBool
+class BBFGreaterThanEquals extends BlackboxTwoOperandBool {
+  setInline("BBFGreaterThanEquals.v", """
+module BBFGreaterThanEquals(
+    input  [63:0] in1,
+    input  [63:0] in2,
+    output out
+);
+  always @* begin
+  out <= $bitstoreal(in1) >= $bitstoreal(in2);
+  end
+endmodule
+  """)
+}
 
-class BBFLessThan extends BlackboxTwoOperandBool
+class BBFLessThan extends BlackboxTwoOperandBool {
+  setInline("BBFLessThan.v", """
+module BBFLessThan(
+    input  [63:0] in1,
+    input  [63:0] in2,
+    output out
+);
+  always @* begin
+  out <= $bitstoreal(in1) < $bitstoreal(in2);
+  end
+endmodule
+  """)
+}
 
-class BBFLessThanEquals extends BlackboxTwoOperandBool
+class BBFLessThanEquals extends BlackboxTwoOperandBool {
+  setInline("BBFLessThanEquals.v", """
+module BBFLessThanEquals(
+    input  [63:0] in1,
+    input  [63:0] in2,
+    output out
+);
+  always @* begin
+  out <= $bitstoreal(in1) <= $bitstoreal(in2);
+  end
+endmodule
+  """)
+}
 
-class BBFEquals extends BlackboxTwoOperandBool
+class BBFEquals extends BlackboxTwoOperandBool {
+  setInline("BBFEquals.v", """
+module BBFEquals(
+    input  [63:0] in1,
+    input  [63:0] in2,
+    output out
+);
+  always @* begin
+  out <= $bitstoreal(in1) == $bitstoreal(in2);
+  end
+endmodule
+  """)
+}
 
-class BBFNotEquals extends BlackboxTwoOperandBool
+class BBFNotEquals extends BlackboxTwoOperandBool {
+  setInline("BBFNotEquals.v", """
+module BBFNotEquals(
+    input  [63:0] in1,
+    input  [63:0] in2,
+    output out
+);
+  always @* begin
+  out <= $bitstoreal(in1) != $bitstoreal(in2);
+  end
+endmodule
+  """)
+}
 
 /** Math operations from IEEE.1364-2005 **/
-class BBFLn extends BlackboxOneOperand
+class BBFLn extends BlackboxOneOperand {
+  setInline("BBFLn.v", """
+module BBFLn(
+    input  [63:0] in,
+    output reg [63:0] out
+);
+  always @* begin
+  out <= $realtobits($ln($bitstoreal(in)));
+  end
+endmodule
+  """)
+}
 
-class BBFLog10 extends BlackboxOneOperand
+class BBFLog10 extends BlackboxOneOperand {
+  setInline("BBFLog10.v", """
+module BBFLog10(
+    input  [63:0] in,
+    output reg [63:0] out
+);
+  always @* begin
+  out <= $realtobits($log10($bitstoreal(in)));
+  end
+endmodule
+  """)
+}
 
-class BBFExp extends BlackboxOneOperand
+class BBFExp extends BlackboxOneOperand {
+  setInline("BBFExp.v", """
+module BBFExp(
+    input  [63:0] in,
+    output reg [63:0] out
+);
+  always @* begin
+  out <= $realtobits($exp($bitstoreal(in)));
+  end
+endmodule
+  """)
+}
 
-class BBFSqrt extends BlackboxOneOperand
+class BBFSqrt extends BlackboxOneOperand {
+  setInline("BBFSqrt.v", """
+module BBFSqrt(
+    input  [63:0] in,
+    output reg [63:0] out
+);
+  always @* begin
+  out <= $realtobits($sqrt($bitstoreal(in)));
+  end
+endmodule
+  """)
+}
 
-class BBFPow extends BlackboxTwoOperand
+class BBFPow extends BlackboxTwoOperand {
+  setInline("BBFPow.v", """
+module BBFPow(
+    input  [63:0] in1,
+    input  [63:0] in2,
+    output reg [63:0] out
+);
+  always @* begin
+  out <= $realtobits($pow($bitstoreal(in1), $bitstoreal(in2)));
+  end
+endmodule
+  """)
+}
 
-class BBFFloor extends BlackboxOneOperand
+class BBFFloor extends BlackboxOneOperand {
+  setInline("BBFFloor.v", """
+module BBFFloor(
+    input  [63:0] in,
+    output reg [63:0] out
+);
+  always @* begin
+  out <= $realtobits($floor($bitstoreal(in)));
+  end
+endmodule
+  """)
+}
 
-class BBFCeil extends BlackboxOneOperand
+class BBFCeil extends BlackboxOneOperand {
+  setInline("BBFCeil.v", """
+module BBFCeil(
+    input  [63:0] in,
+    output reg [63:0] out
+);
+  always @* begin
+  out <= $realtobits($ceil($bitstoreal(in)));
+  end
+endmodule
+  """)
+}
 
 class BBFSin extends BlackboxOneOperand
 
