@@ -10,8 +10,8 @@ object CounterWithReset {
     val out = Wire(UInt())
     out := c._1
     if (n > 1) { 
-      when (comb_reset) { c._1 := 1.U; out := 0.U }
       when (sync_reset) { c._1 := 0.U } 
+      when (comb_reset) { c._1 := 1.U; out := 0.U }
     }
     (out, c._2)
   }
