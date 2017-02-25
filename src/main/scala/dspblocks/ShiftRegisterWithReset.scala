@@ -1,6 +1,6 @@
 // See LICENSE for license details.
 
-package dsptools.counters
+package dspblocks
 
 import chisel3._
 import chisel3.util.RegEnable
