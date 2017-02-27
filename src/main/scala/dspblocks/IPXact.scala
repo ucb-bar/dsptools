@@ -43,7 +43,7 @@ trait HasDspIPXact extends HasIPXact {
 
   def makeSAMInterfaces(ctrl_mmref: String, data_mmref: String): BusInterfaces = {
     val streamInInterface = makeAXI4StreamInterface("io_in", "data_in", false)
-    val ctrlAXIInterface = makeAXI4Interface(ctrl_mmref, "io_axi", "axi4_slave", true)
+    val ctrlAXIInterface = makeAXI4Interface(ctrl_mmref, "io_axi", "axi4_slave", false)
     val dataAXIInterface = makeAXI4Interface(data_mmref, "io_axi_out", "axi4_data_slave", false)
 
     val busInterfaces = new BusInterfaces
@@ -88,7 +88,7 @@ trait HasDspIPXact extends HasIPXact {
     }
     val memoryMaps = new MemoryMaps
     memoryMaps.getMemoryMap().addAll(toCollection(
-      (0 until inputs).map(i => makeMemoryMap(ref, subspaceRefs=signalMaps.map{ case(name, baseAddr) => makeSubspaceRef(s"subspacemap_${ref}_${name}_${i}", baseAddr, name)}))
+      (0 until inputs).map(i => makeMemoryMap(s"${ref}_${i}", subspaceRefs=signalMaps.map{ case(name, baseAddr) => makeSubspaceRef(s"subspacemap_${ref}_${name}_${i}", baseAddr, name)}))
     ))
     memoryMaps
   }
@@ -204,9 +204,6 @@ trait HasDspIPXact extends HasIPXact {
     val addrMap = p(GlobalAddrMap)
     val inputs = p(InPorts)
     val outputs = p(OutPorts)
-    // TODO
-    val ctrl_baseAddress = 0
-    val data_baseAddress = 0
     val busInterfaces = makeXbarInterfaces(inputs, outputs, mmref, asref) 
     val addressSpaces = makeXbarAddressSpaces(asref, addrMap)
     val memoryMaps = makeXbarMemoryMaps(mmref, inputs, addrMap)
