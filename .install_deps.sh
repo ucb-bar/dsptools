@@ -9,9 +9,9 @@ if [ ! -d $TRAVIS_BUILD_DIR/lib ]; then
     mkdir -p $TRAVIS_BUILD_DIR/lib
 fi
 
-orgs=( ucb-bar ucb-bar ucb-bar ucb-bar ucb-bar ucb-art grebe )
-repos=(    firrtl chisel3 firrtl-interpreter chisel-testers dsptools   rocket-chip testchipip )
-branches=( master master  master             localflatten   bumpChisel craftFork   chisel3switch )
+orgs=(     ucb-bar ucb-bar ucb-bar            ucb-bar        ucb-bar    ucb-art     ucb-bar    ucb-art )
+repos=(    firrtl  chisel3 firrtl-interpreter chisel-testers dsptools   rocket-chip testchipip builtin-debugger )
+branches=( master  master  master             master         add_ops    craftFork   master     master )
 
 for idx in "${!repos[@]}"; do
     org=${orgs[$idx]}
@@ -27,10 +27,12 @@ for idx in "${!repos[@]}"; do
     git fetch --all
     git checkout $branch
     git pull
-    sbt publish-local
     if [ "$repo" == "rocket-chip" ]; then
-        cat .gitmodules | grep path | awk '{print $3}' | grep -v hwacha | grep -v riscv-tools | xargs git submodule update --init; rm src/main/scala/rocketchip/PrivateConfigs.scala; cd ..
+        if [ -f src/main/scala/rocketchip/PrivateConfigs.scala ]; then
+            cat .gitmodules | grep path | awk '{print $3}' | grep -v hwacha | grep -v riscv-tools | xargs git submodule update --init; rm src/main/scala/rocketchip/PrivateConfigs.scala
+        fi
         sbt pack
         cp target/pack/lib/*.jar $TRAVIS_BUILD_DIR/lib
     fi
+    sbt publish-local
 done

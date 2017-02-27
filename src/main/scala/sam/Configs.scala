@@ -47,7 +47,7 @@ object SAMConfigBuilder {
         case _ => throw new CDEMatchError
       })
   def standalone(id: String, wordSize: Int, samConfig: SAMConfig): Config =
-    ConfigBuilder.buildDSP(id, {implicit p => LazyModule(new LazySAM())}) ++
+    ConfigBuilder.buildDSP(id, {implicit p => LazyModule(new SAMWrapper())}) ++
     apply(id, wordSize, samConfig)
 }
 

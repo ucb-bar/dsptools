@@ -163,13 +163,27 @@ trait HasDspIPXact extends HasIPXact {
   //////////// Component ///////////////////////
   //////////////////////////////////////////////
 
-  def makeDspBlockComponent(implicit p: Parameters): ComponentType = {
+  def makeDspBlockComponent(_baseAddress: BigInt)(implicit p: Parameters): ComponentType = {
     val name = p(DspBlockId)
     val mmref = s"${name}_mm"
-    val gk = p(GenKey(p(DspBlockId)))
-    val bits_in = gk.genIn.getWidth * gk.lanesIn
-    val bits_out = gk.genOut.getWidth * gk.lanesOut
-    val baseAddress = p(BaseAddr(p(DspBlockId)))
+    val gk = try {
+      Some(p(GenKey(p(DspBlockId))))
+    } catch  {
+      case e: ParameterUndefinedException => None
+    }
+    val dbk = try {
+      Some(p(DspBlockKey(p(DspBlockId))))
+    } catch {
+      case e: ParameterUndefinedException => None
+    }
+    val (bits_in, bits_out) = (gk, dbk) match {
+      case (Some(g), None) => (g.genIn.getWidth * g.lanesIn, g.genOut.getWidth * g.lanesOut)
+      case (None, Some(d)) => (d.inputWidth, d.outputWidth)
+      case _ => throw dsptools.DspException("Input and output widths could not be found in the Parameters object!")
+    }
+//   val bits_in = gk.genIn.getWidth * gk.lanesIn
+//   val bits_out = gk.genOut.getWidth * gk.lanesOut
+    val baseAddress = _baseAddress
     val registers = testchipip.SCRAddressMap.contents.head._2.map{ case (scrName, scrOffset) => scrName }.toArray
     val busInterfaces = makeDspBlockInterfaces(mmref) 
     val addressSpaces = makeDspBlockAddressSpaces
@@ -179,15 +193,14 @@ trait HasDspIPXact extends HasIPXact {
     makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, parameters)
   }
 
-  def makeSAMComponent(implicit p: Parameters): ComponentType = {
+  def makeSAMComponent(_ctrl_baseAddress: BigInt, _data_baseAddress: BigInt)(implicit p: Parameters): ComponentType = {
     val name = p(DspBlockId)
     val ctrl_mmref = s"${name}_ctrl_mm"
     val data_mmref = s"${name}_data_mm"
     val dbk = p(DspBlockKey(p(DspBlockId)))
     val bits_in = dbk.inputWidth
-    val ctrl_baseAddress = p(BaseAddr(p(DspBlockId)))
-    // TODO
-    val data_baseAddress = 0
+    val ctrl_baseAddress = _ctrl_baseAddress
+    val data_baseAddress = _data_baseAddress
     val registers = testchipip.SCRAddressMap.contents.head._2.map{ case (scrName, scrOffset) => scrName }.toArray
     val busInterfaces = makeSAMInterfaces(ctrl_mmref, data_mmref) 
     val addressSpaces = makeSAMAddressSpaces
