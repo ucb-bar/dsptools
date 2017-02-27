@@ -27,10 +27,10 @@ for idx in "${!repos[@]}"; do
     git fetch --all
     git checkout $branch
     git pull
-    sbt publish-local
     if [ "$repo" == "rocket-chip" ]; then
         cat .gitmodules | grep path | awk '{print $3}' | grep -v hwacha | grep -v riscv-tools | xargs git submodule update --init; rm src/main/scala/rocketchip/PrivateConfigs.scala; cd ..
         sbt pack
         cp target/pack/lib/*.jar $TRAVIS_BUILD_DIR/lib
     fi
+    sbt publish-local
 done

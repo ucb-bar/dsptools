@@ -308,7 +308,7 @@ class DspChainModule(
     val mod = LazyModule(b._1(modParams))
     mod
   })
-  val oldSamConfig: SAMConfig = p(SAMKey)
+  val oldSamConfig: SAMConfig = p(DefaultSAMKey)
   val lazySams = lazyMods.map(mod => {
     val samWidth = 64 // todo don't hardcode...
     val samName = mod.id + ":sam"
