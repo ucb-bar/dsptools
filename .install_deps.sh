@@ -28,7 +28,9 @@ for idx in "${!repos[@]}"; do
     git checkout $branch
     git pull
     if [ "$repo" == "rocket-chip" ]; then
-        cat .gitmodules | grep path | awk '{print $3}' | grep -v hwacha | grep -v riscv-tools | xargs git submodule update --init; rm src/main/scala/rocketchip/PrivateConfigs.scala
+        if [ -f src/main/scala/rocketchip/PrivateConfigs.scala ]; then
+            cat .gitmodules | grep path | awk '{print $3}' | grep -v hwacha | grep -v riscv-tools | xargs git submodule update --init; rm src/main/scala/rocketchip/PrivateConfigs.scala
+        fi
         sbt pack
         cp target/pack/lib/*.jar $TRAVIS_BUILD_DIR/lib
     fi
