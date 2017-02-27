@@ -2,7 +2,7 @@
 package sam
 
 import dsptools.numbers.implicits._
-import dsptools.Utilities._
+//import dsptools.Utilities._
 import dsptools.{DspContext, Grow}
 import spire.algebra.{Field, Ring}
 import breeze.math.{Complex}
@@ -36,7 +36,7 @@ import craft._
 
 object LocalTest extends Tag("edu.berkeley.tags.LocalTest")
 
-class SAMWrapperTester(c: SAMWrapper)(implicit p: Parameters) extends DspBlockTester(c) {
+class SAMWrapperTester(c: SAMWrapperModule)(implicit p: Parameters) extends DspBlockTester(c) {
   def doublesToBigInt(in: Seq[Double]): BigInt = {
     in.reverse.foldLeft(BigInt(0)) {case (bi, dbl) =>
       println(s"double = $dbl")
@@ -51,8 +51,8 @@ class SAMWrapperTester(c: SAMWrapper)(implicit p: Parameters) extends DspBlockTe
 
   // custom axiRead for the crossbar side
   val xbar = c.io.asInstanceOf[SAMWrapperIO].axi_out
-  def xbar_ar_ready: Boolean = { (peek(xbar.ar.ready) != BigInt(0)) }
-  def xbar_r_ready: Boolean = { (peek(xbar.r.valid) != BigInt(0)) }
+  def xbar_ar_ready: Boolean = { (peek(xbar.ar.ready)) }
+  def xbar_r_ready: Boolean = { (peek(xbar.r.valid)) }
   poke(xbar.ar.valid, 0)
   poke(xbar.r.ready, 0)
   val xbarDataWidth = xbar.w.bits.data.getWidth
@@ -151,11 +151,9 @@ class SAMWrapperSpec extends FlatSpec with Matchers {
   }
 
   it should "work with DspBlockTester" in {
-    implicit val p: Parameters = Parameters.root(ConfigBuilder.fixedPointBlockParams("sam", 1, 1, 10, 9).toInstance).alterPartial({
-      case BaseAddr => 0
-    })
+    implicit val p: Parameters = Parameters.root(ConfigBuilder.fixedPointBlockParams("sam", 1, 1, 10, 9).toInstance)
     val dut = () => {
-      val lazyModule = LazyModule(new LazySAM)
+      val lazyModule = LazyModule(new SAMWrapper)
       lazyModule.module
     }
     chisel3.iotesters.Driver.execute(dut, manager) { c => new SAMWrapperTester(c) } should be (true)

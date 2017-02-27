@@ -118,6 +118,7 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) {
   // delay state by a cycle to align with SeqMem, I think
   when (rState === rWait) { rState := rReadFirst }
   when (rState === rReadFirst) {
+    printf("ReadFirst with rCount %d and rLen %d and rData %d and rAddr %d\n", rCount, rLen, rData, rAddr)
     rData := rawData
     rAddr := rAddr + 1.U
     rCount := (w/nastiXDataBits-1).U
@@ -127,6 +128,7 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) {
 
   // wait for ready from master when in Send state
   when (io.out.r.fire()) {
+    printf("R fired with rCount %d and rLen %d and rData %d and rAddr %d\n", rCount, rLen, rData, rAddr)
     when (rCount === 0.U) {
       when (rLen === 0.U) {
         rState := rIdle
@@ -175,7 +177,7 @@ class SAMWrapperIO()(implicit p: Parameters) extends BasicDspBlockIO()(p) {
   val axi_out = Flipped(new NastiIO())
 }
 
-class LazySAM()(implicit p: Parameters) extends DspBlock()(p) {
+class SAMWrapper()(implicit p: Parameters) extends DspBlock()(p) with HasAddrMapEntry with HasBaseAddr with HasDataBaseAddr {
   addControl("samWStartAddr", 0.U)
   addControl("samWTargetCount", 0.U)
   addControl("samWTrig", 0.U)
@@ -185,16 +187,28 @@ class LazySAM()(implicit p: Parameters) extends DspBlock()(p) {
   addStatus("samWPacketCount")
   addStatus("samWSyncAddr")
 
-  lazy val module = new SAMWrapper(this)
+  val config = p(SAMKey(p(DspBlockId)))
+  lazy val module = new SAMWrapperModule(this)
 }
 
-class SAMWrapper(outer: LazySAM)(implicit p: Parameters) extends DspBlockModule(outer, Some(new SAMWrapperIO))(p) {
+trait HasDataBaseAddr {
+  private var _dataBaseAddr: BigInt = BigInt(0)
+  def dataBaseAddr: BigInt = _dataBaseAddr
+  def setDataBaseAddr(base: BigInt): Unit = {
+    _dataBaseAddr = base
+  }
+}
+
+class SAMWrapperModule(outer: SAMWrapper)(implicit p: Parameters) extends DspBlockModule(outer, Some(new SAMWrapperIO))(p) {
+
+  println(s"Base address for $name (data) is ${outer.dataBaseAddr}")
 
   // SCR
   val sam = Module(new SAM)
-  val config = p(SAMKey(p(DspBlockId)))
 
+  // todo check that addr map entry is big enough
 
+  val config = outer.config
 
   sam.io.in <> io.in
   sam.io.wStartAddr := control("samWStartAddr")(config.memAddrBits-1, 0)

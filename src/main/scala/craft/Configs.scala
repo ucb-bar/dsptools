@@ -61,7 +61,7 @@ object ConfigBuilder {
   def buildDSP(id: String, func: Parameters => DspBlock): Config = new Config(
     (pname, site, here) => pname match {
       case BuildDSPBlock => func
-      case BaseAddr(_id) if _id == id => 0
+      // case BaseAddr(_id) if _id == id => 0
       case _ => throw new CDEMatchError
     }) ++ nastiTLParams(id)
   def nastiTLParams(id: String): Config = new Config(

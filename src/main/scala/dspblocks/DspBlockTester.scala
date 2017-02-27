@@ -11,11 +11,206 @@ import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3.util.log2Up
 import dsptools.{DspTester, DspException}
 import dsptools.numbers.{DspComplex, DspReal}
-import dsptools.Utilities._
+import dsptools.DspTesterUtilities._
 import scala.math.{abs, pow}
 import _root_.junctions._
 import sam._
 import testchipip._
+
+trait HasDspPokeAs[T <: Module] { this: DspTester[T] =>
+  def dspPeek(data: Data): Either[Double, Complex] = {
+    data match {
+      case c: DspComplex[_] =>
+        c.underlyingType() match {
+          case "fixed" =>
+            val real      = dspPeek(c.real.asInstanceOf[FixedPoint]).left.get
+            val imaginary = dspPeek(c.imag.asInstanceOf[FixedPoint]).left.get
+            Right(Complex(real, imaginary))
+          case "real"  =>
+            val bigIntReal      = dspPeek(c.real.asInstanceOf[DspReal]).left.get
+            val bigIntImaginary = dspPeek(c.imag.asInstanceOf[DspReal]).left.get
+            Right(Complex(bigIntReal, bigIntImaginary))
+          case "SInt" =>
+            val real = peek(c.real.asInstanceOf[SInt]).toDouble
+            val imag = peek(c.imag.asInstanceOf[SInt]).toDouble
+            Right(Complex(real, imag))
+          case _ =>
+            throw DspException(
+              s"peek($c): c DspComplex has unknown underlying type ${c.getClass.getName}")
+        }
+      case r: DspReal =>
+        val bigInt = peek(r.node)
+        Left(bigIntBitsToDouble(bigInt))
+      case r: FixedPoint =>
+        val bigInt = peek(r.asInstanceOf[Bits])
+        Left(FixedPoint.toDouble(bigInt, r.binaryPoint.get))
+      case s: SInt =>
+        Left(peek(s).toDouble)
+      case _ =>
+        throw DspException(s"peek($data): data has unknown type ${data.getClass.getName}")
+    }
+  }
+
+  // [stevo]: peek a UInt but cast it to another type
+  def dspPeekAs[U<:Data](data: Data, typ: U): Either[Double, Complex] = {
+    data match {
+      case u: UInt =>
+        typ match {
+          // TODO:
+          //case c: DspComplex[_] =>
+          //  c.underlyingType() match {
+          //    case "fixed" =>
+          //      val real      = dspPeek(c.real.asInstanceOf[FixedPoint]).left.get
+          //      val imaginary = dspPeek(c.imaginary.asInstanceOf[FixedPoint]).left.get
+          //      Right(Complex(real, imaginary))
+          //    case "real"  =>
+          //      val bigIntReal      = dspPeek(c.real.asInstanceOf[DspReal]).left.get
+          //      val bigIntImaginary = dspPeek(c.imaginary.asInstanceOf[DspReal]).left.get
+          //      Right(Complex(bigIntReal, bigIntImaginary))
+          //    case "SInt" =>
+          //      val real = peek(c.real.asInstanceOf[SInt]).toDouble
+          //      val imag = peek(c.imaginary.asInstanceOf[SInt]).toDouble
+          //      Right(Complex(real, imag))
+          //    case _ =>
+          //      throw DspException(
+          //        s"peek($c): c DspComplex has unknown underlying type ${c.getClass.getName}")
+          //  }
+          case _: DspReal =>
+            val bigInt = peek(u)
+            Left(bigIntBitsToDouble(bigInt))
+          case r: FixedPoint =>
+            val bigInt = peek(u)
+            Left(toDoubleFromUnsigned(bigInt, r.getWidth, r.binaryPoint.get))
+          // TODO:
+          //case s: SInt =>
+          //  Left(peek(s).toDouble)
+          case _ =>
+            throw DspException(s"peek($data): data has unknown type ${data.getClass.getName}")
+
+      }
+    }
+  }
+
+  def dspPeekDouble(data: Data): Double = {
+    dspPeek(data) match {
+      case Left(double) =>
+        double
+      case Right(complex) =>
+        throw DspException(s"dspPeekDouble($data) returned $complex when expecting double")
+    }
+  }
+
+  def dspPeekComplex(data: Data): Complex = {
+    dspPeek(data) match {
+      case Left(double) =>
+        throw DspException(s"dspExpectComplex($data) returned $double when expecting complex")
+      case Right(complex) =>
+        complex
+    }
+  }
+
+  //scalastyle:off cyclomatic.complexity
+  def dspPoke(bundle: Data, value: Double): Unit = {
+    bundle match {
+      case s: SInt =>
+        val a: BigInt = BigInt(value.round.toInt)
+        poke(s, a)
+      case f: FixedPoint =>
+        f.binaryPoint match {
+          case KnownBinaryPoint(binaryPoint) =>
+            val bigInt = FixedPoint.toBigInt(value, binaryPoint)
+            poke(f, bigInt)
+          case _ =>
+            throw DspException(s"Error: poke: Can't create FixedPoint for $value, from signal template $bundle")
+        }
+      case r: DspReal =>
+        poke(r.node, doubleToBigIntBits(value))
+      case c: DspComplex[_]  => c.underlyingType match {
+        case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
+        case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
+        case "SInt" => poke(c.real.asInstanceOf[SInt], value.round.toInt)
+        case _ =>
+          throw DspException(
+            s"poke($bundle, $value): bundle DspComplex has unknown underlying type ${bundle.getClass.getName}")
+      }
+      case _ =>
+        throw DspException(s"poke($bundle, $value): bundle has unknown type ${bundle.getClass.getName}")
+    }
+  }
+  //scalastyle:on cyclomatic.complexity
+
+  def dspPoke(c: DspComplex[_], value: Complex): Unit = {
+    c.underlyingType match {
+      case "fixed" =>
+        dspPoke(c.real.asInstanceOf[FixedPoint], value.real)
+        dspPoke(c.imag.asInstanceOf[FixedPoint], value.imag)
+      case "real"  =>
+        dspPoke(c.real.asInstanceOf[DspReal], value.real)
+        dspPoke(c.imag.asInstanceOf[DspReal], value.imag)
+      case "SInt" =>
+        poke(c.real.asInstanceOf[SInt], value.real.round.toInt)
+        poke(c.imag.asInstanceOf[SInt], value.imag.round.toInt)
+      case _ =>
+        throw DspException(
+          s"poke($c, $value): c DspComplex has unknown underlying type ${c.getClass.getName}")
+    }
+    //scalastyle:off regex
+    if (_verbose) {
+      println(s"DspPoke($c, $value)")
+    }
+    //scalastyle:on regex
+  }
+
+  // [stevo]: poke a value in type typ to a UInt input
+  // it's okay if typ has smaller underlying width than the bundle; we assume it just zero-pads
+  //scalastyle:off cyclomatic.complexity
+  def dspPokeAs[U<:Data](bundle: Data, value: Double, typ: U): Unit = {
+    bundle match {
+      case u: UInt =>
+        typ match {
+          case s: SInt =>
+            assert(u.getWidth >= s.getWidth,
+              s"Error: pokeAs($bundle, $value, $typ): $typ has smaller underlying width than $bundle")
+            val a: BigInt = BigInt(value.round.toInt)
+            poke(u, a)
+          case f: FixedPoint =>
+            f.binaryPoint match {
+              case KnownBinaryPoint(binaryPoint) =>
+                assert(u.getWidth >= f.getWidth,
+                  s"Error: pokeAs($bundle, $value, $typ): $typ has smaller underlying width than $bundle")
+                // [stevo]: convert negative to two's complement positive
+                val bigInt = toBigIntUnsigned(value, f.getWidth, binaryPoint)
+                poke(u, bigInt)
+              case _ =>
+                throw DspException(
+                  s"Error: pokeAs($bundle, $value, $typ): Can't create FixedPoint for $value, from signal template $typ")
+            }
+          case r: DspReal =>
+            assert(u.getWidth >= r.getWidth,
+              s"Error: pokeAs($bundle, $value, $typ): $typ has smaller underlying width than $bundle")
+            poke(u, doubleToBigIntBits(value))
+          case c: DspComplex[_]  => c.underlyingType match {
+            case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
+            case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
+            case "SInt" => poke(c.real.asInstanceOf[SInt], value.toInt)
+            case _ =>
+              throw DspException(
+                s"pokeAs($bundle, $value, $typ): bundle DspComplex has unknown underlying type ${typ.getClass.getName}")
+          }
+          case _ =>
+            throw DspException(s"pokeAs($bundle, $value, $typ): typ has unknown type ${typ.getClass.getName}")
+        }
+      case _ =>
+        throw DspException(s"pokeAs($bundle, $value, $typ): bundle should be type UInt but is ${bundle.getClass.getName}")
+    }
+    //scalastyle:off regex
+    if (_verbose) {
+      println(s"pokeAs($bundle, $value, $typ)")
+    }
+    //scalastyle:on regex
+  }
+
+}
 
 trait InputTester {
   var streamInValid: Boolean = false
@@ -44,7 +239,7 @@ trait InputTester {
         f.asInstanceOf[FixedPoint].binaryPoint match {
           case KnownBinaryPoint(binaryPoint) =>
             in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, dbl) =>
-              val new_bi = dsptools.Utilities.toBigIntUnsigned(dbl, f.getWidth, binaryPoint)
+              val new_bi = toBigIntUnsigned(dbl, f.getWidth, binaryPoint)
               (bi << gen.getWidth) + new_bi
             })
           case _ =>
@@ -62,12 +257,12 @@ trait InputTester {
 
   // handle complex input
   def packInputStream[T<:Data](in: Seq[Seq[Complex]], gen: DspComplex[T]): Seq[BigInt] = {
-    gen.underlyingType() match {
+    gen.underlyingType match {
       case "SInt" =>
         in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, cpx) =>
           val new_bi_real = BigInt(cpx.real.round.toInt)
           val new_bi_imag = BigInt(cpx.imag.round.toInt)
-          (((bi << gen.real.getWidth) + new_bi_real) << gen.imaginary.getWidth) + new_bi_imag
+          (((bi << gen.real.getWidth) + new_bi_real) << gen.imag.getWidth) + new_bi_imag
         })
       case "fixed" =>
         gen.real.asInstanceOf[FixedPoint].binaryPoint match {
@@ -75,7 +270,7 @@ trait InputTester {
             in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, cpx) =>
               val new_bi_real = toBigIntUnsigned(cpx.real, gen.real.getWidth, binaryPoint)
               val new_bi_imag = toBigIntUnsigned(cpx.imag, gen.real.getWidth, binaryPoint)
-              (((bi << gen.real.getWidth) + new_bi_real) << gen.imaginary.getWidth) + new_bi_imag
+              (((bi << gen.real.getWidth) + new_bi_real) << gen.imag.getWidth) + new_bi_imag
             })
           case _ =>
             throw DspException(s"Error: packInput: Can't create Complex[FixedPoint] from signal template ${gen.getClass.getName}")
@@ -84,7 +279,7 @@ trait InputTester {
         in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, cpx) =>
           val new_bi_real = doubleToBigIntBits(cpx.real)
           val new_bi_imag = doubleToBigIntBits(cpx.imag)
-          (((bi << gen.real.getWidth) + new_bi_real) << gen.imaginary.getWidth) + new_bi_imag
+          (((bi << gen.real.getWidth) + new_bi_real) << gen.imag.getWidth) + new_bi_imag
         })
       case _ =>
         throw DspException(s"Error: packInput: DspComplex has unknown underlying type ${gen.getClass.getName}")
@@ -145,30 +340,30 @@ trait OutputTester {
 
   // unpack complex output data
   def unpackOutputStream[T<:Data](gen: DspComplex[T], lanesOut: Int): Seq[Complex] = {
-    gen.underlyingType() match {
+    gen.underlyingType match {
       case "SInt" =>
         streamOut.last.map(x => (0 until lanesOut).map{ idx => {
           // TODO: doesn't work if width is > 32
-          val imag = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx)) % pow(2, gen.imaginary.getWidth).toInt
-          val real = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx + gen.imaginary.getWidth)) % pow(2, gen.real.getWidth).toInt
+          val imag = (x >> ((gen.real.getWidth + gen.imag.getWidth) * idx)) % pow(2, gen.imag.getWidth).toInt
+          val real = (x >> ((gen.real.getWidth + gen.imag.getWidth) * idx + gen.imag.getWidth)) % pow(2, gen.real.getWidth).toInt
           Complex(real.toDouble, imag.toDouble)
         }}).flatten.toSeq
       case "fixed" =>
         gen.real.asInstanceOf[FixedPoint].binaryPoint match {
           case KnownBinaryPoint(binaryPoint) =>
             streamOut.last.map(x => (0 until lanesOut).map{ idx => {
-              val imag = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx)) % pow(2, gen.imaginary.getWidth).toInt
-              val real = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx + gen.imaginary.getWidth)) % pow(2, gen.real.getWidth).toInt
-              Complex(toDoubleFromUnsigned(real, gen.real.getWidth, binaryPoint), toDoubleFromUnsigned(imag, gen.imaginary.getWidth, binaryPoint))
+              val imag = (x >> ((gen.real.getWidth + gen.imag.getWidth) * idx)) % pow(2, gen.imag.getWidth).toInt
+              val real = (x >> ((gen.real.getWidth + gen.imag.getWidth) * idx + gen.imag.getWidth)) % pow(2, gen.real.getWidth).toInt
+              Complex(toDoubleFromUnsigned(real, gen.real.getWidth, binaryPoint), toDoubleFromUnsigned(imag, gen.imag.getWidth, binaryPoint))
             }}).flatten.toSeq
           case _ =>
             throw DspException(s"Error: packInput: Can't create FixedPoint from signal template ${gen.getClass.getName}")
         }
       case "real" =>
         streamOut.last.map(x => (0 until lanesOut).map{ idx => {
-          // [stevo]: comes out as (imaginary, real) because it's alphabetical
-          val imag = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx))
-          val real = (x >> ((gen.real.getWidth + gen.imaginary.getWidth) * idx + gen.imaginary.getWidth))
+          // [stevo]: comes out as (imag, real) because it's alphabetical
+          val imag = (x >> ((gen.real.getWidth + gen.imag.getWidth) * idx))
+          val real = (x >> ((gen.real.getWidth + gen.imag.getWidth) * idx + gen.imag.getWidth))
           Complex(bigIntBitsToDouble(real), bigIntBitsToDouble(imag))
         }}).flatten.toSeq
       case _ =>
@@ -180,10 +375,10 @@ trait OutputTester {
 trait StreamOutputTester[T <: DspBlockModule] extends OutputTester { this: DspTester[T] =>
   def dut: T
   def outputStep: Unit = {
-    if (peek(dut.io.out.sync) != BigInt(0)) {
+    if (peek(dut.io.out.sync)) {
       streamOut_ += new scala.collection.mutable.Queue[BigInt]()
     }
-    if (peek(dut.io.out.valid) != BigInt(0) && !streamOut_.isEmpty) {
+    if (peek(dut.io.out.valid) && !streamOut_.isEmpty) {
       streamOut_.last += peek(dut.io.out.bits)
     }
   }
@@ -195,57 +390,94 @@ trait AXIOutputTester[T <: Module] extends OutputTester with InputTester { this:
   var axi: NastiIO = ctrlAXI
   var wordsDumped: Int = 0
 
-  def lazySam: LazySAM
+  def lazySam: SAMWrapper
   def samSize = lazySam.module.sam.w
   // for now, only support streaming as much as the SAM can store
-  require(streamIn.length <= samSize, "Can't stream in more than the SAM can capture")
-  def addrmap = SCRAddressMap(lazySam.scrbuilder.devName).get
+  def addrmap = testchipip.SCRAddressMap.contents.map({ case (mod, map) =>
+    map.map { case(key, value) => (s"$mod:$key", value) }
+  }).reduce(_++_)
   def ctrlAXI: NastiIO
   def dataAXI: NastiIO
   def outputStep: Unit = {}
 
   override def playStream(): Unit = {
-    initiateSamCapture(streamIn.length)
+    // initiateSamCapture(streamIn.map(_.length).reduce(_+_))
     super[InputTester].playStream()
   }
 
-  def initiateSamCapture(nSamps: Int, waitForSync: Boolean = false): Unit = {
+  // use given SAM by default
+  private def getPrefix(prefix: Option[String]) =
+    prefix.getOrElse(lazySam.id)
+
+  def initiateSamCapture(nSamps: Int, waitForSync: Boolean = false,
+      prefix: Option[String] = None, checkWrites: Boolean = true): Unit = {
+    require(streamIn.length <= samSize, "Can't stream in more than the SAM can capture")
+
+    val _prefix = getPrefix(prefix)
+
     val oldAXI = axi
     axi = ctrlAXI
 
-    val samWStartAddr = addrmap("samWStartAddr")
-    val samWTargetCount = addrmap("samWTargetCount")
-    val samWTrig = addrmap("samWTrig")
-    val samWWaitForSync = addrmap("samWWaitForSync")
+    val samWStartAddr = addrmap(s"${_prefix}:samWStartAddr")
+    val samWTargetCount = addrmap(s"${_prefix}:samWTargetCount")
+    val samWTrig = addrmap(s"${_prefix}:samWTrig")
+    val samWWaitForSync = addrmap(s"${_prefix}:samWWaitForSync")
 
     axiWrite(samWStartAddr, 0)
+    if (checkWrites) {
+      val wStartAddrRead = axiRead(samWStartAddr)
+      require(wStartAddrRead == BigInt(0), s"WStartAddr wrong, was $wStartAddrRead should be 0")
+    }
+
     axiWrite(samWTargetCount, nSamps)
+    if (checkWrites) {
+      val wTargetCountRead = axiRead(samWTargetCount)
+      require(wTargetCountRead == BigInt(nSamps), s"WTargetCount wrong, was $wTargetCountRead should be $nSamps")
+    }
+
     axiWrite(samWWaitForSync, waitForSync)
+    if (checkWrites) {
+      val wWaitForSyncRead = axiRead(samWWaitForSync)
+      require(wWaitForSyncRead == waitForSync.toInt, s"WaitForSync wrong, was $wWaitForSyncRead should be $waitForSync")
+    }
+
     axiWrite(samWTrig, 1)
+    if (checkWrites) {
+      val wTrigRead = axiRead(samWTrig)
+      require(wTrigRead == 1, s"TrigRead wrong, was $wTrigRead should be 1")
+    }
 
     axi = oldAXI
   }
 
-  def getOutputFromSam(): Seq[BigInt] = {
+  def getOutputFromSam(prefix: Option[String] = None): Seq[BigInt] = {
+    val _prefix = getPrefix(prefix)
     val oldAXI = axi
     axi = ctrlAXI
 
-    val samWWriteCount = addrmap("samWWriteCount")
-    val samWPacketCount = addrmap("samWPacketCount")
-    val samWSyncAddr = addrmap("samWSyncAddr")
+    val samWWriteCount = addrmap(s"${_prefix}:samWWriteCount")
+    val samWPacketCount = addrmap(s"${_prefix}:samWPacketCount")
+    val samWSyncAddr = addrmap(s"${_prefix}:samWSyncAddr")
 
-    val base = axiRead(samWSyncAddr)
+    val base = 65536 + axiRead(samWSyncAddr)
+    println(s"SyncAddr is ${base}")
     val writeCount = axiRead(samWWriteCount)
+    val packetCount = axiRead(samWPacketCount)
+
+    println(s"Reading $writeCount words from $base")
 
     axi = dataAXI
 
-    val readout = (base + wordsDumped until writeCount).map(addr => {
-      axiRead(addr)
+    val readout = //(base + wordsDumped until writeCount).map(addr => {
+      (0 until writeCount.toInt).map(addr => {
+      axiRead(base + addr * 8)
     })
 
     streamOut_.last ++= readout
 
     axi = oldAXI
+
+    println(s"Read out $readout")
 
     readout
   }
@@ -257,16 +489,16 @@ trait StreamIOTester[T <: DspBlockModule] extends StreamInputTester[T] with Stre
   this: DspTester[T] =>
 }
 
-trait AXIRWTester[T <: Module] { this: DspTester[T] =>
+trait AXIRWTester[T <: Module] { this: DspTester[T] with HasDspPokeAs[T] =>
 
   def axi: NastiIO
   def maxWait = 100
 
-  def aw_ready: Boolean = { (peek(axi.aw.ready) != BigInt(0)) }
-  def w_ready: Boolean = { (peek(axi.w.ready) != BigInt(0)) }
-  def b_ready: Boolean = { (peek(axi.b.valid) != BigInt(0)) }
-  def ar_ready: Boolean = { (peek(axi.ar.ready) != BigInt(0)) }
-  def r_ready: Boolean = { (peek(axi.r.valid) != BigInt(0)) }
+  def aw_ready: Boolean = { (peek(axi.aw.ready)) }
+  def w_ready: Boolean = { (peek(axi.w.ready)) }
+  def b_ready: Boolean = { (peek(axi.b.valid)) }
+  def ar_ready: Boolean = { (peek(axi.ar.ready)) }
+  def r_ready: Boolean = { (peek(axi.r.valid)) }
 
   poke(axi.aw.valid, 0)
   poke(axi.ar.valid, 0)
@@ -307,6 +539,7 @@ trait AXIRWTester[T <: Module] { this: DspTester[T] =>
       // check for ready condition
       if (!a_written) { a_written = aw_ready }
       if (!d_written) { d_written = w_ready }
+      // if (waited >= maxWait) return BigInt(-1)
       require(waited < maxWait, "Timeout waiting for AXI AW or W to be ready")
       step(1)
       // invalidate when values are received
@@ -416,6 +649,7 @@ trait AXIRWTester[T <: Module] { this: DspTester[T] =>
 
     // s_read_data
     while (!r_ready) {
+      // if (waited >= maxWait) return BigInt(-1)
       require(waited < maxWait, "Timeout waiting for AXI R to be valid")
       step(1)
       waited += 1
@@ -431,7 +665,7 @@ trait AXIRWTester[T <: Module] { this: DspTester[T] =>
 }
 
 abstract class DspBlockTester[V <: DspBlockModule](dut: V, override val maxWait: Int = 100)
-  extends DspTester[V](dut) with StreamIOTester[V] with AXIRWTester[V] {
+  extends DspTester[V](dut) with HasDspPokeAs[V] with StreamIOTester[V] with AXIRWTester[V] {
   def in = dut.io.in
   def axi = dut.io.axi
 
@@ -469,10 +703,17 @@ abstract class DspBlockTester[V <: DspBlockModule](dut: V, override val maxWait:
   }
 }
 
-abstract class DspChainTester[V <: DspChainModule](dut: V) extends DspTester[V](dut) with AXIOutputTester[V] with StreamInputTester[V] with AXIRWTester[V] {
-  def in = dut.mod_ios.head.in
+abstract class DspChainTester[V <: DspChainModule](dut: V) extends DspTester[V](dut) with AXIOutputTester[V] with StreamInputTester[V] with AXIRWTester[V] with HasDspPokeAs[V] {
+  def in = dut.io.stream_in
   def ctrlAXI = dut.io.control_axi
   def dataAXI = dut.io.data_axi
   def lazySam = dut.lazySams.last
+
+  override def step(n: Int): Unit = {
+    inputStep
+    outputStep
+    super.step(1)
+    if (n > 1) step(n - 1)
+  }
 }
 

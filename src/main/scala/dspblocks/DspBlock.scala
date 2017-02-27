@@ -27,7 +27,7 @@ case class DspBlockParameters (
 
 trait HasDspBlockParameters {
   implicit val p: Parameters
-  def baseAddr: Int = p(BaseAddr(p(DspBlockId)))
+  // def baseAddr: Int = p(BaseAddr(p(DspBlockId)))
   def dspBlockExternal = p(DspBlockKey(p(DspBlockId)))
   def inputWidth  = dspBlockExternal.inputWidth
   def outputWidth = dspBlockExternal.outputWidth
@@ -79,11 +79,33 @@ class BasicDspBlockIO()(implicit val p: Parameters) extends Bundle with HasDspBl
   override def cloneType: this.type = new BasicDspBlockIO()(p).asInstanceOf[this.type]
 }
 
-case class BaseAddr(id: String) extends Field[Int]
+// case class BaseAddr(id: String) extends Field[Int]
 
-abstract class DspBlock()(implicit val p: Parameters) extends LazyModule with HasDspBlockParameters {
+trait HasBaseAddr {
+  private var _baseAddr: BigInt = BigInt(0)
+  def baseAddr: BigInt = _baseAddr
+  def setBaseAddr(base: BigInt): Unit = {
+    _baseAddr = base
+  }
+}
+trait HasAddrMapEntry {
+  val p: Parameters
+  private def addrMapEntryName = p(DspBlockId)
+  private def addrMapEntrySize = BigInt(1 << 8)
+  def addrMapEntry = AddrMapEntry(addrMapEntryName,
+    MemSize(addrMapEntrySize, MemAttr(AddrMapProt.RW))
+    )
+}
+
+trait HasSCRBuilder {
+  val p: Parameters
+  private val scrName = p(DspBlockId)
+  val scrbuilder = new SCRBuilder(scrName)
+}
+
+abstract class DspBlock()(implicit val p: Parameters) extends LazyModule
+    with HasDspBlockParameters with HasBaseAddr with HasAddrMapEntry with HasSCRBuilder {
   override def module: DspBlockModule
-  val scrbuilder = new SCRBuilder(name)
 
   def size = scrbuilder.controlNames.length + scrbuilder.statusNames.length
 
@@ -96,9 +118,6 @@ abstract class DspBlock()(implicit val p: Parameters) extends LazyModule with Ha
     scrbuilder.addStatus(name)
   }
 
-  def addrMapEntry = AddrMapEntry(id, MemSize(BigInt(1 << 8), MemAttr(AddrMapProt.RW)))
-
-  println(s"Base address for $id is $baseAddr")
 }
 
 abstract class DspBlockModule(val outer: DspBlock, b: => Option[Bundle with DspBlockIO] = None)
@@ -124,6 +143,7 @@ abstract class DspBlockModule(val outer: DspBlock, b: => Option[Bundle with DspB
   }
 
   lazy val scr: SCRFile = {
+    println(s"Base address for $name is ${outer.baseAddr}")
     val scr_ = outer.scrbuilder.generate(outer.baseAddr)
     val tl2axi = Module(new TileLinkIONastiIOConverter())
     tl2axi.io.tl <> scr_.io.tl

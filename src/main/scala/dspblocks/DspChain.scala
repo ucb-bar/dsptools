@@ -21,9 +21,7 @@ object DspChain {
     scala.collection.mutable.Map()
 
   def addrMap(id: String): AddrMap = _addrMaps(id)
-
   def addrMapIds(): Seq[String] = _addrMaps.keys.toSeq
-
 }
 
 case class DspChainParameters (
@@ -86,8 +84,8 @@ trait HasDecoupledSCR {
 trait HasPatternGenerator extends HasDspChainParameters {
   def scrbuilder: SCRBuilder
 
-  scrbuilder.addControl("patternGeneratorEnable")
-  scrbuilder.addControl("patternGeneratorSelect")
+  scrbuilder.addControl("patternGeneratorEnable", 0.U)
+  scrbuilder.addControl("patternGeneratorSelect", 0.U)
   scrbuilder.addControl("patternGeneratorReadyBypass")
   scrbuilder.addControl("patternGeneratorTriggerMode")
   scrbuilder.addControl("patternGeneratorLastSample")
@@ -112,8 +110,8 @@ trait HasPatternGenerator extends HasDspChainParameters {
 trait HasLogicAnalyzer extends HasDspChainParameters {
   def scrbuilder: SCRBuilder
 
-  scrbuilder.addControl("logicAnalyzerEnable")
-  scrbuilder.addControl("logicAnalyzerSelect")
+  scrbuilder.addControl("logicAnalyzerEnable", 0.U)
+  scrbuilder.addControl("logicAnalyzerSelect", 0.U)
   scrbuilder.addControl("logicAnalyzerValidBypass")
   scrbuilder.addControl("logicAnalyzerTriggerMode")
   scrbuilder.addControl("logicAnalyzerNumSamples")
@@ -138,62 +136,67 @@ trait HasPatternGeneratorModule extends HasDspChainParameters with HasDecoupledS
   def dataWidthWords: Int
   def wordWidth: Int
 
-  val patternGenerator = Module(new PatternGenerator(
-                                  dataWidthWords*wordWidth, 1,
-                                  patternGeneratorSamples,
-                                  patternGeneratorUseCombinationalTrigger)
-  )
+  lazy val patternGenerator = {
+    val patternGenerator = Module(new PatternGenerator(
+      dataWidthWords*wordWidth, 1,
+      patternGeneratorSamples,
+      patternGeneratorUseCombinationalTrigger)
+    )
 
-  scrfile.status("patternGeneratorState")      :=
-    patternGenerator.io.status.state
-  scrfile.status("patternGeneratorNumSampled") :=
-    patternGenerator.io.status.numSampled
-  scrfile.status("patternGeneratorStarted")    :=
-    patternGenerator.io.status.started
-  scrfile.status("patternGeneratorOverflow")   :=
-    patternGenerator.io.status.overflow
+    scrfile.status("patternGeneratorState")      :=
+      patternGenerator.io.status.state
+    scrfile.status("patternGeneratorNumSampled") :=
+      patternGenerator.io.status.numSampled
+    scrfile.status("patternGeneratorStarted")    :=
+      patternGenerator.io.status.started
+    scrfile.status("patternGeneratorOverflow")   :=
+      patternGenerator.io.status.overflow
 
-  patternGenerator.io.memory.bits.writeAddr :=
-    scrfile.control("patternGeneratorWriteAddr")
+    patternGenerator.io.memory.bits.writeAddr :=
+      scrfile.control("patternGeneratorWriteAddr")
 
-  val patternGeneratorWriteData = (0 until dataWidthWords).map(i =>
-      scrfile.control(s"patternGeneratorWriteData_$i")
-      )
+    val patternGeneratorWriteData = (0 until dataWidthWords).map(i =>
+        scrfile.control(s"patternGeneratorWriteData_$i")
+        )
 
-  patternGenerator.io.memory.bits.writeData(0) :=
-    patternGeneratorWriteData.reduce({(x:UInt, y:UInt) => util.Cat(x,y) })
+    patternGenerator.io.memory.bits.writeData(0) :=
+      patternGeneratorWriteData.reduce({(x:UInt, y:UInt) => util.Cat(x,y) })
 
-  decoupledHelper(
-    patternGenerator.io.memory.valid,
-    patternGenerator.io.memory.ready,
-    scrfile.control("patternGeneratorWriteEnable") =/= 0.U,
-    scrfile.status("patternGeneratorWriteFinished"))
+    decoupledHelper(
+      patternGenerator.io.memory.valid,
+      patternGenerator.io.memory.ready,
+      scrfile.control("patternGeneratorWriteEnable") =/= 0.U,
+      scrfile.status("patternGeneratorWriteFinished"))
 
-  patternGenerator.io.control.bits.readyBypass :=
-    scrfile.control("patternGeneratorReadyBypass")
-  patternGenerator.io.control.bits.triggerMode :=
-    scrfile.control("patternGeneratorTriggerMode")
-  patternGenerator.io.control.bits.lastSample :=
-    scrfile.control("patternGeneratorLastSample")
-  patternGenerator.io.control.bits.continuous :=
-    scrfile.control("patternGeneratorContinuous")
-  patternGenerator.io.control.bits.arm :=
-    scrfile.control("patternGeneratorArm")
-  patternGenerator.io.control.bits.abort :=
-    scrfile.control("patternGeneratorAbort")
+    patternGenerator.io.control.bits.readyBypass :=
+      scrfile.control("patternGeneratorReadyBypass")
+    patternGenerator.io.control.bits.triggerMode :=
+      scrfile.control("patternGeneratorTriggerMode")
+    patternGenerator.io.control.bits.lastSample :=
+      scrfile.control("patternGeneratorLastSample")
+    patternGenerator.io.control.bits.continuous :=
+      scrfile.control("patternGeneratorContinuous")
+    patternGenerator.io.control.bits.arm :=
+      scrfile.control("patternGeneratorArm")
+    patternGenerator.io.control.bits.abort :=
+      scrfile.control("patternGeneratorAbort")
 
-  decoupledHelper(
-    patternGenerator.io.control.valid,
-    patternGenerator.io.control.ready,
-    scrfile.control("patternGeneratorControlEnable") =/= 0.U,
-    scrfile.status("patternGeneratorControlFinished"))
+    decoupledHelper(
+      patternGenerator.io.control.valid,
+      patternGenerator.io.control.ready,
+      scrfile.control("patternGeneratorControlEnable") =/= 0.U,
+      scrfile.status("patternGeneratorControlFinished"))
 
-  val patternGeneratorSelects = (0 until blocks.length).map(i =>
+
+    patternGenerator.io.signal.ready := true.B
+
+    patternGenerator
+  }
+
+  lazy val patternGeneratorSelects = (0 until blocks.length).map(i =>
       scrfile.control("patternGeneratorSelect") === i.U &&
       scrfile.control("patternGeneratorEnable") =/= 0.U
       )
-
-  patternGenerator.io.signal.ready := true.B
 }
 
 trait HasLogicAnalyzerModule extends HasDspChainParameters with HasDecoupledSCR {
@@ -201,55 +204,58 @@ trait HasLogicAnalyzerModule extends HasDspChainParameters with HasDecoupledSCR 
   def dataWidthWords: Int
   def wordWidth: Int
 
-  val logicAnalyzer    = Module(new LogicAnalyzer(
-                                  dataWidthWords*wordWidth, 1,
-                                  logicAnalyzerSamples,
-                                  logicAnalyzerUseCombinationalTrigger)
-                                )
-  scrfile.status("logicAnalyzerState")      :=
-    logicAnalyzer.io.status.state
-  scrfile.status("logicAnalyzerNumSampled") :=
-    logicAnalyzer.io.status.numSampled
-  scrfile.status("logicAnalyzerOverflow")   :=
-    logicAnalyzer.io.status.overflow
+  lazy val logicAnalyzer = {
+    val logicAnalyzer    = Module(new LogicAnalyzer(
+                                    dataWidthWords*wordWidth, 1,
+                                    logicAnalyzerSamples,
+                                    logicAnalyzerUseCombinationalTrigger)
+                                  )
+    scrfile.status("logicAnalyzerState")      :=
+      logicAnalyzer.io.status.state
+    scrfile.status("logicAnalyzerNumSampled") :=
+      logicAnalyzer.io.status.numSampled
+    scrfile.status("logicAnalyzerOverflow")   :=
+      logicAnalyzer.io.status.overflow
 
-  logicAnalyzer.io.memory.reqAddr :=
-    scrfile.control("logicAnalyzerWriteAddr")
+    logicAnalyzer.io.memory.reqAddr :=
+      scrfile.control("logicAnalyzerWriteAddr")
 
-  val logicAnalyzerWriteData = (0 until dataWidthWords).map(i =>
-      scrfile.status(s"logicAnalyzerWriteData_$i")
-      )
+    val logicAnalyzerWriteData = (0 until dataWidthWords).map(i =>
+        scrfile.status(s"logicAnalyzerWriteData_$i")
+        )
 
-  logicAnalyzerWriteData.zipWithIndex.foreach { case(la, idx) =>
-    val width = la.getWidth
-    la := logicAnalyzer.io.memory.respData(0)(width * (idx + 1) - 1, width * idx)
+    logicAnalyzerWriteData.zipWithIndex.foreach { case(la, idx) =>
+      val width = la.getWidth
+      la := logicAnalyzer.io.memory.respData(0)(width * (idx + 1) - 1, width * idx)
+    }
+
+    logicAnalyzer.io.control.bits.validBypass :=
+      scrfile.control("logicAnalyzerValidBypass")
+    logicAnalyzer.io.control.bits.triggerMode :=
+      scrfile.control("logicAnalyzerTriggerMode")
+    logicAnalyzer.io.control.bits.numSamples :=
+      scrfile.control("logicAnalyzerNumSamples")
+    logicAnalyzer.io.control.bits.arm :=
+      scrfile.control("logicAnalyzerArm")
+    logicAnalyzer.io.control.bits.abort :=
+      scrfile.control("logicAnalyzerAbort")
+
+    decoupledHelper(
+      logicAnalyzer.io.control.valid,
+      logicAnalyzer.io.control.ready,
+      scrfile.control("logicAnalyzerControlEnable") =/= 0.U,
+      scrfile.status("logicAnalyzerControlFinished"))
+
+
+    logicAnalyzer.io.signal.valid := false.B
+    logicAnalyzer.io.signal.bits  := 0.U
+
+    logicAnalyzer
   }
-
-  logicAnalyzer.io.control.bits.validBypass :=
-    scrfile.control("logicAnalyzerValidBypass")
-  logicAnalyzer.io.control.bits.triggerMode :=
-    scrfile.control("logicAnalyzerTriggerMode")
-  logicAnalyzer.io.control.bits.numSamples :=
-    scrfile.control("logicAnalyzerNumSamples")
-  logicAnalyzer.io.control.bits.arm :=
-    scrfile.control("logicAnalyzerArm")
-  logicAnalyzer.io.control.bits.abort :=
-    scrfile.control("logicAnalyzerAbort")
-
-  decoupledHelper(
-    logicAnalyzer.io.control.valid,
-    logicAnalyzer.io.control.ready,
-    scrfile.control("logicAnalyzerControlEnable") =/= 0.U,
-    scrfile.status("logicAnalyzerControlFinished"))
-
-  val logicAnalyzerSelects = (0 until blocks.length).map(i =>
-      scrfile.control("logicAnalyzerSelect") === i.U &&
-      scrfile.control("logicAnalyzerEnable") =/= 0.U
-      )
-
-  logicAnalyzer.io.signal.valid := false.B
-  logicAnalyzer.io.signal.bits  := 0.U
-
+  lazy val logicAnalyzerSelects = (0 until blocks.length).map(i =>
+        scrfile.control("logicAnalyzerSelect") === i.U &&
+        scrfile.control("logicAnalyzerEnable") =/= 0.U
+        )
 }
 
 class DspChainIO(firstBlock: DspBlockModule)(implicit val p: Parameters) extends Bundle {
@@ -257,11 +263,6 @@ class DspChainIO(firstBlock: DspBlockModule)(implicit val p: Parameters) extends
   val data_axi    = Flipped(new NastiIO())
 
   val stream_in   = Flipped(firstBlock.io.in.cloneType)
-}
-
-trait HasSCRBuilder {
-  def name: String
-  val scrbuilder = new SCRBuilder(name + ":scr")
 }
 
 class DspChain(
@@ -275,47 +276,83 @@ class DspChain(
   override def module: DspChainModule = new DspChainModule(this, b, override_clock, override_reset)(p)
 }
 
-trait HasSCRFile {
-  def outer: DspChain
-  implicit def p: Parameters
-  val scrfile = outer.scrbuilder.generate(0)
-}
-
 class DspChainModule(
   val outer: DspChain,
   b: => Option[DspChainIO] = None,
   override_clock: Option[Clock]=None,
-  override_reset: Option[Bool]=None)(val p: Parameters)
+  override_reset: Option[Bool]=None)(implicit val p: Parameters)
   extends LazyModuleImp(outer, override_clock, override_reset)
-  with HasSCRFile with HasDspChainParameters
-  with HasPatternGeneratorModule with HasLogicAnalyzerModule {
+    with HasDspChainParameters
+    with HasPatternGeneratorModule with HasLogicAnalyzerModule {
 
   val ctrlBaseAddr = outer.ctrlBaseAddr
   val dataBaseAddr = outer.dataBaseAddr
+
   val tlid = p(TLId)
   println(s"TLId is $tlid")
   val tlkey = p(TLKey(tlid))
-  implicit val overrideParams = p.alterPartial({
+  require(tlkey.dataBitsPerBeat == 64,
+    s"SCR File in DspChain requires 64-bit data bits per beat, got ${tlkey.dataBitsPerBeat}")
+  /*implicit val overrideParams = p.alterPartial({
     case TLKey(tlid) => tlkey.copy(
     //  dataBits = 4 * 64,
       overrideDataBitsPerBeat = Some(64)
-      )})
+  )})*/
 
   require(blocks.length > 0)
-  var addr = 0
-  val lazy_mods = blocks.map(b => {
-    val modParams = overrideParams.alterPartial({
-      case BaseAddr(_id) if _id == b._2 => addr
+
+  val lazyMods = blocks.map(b => {
+    val modParams = p.alterPartial({
       case DspBlockId => b._2
     })
     val mod = LazyModule(b._1(modParams))
     IPXactComponents._ipxactComponents += DspIPXact.makeDspBlockComponent(modParams)
-    addr += mod.size
     mod
   })
-  val modules = lazy_mods.map(mod => Module(mod.module))
+  val oldSamConfig: SAMConfig = p(SAMKey)
+  val lazySams = lazyMods.map(mod => {
+    val samWidth = 64 // todo don't hardcode...
+    val samName = mod.id + ":sam"
+    val samParams = p.alterPartial({
+      case SAMKey(_id) if _id == samName => oldSamConfig
+      case DspBlockId => samName
+      case DspBlockKey(_id) if _id == samName => DspBlockParameters(samWidth, samWidth)
+      case IPXactParameters(_id) if _id == samName => {
+        val parameterMap = scala.collection.mutable.HashMap[String, String]()
+
+        // Conjure up some IPXACT synthsized parameters.
+        parameterMap ++= List(("InputTotalBits", samWidth.toString))
+
+        parameterMap
+      }
+    })
+    val lazySam = LazyModule( new SAMWrapper()(samParams) )
+    IPXactComponents._ipxactComponents += DspIPXact.makeSAMComponent(samParams)
+    lazySam
+  })
+
+  val ctrlAddrs = new AddrMap(
+    lazyMods.map(_.addrMapEntry) ++
+    lazySams.map(_.addrMapEntry) ++
+    Seq(
+      AddrMapEntry(s"chain", MemSize(BigInt(1 << 8), MemAttr(AddrMapProt.RWX)))
+    ),
+  start=ctrlBaseAddr)
+
+  (lazyMods ++ lazySams).zip(ctrlAddrs.entries).foreach{ case (mod, addr) =>
+    mod.setBaseAddr(addr.region.start)
+  }
+
+  val scrfile = outer.scrbuilder.generate(ctrlAddrs.entries.last.region.start)
+
+  val modules = lazyMods.map(mod => Module(mod.module))
   val mod_ios = modules.map(_.io)
   val io = IO(b.getOrElse(new DspChainIO(modules.head)))
+
+  // make sure the pattern generator and logic analyzer are instantitated
+  patternGenerator
+  logicAnalyzer
+
 
   val maxDataWidth = mod_ios.map(i =>
       math.max(i.in.bits.getWidth, i.out.bits.getWidth)
@@ -329,41 +366,20 @@ class DspChainModule(
     mod_ios(i + 1).in <> mod_ios(i).out
   }
 
-  val oldSamConfig: SAMConfig = p(DefaultSAMKey)
-
-  val lazySams = modules.map(mod => {
-    val samWidth = mod.io.out.bits.getWidth
-    val samName = mod.id + ":sam"
-    val samParams = overrideParams.alterPartial({
-      case SAMKey(_id) if _id == samName => oldSamConfig.copy()
-      case DspBlockId => samName
-      case DspBlockKey(_id) if _id == samName => DspBlockParameters(samWidth, samWidth)
-      case BaseAddr(_id) if _id == samName => addr
-      case IPXactParameters(_id) if _id == samName => {
-        val parameterMap = scala.collection.mutable.HashMap[String, String]()
-    
-        // Conjure up some IPXACT synthsized parameters.
-        parameterMap ++= List(("InputTotalBits", samWidth.toString))
-    
-        parameterMap
-      }
-    })
-    val lazySam = LazyModule( new LazySAM()(samParams) )
-    IPXactComponents._ipxactComponents += DspIPXact.makeSAMComponent(samParams)
-    addr += lazySam.size
-    lazySam
-  })
+  val dataAddrs = new AddrMap(
+    lazySams.zipWithIndex.map({ case (sam, idx) =>
+      AddrMapEntry(s"${sam.name}_${idx}_data", MemSize(sam.config.memDepth * 8 * 16, MemAttr(AddrMapProt.RWX)))
+    }), start=dataBaseAddr)
+  lazySams.zip(dataAddrs.entries).foreach { case(sam, addr) =>
+    sam.setDataBaseAddr(addr.region.start)
+  }
   val sams = lazySams.map(ls => {
     val sam = Module(ls.module)
     sam
   })
 
-  val scrbuildersize = outer.scrbuilder.controlNames.length + outer.scrbuilder.statusNames.length
-  // addr += scrbuildersize
-
   val scrfile_tl2axi = Module(new TileLinkIONastiIOConverter())
   scrfile_tl2axi.io.tl <> scrfile.io.tl
-
 
   // connect input to first module
   when (patternGeneratorSelects(0)) {
@@ -394,23 +410,10 @@ class DspChainModule(
     sam.io.in := mod.io.out
   }
 
-  val control_axis = mod_ios.map(_.axi)
-  // + 1 for PG and LA
-  val ctrlOutPorts = control_axis.length + sams.length + 1
+  val control_axis = (modules ++ sams).map(_.io.axi) :+ scrfile_tl2axi.io.nasti
+
+  val ctrlOutPorts = control_axis.length
   val dataOutPorts = sams.length
-
-  val ctrlAddrs = new AddrMap(lazy_mods.map(_.addrMapEntry
-    //AddrMapEntry(s"${mod.id}", MemSize(mod.size, MemAttr(AddrMapProt.RWX)))
-  ) ++ lazySams.zipWithIndex.map({ case(sam, idx) =>
-    AddrMapEntry(s"sam${idx}", MemSize(BigInt(1 << 8), MemAttr(AddrMapProt.RWX)))
-  }) ++ Seq(
-    AddrMapEntry(s"chain", MemSize(BigInt(1 << 8), MemAttr(AddrMapProt.RWX)))
-  )
-  )
-
-  val dataAddrs = sams.zipWithIndex.map({ case (sam, idx) =>
-    AddrMapEntry(s"${sam}_${idx}_data", MemSize(sam.config.memDepth, MemAttr(AddrMapProt.RWX)))
-  })
 
   val inPorts = 1
   val ctrlXbarParams = p.alterPartial({
@@ -441,7 +444,7 @@ class DspChainModule(
     case TLId => "XBar"
     case GlobalAddrMap => {
       val memSize = 0x1000L
-      new AddrMap(dataAddrs)
+      dataAddrs
     }
     case XBarQueueDepth => 2
     case ExtMemSize => 0x1000L
@@ -450,13 +453,12 @@ class DspChainModule(
     case DspBlockId => s"$id:data"
   })
 
-  DspChain._addrMaps += (s"$id:data" -> new AddrMap(dataAddrs))
+  DspChain._addrMaps += (s"$id:data" -> dataAddrs)
   DspChain._addrMaps += (s"$id:ctrl" -> ctrlAddrs)
   println(s"In the address map list we have keys ${DspChain.addrMapIds()}")
   for (key <- DspChain.addrMapIds()) {
-    println(s"AddrMap($key) =\n${DspChain.addrMap(key)}")
+    println(s"AddrMap($key) =\n${DspChain.addrMap(key).entries.foreach(x => println(x.toString))}")
   }
-  println(s"After instantiating everything, addr is $addr")
   println(s"We have ${control_axis.length} OutPorts on the XBar")
   println(s"We have ${ctrlXbarParams(GlobalAddrMap).numSlaves} ctrl slaves in the AddrMap")
   println(s"We have ${dataXbarParams(GlobalAddrMap).numSlaves} data slaves in the AddrMap")
@@ -469,8 +471,7 @@ class DspChainModule(
 
   ctrlXbar.io.in(0) <> io.control_axi
   ctrlXbar.io.out.zip(control_axis).foreach{ case (xbar_axi, control_axi) => xbar_axi <> control_axi }
-  ctrlXbar.io.out.last <> scrfile_tl2axi.io.nasti
 
   dataXbar.io.in(0) <> io.data_axi
-  dataXbar.io.out.zip(sams).foreach{ case (xbar_axi, sam) => xbar_axi <> sam.io.axi }
+  dataXbar.io.out.zip(sams).foreach{ case (xbar_axi, sam) => xbar_axi <> sam.io.asInstanceOf[SAMWrapperIO].axi_out }
 }
