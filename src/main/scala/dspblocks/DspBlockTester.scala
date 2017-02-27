@@ -703,8 +703,8 @@ abstract class DspBlockTester[V <: DspBlockModule](dut: V, override val maxWait:
   }
 }
 
-abstract class DspChainTester[V <: DspChainModule](dut: V) extends DspTester[V](dut) with AXIOutputTester[V] with StreamInputTester[V] with AXIRWTester[V] with HasDspPokeAs[V] {
-  def in = dut.io.stream_in
+abstract class DspChainTester[V <: DspChainModule with AXI4SInputModule](dut: V) extends DspTester[V](dut) with AXIOutputTester[V] with StreamInputTester[V] with AXIRWTester[V] with HasDspPokeAs[V] {
+  def in = dut.io.asInstanceOf[AXI4SInputIO].stream_in
   def ctrlAXI = dut.io.control_axi
   def dataAXI = dut.io.data_axi
   def lazySam = dut.lazySams.last

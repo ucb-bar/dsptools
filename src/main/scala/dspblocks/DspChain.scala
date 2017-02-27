@@ -258,25 +258,61 @@ trait HasLogicAnalyzerModule extends HasDspChainParameters with HasDecoupledSCR 
         )
 }
 
-class DspChainIO(firstBlock: DspBlockModule)(implicit val p: Parameters) extends Bundle {
+class DspChainIO()(implicit val p: Parameters) extends Bundle {
   val control_axi = Flipped(new NastiIO())
   val data_axi    = Flipped(new NastiIO())
-
-  val stream_in   = Flipped(firstBlock.io.in.cloneType)
 }
 
-class DspChain(
+case object DspChainAXI4SInputWidth extends Field[Int]
+
+trait AXI4SInputIO {
+  def p: Parameters
+  def streamWidth = p(DspChainAXI4SInputWidth)
+  val stream_in = Flipped(ValidWithSync(UInt(streamWidth.W)))
+}
+
+/*trait AXI4SInput { this: DspChain =>
+  def module = new DspChainModule(this,
+    Some(new DspChainIO with AXI4SInputIO),
+    override_clock, override_reset)(p)
+}*/
+
+trait AXI4SInputModule {
+  def io: DspChainIO with AXI4SInputIO
+  def streamIn = io.stream_in
+}
+
+abstract class DspChain(
   val ctrlBaseAddr: Long,
   val dataBaseAddr: Long,
-  b: => Option[DspChainIO] = None,
-  override_clock: Option[Clock]=None,
-  override_reset: Option[Bool]=None)
+  val override_clock: Option[Clock]=None,
+  val override_reset: Option[Bool]=None)
   (implicit val p: Parameters) extends LazyModule with HasSCRBuilder
-  with HasPatternGenerator with HasLogicAnalyzer {
-  override def module: DspChainModule = new DspChainModule(this, b, override_clock, override_reset)(p)
+    with HasPatternGenerator with HasLogicAnalyzer {
+  def module: DspChainModule
 }
 
-class DspChainModule(
+class DspChainWithAXI4SInput(
+  ctrlBaseAddr: Long,
+  dataBaseAddr: Long,
+  b: => Option[DspChainIO with AXI4SInputIO] = None,
+  override_clock: Option[Clock]=None,
+  override_reset: Option[Bool]=None)(implicit p: Parameters) extends 
+    DspChain(ctrlBaseAddr, dataBaseAddr, override_clock, override_reset) {
+  lazy val module = new DspChainWithAXI4SInputModule(this, b, override_clock, override_reset)
+}
+
+class DspChainWithAXI4SInputModule(
+  outer: DspChain,
+  b: => Option[DspChainIO with AXI4SInputIO] = None,
+  override_clock: Option[Clock]=None,
+  override_reset: Option[Bool]=None)(implicit p: Parameters)
+  extends DspChainModule(outer, b, override_clock, override_reset)
+    with AXI4SInputModule {
+  override lazy val io = b.getOrElse(new DspChainIO with AXI4SInputIO)
+}
+
+abstract class DspChainModule(
   val outer: DspChain,
   b: => Option[DspChainIO] = None,
   override_clock: Option[Clock]=None,
@@ -298,6 +334,11 @@ class DspChainModule(
     //  dataBits = 4 * 64,
       overrideDataBitsPerBeat = Some(64)
   )})*/
+
+  // This gets connected to the input of the first block
+  // Different traits that implement streamIn should be mixed in
+  // to feed data into the first block
+  def streamIn: ValidWithSync[UInt]
 
   require(blocks.length > 0)
 
@@ -348,7 +389,7 @@ class DspChainModule(
     IPXactComponents._ipxactComponents += DspIPXact.makeDspBlockComponent(m.baseAddr)(m.p)
     )
   val mod_ios = modules.map(_.io)
-  val io = IO(b.getOrElse(new DspChainIO(modules.head)))
+  lazy val io = IO(b.getOrElse(new DspChainIO))
 
   // make sure the pattern generator and logic analyzer are instantitated
   patternGenerator
@@ -390,7 +431,7 @@ class DspChainModule(
     mod_ios.head.in.bits := patternGenerator.io.signal.bits
     mod_ios.head.in.valid := patternGenerator.io.signal.valid
   } .otherwise {
-    mod_ios.head.in <> io.stream_in
+    mod_ios.head.in <> streamIn
   }
 
   for (i <- 1 until mod_ios.length) {

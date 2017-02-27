@@ -76,7 +76,7 @@ class BarrelShifterTester(dut: BarrelShifterModule) extends DspBlockTester(dut) 
   }
 }
 
-class PTBSTester(dut: DspChainModule) extends DspChainTester(dut) {
+class PTBSTester(dut: DspChainWithAXI4SInputModule) extends DspChainTester(dut) {
   val streamIn = Seq((0 until 48).map(x=>BigInt(x)).toSeq)
   pauseStream()
 
@@ -196,7 +196,8 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
     implicit val p: Parameters = Parameters.root((
       new Config(
         (pname, site, here) => pname match {
-          case SAMKey => SAMConfig(16, 16)
+          case DspChainAXI4SInputWidth => 12
+          case DefaultSAMKey => SAMConfig(16, 16)
           case DspChainId => "chain"
           case DspChainKey("chain") => DspChainParameters(
             blocks = Seq(
@@ -220,7 +221,7 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
     ).toInstance)
 
     val dut = () => {
-      val lazyChain = LazyModule(new DspChain(0x0000, 0x1000))
+      val lazyChain = LazyModule(new DspChainWithAXI4SInput(0x0000, 0x1000))
       lazyChain.module
     }
 
