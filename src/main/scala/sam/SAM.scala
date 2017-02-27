@@ -201,6 +201,8 @@ trait HasDataBaseAddr {
 
 class SAMWrapperModule(outer: SAMWrapper)(implicit p: Parameters) extends DspBlockModule(outer, Some(new SAMWrapperIO))(p) {
 
+  val dataBaseAddr = outer.dataBaseAddr
+
   println(s"Base address for $name (data) is ${outer.dataBaseAddr}")
 
   // SCR

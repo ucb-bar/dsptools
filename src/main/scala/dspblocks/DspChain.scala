@@ -306,7 +306,6 @@ class DspChainModule(
       case DspBlockId => b._2
     })
     val mod = LazyModule(b._1(modParams))
-    IPXactComponents._ipxactComponents += DspIPXact.makeDspBlockComponent(modParams)
     mod
   })
   val oldSamConfig: SAMConfig = p(SAMKey)
@@ -327,7 +326,6 @@ class DspChainModule(
       }
     })
     val lazySam = LazyModule( new SAMWrapper()(samParams) )
-    IPXactComponents._ipxactComponents += DspIPXact.makeSAMComponent(samParams)
     lazySam
   })
 
@@ -346,6 +344,9 @@ class DspChainModule(
   val scrfile = outer.scrbuilder.generate(ctrlAddrs.entries.last.region.start)
 
   val modules = lazyMods.map(mod => Module(mod.module))
+  modules.map(m => 
+    IPXactComponents._ipxactComponents += DspIPXact.makeDspBlockComponent(m.baseAddr)(m.p)
+    )
   val mod_ios = modules.map(_.io)
   val io = IO(b.getOrElse(new DspChainIO(modules.head)))
 
@@ -377,6 +378,9 @@ class DspChainModule(
     val sam = Module(ls.module)
     sam
   })
+  sams.map(s =>
+    IPXactComponents._ipxactComponents += DspIPXact.makeSAMComponent(s.baseAddr, s.dataBaseAddr)(s.p)
+    )
 
   val scrfile_tl2axi = Module(new TileLinkIONastiIOConverter())
   scrfile_tl2axi.io.tl <> scrfile.io.tl

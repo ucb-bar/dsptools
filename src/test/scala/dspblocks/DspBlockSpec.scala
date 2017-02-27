@@ -162,7 +162,7 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
 
   behavior of "DspBlockTester"
 
-  it should "work with Passthrough" ignore {
+  it should "work with Passthrough" in {
     implicit val p: Parameters = Parameters.root((
       ConfigBuilder.dspBlockParams("passthrough", 12) ++
       ConfigBuilder.buildDSP("passthrough", q => new Passthrough()(q)))
@@ -177,7 +177,7 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
     chisel3.iotesters.Driver.execute(dut, manager) { c => new PassthroughTester(c) } should be (true)
   }
 
-  it should "work with BarrelShifter" ignore {
+  it should "work with BarrelShifter" in {
     implicit val p: Parameters = Parameters.root((
       ConfigBuilder.dspBlockParams("passthrough", 12) ++
       ConfigBuilder.buildDSP("passthrough", q => new BarrelShifter()(q)))
@@ -209,6 +209,7 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
             patternGeneratorUseCombinationalTrigger = true
           )
           case PassthroughDelay => 10
+          case IPXactParameters(id) => scala.collection.mutable.Map[String,String]()
           case _ => throw new CDEMatchError
         }
         ) ++

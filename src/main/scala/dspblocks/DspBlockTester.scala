@@ -125,7 +125,7 @@ trait HasDspPokeAs[T <: Module] { this: DspTester[T] =>
         }
       case r: DspReal =>
         poke(r.node, doubleToBigIntBits(value))
-      case c: DspComplex[_]  => c.underlyingType match {
+      case c: DspComplex[_]  => c.underlyingType() match {
         case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
         case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
         case "SInt" => poke(c.real.asInstanceOf[SInt], value.round.toInt)
@@ -140,7 +140,7 @@ trait HasDspPokeAs[T <: Module] { this: DspTester[T] =>
   //scalastyle:on cyclomatic.complexity
 
   def dspPoke(c: DspComplex[_], value: Complex): Unit = {
-    c.underlyingType match {
+    c.underlyingType() match {
       case "fixed" =>
         dspPoke(c.real.asInstanceOf[FixedPoint], value.real)
         dspPoke(c.imag.asInstanceOf[FixedPoint], value.imag)
@@ -189,7 +189,7 @@ trait HasDspPokeAs[T <: Module] { this: DspTester[T] =>
             assert(u.getWidth >= r.getWidth,
               s"Error: pokeAs($bundle, $value, $typ): $typ has smaller underlying width than $bundle")
             poke(u, doubleToBigIntBits(value))
-          case c: DspComplex[_]  => c.underlyingType match {
+          case c: DspComplex[_]  => c.underlyingType() match {
             case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
             case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
             case "SInt" => poke(c.real.asInstanceOf[SInt], value.toInt)
@@ -257,7 +257,7 @@ trait InputTester {
 
   // handle complex input
   def packInputStream[T<:Data](in: Seq[Seq[Complex]], gen: DspComplex[T]): Seq[BigInt] = {
-    gen.underlyingType match {
+    gen.underlyingType() match {
       case "SInt" =>
         in.map(x => x.reverse.foldLeft(BigInt(0)) { case (bi, cpx) =>
           val new_bi_real = BigInt(cpx.real.round.toInt)
@@ -340,7 +340,7 @@ trait OutputTester {
 
   // unpack complex output data
   def unpackOutputStream[T<:Data](gen: DspComplex[T], lanesOut: Int): Seq[Complex] = {
-    gen.underlyingType match {
+    gen.underlyingType() match {
       case "SInt" =>
         streamOut.last.map(x => (0 until lanesOut).map{ idx => {
           // TODO: doesn't work if width is > 32

@@ -126,6 +126,8 @@ abstract class DspBlockModule(val outer: DspBlock, b: => Option[Bundle with DspB
 
   def addrmap = testchipip.SCRAddressMap(outer.scrbuilder.devName).get
 
+  val baseAddr = outer.baseAddr
+
   def unpackInput[T <: Data](lanes: Int, genIn: T) = {
     val i = Wire(ValidWithSync(Vec(lanes, genIn.cloneType)))
     i.valid := io.in.valid
