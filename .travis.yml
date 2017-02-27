@@ -15,7 +15,7 @@ env:
 
 install:
   # Install dependencies
-  - base .install_verilator.sh
+  - bash .install_verilator.sh
   - bash .install_deps.sh
 
 script:
