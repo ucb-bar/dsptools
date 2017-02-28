@@ -410,7 +410,7 @@ abstract class DspChainModule(
 
   val dataAddrs = new AddrMap(
     lazySams.zipWithIndex.map({ case (sam, idx) =>
-      AddrMapEntry(s"${sam.name}_${idx}_data", MemSize(sam.config.memDepth * 8 * 16, MemAttr(AddrMapProt.RWX)))
+      AddrMapEntry(s"${sam.name}_${idx}_data", MemSize(sam.config.memDepth, MemAttr(AddrMapProt.RWX)))
     }), start=dataBaseAddr)
   lazySams.zip(dataAddrs.entries).foreach { case(sam, addr) =>
     sam.setDataBaseAddr(addr.region.start)
