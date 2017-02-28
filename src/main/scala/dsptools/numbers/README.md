@@ -446,6 +446,7 @@ To run this single test, you can use the command `sbt "test-only SimpleDsp.Simpl
     * customTransforms - Seq[Transform]
       * Default = Empty
       * See below for an example
+      * Order matters
     * annotations - List[Annotation]
       * Default = Empty
       * See below for an example (tends to go hand in hand with customTransforms + this method is really only for InferReadWrite and ReplSeqMem -- an alternative method is currently being made for more tapeout-y Firrtl transforms)
