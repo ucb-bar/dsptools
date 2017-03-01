@@ -1,5 +1,5 @@
 // See LICENSE for license details.
-
+/*
 package dsptools
 
 import chisel3._
@@ -50,3 +50,4 @@ class BaseNSpec extends FreeSpec with Matchers {
     }
   }
 }
+*/

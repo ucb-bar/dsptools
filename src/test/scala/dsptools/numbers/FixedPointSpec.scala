@@ -10,11 +10,11 @@ import dsptools.numbers.implicits._
 
 class FixedRing1(val width: Int, val binaryPoint: Int) extends Module {
   val io = IO(new Bundle {
-    val in = Input(FixedPoint(width = width, binaryPoint = binaryPoint))
-    val floor = Output(FixedPoint(width = width, binaryPoint = binaryPoint))
-    val ceil = Output(FixedPoint(width = width, binaryPoint = binaryPoint))
+    val in = Input(FixedPoint(width.W, binaryPoint.BP))
+    val floor = Output(FixedPoint(width.W, binaryPoint.BP))
+    val ceil = Output(FixedPoint(width.W, binaryPoint.BP))
     val isWhole = Output(Bool())
-    val round = Output(FixedPoint(width = width, binaryPoint = binaryPoint))
+    val round = Output(FixedPoint(width.W, binaryPoint.BP))
     val real = Output(DspReal(1.0))
   })
 
@@ -30,12 +30,12 @@ class FixedRing1Tester(c: FixedRing1) extends DspTester(c) {
   for(i <- -2.0 to 3.0 by increment) {
     println(s"Testing value $i")
 
-    dspPoke(c.io.in, i)
+    poke(c.io.in, i)
 
-    dspExpect(c.io.floor, breeze.numerics.floor(i), s"floor of $i should be ${breeze.numerics.floor(i)}")
-    dspExpect(c.io.ceil, breeze.numerics.ceil(i), s"ceil of $i should be ${breeze.numerics.ceil(i)}")
+    expect(c.io.floor, breeze.numerics.floor(i), s"floor of $i should be ${breeze.numerics.floor(i)}")
+    expect(c.io.ceil, breeze.numerics.ceil(i), s"ceil of $i should be ${breeze.numerics.ceil(i)}")
     expect(c.io.isWhole, breeze.numerics.floor(i) == i , s"isWhole of $i should be ${breeze.numerics.floor(i) == i}")
-    dspExpect(c.io.round, breeze.numerics.round(i), s"round of $i should be ${breeze.numerics.round(i)}")
+    expect(c.io.round, breeze.numerics.round(i), s"round of $i should be ${breeze.numerics.round(i)}")
     step(1)
   }}
 

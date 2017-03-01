@@ -10,6 +10,7 @@ import dsptools.DspTester
 import org.scalatest.{FreeSpec, Matchers}
 import dsptools.numbers._
 import dsptools.numbers.implicits._
+import dsptools._
 
 //scalastyle:off magic.number
 
@@ -30,7 +31,7 @@ class ParameterizedNumberOperation[T <: Data:Ring](
     op match {
       case "+" => io.a1 + io.a2
       case "-" => io.a1 - io.a2
-      case "*" => io.a1 * io.a2
+      case "*" => DspContext.withTrimType(NoTrim) { io.a1 * io.a2 }
 //      case "/" => io.a1 / io.a2
       case _ => throw new Exception(s"Bad operator $op passed to ParameterizedNumberOperation")
     }
@@ -50,13 +51,13 @@ class ParameterizedOpTester[T<:Data:Ring](c: ParameterizedNumberOperation[T]) ex
       case "*" => i * j
       case _ => i + j
     }
-    dspPoke(c.io.a1, i)
-    dspPoke(c.io.a2, j)
+    poke(c.io.a1, i)
+    poke(c.io.a2, j)
     step(1)
 
-    val result = dspPeekDouble(c.io.c)
+    val result = peek(c.io.c)
 
-    dspExpect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
+    expect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
   }
 }
 
@@ -67,8 +68,8 @@ class ParameterizedOpSpecification extends FreeSpec with Matchers {
   """ -
     {
     def realGenerator():  DspReal    = new DspReal
-    def fixedInGenerator(): FixedPoint = FixedPoint(width = 16, binaryPoint = 8)
-    def fixedOutGenerator(): FixedPoint = FixedPoint(width = 48, binaryPoint = 8)
+    def fixedInGenerator(): FixedPoint = FixedPoint(16.W, 8.BP)
+    def fixedOutGenerator(): FixedPoint = FixedPoint(48.W, 8.BP)
 
     "This instance will process Real numbers with the basic mathematical operations" - {
       Seq("+", "-", "*").foreach { operation =>
@@ -110,13 +111,13 @@ class ComplexOpTester[T<:DspComplex[_]](c: ParameterizedNumberOperation[T]) exte
       case "*" => c1 * c2
       case _ => c1 + c2
     }
-    dspPoke(c.io.a1, c1)
-    dspPoke(c.io.a2, c2)
+    poke(c.io.a1, c1)
+    poke(c.io.a2, c2)
     step(1)
 
-    val result = dspPeek(c.io.c).right.get
+    val result = peek(c.io.c)
 
-    dspExpect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
+    expect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
   }
 }
 
@@ -127,13 +128,13 @@ class ComplexOpSpecification extends FreeSpec with Matchers {
   """ - {
     def complexFixedGenerator(): DspComplex[FixedPoint] = {
       DspComplex(
-        FixedPoint(width = 16, binaryPoint = 2),
-        FixedPoint(width = 16, binaryPoint = 2))
+        FixedPoint(16.W, 2.BP),
+        FixedPoint(16.W, 2.BP))
     }
     def complexFixedOutputGenerator(): DspComplex[FixedPoint] = {
       DspComplex(
-        FixedPoint(width = 48, binaryPoint = 4),
-        FixedPoint(width = 48, binaryPoint = 4))
+        FixedPoint(48.W, 4.BP),
+        FixedPoint(48.W, 4.BP))
     }
     def complexRealGenerator(): DspComplex[DspReal] = {
       DspComplex(

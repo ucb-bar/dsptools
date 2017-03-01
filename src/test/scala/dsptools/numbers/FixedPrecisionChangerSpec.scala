@@ -11,8 +11,8 @@ import org.scalatest.{FreeSpec, Matchers}
 
 class FixedPrecisionChanger(inWidth: Int, inBinaryPoint: Int, outWidth: Int, outBinaryPoint: Int) extends Module {
   val io = IO(new Bundle {
-    val in  = Input(FixedPoint(inWidth, inBinaryPoint))
-    val out = Output(FixedPoint(outWidth, outBinaryPoint))
+    val in  = Input(FixedPoint(inWidth.W, inBinaryPoint.BP))
+    val out = Output(FixedPoint(outWidth.W, outBinaryPoint.BP))
   })
 
   val reg = Reg(FixedPoint())
@@ -21,15 +21,15 @@ class FixedPrecisionChanger(inWidth: Int, inBinaryPoint: Int, outWidth: Int, out
 }
 
 class FixedPointTruncatorTester(c: FixedPrecisionChanger, inValue: Double, outValue: Double) extends DspTester(c) {
-  dspPoke(c.io.in, inValue)
+  poke(c.io.in, inValue)
   step(1)
-  dspExpect(c.io.out, outValue, s"got ${dspPeekDouble(c.io.out)} should have $outValue")
+  expect(c.io.out, outValue, s"got ${peek(c.io.out)} should have $outValue")
 }
 
 class RemoveMantissa(inWidth: Int, inBinaryPoint: Int, outWidth: Int, outBinaryPoint: Int) extends Module {
   val io = IO(new Bundle {
-    val in  = Input(FixedPoint(inWidth, inBinaryPoint))
-    val out = Output(FixedPoint(outWidth, 0))
+    val in  = Input(FixedPoint(inWidth.W, inBinaryPoint.BP))
+    val out = Output(FixedPoint(outWidth.W, 0.BP))
   })
 
   val reg = Reg(FixedPoint())
@@ -38,9 +38,9 @@ class RemoveMantissa(inWidth: Int, inBinaryPoint: Int, outWidth: Int, outBinaryP
 }
 
 class RemoveMantissaTester(c: RemoveMantissa, inValue: Double, outValue: Double) extends DspTester(c) {
-  dspPoke(c.io.in, inValue)
+  poke(c.io.in, inValue)
   step(1)
-  dspExpect(c.io.out, outValue, s"got ${dspPeekDouble(c.io.out)} should have $outValue")
+  expect(c.io.out, outValue, s"got ${peek(c.io.out)} should have $outValue")
 }
 
 class FixedPrecisionChangerSpec extends FreeSpec with Matchers {

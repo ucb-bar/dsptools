@@ -57,12 +57,12 @@ class BlackBoxFloatAdder extends Module {
 }
 
 class BlackBoxFloatAdderTester(c: BlackBoxFloatAdder) extends DspTester(c) {
-  dspPoke(c.io.a, 2.1)
-  dspPoke(c.io.b, 3.0)
+  poke(c.io.a, 2.1)
+  poke(c.io.b, 3.0)
 
-  dspExpect(c.io.c, 5.1, "reals should add")
-  dspExpect(c.io.d, 4.2, "reals should add")
-  dspExpect(c.io.e, 6.0, "reals should add")
+  expect(c.io.c, 5.1, "reals should add")
+  expect(c.io.d, 4.2, "reals should add")
+  expect(c.io.e, 6.0, "reals should add")
 }
 
 object FloatOpCodes {
@@ -117,6 +117,7 @@ class FloatOpsWithTrig extends FloatOps {
     is(Pow.U) { io.out := io.in1.pow(io.in2) }
     is(Floor.U) { io.out := io.in1.floor() }
     is(Ceil.U) { io.out := io.in1.ceil() }
+
     is(Sin.U) { io.out := io.in1.sin() }
     is(Cos.U) { io.out := io.in1.cos() }
     is(Tan.U) { io.out := io.in1.tan() }
@@ -131,6 +132,7 @@ class FloatOpsWithTrig extends FloatOps {
     is(ASinh.U) { io.out := io.in1.asinh() }
     is(ACosh.U) { io.out := io.in1.acosh() }
     is(ATanh.U) { io.out := io.in1.atanh() }
+
   }
 }
 
@@ -158,68 +160,69 @@ class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends 
   // scala doesn't have inverse hyperbolic functions, hardcode them
   val asinh_a = 1.9378792776645006
   val acosh_a = 1.8945590126722978042798892652
-  dspPoke(c.io.in1, a)
-  dspPoke(c.io.in2, b)
+  poke(c.io.in1, a)
+  poke(c.io.in2, b)
 
   poke(c.io.opsel, Add)
-  dspExpect(c.io.out, a + b, "reals should add")
+  expect(c.io.out, a + b, "reals should add")
   poke(c.io.opsel, Subtract)
-  dspExpect(c.io.out, a - b, "reals should subtract")
+  expect(c.io.out, a - b, "reals should subtract")
   poke(c.io.opsel, Multiply)
-  dspExpect(c.io.out, a * b, "reals should multiply")
+  expect(c.io.out, a * b, "reals should multiply")
   poke(c.io.opsel, Divide)
-  dspExpect(c.io.out, a / b, "reals should divide")
+  expect(c.io.out, a / b, "reals should divide")
   poke(c.io.opsel, Ln)
-  dspExpect(c.io.out, math.log(a), "log should work on reals")
+  expect(c.io.out, math.log(a), "log should work on reals")
   poke(c.io.opsel, Log10)
-  dspExpect(c.io.out, math.log10(a), "log10 should work on reals")
+  expect(c.io.out, math.log10(a), "log10 should work on reals")
   poke(c.io.opsel, Exp)
-  dspExpect(c.io.out, math.exp(a), "exp should work on reals")
+  expect(c.io.out, math.exp(a), "exp should work on reals")
   poke(c.io.opsel, Sqrt)
-  dspExpect(c.io.out, math.sqrt(a), "sqrt should work on reals")
+  expect(c.io.out, math.sqrt(a), "sqrt should work on reals")
   poke(c.io.opsel, Pow)
-  dspExpect(c.io.out, math.pow(a, b), "reals should pow")
+  expect(c.io.out, math.pow(a, b), "reals should pow")
   poke(c.io.opsel, Floor)
-  dspExpect(c.io.out, math.floor(a), "floor should work on reals")
+  expect(c.io.out, math.floor(a), "floor should work on reals")
   poke(c.io.opsel, Ceil)
-  dspExpect(c.io.out, math.ceil(a), "ceil should work on reals")
+  expect(c.io.out, math.ceil(a), "ceil should work on reals")
 
   if(testTrigFuncs) {
     poke(c.io.opsel, Sin)
-    dspExpect(c.io.out, math.sin(a), "sin should work on reals")
+    expect(c.io.out, math.sin(a), "sin should work on reals")
     poke(c.io.opsel, Cos)
-    dspExpect(c.io.out, math.cos(a), "cos should work on reals")
+    expect(c.io.out, math.cos(a), "cos should work on reals")
     poke(c.io.opsel, Tan)
-    dspExpect(c.io.out, math.tan(a), "tan should work on reals")
+    expect(c.io.out, math.tan(a), "tan should work on reals")
 
     val arcArg = 0.5
-    dspPoke(c.io.in1, arcArg)
+    poke(c.io.in1, arcArg)
     poke(c.io.opsel, ASin)
-    dspExpect(c.io.out, math.asin(arcArg), "asin should work on reals")
+    expect(c.io.out, math.asin(arcArg), "asin should work on reals")
     poke(c.io.opsel, ACos)
-    dspExpect(c.io.out, math.acos(arcArg), "acos should work on reals")
+    expect(c.io.out, math.acos(arcArg), "acos should work on reals")
 
-    dspPoke(c.io.in1, a)
+    poke(c.io.in1, a)
     poke(c.io.opsel, ATan)
-    dspExpect(c.io.out, math.atan(a), "atan should work on reals")
+    expect(c.io.out, math.atan(a), "atan should work on reals")
     poke(c.io.opsel, ATan2)
-    dspExpect(c.io.out, math.atan2(a, b), "atan2 should work on reals")
+    expect(c.io.out, math.atan2(a, b), "atan2 should work on reals")
     poke(c.io.opsel, Hypot)
-    dspExpect(c.io.out, math.hypot(a, b), "hypot should work on reals")
+    expect(c.io.out, math.hypot(a, b), "hypot should work on reals")
     poke(c.io.opsel, Sinh)
-    dspExpect(c.io.out, math.sinh(a), "sinh should work on reals")
+    expect(c.io.out, math.sinh(a), "sinh should work on reals")
     poke(c.io.opsel, Cosh)
-    dspExpect(c.io.out, math.cosh(a), "cosh should work on reals")
+    expect(c.io.out, math.cosh(a), "cosh should work on reals")
     poke(c.io.opsel, Tanh)
-    dspExpect(c.io.out, math.tanh(a), "tanh should work on reals")
+    expect(c.io.out, math.tanh(a), "tanh should work on reals")
     poke(c.io.opsel, ASinh)
-    dspExpect(c.io.out, asinh_a, "asinh should work on reals")
+    expect(c.io.out, asinh_a, "asinh should work on reals")
     poke(c.io.opsel, ACosh)
-    dspExpect(c.io.out, acosh_a, "acosh should work on reals")
+    expect(c.io.out, acosh_a, "acosh should work on reals")
     poke(c.io.opsel, ATanh)
     // not defined
     // dspExpect(c.io.out, math.atanh(a), "atanh should work on reals")
   }
+
 }
 
 class BlackBoxFloatSpec extends ChiselFlatSpec {
