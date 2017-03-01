@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.util.RegNext
+import chisel3.util.{ListLookup, RegNext}
 import dsptools._
 import dsptools.numbers._
 import chisel3.experimental.FixedPoint
@@ -13,6 +13,7 @@ import org.scalatest.{FreeSpec, Matchers}
 /**
   * This will attempt to follow the dsptools.numbers.README.md file as close as possible.
   */
+//scalastyle:off magic.number
 class NumbersSpec extends FreeSpec with Matchers {
   def f(w: Int, b: Int): FixedPoint = FixedPoint(w.W, b.BP)
   def u(w: Int): UInt = UInt(w.W)
@@ -22,50 +23,54 @@ class NumbersSpec extends FreeSpec with Matchers {
     "the behavior of operators and methods can be controlled with the DspContext object" - {
       "overflow type controls how a * b, a.trimBinary(n) and a.div2(n) should round results" - {
         "Overflow type tests for UInt" in {
+            dsptools.Driver.execute(
+              () => new OverflowTypeCircuit(u(4), u(5), u(5)),
+              Array("--backend-name", "firrtl")
+            ) { c =>
+              new OverflowTypeCircuitTester(c,
+                (15, 1, 0, 16, 14, 30),
+                (14, 2, 0, 16, 12, 28),
+                (1, 2, 3, 3, 15, 31)
+              )
+            } should be(true)
+          }
+        "Overflow type tests for SInt" in {
           dsptools.Driver.execute(
-            () => new OverflowTypeCircuit(u(4), u(5), s(5)),
+            () => new OverflowTypeCircuit(s(4), s(5), s(5)),
             Array("--backend-name", "firrtl")
           ) { c =>
-            new OverflowTypeCircuitTester(c)
+            new OverflowTypeCircuitTester(c,
+              (7, 2, -7, 9, 5, 5),
+              (-8, -2, 6, -10, -6, -6)
+            )
+
           } should be(true)
         }
-//        "Overflow type tests for SInt" in {
-//          dsptools.Driver.execute(
-//            () => new OverflowTypeCircuit(s(4), s(4), s(5)),
-//            Array("--backend-name", "firrtl")
-//          ) { c =>
-//            new OverflowTypeCircuitTester(c,
-//              (7, 2, -7, 9, 5, 5),
-//              (-8, -2, 6, -10, -6, -6)
-//            )
-//
-//          } should be(true)
-//        }
-//        "Overflow type tests for FixedPoint" in {
-//          dsptools.Driver.execute(
-//            () => new OverflowTypeCircuit(f(4, 2), f(4, 2), f(8, 3)),
-//            Array("--backend-name", "firrtl")
-//          ) { c =>
-//            new OverflowTypeCircuitTester(c,
-//              (1.75, 0.5, -1.75, 2.25, 1.25, 1.25)
-//            )
-//
-//          } should be(true)
-//        }
+        "Overflow type tests for FixedPoint" in {
+          dsptools.Driver.execute(
+            () => new OverflowTypeCircuit(f(4, 2), f(5, 2), f(8, 3)),
+            Array("--backend-name", "firrtl")
+          ) { c =>
+            new OverflowTypeCircuitTester(c,
+              (1.75, 0.5, -1.75, 2.25, 1.25, 1.25)
+            )
+
+          } should be(true)
+        }
       }
     }
-//      "trimType controls how a * b, a.trimBinary(n) and a.div2(n) should round results" - {
-//        "TrimType tests" in {
-//          def f(w: Int, b: Int): FixedPoint = FixedPoint(w.W, b.BP)
-//          dsptools.Driver.execute(
-//            //            () => new TrimTypeCircuit(f(4, 2), f(10, 5), f(10, 5))) { c =>
-//            () => new TrimTypeCircuit(f(4, 2), f(10, 5), f(20, 7)),
-//            Array("--backend-name", "verilator")
-//          ) { c =>
-//            new TrimTypeCircuitTester(c)
-//          } should be(true)
-//        }
-//      }
+      "trimType controls how a * b, a.trimBinary(n) and a.div2(n) should round results" - {
+        "TrimType tests" in {
+          def f(w: Int, b: Int): FixedPoint = FixedPoint(w.W, b.BP)
+          dsptools.Driver.execute(
+            //            () => new TrimTypeCircuit(f(4, 2), f(10, 5), f(10, 5))) { c =>
+            () => new TrimTypeCircuit(f(4, 2), f(10, 5), f(20, 7)),
+            Array("--backend-name", "verilator")
+          ) { c =>
+            new TrimTypeCircuitTester(c)
+          } should be(true)
+        }
+      }
   }
 }
 
@@ -136,4 +141,5 @@ class OverflowTypeCircuit[T <: Data : Ring, U <: Data : Ring]
   io.addGrow := regAddGrow
   io.subWrap := regSubWrap
   io.subGrow := regSubGrow
+  ListLookup
 }
