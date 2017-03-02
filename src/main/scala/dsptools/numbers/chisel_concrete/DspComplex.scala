@@ -7,6 +7,7 @@ import chisel3.experimental.FixedPoint
 import dsptools.DspException
 import implicits._
 import breeze.math.Complex
+import scala.collection.immutable.ListMap
 
 object DspComplex {
 
@@ -19,6 +20,8 @@ object DspComplex {
   // In reality, real and imag should have the same type, so should be using single argument
   // apply if you aren't trying t create a Lit
   def apply[T <: Data:Ring](real: T, imag: T): DspComplex[T] = {
+    if (real.isLit())  require(imag.isLit(),  "real was a literal, so imag should also be a literal")
+    if (!real.isLit()) require(!imag.isLit(), "real was not a literal, so imag should also not be a literal")
     val newReal = if (real.isLit()) real else real.cloneType
     val newImag = if (imag.isLit()) imag else imag.cloneType
     new DspComplex(newReal, newImag)
@@ -55,26 +58,26 @@ object DspComplex {
 
 }
 
-class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Bundle {
+class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Record {
+  val elements = ListMap( "real" -> real, "imag" -> imag )
   
-  // So old DSP code doesn't break
-  def imaginary(dummy: Int = 0): T = imag
+  def imaginary: T = imag
 
   // Multiply by j
-  def mulj(dummy: Int = 0): DspComplex[T] = DspComplex.wire(-imag, real)
+  def mulj(): DspComplex[T] = DspComplex.wire(-imag, real)
   // Divide by j
-  def divj(dummy: Int = 0): DspComplex[T] = DspComplex.wire(imag, -real)
+  def divj(): DspComplex[T] = DspComplex.wire(imag, -real)
   // Complex conjugate
-  def conj(dummy: Int = 0): DspComplex[T] = DspComplex.wire(real, -imag)
+  def conj(): DspComplex[T] = DspComplex.wire(real, -imag)
   // Absolute square (squared norm) = x^2 + y^2
   // Uses implicits
-  def abssq(dummy: Int = 0): T = (real * real) + (imag * imag)
+  def abssq(): T = (real * real) + (imag * imag)
 
   override def cloneType: this.type = {
     new DspComplex(real.cloneType, imag.cloneType).asInstanceOf[this.type]
   }
 
-  def underlyingType(dummy: Int = 0): String = {
+  def underlyingType: String = {
     real match {
       case f: FixedPoint => "fixed"
       case r: DspReal    => "real"
