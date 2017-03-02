@@ -110,7 +110,7 @@ abstract class DspBlock()(implicit val p: Parameters) extends LazyModule
   def size = scrbuilder.controlNames.length + scrbuilder.statusNames.length
 
   addStatus("uuid")
-  addControl("wrapback")
+  addControl("Wrapback")
 
   def addControl(name: String, init: UInt = null) = {
     scrbuilder.addControl(name, init)
@@ -157,7 +157,8 @@ abstract class DspBlockModule(val outer: DspBlock, b: => Option[Bundle with DspB
   def control(name: String) = scr.control(name)
   def status(name : String) = scr.status(name)
 
-  status("uuid") := this.hashCode.U
+  val uuid = this.hashCode
+  status("uuid") := uuid.U
 }
 
 class GenDspBlockIO[T <: Data, V <: Data]()(implicit val p: Parameters)

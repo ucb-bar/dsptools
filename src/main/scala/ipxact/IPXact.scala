@@ -197,7 +197,7 @@ trait HasIPXact {
   // name = name of the address block
   // base address = base address of the address block
   // registers = list of register names, assumed to be 64 bits and each offset by 1 address unit bits from the previous one
-  def makeAddressBlock(name: String, baseAddr: BigInt, registers: Seq[String]): AddressBlockType = {
+  def makeAddressBlock(name: String, baseAddr: BigInt, registers: Seq[(String, BigInt)]): AddressBlockType = {
     val addrBlockMap = new AddressBlockType
     addrBlockMap.setName(name)
     val baseAddress = new BaseAddress
@@ -212,10 +212,10 @@ trait HasIPXact {
     addrBlockMap.setWidth(width)
     addrBlockMap.setUsage(UsageType.REGISTER)
     val registerBlock = addrBlockMap.getRegister()
-    registers.zipWithIndex.foreach { case(mname: String, index: Int) => 
+    registers.foreach { case(mname: String, offset: BigInt) => 
       val register = new RegisterFile.Register
       register.setName(mname)
-      register.setAddressOffset("0x" + (index*8).toHexString) // addresses increment by 8 bytes (64 bits)
+      register.setAddressOffset("0x" + offset.toString(16))
       val size = new RegisterFile.Register.Size
       size.setValue(BigInteger.valueOf(64))
       register.setSize(size)
@@ -261,7 +261,7 @@ trait HasIPXact {
     range.setValue("0x" + size.toString(16))
     addressSpace.setRange(range)
     var width = new BankedBlockType.Width
-    width.setValue(BigInteger.valueOf(64))  // TODO: ???
+    width.setValue(BigInteger.valueOf(64))
     addressSpace.setWidth(width)
     addressSpace.setAddressUnitBits(BigInteger.valueOf(8))
     addressSpace
@@ -427,7 +427,7 @@ trait HasIPXact {
   //////////// Parameters //////////////////////
   //////////////////////////////////////////////
 
-  def makeParameters(parameterMap: scala.collection.mutable.HashMap[String, String]): SpiritParameters = {
+  def makeParameters(parameterMap: scala.collection.mutable.Map[String, String]): SpiritParameters = {
     val parameters = new SpiritParameters()
     for ( (name, value) <- parameterMap ) {
       val nameValuePairType = new NameValuePairType

@@ -66,7 +66,7 @@ trait HasDspIPXact extends HasIPXact {
   //////////////////////////////////////////////
 
   // TODO: should registers be AddrMap?
-  def makeDspBlockMemoryMaps(mmref: String, baseAddress: BigInt, registers: Seq[String]): MemoryMaps = {
+  def makeDspBlockMemoryMaps(mmref: String, baseAddress: BigInt, registers: Seq[(String, BigInt)]): MemoryMaps = {
     val addrBlock = makeAddressBlock("SCRFile", baseAddress, registers)
     val memoryMaps = new MemoryMaps
     memoryMaps.getMemoryMap().add(makeMemoryMap(mmref, addrBlocks=Seq(addrBlock)))
@@ -74,9 +74,9 @@ trait HasDspIPXact extends HasIPXact {
   }
 
   // TODO: make the data map correct
-  def makeSAMMemoryMaps(ctrl_mmref: String, data_mmref: String, ctrl_baseAddress: BigInt, data_baseAddress: BigInt, registers: Seq[String]): MemoryMaps = {
+  def makeSAMMemoryMaps(ctrl_mmref: String, data_mmref: String, ctrl_baseAddress: BigInt, data_baseAddress: BigInt, registers: Seq[(String, BigInt)]): MemoryMaps = {
     val ctrl_addrBlock = makeAddressBlock("SCRFile", ctrl_baseAddress, registers)
-    val data_addrBlock = makeAddressBlock("SAMData", data_baseAddress, Seq("SAM"))
+    val data_addrBlock = makeAddressBlock("SAMData", data_baseAddress, Seq(("SAM", BigInt(0))))
     val memoryMaps = new MemoryMaps
     memoryMaps.getMemoryMap().addAll(toCollection(Seq(makeMemoryMap(ctrl_mmref, addrBlocks=Seq(ctrl_addrBlock)), makeMemoryMap(data_mmref, addrBlocks=Seq(data_addrBlock)))))
     memoryMaps
@@ -163,7 +163,7 @@ trait HasDspIPXact extends HasIPXact {
   //////////// Component ///////////////////////
   //////////////////////////////////////////////
 
-  def makeDspBlockComponent(_baseAddress: BigInt)(implicit p: Parameters): ComponentType = {
+  def makeDspBlockComponent(_baseAddress: BigInt, uuid: Int)(implicit p: Parameters): ComponentType = {
     val name = p(DspBlockId)
     val mmref = s"${name}_mm"
     val gk = try {
@@ -181,19 +181,20 @@ trait HasDspIPXact extends HasIPXact {
       case (None, Some(d)) => (d.inputWidth, d.outputWidth)
       case _ => throw dsptools.DspException("Input and output widths could not be found in the Parameters object!")
     }
-//   val bits_in = gk.genIn.getWidth * gk.lanesIn
-//   val bits_out = gk.genOut.getWidth * gk.lanesOut
     val baseAddress = _baseAddress
-    val registers = testchipip.SCRAddressMap.contents.head._2.map{ case (scrName, scrOffset) => scrName }.toArray
+    val registers = testchipip.SCRAddressMap.contents.head._2.toSeq
     val busInterfaces = makeDspBlockInterfaces(mmref) 
     val addressSpaces = makeDspBlockAddressSpaces
     val memoryMaps = makeDspBlockMemoryMaps(mmref, baseAddress, registers)
     val model = makeModel(makeDspBlockPorts(bits_in, bits_out))
-    val parameters = makeParameters(p(IPXactParameters(p(DspBlockId))))
+    val parameterMap = scala.collection.mutable.Map[String, String]()
+    parameterMap ++= p(IPXactParameters(p(DspBlockId))) 
+    parameterMap ++= List(("uuid", uuid.toString))
+    val parameters = makeParameters(parameterMap)
     makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, parameters)
   }
 
-  def makeSAMComponent(_ctrl_baseAddress: BigInt, _data_baseAddress: BigInt)(implicit p: Parameters): ComponentType = {
+  def makeSAMComponent(_ctrl_baseAddress: BigInt, _data_baseAddress: BigInt, uuid: Int)(implicit p: Parameters): ComponentType = {
     val name = p(DspBlockId)
     val ctrl_mmref = s"${name}_ctrl_mm"
     val data_mmref = s"${name}_data_mm"
@@ -201,12 +202,15 @@ trait HasDspIPXact extends HasIPXact {
     val bits_in = dbk.inputWidth
     val ctrl_baseAddress = _ctrl_baseAddress
     val data_baseAddress = _data_baseAddress
-    val registers = testchipip.SCRAddressMap.contents.head._2.map{ case (scrName, scrOffset) => scrName }.toArray
+    val registers = testchipip.SCRAddressMap.contents.head._2.toSeq
     val busInterfaces = makeSAMInterfaces(ctrl_mmref, data_mmref) 
     val addressSpaces = makeSAMAddressSpaces
     val memoryMaps = makeSAMMemoryMaps(ctrl_mmref, data_mmref, ctrl_baseAddress, data_baseAddress, registers)
     val model = makeModel(makeSAMPorts(bits_in))
-    val parameters = makeParameters(p(IPXactParameters(p(DspBlockId))))
+    val parameterMap = scala.collection.mutable.Map[String, String]()
+    parameterMap ++= p(IPXactParameters(p(DspBlockId))) 
+    parameterMap ++= List(("uuid", uuid.toString))
+    val parameters = makeParameters(parameterMap)
     makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, parameters)
   }
 
