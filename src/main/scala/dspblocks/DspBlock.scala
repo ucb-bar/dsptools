@@ -110,6 +110,7 @@ abstract class DspBlock()(implicit val p: Parameters) extends LazyModule
   def size = scrbuilder.controlNames.length + scrbuilder.statusNames.length
 
   addStatus("uuid")
+  addControl("wrapback")
 
   def addControl(name: String, init: UInt = null) = {
     scrbuilder.addControl(name, init)
