@@ -208,14 +208,14 @@ trait HasIPXact {
     range.setValue(s"${registers.size}")
     addrBlockMap.setRange(range)
     val width = new BankedBlockType.Width
-    width.setValue(BigInteger.valueOf(1)) // TODO: what should this be? anything other than 1?
+    width.setValue(BigInteger.valueOf(64)) // SCRs are grouped into 64 bit chunks
     addrBlockMap.setWidth(width)
     addrBlockMap.setUsage(UsageType.REGISTER)
     val registerBlock = addrBlockMap.getRegister()
     registers.zipWithIndex.foreach { case(mname: String, index: Int) => 
       val register = new RegisterFile.Register
       register.setName(mname)
-      register.setAddressOffset("0x" + index.toHexString) // TODO: should this be incrementing by 1 or by addressUnitBits?
+      register.setAddressOffset("0x" + (index*8).toHexString) // addresses increment by 8 bytes (64 bits)
       val size = new RegisterFile.Register.Size
       size.setValue(BigInteger.valueOf(64))
       register.setSize(size)
@@ -261,7 +261,7 @@ trait HasIPXact {
     range.setValue("0x" + size.toString(16))
     addressSpace.setRange(range)
     var width = new BankedBlockType.Width
-    width.setValue(BigInteger.valueOf(32))  // TODO: ???
+    width.setValue(BigInteger.valueOf(64))  // TODO: ???
     addressSpace.setWidth(width)
     addressSpace.setAddressUnitBits(BigInteger.valueOf(8))
     addressSpace
