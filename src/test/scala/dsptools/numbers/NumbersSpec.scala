@@ -28,12 +28,24 @@ class NumbersSpec extends FreeSpec with Matchers {
               Array("--backend-name", "firrtl")
             ) { c =>
               new OverflowTypeCircuitTester(c,
-                (15, 1, 0, 16, 14, 30),
-                (14, 2, 0, 16, 12, 28),
-                (1, 2, 3, 3, 15, 31)
+                (15, 1, 0, 16, 14, 0),
+                (14, 2, 0, 16, 12, 0),
+                (1, 2, 3, 3, 15, 0)
               )
             } should be(true)
           }
+        "UInt subtract with overflow type Grow not supported" in {
+          intercept[DspException] {
+            dsptools.Driver.execute(() => new BadUIntSubtractWithGrow2(u(4))) { c =>
+              new NumbersEmptyTester(c)
+            } should be(true)
+          }
+        }
+        "UInt subtract with overflow type Grow not supported cannot be detected without evidence that io is ring" in {
+          dsptools.Driver.execute(() => new ShouldBeBadUIntSubtractWithGrow) { c =>
+            new NumbersEmptyTester(c)
+          } should be(true)
+        }
         "Overflow type tests for SInt" in {
           dsptools.Driver.execute(
             () => new OverflowTypeCircuit(s(4), s(5), s(5)),
@@ -135,11 +147,33 @@ class OverflowTypeCircuit[T <: Data : Ring, U <: Data : Ring]
   val regAddGrow = RegNext(DspContext.withOverflowType(Grow) { io.a + io.b })
 
   val regSubWrap = RegNext(DspContext.withOverflowType(Wrap) { io.a - io.b })
-  val regSubGrow = RegNext(DspContext.withOverflowType(Grow) { io.a - io.b })
+  val regSubGrow = RegNext(if (io.a.isInstanceOf[UInt]) 0.U else DspContext.withOverflowType(Grow) { io.a - io.b })
+//  val regSubGrow = RegNext(DspContext.withOverflowType(Grow) { io.a - io.b })
 
   io.addWrap := regAddWrap
   io.addGrow := regAddGrow
   io.subWrap := regSubWrap
   io.subGrow := regSubGrow
-  ListLookup
+}
+
+class NumbersEmptyTester[T <: Module](c: T) extends DspTester(c)
+
+class ShouldBeBadUIntSubtractWithGrow extends Module {
+  val io = IO(new Bundle {
+    val a = Input(UInt(4.W))
+    val b = Input(UInt(4.W))
+    val o = Output(UInt(4.W))
+  })
+  val r = RegNext(DspContext.withOverflowType(Grow) { io.a - io.b })
+  io.o := r
+}
+
+class BadUIntSubtractWithGrow2[T <: Data : Ring](gen: T) extends Module {
+  val io = IO(new Bundle {
+    val a = Input(gen)
+    val b = Input(gen)
+    val o = Output(gen)
+  })
+  val r = RegNext(DspContext.withOverflowType(Grow) { io.a - io.b })
+  io.o := r
 }
