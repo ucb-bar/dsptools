@@ -3,9 +3,8 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.util.{ListLookup, RegNext}
+import chisel3.util.RegNext
 import dsptools._
-import dsptools.numbers._
 import chisel3.experimental.FixedPoint
 import dsptools.numbers.implicits._
 import org.scalatest.{FreeSpec, Matchers}
@@ -23,17 +22,29 @@ class NumbersSpec extends FreeSpec with Matchers {
     "the behavior of operators and methods can be controlled with the DspContext object" - {
       "overflow type controls how a * b, a.trimBinary(n) and a.div2(n) should round results" - {
         "Overflow type tests for UInt" in {
-            dsptools.Driver.execute(
-              () => new OverflowTypeCircuit(u(4), u(5), u(5)),
-              Array("--backend-name", "firrtl")
-            ) { c =>
-              new OverflowTypeCircuitTester(c,
-                (15, 1, 0, 16, 14, 0),
-                (14, 2, 0, 16, 12, 0),
-                (1, 2, 3, 3, 15, 0)
-              )
-            } should be(true)
-          }
+          dsptools.Driver.execute(
+            () => new OverflowTypeCircuit(u(4), u(5), u(5)),
+            Array("--backend-name", "firrtl")
+          ) { c =>
+            new OverflowTypeCircuitTester(c,
+              // in1, in2, addWrap, addGrow, subWrap, subGrow
+              (15, 1, 0, 16, 14, 0),
+              (14, 2, 0, 16, 12, 0),
+              (1, 2, 3, 3, 15, 0)
+            )
+          } should be(true)
+          dsptools.Driver.execute(
+            () => new OverflowTypeCircuit(u(4), u(5), u(5)),
+            Array("--backend-name", "verilator")
+          ) { c =>
+            new OverflowTypeCircuitTester(c,
+              // in1, in2, addWrap, addGrow, subWrap, subGrow
+              (15, 1, 0, 16, 14, 0),
+              (14, 2, 0, 16, 12, 0),
+              (1, 2, 3, 3, 15, 0)
+            )
+          } should be(true)
+        }
         "UInt subtract with overflow type Grow not supported" in {
           intercept[DspException] {
             dsptools.Driver.execute(() => new BadUIntSubtractWithGrow2(u(4))) { c =>
@@ -52,7 +63,21 @@ class NumbersSpec extends FreeSpec with Matchers {
             Array("--backend-name", "firrtl")
           ) { c =>
             new OverflowTypeCircuitTester(c,
+              // in1, in2, addWrap, addGrow, subWrap, subGrow
               (7, 2, -7, 9, 5, 5),
+              (-8, 2, -6, -6, 6, -10),
+              (-8, -2, 6, -10, -6, -6)
+            )
+
+          } should be(true)
+          dsptools.Driver.execute(
+            () => new OverflowTypeCircuit(s(4), s(5), s(5)),
+            Array("--backend-name", "verilator")
+          ) { c =>
+            new OverflowTypeCircuitTester(c,
+              // in1, in2, addWrap, addGrow, subWrap, subGrow
+              (7, 2, -7, 9, 5, 5),
+              (-8, 2, -6, -6, 6, -10),
               (-8, -2, 6, -10, -6, -6)
             )
 
@@ -64,7 +89,22 @@ class NumbersSpec extends FreeSpec with Matchers {
             Array("--backend-name", "firrtl")
           ) { c =>
             new OverflowTypeCircuitTester(c,
-              (1.75, 0.5, -1.75, 2.25, 1.25, 1.25)
+              // in1, in2, addWrap, addGrow, subWrap, subGrow
+              (1.75, 0.5, -1.75, 2.25, 1.25, 1.25),
+              (-1.75, 0.5, -1.25, -1.25, 1.75, -2.25),
+              (-1.75, -0.5, 1.75, -2.25, -1.25, -1.25)
+            )
+
+          } should be(true)
+          dsptools.Driver.execute(
+            () => new OverflowTypeCircuit(f(4, 2), f(5, 2), f(8, 3)),
+            Array("--backend-name", "verilator")
+          ) { c =>
+            new OverflowTypeCircuitTester(c,
+              // in1, in2, addWrap, addGrow, subWrap, subGrow
+              (1.75, 0.5, -1.75, 2.25, 1.25, 1.25),
+              (-1.75, 0.5, -1.25, -1.25, 1.75, -2.25),
+              (-1.75, -0.5, 1.75, -2.25, -1.25, -1.25)
             )
 
           } should be(true)
@@ -86,6 +126,7 @@ class NumbersSpec extends FreeSpec with Matchers {
   }
 }
 
+//scalastyle:off regex
 class TrimTypeCircuitTester[T <: Data : Ring](c: TrimTypeCircuit[T]) extends DspTester(c) {
   poke(c.io.a, 1.25)
   poke(c.io.b, 1.25)
