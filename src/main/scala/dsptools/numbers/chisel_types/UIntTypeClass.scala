@@ -26,11 +26,11 @@ trait UIntRing extends Any with Ring[UInt] with hasContext {
   }
   override def minus(f: UInt, g: UInt): UInt = {
     val diff = context.overflowType match {
-      case Grow => f -& g
+      case Grow => throw DspException("OverflowType Grow is not supported for UInt subtraction")
       case Wrap => f -% g
       case _ => throw DspException("Saturating subtractor hasn't been implemented")
     }
-    ShiftRegister(diff, context.numAddPipes)
+    ShiftRegister(diff.asUInt, context.numAddPipes)
   }
   def negate(f: UInt): UInt = throw DspException("Can't negate UInt and get UInt")
   def times(f: UInt, g: UInt): UInt = {

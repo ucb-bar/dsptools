@@ -1,3 +1,5 @@
+// See LICENSE for license details.
+
 package SimpleTB
 
 import chisel3._
@@ -349,7 +351,7 @@ class SimpleTBSpec extends FlatSpec with Matchers {
     val opt = new DspTesterOptionsManager {
       dspTesterOptions = optionsPass.dspTesterOptions
       testerOptions = optionsPass.testerOptions
-      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/lit_sint")
+//      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/lit_sint")
     }
     dsptools.Driver.execute(() => new SimpleLitModule(p.genShortS, p.genLongS, includeR = true, p), opt) { c =>
       new PassLitTester(c)
@@ -361,7 +363,7 @@ class SimpleTBSpec extends FlatSpec with Matchers {
     val opt = new DspTesterOptionsManager {
       dspTesterOptions = optionsPass.dspTesterOptions
       testerOptions = optionsPass.testerOptions
-      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/lit_fix")
+//      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/lit_fix")
     }  
     dsptools.Driver.execute(() => new SimpleLitModule(p.genShortF, p.genLongF, includeR = true, p), opt) { c =>
       new PassLitTester(c)
@@ -373,7 +375,7 @@ class SimpleTBSpec extends FlatSpec with Matchers {
     val opt = new DspTesterOptionsManager {
       dspTesterOptions = optionsFail.dspTesterOptions
       testerOptions = optionsFail.testerOptions
-      commonOptions = optionsFail.commonOptions.copy(targetDirName = "test_run_dir/lit_fix")
+//      commonOptions = optionsFail.commonOptions.copy(targetDirName = "test_run_dir/lit_fix")
     }
     dsptools.Driver.execute(() => new SimpleLitModule(p.genShortF, p.genLongF, includeR = true, p), opt) { c =>
       new FailLitTester(c)
@@ -387,7 +389,7 @@ class SimpleTBSpec extends FlatSpec with Matchers {
     val opt = new DspTesterOptionsManager {
       dspTesterOptions = optionsPass.dspTesterOptions
       testerOptions = optionsPass.testerOptions
-      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/io_sint")
+//      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/io_sint")
     }
     dsptools.Driver.execute(() => new SimpleIOModule(p.genShortS, p.genLongS, includeR = true, p), opt) { c =>
       new PassIOTester(c)
@@ -398,7 +400,7 @@ class SimpleTBSpec extends FlatSpec with Matchers {
     val opt = new DspTesterOptionsManager {
       dspTesterOptions = optionsPass.dspTesterOptions
       testerOptions = optionsPass.testerOptions
-      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/io_fix")
+//      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/io_fix")
     }
     dsptools.Driver.execute(() => new SimpleIOModule(p.genShortF, p.genLongF, includeR = true, p), opt) { c =>
       new PassIOTester(c)
@@ -410,7 +412,7 @@ class SimpleTBSpec extends FlatSpec with Matchers {
       val opt = new DspTesterOptionsManager {
         dspTesterOptions = optionsPassTB.dspTesterOptions
         testerOptions = optionsPassTB.testerOptions
-        commonOptions = optionsPassTB.commonOptions.copy(targetDirName = "test_run_dir/io_fix_tb")
+//        commonOptions = optionsPassTB.commonOptions.copy(targetDirName = "test_run_dir/io_fix_tb")
       }
       var tbFileLoc: String = ""
       dsptools.Driver.execute(() => new SimpleIOModule(p.genShortF, p.genLongF, includeR = false, p), 

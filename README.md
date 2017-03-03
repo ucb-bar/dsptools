@@ -89,10 +89,10 @@ To write a generic chisel Module, we might try to write
 
 ```
 class Passthrough[T](gen: => T) extends Module {
-  val io = new Bundle {
-    val in = gen.asInput
-    val out = gen.asOutput
-  }
+  val io = new IO(Bundle {
+    val in = Input(gen)
+    val out = Output(gen)
+  })
   io.out := io.in
 }
 ```
@@ -113,10 +113,10 @@ This example isn't very interesting, though.
 
 ```
 class Doubler[T<:Data](gen: => T) extends Module {
-  val io = new Bundle {
-    val in = gen.asInput
-    val out = gen.asOutput
-  }
+  val io = IO(new Bundle {
+    val in = Input(gen)
+    val out = Output(gen)
+  })
   io.out := io.in + io.in
 }
 ```
