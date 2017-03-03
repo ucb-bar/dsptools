@@ -26,9 +26,9 @@ trait IPXactGeneratorApp extends GeneratorApp {
       val component = factory.createComponent(componentType)
       // create name based off component parameters
       val of = new File(td, 
-        componentType.getLibrary() + ":" + 
-        componentType.getName() + ":" + 
-        componentType.getVendor() + ":" + 
+        componentType.getLibrary() + "_" + 
+        componentType.getName() + "_" + 
+        componentType.getVendor() + "_" + 
         componentType.getVersion() + ".xml"
       )
       of.getParentFile().mkdirs()

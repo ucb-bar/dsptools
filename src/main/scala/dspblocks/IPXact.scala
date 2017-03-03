@@ -52,8 +52,8 @@ trait HasDspIPXact extends HasIPXact {
   }
 
   def makeXbarInterfaces(inputs: Int, outputs: Int, mmref: String, asref: String): BusInterfaces = {
-    val inputInterfaces = (0 until inputs).map(i => makeAXI4Interface(s"${mmref}_${i}", s"io_in_${i}", s"xbar_in_${i}", false, outputs, "io_out"))
-    val outputInterfaces = (0 until outputs).map(i => makeAXI4Interface(s"${asref}_${i}", s"io_out_${i}", s"xbar_out_${i}", true))
+    val inputInterfaces = (0 until inputs).map(i => makeAXI4Interface(s"${mmref}_${i}", s"io_in_${i}", s"io_in_${i}", false, outputs, "io_out"))
+    val outputInterfaces = (0 until outputs).map(i => makeAXI4Interface(s"${asref}_${i}", s"io_out_${i}", s"io_out_${i}", true))
     
     val busInterfaces = new BusInterfaces
     busInterfaces.getBusInterface().addAll(toCollection(Seq(inputInterfaces, outputInterfaces).flatten))
@@ -164,7 +164,8 @@ trait HasDspIPXact extends HasIPXact {
   //////////////////////////////////////////////
 
   def makeDspBlockComponent(_baseAddress: BigInt, uuid: Int)(implicit p: Parameters): ComponentType = {
-    val name = p(DspBlockId)
+    val id = p(DspBlockId)
+    val name = id.replaceAll("[-:]", "_")
     val mmref = s"${name}_mm"
     val gk = try {
       Some(p(GenKey(p(DspBlockId))))
@@ -195,7 +196,8 @@ trait HasDspIPXact extends HasIPXact {
   }
 
   def makeSAMComponent(_ctrl_baseAddress: BigInt, _data_baseAddress: BigInt, uuid: Int)(implicit p: Parameters): ComponentType = {
-    val name = p(DspBlockId)
+    val id = p(DspBlockId)
+    val name = id.replaceAll("[-:]", "_")
     val ctrl_mmref = s"${name}_ctrl_mm"
     val data_mmref = s"${name}_data_mm"
     val dbk = p(DspBlockKey(p(DspBlockId)))
@@ -215,7 +217,8 @@ trait HasDspIPXact extends HasIPXact {
   }
 
   def makeXbarComponent(implicit p: Parameters): ComponentType = {
-    val name = p(DspBlockId)
+    val id = p(DspBlockId)
+    val name = id.replaceAll("[-:]", "_")
     val mmref = s"${name}_mm"
     val asref = s"${name}_as"
     val addrMap = p(GlobalAddrMap)
