@@ -71,6 +71,9 @@ For example, using typeclasses you can write chisel that generates an FIR filter
 You can also use typeclasses to write chisel that generates a circuit implementation using floating point (via Verilog's real type).
 After testing that your circuit implementation works with floating point, you can use the same code to generate a fixed point version of the circuit suitable for synthesis.
 
+**For a additional, more detailed description of the Numeric classes in dsptools: see [The Numbers ReadMe](https://github.com/ucb-bar/dsptools/blob/master/src/main/scala/dsptools/numbers/README.md)**
+
+
 A generic function in scala is defined via
 
 ```def func[T](in: T): T```
