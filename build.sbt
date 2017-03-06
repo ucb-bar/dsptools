@@ -13,7 +13,7 @@ resolvers ++= Seq (
   Resolver.sonatypeRepo("releases")
 )
 
-libraryDependencies ++= Seq("chisel3", "chisel-iotesters", "dsptools", "testchipip", "builtin-debugger").map {
+libraryDependencies ++= Seq("chisel3", "chisel-iotesters", "dsptools", "testchipip", "builtin-debugger", "tapeout").map {
   dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
 }
 
@@ -26,5 +26,6 @@ val defaultVersions = Map(
   "dsptools" -> "1.0",
   "rocketchip" -> "1.2",
   "builtin-debugger" -> "0",
-  "testchipip" -> "1.0"
+  "testchipip" -> "1.0",
+  "tapeout" -> "0.1-SNAPSHOT"
 )

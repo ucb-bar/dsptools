@@ -10,11 +10,14 @@ import java.math.BigInteger
 import rocketchip._
 import cde._
 
-trait IPXactGeneratorApp extends GeneratorApp {
+trait IPXactGeneratorApp extends App {
 
   /////////////////////////////////////////////
   //////////// Generate ////////////////////////
   //////////////////////////////////////////////
+
+  def verilogFilename: String
+  def ipxactDir: String
 
   def generateIPXact(component: ComponentType): Unit = generateIPXact(Seq(component))
   def generateIPXact(components: Seq[ComponentType]): Unit = {
@@ -22,10 +25,10 @@ trait IPXactGeneratorApp extends GeneratorApp {
     val factory = new ObjectFactory
 
     components.foreach{ componentType => {
-      componentType.setFileSets(IPXact.makeFileSets(s"${longName}.v"))
+      componentType.setFileSets(IPXact.makeFileSets(verilogFilename))
       val component = factory.createComponent(componentType)
       // create name based off component parameters
-      val of = new File(td, 
+      val of = new File(ipxactDir, 
         componentType.getLibrary() + "_" + 
         componentType.getName() + "_" + 
         componentType.getVendor() + "_" + 

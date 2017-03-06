@@ -15,12 +15,10 @@ import dspblocks._
 import dsptools._
 import ipxact._
 
-trait DspGeneratorApp extends GeneratorApp
-
-object DspGenerator extends DspGeneratorApp with IPXactGeneratorApp {
+object Generator extends GeneratorApp with IPXactGeneratorApp  {
   val longName = names.fullTopModuleClass + "." + names.configs
+  def verilogFilename = s"${longName}.v"
+  def ipxactDir = td
   generateFirrtl
-  //generateTestSuiteMakefrags // TODO: Needed only for legacy make targets
-  //generateParameterDump      // TODO: Needed only for legacy make targets
   generateIPXact(IPXactComponents.ipxactComponents())
 }
