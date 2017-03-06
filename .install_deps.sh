@@ -9,7 +9,7 @@ if [ ! -d $TRAVIS_BUILD_DIR/lib ]; then
     mkdir -p $TRAVIS_BUILD_DIR/lib
 fi
 
-orgs=(     ucb-bar ucb-bar ucb-bar            ucb-bar        ucb-bar    ucb-art     ucb-bar    ucb-art          ucb-art )
+orgs=(     ucb-bar ucb-bar ucb-bar            ucb-bar        ucb-bar    ucb-art     ucb-bar    ucb-art          ucb-bar )
 repos=(    firrtl  chisel3 firrtl-interpreter chisel-testers dsptools   rocket-chip testchipip builtin-debugger barstools )
 branches=( master  master  master             master         add_ops    craftFork   master     master           new_gen )
 
