@@ -390,12 +390,14 @@ trait AXIOutputTester[T <: Module] extends OutputTester with InputTester { this:
   var axi: NastiIO = ctrlAXI
   var wordsDumped: Int = 0
 
-  def lazySam: SAMWrapper
-  def samSize = lazySam.module.sam.w
+  def flattenedLazySams: Seq[SAMWrapper]
+  def samSize = flattenedLazySams.last.module.sam.w // TODO fix
   // for now, only support streaming as much as the SAM can store
   def addrmap = testchipip.SCRAddressMap.contents.map({ case (mod, map) =>
     map.map { case(key, value) => (s"$mod:$key", value) }
-  }).reduce(_++_)
+  }).reduce(_++_) ++ flattenedLazySams.map(s =>
+    s"${s.id}:data" -> s.dataBaseAddr
+    )
   def ctrlAXI: NastiIO
   def dataAXI: NastiIO
   def outputStep: Unit = {}
@@ -407,7 +409,7 @@ trait AXIOutputTester[T <: Module] extends OutputTester with InputTester { this:
 
   // use given SAM by default
   private def getPrefix(prefix: Option[String]) =
-    prefix.getOrElse(lazySam.id)
+    prefix.getOrElse(flattenedLazySams.last.id)
 
   def initiateSamCapture(nSamps: Int, waitForSync: Boolean = false,
       prefix: Option[String] = None, checkWrites: Boolean = true): Unit = {
@@ -459,7 +461,8 @@ trait AXIOutputTester[T <: Module] extends OutputTester with InputTester { this:
     val samWPacketCount = addrmap(s"${_prefix}:samWPacketCount")
     val samWSyncAddr = addrmap(s"${_prefix}:samWSyncAddr")
 
-    val base = 65536 + axiRead(samWSyncAddr)
+    val samBase = addrmap(s"${_prefix}:data")
+    val base = samBase + axiRead(samWSyncAddr)
     println(s"SyncAddr is ${base}")
     val writeCount = axiRead(samWWriteCount)
     val packetCount = axiRead(samWPacketCount)
@@ -707,7 +710,7 @@ abstract class DspChainTester[V <: DspChainModule with AXI4SInputModule](dut: V)
   def in = dut.io.asInstanceOf[AXI4SInputIO].stream_in
   def ctrlAXI = dut.io.control_axi
   def dataAXI = dut.io.data_axi
-  def lazySam = dut.lazySams.last
+  def flattenedLazySams = dut.flattenedLazySams
 
   override def step(n: Int): Unit = {
     inputStep
