@@ -24,13 +24,25 @@ object DspChain {
   def addrMapIds(): Seq[String] = _addrMaps.keys.toSeq
 }
 
+case class BlockConnectionParameters (
+  connectPG: Boolean = true,
+  connectLA: Boolean = true,
+  addSAM: Boolean = true
+)
+
+object BlockConnectEverything extends BlockConnectionParameters(true, true, true)
+object BlockConnectNothing extends BlockConnectionParameters(false, false, false)
+object BlockConnectSAMOnly extends BlockConnectionParameters(false, false, true)
+object BlockConnectPGLAOnly extends BlockConnectionParameters(true, true, false)
+
 case class DspChainParameters (
-  val blocks: Seq[(Parameters => DspBlock, String)],
+  blocks: Seq[(Parameters => DspBlock, String, BlockConnectionParameters)],
   logicAnalyzerSamples: Int,
   logicAnalyzerUseCombinationalTrigger: Boolean,
   patternGeneratorSamples: Int,
   patternGeneratorUseCombinationalTrigger: Boolean,
-  biggestWidth: Int = 128
+  biggestWidth: Int = 128,
+  writeHeader: Boolean = false
 )
 
 case object DspChainId extends Field[String]
@@ -41,6 +53,12 @@ trait HasDspChainParameters extends HasSCRParameters {
   val dspChainExternal                        = p(DspChainKey(p(DspChainId)))
   val id                                      = p(DspChainId)
   val blocks                                  = dspChainExternal.blocks
+  val blocksUsePG                             = blocks.map(_._3.connectPG)
+  val blocksUseLA                             = blocks.map(_._3.connectLA)
+  val blocksUseSAM                            = blocks.map(_._3.addSAM)
+  val totalPGBlocks                           = blocksUsePG.foldLeft(0) { case (sum, b) => if (b) sum + 1 else sum }
+  val totalLABlocks                           = blocksUseLA.foldLeft(0) { case (sum, b) => if (b) sum + 1 else sum }
+  val totalSAMBlocks                          = blocksUseSAM.foldLeft(0) { case(sum, b) => if (b) sum + 1 else sum }
   val logicAnalyzerSamples                    = dspChainExternal.logicAnalyzerSamples
   val logicAnalyzerUseCombinationalTrigger    = dspChainExternal.logicAnalyzerUseCombinationalTrigger
   val patternGeneratorSamples                 = dspChainExternal.patternGeneratorSamples
@@ -55,6 +73,60 @@ trait HasDspChainParameters extends HasSCRParameters {
   }*/
   val wordWidth = scrDataBits
   val dataWidthWords = (biggestWidth + wordWidth-1) / wordWidth
+
+  def writeHeader = dspChainExternal.writeHeader
+}
+
+trait WithChainHeaderWriter { this: DspChainModule =>
+  private val badTokens = Seq("-", ":")
+  def nameMangle(id: String): String =
+    badTokens.foldLeft(id) {case (str, token) => str.replace(token, "_") }
+  def getSamOffset(regName: String) =
+    flattenedSams.head.addrmap(regName) - flattenedSams.head.baseAddr
+  def annotateHeader = {
+    object Chain {
+      val chain = nameMangle(id)
+      val blocks = modules.map(mod => {
+        Map(
+          "addrs"     ->
+            mod.addrmap.map({case (key, value) =>
+              Map(
+                "addrname"  -> key,
+                "addr"      -> value,
+                "blockname" -> nameMangle(mod.id)
+              )
+            })
+        )})
+      val sam = flattenedSams.map(s => {
+        Map(
+          "samname"   -> nameMangle(s.id),
+          "ctrl_base" -> s.baseAddr,
+          "data_base" -> s.dataBaseAddr
+          )
+      })
+      val samWStartAddrOffset   = getSamOffset("samWStartAddr")
+      val samWTargetCountOffset = getSamOffset("samWTargetCount")
+      val samWTrigOffset        = getSamOffset("samWTrig")
+      val samWWaitForSyncOffset = getSamOffset("samWWaitForSync")
+      val samWWriteCountOffset  = getSamOffset("samWWriteCount")
+      val samWPacketCountOffset = getSamOffset("samWPacketCount")
+      val samWSyncAddrOffset    = getSamOffset("samWSyncAddr")
+    }
+    val header: String = {
+      import com.gilt.handlebars.scala.binding.dynamic._
+      import com.gilt.handlebars.scala.Handlebars
+      import scala.io.Source
+
+      val stream = getClass.getResourceAsStream("/chain_api.h")
+      val template = Source.fromInputStream( stream ).getLines.mkString("\n")
+      val t= Handlebars(template)
+      t(Chain)
+    }
+    import java.io.{File, PrintWriter}
+    val writer = new PrintWriter(new File("chain_api.h"))
+    writer.write(header)
+    writer.close()
+  }
 }
 
 trait HasDecoupledSCR {
@@ -193,7 +265,7 @@ trait HasPatternGeneratorModule extends HasDspChainParameters with HasDecoupledS
     patternGenerator
   }
 
-  lazy val patternGeneratorSelects = (0 until blocks.length).map(i =>
+  lazy val patternGeneratorSelects = (0 until totalPGBlocks).map(i =>
       scrfile.control("patternGeneratorSelect") === i.U &&
       scrfile.control("patternGeneratorEnable") =/= 0.U
       )
@@ -252,7 +324,7 @@ trait HasLogicAnalyzerModule extends HasDspChainParameters with HasDecoupledSCR 
 
     logicAnalyzer
   }
-  lazy val logicAnalyzerSelects = (0 until blocks.length).map(i =>
+  lazy val logicAnalyzerSelects = (0 until totalLABlocks).map(i =>
         scrfile.control("logicAnalyzerSelect") === i.U &&
         scrfile.control("logicAnalyzerEnable") =/= 0.U
         )
@@ -297,7 +369,7 @@ class DspChainWithAXI4SInput(
   dataBaseAddr: Long,
   b: => Option[DspChainIO with AXI4SInputIO] = None,
   override_clock: Option[Clock]=None,
-  override_reset: Option[Bool]=None)(implicit p: Parameters) extends 
+  override_reset: Option[Bool]=None)(implicit p: Parameters) extends
     DspChain(ctrlBaseAddr, dataBaseAddr, override_clock, override_reset) {
   lazy val module = new DspChainWithAXI4SInputModule(this, b, override_clock, override_reset)
 }
@@ -319,7 +391,8 @@ abstract class DspChainModule(
   override_reset: Option[Bool]=None)(implicit val p: Parameters)
   extends LazyModuleImp(outer, override_clock, override_reset)
     with HasDspChainParameters
-    with HasPatternGeneratorModule with HasLogicAnalyzerModule {
+    with HasPatternGeneratorModule with HasLogicAnalyzerModule
+    with WithChainHeaderWriter {
 
   val ctrlBaseAddr = outer.ctrlBaseAddr
   val dataBaseAddr = outer.dataBaseAddr
@@ -350,7 +423,7 @@ abstract class DspChainModule(
     mod
   })
   val oldSamConfig: SAMConfig = p(DefaultSAMKey)
-  val lazySams = lazyMods.map(mod => {
+  val lazySams = lazyMods.zip(blocksUseSAM).map({ case(mod, useSam) =>
     val samWidth = 64 // todo don't hardcode...
     val samName = mod.id + ":sam"
     val samParams = p.alterPartial({
@@ -366,19 +439,24 @@ abstract class DspChainModule(
         parameterMap
       }
     })
-    val lazySam = LazyModule( new SAMWrapper()(samParams) )
-    lazySam
+    if (useSam) {
+      val lazySam = LazyModule( new SAMWrapper()(samParams) )
+      Some(lazySam)
+    } else {
+      None
+    }
   })
+  val flattenedLazySams = lazySams.flatten.toSeq
 
   val ctrlAddrs = new AddrMap(
     lazyMods.map(_.addrMapEntry) ++
-    lazySams.map(_.addrMapEntry) ++
+    flattenedLazySams.map(_.addrMapEntry) ++
     Seq(
       AddrMapEntry(s"chain", MemSize(BigInt(1 << 8), MemAttr(AddrMapProt.RWX)))
     ),
   start=ctrlBaseAddr)
 
-  (lazyMods ++ lazySams).zip(ctrlAddrs.entries).foreach{ case (mod, addr) =>
+  (lazyMods ++ flattenedLazySams).zip(ctrlAddrs.entries).foreach{ case (mod, addr) =>
     mod.setBaseAddr(addr.region.start)
   }
 
@@ -409,56 +487,63 @@ abstract class DspChainModule(
   }
 
   val dataAddrs = new AddrMap(
-    lazySams.zipWithIndex.map({ case (sam, idx) =>
-      AddrMapEntry(s"${sam.name}_${idx}_data", MemSize(sam.config.memDepth, MemAttr(AddrMapProt.RWX)))
+    flattenedLazySams.zipWithIndex.map({ case (sam, idx) =>
+      AddrMapEntry(s"${modules(idx).id}:sam:data", MemSize(sam.config.memDepth, MemAttr(AddrMapProt.RWX)))
     }), start=dataBaseAddr)
-  lazySams.zip(dataAddrs.entries).foreach { case(sam, addr) =>
+  flattenedLazySams.zip(dataAddrs.entries).foreach { case(sam, addr) =>
     sam.setDataBaseAddr(addr.region.start)
   }
-  val sams = lazySams.map(ls => {
-    val sam = Module(ls.module)
-    sam
+  val sams = lazySams.map(_ match {
+    case Some(ls) =>
+      val sam = Module(ls.module)
+      Some(sam)
+    case None =>
+      None
   })
-  sams.map(s =>
+  val flattenedSams = sams.flatten.toSeq
+  flattenedSams.map(s =>
     IPXactComponents._ipxactComponents += DspIPXact.makeSAMComponent(s.baseAddr, s.dataBaseAddr, s.uuid)(s.p)
     )
 
   val scrfile_tl2axi = Module(new TileLinkIONastiIOConverter())
   scrfile_tl2axi.io.tl <> scrfile.io.tl
 
-  // connect input to first module
-  when (patternGeneratorSelects(0)) {
-    mod_ios.head.in.bits := patternGenerator.io.signal.bits
-    mod_ios.head.in.valid := patternGenerator.io.signal.valid
-  } .otherwise {
-    mod_ios.head.in <> streamIn
+  // unless pattern generator asserted, every module connects to the next
+  mod_ios.foldLeft(streamIn) { case(out, mod) =>
+    mod.in <> out
+    mod.out
   }
 
-  for (i <- 1 until mod_ios.length) {
-    when (patternGeneratorSelects(i)) {
-      mod_ios(i).in.bits := patternGenerator.io.signal.bits
-      mod_ios(i).in.valid := patternGenerator.io.signal.valid
-    } .otherwise {
-      mod_ios(i).in <> mod_ios(i-1).out
-    }
-  }
-
+  var currentPatternGen = 0
+  var currentLogicAnalyzer = 0
   for (i <- 0 until mod_ios.length) {
-    when (logicAnalyzerSelects(i)) {
-      logicAnalyzer.io.signal.valid := mod_ios(i).out.valid
-      logicAnalyzer.io.signal.bits  := mod_ios(i).out.bits
+    if (blocksUsePG(i)) {
+      when (patternGeneratorSelects(currentPatternGen)) {
+        mod_ios(i).in.bits  := patternGenerator.io.signal.bits
+        mod_ios(i).in.valid := patternGenerator.io.signal.valid
+      }
+      currentPatternGen += 1
+    }
+    if (blocksUseLA(i)) {
+      when (logicAnalyzerSelects(currentLogicAnalyzer)) {
+        logicAnalyzer.io.signal.valid := mod_ios(i).out.valid
+        logicAnalyzer.io.signal.bits  := mod_ios(i).out.bits
+      }
+      currentLogicAnalyzer += 1
     }
   }
 
   // connect output of each module to appropriate SAM
-  modules.zip(sams).foreach {case (mod, sam) =>
-    sam.io.in := mod.io.out
+  modules.zip(sams).foreach {
+    case (mod, Some(sam)) =>
+      sam.io.in := mod.io.out
+    case _ =>
   }
 
-  val control_axis = (modules ++ sams).map(_.io.axi) :+ scrfile_tl2axi.io.nasti
+  val control_axis = (modules ++ flattenedSams).map(_.io.axi) :+ scrfile_tl2axi.io.nasti
 
   val ctrlOutPorts = control_axis.length
-  val dataOutPorts = sams.length
+  val dataOutPorts = totalSAMBlocks
 
   val inPorts = 1
   val ctrlXbarParams = p.alterPartial({
@@ -518,5 +603,7 @@ abstract class DspChainModule(
   ctrlXbar.io.out.zip(control_axis).foreach{ case (xbar_axi, control_axi) => xbar_axi <> control_axi }
 
   dataXbar.io.in(0) <> io.data_axi
-  dataXbar.io.out.zip(sams).foreach{ case (xbar_axi, sam) => xbar_axi <> sam.io.asInstanceOf[SAMWrapperIO].axi_out }
+  dataXbar.io.out.zip(flattenedSams).foreach{ case (xbar_axi, sam) => xbar_axi <> sam.io.asInstanceOf[SAMWrapperIO].axi_out }
+
+  annotateHeader
 }

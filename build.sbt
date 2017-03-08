@@ -29,3 +29,5 @@ val defaultVersions = Map(
   "testchipip" -> "1.0",
   "tapeout" -> "0.1-SNAPSHOT"
 )
+
+libraryDependencies += "com.gilt" %% "handlebars-scala" % "2.1.1"
