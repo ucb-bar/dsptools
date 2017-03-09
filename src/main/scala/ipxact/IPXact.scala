@@ -9,6 +9,7 @@ import java.util.Collection
 import java.math.BigInteger
 import junctions._
 import rocketchip._
+import scala.collection.mutable.HashMap
 import cde._
 
 trait HasIPXact {
@@ -196,30 +197,42 @@ trait HasIPXact {
 
   // name = name of the address block
   // base address = base address of the address block
-  // registers = list of register names, assumed to be 64 bits and each offset by 1 address unit bits from the previous one
-  def makeAddressBlock(name: String, baseAddr: BigInt, registers: Seq[(String, BigInt)]): AddressBlockType = {
+  // registers = list of register names, each assumed to each be widthValue wide
+  def makeAddressBlock(name: String, baseAddr: BigInt, registers: HashMap[String, BigInt], widthValue: Int): AddressBlockType = {
     val addrBlockMap = new AddressBlockType
     addrBlockMap.setName(name)
     val baseAddress = new BaseAddress
     baseAddress.setValue("0x" + baseAddr.toString(16))
     addrBlockMap.setBaseAddress(baseAddress)
     
+    // range
     val range = new BankedBlockType.Range
-    range.setValue(s"${registers.size}")
+    val rangeValue = registers.size * widthValue / 64 // assume 64-bit addressUnitBits
+    range.setValue(s"$rangeValue")
     addrBlockMap.setRange(range)
+
+    //width
     val width = new BankedBlockType.Width
-    width.setValue(BigInteger.valueOf(64)) // SCRs are grouped into 64 bit chunks
+    width.setValue(BigInteger.valueOf(widthValue))
     addrBlockMap.setWidth(width)
-    addrBlockMap.setUsage(UsageType.REGISTER)
-    val registerBlock = addrBlockMap.getRegister()
-    registers.foreach { case(mname: String, offset: BigInt) => 
-      val register = new RegisterFile.Register
-      register.setName(mname)
-      register.setAddressOffset("0x" + offset.toString(16))
-      val size = new RegisterFile.Register.Size
-      size.setValue(BigInteger.valueOf(64))
-      register.setSize(size)
-      registerBlock.add(register)
+
+    if (widthValue == 64) {
+      addrBlockMap.setUsage(UsageType.REGISTER)
+      val registerBlock = addrBlockMap.getRegister()
+      registers.foreach { case(mname: String, addr: BigInt) => 
+        val register = new RegisterFile.Register
+        register.setName(mname)
+        val offset = addr-baseAddr
+        register.setAddressOffset("0x" + offset.toString(16))
+        val size = new RegisterFile.Register.Size
+        size.setValue(BigInteger.valueOf(widthValue))
+        register.setSize(size)
+        registerBlock.add(register)
+      }
+    } else {
+      addrBlockMap.setUsage(UsageType.MEMORY)
+      addrBlockMap.setAccess(AccessType.READ_ONLY) 
+      addrBlockMap.setVolatile(true) 
     }
     addrBlockMap
   }
@@ -427,7 +440,7 @@ trait HasIPXact {
   //////////// Parameters //////////////////////
   //////////////////////////////////////////////
 
-  def makeParameters(parameterMap: scala.collection.mutable.Map[String, String]): SpiritParameters = {
+  def makeParameters(parameterMap: HashMap[String, String]): SpiritParameters = {
     val parameters = new SpiritParameters()
     for ( (name, value) <- parameterMap ) {
       val nameValuePairType = new NameValuePairType
@@ -464,6 +477,9 @@ trait HasIPXact {
     componentType.setParameters(parameters)
     componentType
   }
+
+
+
 }
 
 object IPXact extends HasIPXact

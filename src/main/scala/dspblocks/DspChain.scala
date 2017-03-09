@@ -502,7 +502,7 @@ abstract class DspChainModule(
   })
   val flattenedSams = sams.flatten.toSeq
   flattenedSams.map(s =>
-    IPXactComponents._ipxactComponents += DspIPXact.makeSAMComponent(s.baseAddr, s.dataBaseAddr, s.uuid)(s.p)
+    IPXactComponents._ipxactComponents += DspIPXact.makeSAMComponent(s.baseAddr, s.dataBaseAddr, s.config.memDepth, s.uuid)(s.p)
     )
 
   val scrfile_tl2axi = Module(new TileLinkIONastiIOConverter())
