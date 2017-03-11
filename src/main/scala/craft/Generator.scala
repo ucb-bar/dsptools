@@ -17,7 +17,7 @@ import ipxact._
 
 object Generator extends GeneratorApp with IPXactGeneratorApp  {
   val longName = names.fullTopModuleClass + "." + names.configs
-  def verilogFilename = s"${longName}.top.v"
+  def verilogFilename = s"${longName}.v"
   def ipxactDir = td
   generateFirrtl
   generateIPXact(IPXactComponents.ipxactComponents())

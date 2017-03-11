@@ -36,7 +36,7 @@ object BlockConnectSAMOnly extends BlockConnectionParameters(false, false, true)
 object BlockConnectPGLAOnly extends BlockConnectionParameters(true, true, false)
 
 case class DspChainParameters (
-  blocks: Seq[(Parameters => DspBlock, String, BlockConnectionParameters)],
+  blocks: Seq[(Parameters => DspBlock, String, BlockConnectionParameters, Option[SAMConfig])],
   logicAnalyzerSamples: Int,
   logicAnalyzerUseCombinationalTrigger: Boolean,
   patternGeneratorSamples: Int,
@@ -56,6 +56,7 @@ trait HasDspChainParameters extends HasSCRParameters {
   val blocksUsePG                             = blocks.map(_._3.connectPG)
   val blocksUseLA                             = blocks.map(_._3.connectLA)
   val blocksUseSAM                            = blocks.map(_._3.addSAM)
+  val blocksSAMConfigs                        = blocks.map(_._4)
   val totalPGBlocks                           = blocksUsePG.foldLeft(0) { case (sum, b) => if (b) sum + 1 else sum }
   val totalLABlocks                           = blocksUseLA.foldLeft(0) { case (sum, b) => if (b) sum + 1 else sum }
   val totalSAMBlocks                          = blocksUseSAM.foldLeft(0) { case(sum, b) => if (b) sum + 1 else sum }
@@ -422,12 +423,11 @@ abstract class DspChainModule(
     val mod = LazyModule(b._1(modParams))
     mod
   })
-  val oldSamConfig: SAMConfig = p(DefaultSAMKey)
-  val lazySams = lazyMods.zip(blocksUseSAM).map({ case(mod, useSam) =>
-    val samWidth = 64 // todo don't hardcode...
+  val lazySams = lazyMods.zip(blocksUseSAM).zip(blocksSAMConfigs).map({ case((mod, useSam), samConfig) =>
+    val samWidth = p(GenKey(mod.id)).lanesOut * p(GenKey(mod.id)).genOut.getWidth //64
     val samName = mod.id + ":sam"
     val samParams = p.alterPartial({
-      case SAMKey(_id) if _id == samName => oldSamConfig
+      case SAMKey(_id) if _id == samName => samConfig.getOrElse(p(DefaultSAMKey))
       case DspBlockId => samName
       case DspBlockKey(_id) if _id == samName => DspBlockParameters(samWidth, samWidth)
       case IPXactParameters(_id) if _id == samName => {
@@ -440,6 +440,11 @@ abstract class DspChainModule(
       }
     })
     if (useSam) {
+      println("Creating SAM:")
+      println(s"\tBlock ID: ${mod.id}")
+      println(s"\tLanes Out: ${p(GenKey(mod.id)).lanesOut}")
+      println(s"\tgenOut Width: ${p(GenKey(mod.id)).genOut.getWidth}")
+      println(s"\tSAM Width: ${samWidth}")
       val lazySam = LazyModule( new SAMWrapper()(samParams) )
       Some(lazySam)
     } else {
