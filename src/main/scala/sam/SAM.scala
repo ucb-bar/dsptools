@@ -192,9 +192,9 @@ class SAMWrapper()(implicit p: Parameters) extends DspBlock()(p) with HasAddrMap
 }
 
 trait HasDataBaseAddr {
-  private var _dataBaseAddr: BigInt = BigInt(0)
-  def dataBaseAddr: BigInt = _dataBaseAddr
-  def setDataBaseAddr(base: BigInt): Unit = {
+  private var _dataBaseAddr: () => BigInt = () => BigInt(0)
+  def dataBaseAddr: BigInt = _dataBaseAddr()
+  def setDataBaseAddr(base: () => BigInt): Unit = {
     _dataBaseAddr = base
   }
 }
