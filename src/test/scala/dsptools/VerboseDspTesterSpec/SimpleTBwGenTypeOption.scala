@@ -5,7 +5,6 @@ package SimpleTB
 import chisel3._
 import chisel3.internal.firrtl.{Width, BinaryPoint}
 import chisel3.experimental.FixedPoint
-import chisel3.util.RegNext
 import breeze.math.Complex
 import dsptools.numbers.{Real, DspReal, DspComplex}
 import dsptools.numbers.implicits._

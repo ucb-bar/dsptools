@@ -3,7 +3,6 @@
 package dsptools
 
 import chisel3._
-import chisel3.util.RegInit
 import dsptools.firrtltools.ResetInverter
 import firrtl._
 import org.scalatest.{FreeSpec, Matchers}
@@ -13,7 +12,7 @@ class ExampleModuleNeedsResetInverted extends Module with ResetInverter {
     val out = Output(UInt(32.W))
   })
 
-  val r = RegInit(0.U)
+  val r = RegInit(0.U(32.W))
 
   invert(this)
 }

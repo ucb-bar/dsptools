@@ -83,7 +83,7 @@
     * Arithmetic shift left where n is either Int or UInt
     * Doesn't work for DspComplex[T]
   * a.signBit 
-    * 1 if a is zero or positive; 0 if a is negative
+    * 0 if a is zero or positive; 1 if a is negative
     * Doesn't work for DspComplex[T]
   * a.div2(n) 
     * a/2^n
