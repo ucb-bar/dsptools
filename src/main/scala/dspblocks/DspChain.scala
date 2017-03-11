@@ -355,64 +355,12 @@ trait AXI4SInputModule {
   def streamIn = io.stream_in
 }
 
-abstract class DspChain(
-  val ctrlBaseAddr: Long,
-  val dataBaseAddr: Long,
-  val override_clock: Option[Clock]=None,
-  val override_reset: Option[Bool]=None)
-  (implicit val p: Parameters) extends LazyModule with HasSCRBuilder
-    with HasPatternGenerator with HasLogicAnalyzer {
+abstract class DspChain()
+  (implicit val p: Parameters) extends LazyModule with HasDspChainParameters
+  with HasSCRBuilder with HasPatternGenerator with HasLogicAnalyzer {
   def module: DspChainModule
-}
-
-class DspChainWithAXI4SInput(
-  ctrlBaseAddr: Long,
-  dataBaseAddr: Long,
-  b: => Option[DspChainIO with AXI4SInputIO] = None,
-  override_clock: Option[Clock]=None,
-  override_reset: Option[Bool]=None)(implicit p: Parameters) extends
-    DspChain(ctrlBaseAddr, dataBaseAddr, override_clock, override_reset) {
-  lazy val module = new DspChainWithAXI4SInputModule(this, b, override_clock, override_reset)
-}
-
-class DspChainWithAXI4SInputModule(
-  outer: DspChain,
-  b: => Option[DspChainIO with AXI4SInputIO] = None,
-  override_clock: Option[Clock]=None,
-  override_reset: Option[Bool]=None)(implicit p: Parameters)
-  extends DspChainModule(outer, b, override_clock, override_reset)
-    with AXI4SInputModule {
-  override lazy val io = b.getOrElse(new DspChainIO with AXI4SInputIO)
-}
-
-abstract class DspChainModule(
-  val outer: DspChain,
-  b: => Option[DspChainIO] = None,
-  override_clock: Option[Clock]=None,
-  override_reset: Option[Bool]=None)(implicit val p: Parameters)
-  extends LazyModuleImp(outer, override_clock, override_reset)
-    with HasDspChainParameters
-    with HasPatternGeneratorModule with HasLogicAnalyzerModule
-    with WithChainHeaderWriter {
-
-  val ctrlBaseAddr = outer.ctrlBaseAddr
-  val dataBaseAddr = outer.dataBaseAddr
-
-  val tlid = p(TLId)
-  println(s"TLId is $tlid")
-  val tlkey = p(TLKey(tlid))
-  require(tlkey.dataBitsPerBeat == 64,
-    s"SCR File in DspChain requires 64-bit data bits per beat, got ${tlkey.dataBitsPerBeat}")
-  /*implicit val overrideParams = p.alterPartial({
-    case TLKey(tlid) => tlkey.copy(
-    //  dataBits = 4 * 64,
-      overrideDataBitsPerBeat = Some(64)
-  )})*/
-
-  // This gets connected to the input of the first block
-  // Different traits that implement streamIn should be mixed in
-  // to feed data into the first block
-  def streamIn: ValidWithSync[UInt]
+  var ctrlBaseAddr: () => Long = () => 0L
+  var dataBaseAddr: () => Long = () => 0L
 
   require(blocks.length > 0)
 
@@ -452,22 +400,108 @@ abstract class DspChainModule(
     }
   })
   val flattenedLazySams = lazySams.flatten.toSeq
-
-  val ctrlAddrs = new AddrMap(
+  val ctrlAddrMapEntries =
     lazyMods.map(_.addrMapEntry) ++
     flattenedLazySams.map(_.addrMapEntry) ++
     Seq(
       AddrMapEntry(s"chain", MemSize(BigInt(1 << 8), MemAttr(AddrMapProt.RWX)))
-    ),
-  start=ctrlBaseAddr)
+    )
+  val dataAddrMapEntries =
+    lazySams.zipWithIndex.map({
+      case (Some(sam), idx) =>
+        Some(
+          AddrMapEntry(s"${lazyMods(idx).id}:sam:data", MemSize(sam.config.memDepth, MemAttr(AddrMapProt.RWX)))
+        )
+      case (None, _) => None
+    }).flatten.toSeq
 
-  (lazyMods ++ flattenedLazySams).zip(ctrlAddrs.entries).foreach{ case (mod, addr) =>
-    mod.setBaseAddr(addr.region.start)
+  def makeAddrMap(entries: Seq[AddrMapEntry], start: Long = 0L) =
+    new AddrMap(entries, start=start)
+  def getMemSize(entries: Seq[AddrMapEntry], start: Long = 0L) = {
+    val addrMap = makeAddrMap(entries, start)
+    MemSize(addrMap.size, addrMap.attr)
   }
 
-  val scrfile = outer.scrbuilder.generate(ctrlAddrs.entries.last.region.start)
+  val ctrlMemSize = getMemSize(ctrlAddrMapEntries)
+  val dataMemSize = getMemSize(dataAddrMapEntries)
 
-  val modules = lazyMods.map(mod => Module(mod.module))
+  // the outer lazy module gets its base addresses set by the pbus
+  // make an address map now that we have the correct base address
+  def ctrlAddrs = makeAddrMap(ctrlAddrMapEntries, ctrlBaseAddr())
+  def dataAddrs = makeAddrMap(dataAddrMapEntries, dataBaseAddr())
+
+  // assign base addresses to scrs and sams
+  (lazyMods ++ flattenedLazySams).zipWithIndex.foreach{ case (mod, idx) =>
+    mod.setBaseAddr(() => {
+      val addr = ctrlAddrs.entries(idx)
+      addr.region.start
+    })
+  }
+
+  flattenedLazySams.zipWithIndex.foreach { case(sam, idx) =>
+    sam.setDataBaseAddr(() => {
+      val addr = dataAddrs.entries(idx)
+      addr.region.start
+    })
+  }
+}
+
+class DspChainWithAXI4SInput(
+  b: => Option[DspChainIO with AXI4SInputIO] = None,
+  override_clock: Option[Clock]=None,
+  override_reset: Option[Bool]=None)(implicit p: Parameters) extends
+    DspChain() {
+  lazy val module = new DspChainWithAXI4SInputModule(this, b, override_clock, override_reset)
+}
+
+class DspChainWithAXI4SInputModule(
+  outer: DspChain,
+  b: => Option[DspChainIO with AXI4SInputIO] = None,
+  override_clock: Option[Clock]=None,
+  override_reset: Option[Bool]=None)(implicit p: Parameters)
+  extends DspChainModule(outer, b, override_clock, override_reset)
+    with AXI4SInputModule {
+  override lazy val io = b.getOrElse(new DspChainIO with AXI4SInputIO)
+}
+
+abstract class DspChainModule(
+  val outer: DspChain,
+  b: => Option[DspChainIO] = None,
+  override_clock: Option[Clock]=None,
+  override_reset: Option[Bool]=None)(implicit val p: Parameters)
+  extends LazyModuleImp(outer, override_clock, override_reset)
+    with HasDspChainParameters
+    with HasPatternGeneratorModule with HasLogicAnalyzerModule
+    with WithChainHeaderWriter {
+  // This gets connected to the input of the first block
+  // Different traits that implement streamIn should be mixed in
+  // to feed data into the first block
+  def streamIn: ValidWithSync[UInt]
+
+  val tlid = p(TLId)
+  val tlkey = p(TLKey(tlid))
+  require(tlkey.dataBitsPerBeat == 64,
+    s"SCR File in DspChain requires 64-bit data bits per beat, got ${tlkey.dataBitsPerBeat}")
+
+  def ctrlBaseAddr       = outer.ctrlBaseAddr()
+  def dataBaseAddr       = outer.dataBaseAddr()
+  val ctrlAddrMapEntries = outer.ctrlAddrMapEntries
+  val dataAddrMapEntries = outer.dataAddrMapEntries
+  val ctrlAddrs          = outer.ctrlAddrs
+  val dataAddrs          = outer.dataAddrs
+  val lazyMods           = outer.lazyMods
+  val lazySams           = outer.lazySams
+  val flattenedLazySams  = outer.flattenedLazySams
+  val makeAddrMap        = outer.makeAddrMap _
+
+  // the scrfile for the chain is the last entry in the ctrl address map
+  // construct it and connect it to a AXI <-> TL converter
+  val scrfile = outer.scrbuilder.generate(ctrlAddrs.entries.last.region.start)
+  val scrfile_tl2axi = Module(new TileLinkIONastiIOConverter())
+  scrfile_tl2axi.io.tl <> scrfile.io.tl
+
+  // instantiate modules
+  val modules = lazyMods.map(mod => mod.module)
   modules.map(m => 
     IPXactComponents._ipxactComponents += DspIPXact.makeDspBlockComponent(m.baseAddr, m.uuid)(m.p)
     )
@@ -491,16 +525,10 @@ abstract class DspChainModule(
     mod_ios(i + 1).in <> mod_ios(i).out
   }
 
-  val dataAddrs = new AddrMap(
-    flattenedLazySams.zipWithIndex.map({ case (sam, idx) =>
-      AddrMapEntry(s"${modules(idx).id}:sam:data", MemSize(sam.config.memDepth, MemAttr(AddrMapProt.RWX)))
-    }), start=dataBaseAddr)
-  flattenedLazySams.zip(dataAddrs.entries).foreach { case(sam, addr) =>
-    sam.setDataBaseAddr(addr.region.start)
-  }
+  // instantiate sams
   val sams = lazySams.map(_ match {
     case Some(ls) =>
-      val sam = Module(ls.module)
+      val sam = ls.module
       Some(sam)
     case None =>
       None
@@ -509,9 +537,6 @@ abstract class DspChainModule(
   flattenedSams.map(s =>
     IPXactComponents._ipxactComponents += DspIPXact.makeSAMComponent(s.baseAddr, s.dataBaseAddr, s.config.memDepth, s.uuid)(s.p)
     )
-
-  val scrfile_tl2axi = Module(new TileLinkIONastiIOConverter())
-  scrfile_tl2axi.io.tl <> scrfile.io.tl
 
   // unless pattern generator asserted, every module connects to the next
   mod_ios.foldLeft(streamIn) { case(out, mod) =>

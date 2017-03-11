@@ -27,7 +27,6 @@ case class DspBlockParameters (
 
 trait HasDspBlockParameters {
   implicit val p: Parameters
-  // def baseAddr: Int = p(BaseAddr(p(DspBlockId)))
   def dspBlockExternal = p(DspBlockKey(p(DspBlockId)))
   def inputWidth  = dspBlockExternal.inputWidth
   def outputWidth = dspBlockExternal.outputWidth
@@ -79,19 +78,19 @@ class BasicDspBlockIO()(implicit val p: Parameters) extends Bundle with HasDspBl
   override def cloneType: this.type = new BasicDspBlockIO()(p).asInstanceOf[this.type]
 }
 
-// case class BaseAddr(id: String) extends Field[Int]
 
 trait HasBaseAddr {
-  private var _baseAddr: BigInt = BigInt(0)
-  def baseAddr: BigInt = _baseAddr
-  def setBaseAddr(base: BigInt): Unit = {
+  private var _baseAddr: () => BigInt = () => BigInt(0)
+  def baseAddr: BigInt = _baseAddr()
+  def setBaseAddr(base: () => BigInt): Unit = {
     _baseAddr = base
   }
 }
 trait HasAddrMapEntry {
   val p: Parameters
   private def addrMapEntryName = p(DspBlockId)
-  private def addrMapEntrySize = BigInt(1 << 8)
+  def size: Int
+  def addrMapEntrySize = BigInt(size)*8
   def addrMapEntry = AddrMapEntry(addrMapEntryName,
     MemSize(addrMapEntrySize, MemAttr(AddrMapProt.RW))
     )
