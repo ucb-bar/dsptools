@@ -382,7 +382,9 @@ abstract class DspChain()
         val parameterMap = scala.collection.mutable.HashMap[String, String]()
 
         // Conjure up some IPXACT synthsized parameters.
+        val config = samConfig.getOrElse(p(DefaultSAMKey))
         parameterMap ++= List(("InputTotalBits", samWidth.toString))
+        parameterMap ++= List(("MemoryDepth", config.bufferDepth.toString))
 
         parameterMap
       }
