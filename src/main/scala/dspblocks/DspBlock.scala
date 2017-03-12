@@ -98,13 +98,14 @@ trait HasAddrMapEntry {
 
 trait HasSCRBuilder {
   val p: Parameters
-  private val scrName = p(DspBlockId)
+  def scrName: String
   val scrbuilder = new SCRBuilder(scrName)
 }
 
 abstract class DspBlock()(implicit val p: Parameters) extends LazyModule
     with HasDspBlockParameters with HasBaseAddr with HasAddrMapEntry with HasSCRBuilder {
   override def module: DspBlockModule
+  def scrName = p(DspBlockId)
 
   def size = scrbuilder.controlNames.length + scrbuilder.statusNames.length
 

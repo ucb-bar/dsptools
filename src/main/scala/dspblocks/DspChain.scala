@@ -359,6 +359,7 @@ abstract class DspChain()
   (implicit val p: Parameters) extends LazyModule with HasDspChainParameters
   with HasSCRBuilder with HasPatternGenerator with HasLogicAnalyzer {
   def module: DspChainModule
+  def scrName = p(DspChainId)
   var ctrlBaseAddr: () => Long = () => 0L
   var dataBaseAddr: () => Long = () => 0L
 
