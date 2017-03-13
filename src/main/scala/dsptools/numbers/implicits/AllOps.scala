@@ -120,3 +120,10 @@ class BinaryRepresentationOps[A <: Data](lhs: A)(implicit ev: BinaryRepresentati
   def mul2(n: Int): A = ev.mul2(lhs, n)
   def trimBinary(n: Int): A = ev.trimBinary(lhs, n)
 }
+
+class ContextualRingOps[A <: Data](lhs: A)(implicit ev: Ring[A]) {
+  def context_+(rhs: A): A = ev.plus(lhs, rhs)
+  def context_-(rhs: A): A = ev.minus(lhs, rhs)
+  def context_*(rhs: A): A = ev.times(lhs, rhs)
+  def context_unary_-(): A = ev.negate(lhs)
+}

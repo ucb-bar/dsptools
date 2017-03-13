@@ -3,6 +3,15 @@
 > If you want to support IsIntegral operations for SInt + UInt (in addition to the others), you want a: T where `[T <: Data:IntegerBits]`
 > DspReal is *not* synthesizable!
 
+BIG WARNING: If you want to directly use UInt, SInt, & FixedPoint without passing them through some generic, you **should not** use the Ring operators +, -, *, unary_- *if* you want to use DspContext. Using + on a normal UInt will result in Chisel + behavior (wrapped addition). To guarantee that the Ring operators follow DspContext, after importing implicits, you should instead use:
+* a context_+ b
+* a context_- b
+* a context_* b
+* a.context_unary_- 
+
+We need to come up with better names, but at least this makes it easy to search for context_...
+
+
 # DspContext
 * DspContext allows you to change how certain operations behave via a dynamic variable
 * The DspContext case class contains the following fields:
