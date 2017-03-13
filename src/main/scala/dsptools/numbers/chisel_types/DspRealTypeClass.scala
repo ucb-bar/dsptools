@@ -13,15 +13,19 @@ import scala.language.implicitConversions
 trait DspRealRing extends Any with Ring[DspReal] with hasContext {
   def one: DspReal = DspReal(1.0)
   def zero: DspReal = DspReal(0.0)
-  def plus(f: DspReal, g: DspReal): DspReal = {
+  def plus(f: DspReal, g: DspReal): DspReal = f + g
+  def plusContext(f: DspReal, g: DspReal): DspReal = {
     ShiftRegister(f + g, context.numAddPipes)
   }
-  override def minus(f: DspReal, g: DspReal): DspReal = {
+  override def minus(f: DspReal, g: DspReal): DspReal = f - g
+  def minusContext(f: DspReal, g: DspReal): DspReal = {
     ShiftRegister(f - g, context.numAddPipes)
   }
   def negate(f: DspReal): DspReal = minus(zero, f)
-  def times(f: DspReal, g: DspReal): DspReal = {
-    ShiftRegister(f * g, context.numMulPipes)   
+  def negateContext(f: DspReal): DspReal = minusContext(zero, f)
+  def times(f: DspReal, g: DspReal): DspReal = f * g
+  def timesContext(f: DspReal, g: DspReal): DspReal = {
+    ShiftRegister(f * g, context.numMulPipes)
   }
 }
 

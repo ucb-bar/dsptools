@@ -122,8 +122,8 @@ class BinaryRepresentationOps[A <: Data](lhs: A)(implicit ev: BinaryRepresentati
 }
 
 class ContextualRingOps[A <: Data](lhs: A)(implicit ev: Ring[A]) {
-  def context_+(rhs: A): A = ev.plus(lhs, rhs)
-  def context_-(rhs: A): A = ev.minus(lhs, rhs)
-  def context_*(rhs: A): A = ev.times(lhs, rhs)
-  def context_unary_-(): A = ev.negate(lhs)
+  def context_+(rhs: A): A = ev.plusContext(lhs, rhs)
+  def context_-(rhs: A): A = ev.minusContext(lhs, rhs)
+  def context_*(rhs: A): A = ev.timesContext(lhs, rhs)
+  def context_unary_-(): A = ev.negateContext(lhs)
 }

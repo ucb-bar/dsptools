@@ -16,7 +16,8 @@ import scala.language.implicitConversions
 trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
   def zero: FixedPoint = 0.0.F(0.BP)
   def one: FixedPoint= 1.0.F(0.BP)
-  def plus(f: FixedPoint, g: FixedPoint): FixedPoint = {
+  def plus(f: FixedPoint, g: FixedPoint): FixedPoint = f + g
+  def plusContext(f: FixedPoint, g: FixedPoint): FixedPoint = {
     // TODO: Saturating mux should be outside of ShiftRegister
     val sum = context.overflowType match {
       case Grow => f +& g
@@ -25,7 +26,8 @@ trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
     }
     ShiftRegister(sum, context.numAddPipes)
   }
-  override def minus(f: FixedPoint, g: FixedPoint): FixedPoint = {
+  override def minus(f: FixedPoint, g: FixedPoint): FixedPoint = f - g
+  def minusContext(f: FixedPoint, g: FixedPoint): FixedPoint = {
     val diff = context.overflowType match {
       case Grow => f -& g
       case Wrap => f -% g
@@ -33,8 +35,12 @@ trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
     }
     ShiftRegister(diff, context.numAddPipes)
   }
-  def negate(f: FixedPoint): FixedPoint = minus(zero, f)
-  // Times moved later b/c need trim binary
+  def negate(f: FixedPoint): FixedPoint = -f
+  def negateContext(f: FixedPoint): FixedPoint = minus(zero, f)
+
+  def times(f: FixedPoint, g: FixedPoint): FixedPoint = f * g
+
+  // timesContext moved later b/c need trim binary
 }
 
 trait FixedPointOrder extends Any with Order[FixedPoint] with hasContext {
@@ -149,7 +155,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     }
   }
 
-  def times(f: FixedPoint, g: FixedPoint): FixedPoint = {
+  def timesContext(f: FixedPoint, g: FixedPoint): FixedPoint = {
     // TODO: Overflow via ranging in FIRRTL?
     // Rounding after registering to make retiming easier to recognize
     val outTemp = ShiftRegister(f * g, context.numMulPipes)   

@@ -15,7 +15,8 @@ import scala.language.implicitConversions
 trait SIntRing extends Any with Ring[SInt] with hasContext {
   def zero: SInt = 0.S
   def one: SInt = 1.S
-  def plus(f: SInt, g: SInt): SInt = {
+  def plus(f: SInt, g: SInt): SInt = f + g
+  def plusContext(f: SInt, g: SInt): SInt = {
     // TODO: Saturating mux should be outside of ShiftRegister
     val sum = context.overflowType match {
       case Grow => f +& g
@@ -24,7 +25,8 @@ trait SIntRing extends Any with Ring[SInt] with hasContext {
     }
     ShiftRegister(sum, context.numAddPipes)
   }
-  override def minus(f: SInt, g: SInt): SInt = {
+  override def minus(f: SInt, g: SInt): SInt = f - g
+  def minusContext(f: SInt, g: SInt): SInt = {
     val diff = context.overflowType match {
       case Grow => f -& g
       case Wrap => f -% g
@@ -32,8 +34,10 @@ trait SIntRing extends Any with Ring[SInt] with hasContext {
     }
     ShiftRegister(diff, context.numAddPipes)
   }
-  def negate(f: SInt): SInt = minus(0.S, f)
-  def times(f: SInt, g: SInt): SInt = {
+  def negate(f: SInt): SInt = -f
+  def negateContext(f: SInt): SInt = minus(0.S, f)
+  def times(f: SInt, g: SInt): SInt = f * g
+  def timesContext(f: SInt, g: SInt): SInt = {
     // TODO: Overflow via ranging in FIRRTL?
     ShiftRegister(f * g, context.numMulPipes)
   }  

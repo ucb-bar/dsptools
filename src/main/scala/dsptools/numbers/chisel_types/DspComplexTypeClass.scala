@@ -12,20 +12,35 @@ class DspComplexRing[T <: Data:Ring] extends Ring[DspComplex[T]] with hasContext
   def plus(f: DspComplex[T], g: DspComplex[T]): DspComplex[T] = {
     DspComplex.wire(f.real + g.real, f.imag + g.imag)
   }
+  def plusContext(f: DspComplex[T], g: DspComplex[T]): DspComplex[T] = {
+    DspComplex.wire(f.real context_+ g.real, f.imag context_+ g.imag)
+  }
   def times(f: DspComplex[T], g: DspComplex[T]): DspComplex[T] = {
+    val c_p_d = g.real + g.imag
+    val a_p_b = f.real + f.imag
+    val b_m_a = f.imag - f.real
+    val ac_p_ad = f.real * c_p_d
+    val ad_p_bd = a_p_b * g.imag
+    val bc_m_ac = b_m_a * g.real
+    DspComplex.wire(ac_p_ad - ad_p_bd, ac_p_ad + bc_m_ac)
+  }
+  def timesContext(f: DspComplex[T], g: DspComplex[T]): DspComplex[T] = {
     if (context.complexUse4Muls)
-      DspComplex.wire((f.real * g.real) - (f.imag * g.imag), (f.real * g.imag) + (f.imag * g.real))
+      DspComplex.wire(
+        (f.real context_* g.real) context_- (f.imag context_* g.imag),
+        (f.real context_* g.imag) context_+ (f.imag context_* g.real)
+      )
     else {
       val fRealDly = ShiftRegister(f.real, context.numAddPipes)
       val gRealDly = ShiftRegister(g.real, context.numAddPipes)
       val gImagDly = ShiftRegister(g.imag, context.numAddPipes)
-      val c_p_d = g.real + g.imag
-      val a_p_b = f.real + f.imag
-      val b_m_a = f.imag - f.real
-      val ac_p_ad = fRealDly * c_p_d
-      val ad_p_bd = a_p_b * gImagDly
-      val bc_m_ac = b_m_a * gRealDly
-      DspComplex.wire(ac_p_ad - ad_p_bd, ac_p_ad + bc_m_ac)
+      val c_p_d = g.real context_+ g.imag
+      val a_p_b = f.real context_+ f.imag
+      val b_m_a = f.imag context_- f.real
+      val ac_p_ad = fRealDly context_* c_p_d
+      val ad_p_bd = a_p_b context_* gImagDly
+      val bc_m_ac = b_m_a context_* gRealDly
+      DspComplex.wire(ac_p_ad context_- ad_p_bd, ac_p_ad context_+ bc_m_ac)
     }
   }
   def one: DspComplex[T] = DspComplex(Ring[T].one, Ring[T].zero)
@@ -33,8 +48,14 @@ class DspComplexRing[T <: Data:Ring] extends Ring[DspComplex[T]] with hasContext
   override def fromInt(x: Int): DspComplex[T] = DspComplex(Ring[T].fromInt(x), Ring[T].zero)
   def zero: DspComplex[T] = DspComplex(Ring[T].zero, Ring[T].zero)
   def negate(f: DspComplex[T]): DspComplex[T] = DspComplex.wire(-f.real, -f.imag)
+  def negateContext(f: DspComplex[T]): DspComplex[T] = {
+    DspComplex.wire(f.real.context_unary_-, f.imag.context_unary_-)
+  }
   override def minus(f: DspComplex[T], g: DspComplex[T]): DspComplex[T] = {
     DspComplex.wire(f.real - g.real, f.imag - g.imag)
+  }
+  def minusContext(f: DspComplex[T], g: DspComplex[T]): DspComplex[T] = {
+    DspComplex.wire(f.real context_- g.real, f.imag context_- g.imag)
   }
 }
 
