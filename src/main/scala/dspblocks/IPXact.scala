@@ -163,9 +163,8 @@ trait HasDspIPXact extends HasIPXact {
   //////////// Component ///////////////////////
   //////////////////////////////////////////////
 
-  def makeDspBlockComponent(_baseAddress: BigInt, uuid: Int)(implicit p: Parameters): ComponentType = {
+  def makeDspBlockComponent(_baseAddress: BigInt, uuid: Int, name: String)(implicit p: Parameters): ComponentType = {
     val id = p(DspBlockId)
-    val name = id.replaceAll("[-:]", "_")
     val mmref = s"${name}_mm"
     val gk = try {
       Some(p(GenKey(p(DspBlockId))))
@@ -195,9 +194,8 @@ trait HasDspIPXact extends HasIPXact {
     makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, parameters)
   }
 
-  def makeSAMComponent(_ctrl_baseAddress: BigInt, _data_baseAddress: BigInt, memDepth: Int, uuid: Int)(implicit p: Parameters): ComponentType = {
+  def makeSAMComponent(_ctrl_baseAddress: BigInt, _data_baseAddress: BigInt, memDepth: Int, uuid: Int, name: String)(implicit p: Parameters): ComponentType = {
     val id = p(DspBlockId)
-    val name = id.replaceAll("[-:]", "_")
     val ctrl_mmref = s"${name}_ctrl_mm"
     val data_mmref = s"${name}_data_mm"
     val dbk = p(DspBlockKey(p(DspBlockId)))
@@ -216,9 +214,8 @@ trait HasDspIPXact extends HasIPXact {
     makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, parameters)
   }
 
-  def makeXbarComponent(implicit p: Parameters): ComponentType = {
+  def makeXbarComponent(implicit p: Parameters, name: String): ComponentType = {
     val id = p(DspBlockId)
-    val name = id.replaceAll("[-:]", "_")
     val mmref = s"${name}_mm"
     val asref = s"${name}_as"
     val addrMap = p(GlobalAddrMap)

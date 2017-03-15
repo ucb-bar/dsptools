@@ -505,9 +505,9 @@ abstract class DspChainModule(
 
   // instantiate modules
   val modules = lazyMods.map(mod => mod.module)
-  modules.map(m => 
-    IPXactComponents._ipxactComponents += DspIPXact.makeDspBlockComponent(m.baseAddr, m.uuid)(m.p)
-    )
+  modules.map(m => {
+    IPXactComponents._ipxactComponents += DspIPXact.makeDspBlockComponent(m.baseAddr, m.uuid, m.name)(m.p)
+  })
   val mod_ios = modules.map(_.io)
   lazy val io = IO(b.getOrElse(new DspChainIO))
 
@@ -538,7 +538,7 @@ abstract class DspChainModule(
   })
   val flattenedSams = sams.flatten.toSeq
   flattenedSams.map(s =>
-    IPXactComponents._ipxactComponents += DspIPXact.makeSAMComponent(s.baseAddr, s.dataBaseAddr, s.config.memDepth, s.uuid)(s.p)
+    IPXactComponents._ipxactComponents += DspIPXact.makeSAMComponent(s.baseAddr, s.dataBaseAddr, s.config.memDepth, s.uuid, s.name)(s.p)
     )
 
   // unless pattern generator asserted, every module connects to the next
@@ -628,9 +628,9 @@ abstract class DspChainModule(
 
 
   val ctrlXbar = Module(new NastiXBar(ctrlXbarParams))
-  IPXactComponents._ipxactComponents += DspIPXact.makeXbarComponent(ctrlXbarParams)
   val dataXbar = Module(new NastiXBar(dataXbarParams))
-  IPXactComponents._ipxactComponents += DspIPXact.makeXbarComponent(dataXbarParams)
+  IPXactComponents._ipxactComponents += DspIPXact.makeXbarComponent(ctrlXbarParams, ctrlXbar.name)
+  IPXactComponents._ipxactComponents += DspIPXact.makeXbarComponent(dataXbarParams, dataXbar.name)
 
   ctrlXbar.io.in(0) <> io.control_axi
   ctrlXbar.io.out.zip(control_axis).foreach{ case (xbar_axi, control_axi) => xbar_axi <> control_axi }
