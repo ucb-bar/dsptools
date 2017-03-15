@@ -191,12 +191,12 @@ class OverflowTypeCircuit[T <: Data : Ring, U <: Data : Ring]
     val subGrow = Output(gen3)
   })
 
-  val regAddWrap = RegNext(DspContext.withOverflowType(Wrap) { io.a + io.b })
-  val regAddGrow = RegNext(DspContext.withOverflowType(Grow) { io.a + io.b })
+  val regAddWrap = RegNext(DspContext.withOverflowType(Wrap) { io.a context_+ io.b })
+  val regAddGrow = RegNext(DspContext.withOverflowType(Grow) { io.a context_+ io.b })
 
-  val regSubWrap = RegNext(DspContext.withOverflowType(Wrap) { io.a - io.b })
-  val regSubGrow = RegNext(if (io.a.isInstanceOf[UInt]) 0.U else DspContext.withOverflowType(Grow) { io.a - io.b })
-//  val regSubGrow = RegNext(DspContext.withOverflowType(Grow) { io.a - io.b })
+  val regSubWrap = RegNext(DspContext.withOverflowType(Wrap) { io.a context_- io.b })
+  val regSubGrow = RegNext(if (io.a.isInstanceOf[UInt]) 0.U else DspContext.withOverflowType(Grow) { io.a context_- io.b })
+//  val regSubGrow = RegNext(DspContext.withOverflowType(Grow) { io.a context_- io.b })
 
   io.addWrap := regAddWrap
   io.addGrow := regAddGrow
@@ -222,7 +222,7 @@ class BadUIntSubtractWithGrow2[T <: Data : Ring](gen: T) extends Module {
     val b = Input(gen)
     val o = Output(gen)
   })
-  val r = RegNext(DspContext.withOverflowType(Grow) { io.a - io.b })
+  val r = RegNext(DspContext.withOverflowType(Grow) { io.a context_- io.b })
   io.o := r
 }
 
