@@ -186,6 +186,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
   override def fromInt(n: Int): FixedPoint = super[ConvertableToFixedPoint].fromInt(n)
   // Overflow only on most negative
   def abs(a: FixedPoint): FixedPoint = Mux(isSignNegative(a), super[FixedPointRing].minus(zero, a), a)
+  def context_abs(a: FixedPoint): FixedPoint = Mux(isSignNegative(a), super[FixedPointRing].minusContext(zero, a), a)
 
   def intPart(a: FixedPoint): SInt = truncate(a).asSInt
 

@@ -47,6 +47,7 @@ trait DspRealSigned extends Any with Signed[DspReal] with hasContext {
     ComparisonHelper(a === DspReal(0.0), a < DspReal(0.0))
   }
   def abs(a: DspReal): DspReal = Mux(a < DspReal(0.0), DspReal(0.0) - a, a)
+  def context_abs(a: DspReal): DspReal = Mux(a < DspReal(0.0), DspReal(0.0) - a, a)
 
   override def isSignZero(a: DspReal): Bool = a === DspReal(0.0)
   override def isSignNegative(a:DspReal): Bool = a < DspReal(0.0)

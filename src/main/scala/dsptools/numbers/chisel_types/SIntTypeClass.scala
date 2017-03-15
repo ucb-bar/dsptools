@@ -34,8 +34,13 @@ trait SIntRing extends Any with Ring[SInt] with hasContext {
     }
     ShiftRegister(diff, context.numAddPipes)
   }
-  def negate(f: SInt): SInt = -f
-  def negateContext(f: SInt): SInt = minus(0.S, f)
+  def negate(f: SInt): SInt = {
+    -f
+  }
+  def negateContext(f: SInt): SInt = {
+    //TODO: should this be minusContext, had been just minus
+    minusContext(0.S, f)
+  }
   def times(f: SInt, g: SInt): SInt = f * g
   def timesContext(f: SInt, g: SInt): SInt = {
     // TODO: Overflow via ranging in FIRRTL?
@@ -67,6 +72,13 @@ trait SIntSigned extends Any with Signed[SInt] with hasContext {
   }
   // isSignPositive, isSignNonZero, isSignNonPositive, isSignNonNegative derived from above (!)
   // abs requires ring (for overflow) so overridden later
+  def context_abs(a: SInt): SInt = {
+    context.overflowType match {
+      case Grow => Mux(a >= 0.S, a, 0.S -& a)
+      case Wrap => Mux(a >= 0.S, a, 0.S -% a)
+      case _ => throw DspException("Saturating abs hasn't been implemented")
+    }
+  }
 }
 
 trait SIntIsReal extends Any with IsIntegral[SInt] with SIntOrder with SIntSigned with hasContext {
@@ -130,7 +142,7 @@ trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with
   // fromSInt also included in Ring
   override def fromInt(n: Int): SInt = super[ConvertableToSInt].fromInt(n)
   // Overflow only on most negative
-  def abs(a: SInt): SInt = Mux(isSignNegative(a), super[SIntRing].minus(0.S, a), a)
+  def abs(a: SInt): SInt = Mux(isSignNegative(a), super[SIntRing].minusContext(0.S, a), a)
   // Rounds result to nearest int (half up) for more math-y division
   override def div2(a: SInt, n: Int): SInt = a.widthOption match {
     // If shifting more than width, guaranteed to be closer to 0

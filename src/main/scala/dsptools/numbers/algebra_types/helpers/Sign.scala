@@ -69,6 +69,7 @@ object Sign {
     override def sign(a: Sign): Sign = a
     def signum(a: Sign): ComparisonBundle = ComparisonHelper(a.zero, a.neg)
     def abs(a: Sign): Sign = if (a == Negative) Positive else a
+    def context_abs(a: Sign): Sign = if (a == Negative) Positive else a
 
     def compare(x: Sign, y: Sign): ComparisonBundle = {
       val eq = Mux(x.zero,

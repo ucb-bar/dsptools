@@ -69,6 +69,7 @@ final class OrderOps[A <: Data](lhs: A)(implicit ev: Order[A]) {
 
 final class SignedOps[A: Signed](lhs: A) {
   def abs(): A = macro Ops.unop[A]
+  def context_abs(): A = macro Ops.unop[A]
   def sign(): Sign = macro Ops.unop[Sign]
   def signum(): Int = macro Ops.unop[Int]
 

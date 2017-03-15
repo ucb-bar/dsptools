@@ -61,6 +61,7 @@ trait UIntSigned extends Any with Signed[UInt] with hasContext {
     ComparisonHelper(a === 0.U, a < 0.U)
   }
   def abs(a: UInt): UInt = a // UInts are unsigned!
+  def context_abs(a: UInt): UInt = a // UInts are unsigned!
   override def isSignZero(a: UInt): Bool = a === 0.U
   override def isSignPositive(a: UInt): Bool = !isSignZero(a)
   override def isSignNegative(a: UInt): Bool = false.B
