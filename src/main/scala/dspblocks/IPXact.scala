@@ -61,6 +61,14 @@ trait HasDspIPXact extends HasIPXact {
     busInterfaces
   }
 
+  def makeSCRInterfaces(mmref: String): BusInterfaces = {
+    val ctrlAXIInterface = makeAXI4Interface(ctrl_mmref, "io_nasti", "axi4_slave", false)
+
+    val busInterfaces = new BusInterfaces
+    busInterfaces.getBusInterface().addAll(ctrlAXIInterface)
+    busInterfaces
+  }
+
 
   //////////////////////////////////////////////
   //////////// Memory Maps /////////////////////
@@ -93,6 +101,12 @@ trait HasDspIPXact extends HasIPXact {
     memoryMaps
   }
 
+  def makeSCRMemoryMaps(mmref: String, baseAddress: BigInt, registers: HashMap[String, BigInt]): MemoryMaps = {
+    val addrBlock = makeAddressBlock("SCRFile", baseAddress, registers, 64)
+    val memoryMaps = new MemoryMaps
+    memoryMaps.getMemoryMap().add(makeMemoryMap(mmref, addrBlocks=Seq(addrBlock)))
+    memoryMaps
+  }
 
   //////////////////////////////////////////////
   //////////// Address Spaces //////////////////
@@ -114,6 +128,10 @@ trait HasDspIPXact extends HasIPXact {
       }
     ))
     addressSpaces
+  }
+
+  def makeSCRAddressSpaces: AddressSpaces = {
+    new AddressSpaces
   }
 
 
@@ -156,6 +174,16 @@ trait HasDspIPXact extends HasIPXact {
 
     val ports = new ModelType.Ports
     ports.getPort().addAll(toCollection(globalPorts ++ (inPorts ++ outPorts).flatten))
+    ports
+  }
+
+  def makeSCRPorts()(implicit p: Parameters): ModelType.Ports = {
+    val config = new NastiConfig
+    val AXIPorts = makeAXI4Ports(s"io_axi", false, config)
+    val globalPorts = makeClockAndResetPorts
+
+    val ports = new ModelType.Ports
+    ports.getPort().addAll(toCollection(globalPorts ++ AXIPorts))
     ports
   }
 
@@ -225,6 +253,18 @@ trait HasDspIPXact extends HasIPXact {
     val addressSpaces = makeXbarAddressSpaces(asref, addrMap)
     val memoryMaps = makeXbarMemoryMaps(mmref, inputs, addrMap)
     val model = makeModel(makeXbarPorts(inputs, outputs))
+    val parameters = makeParameters(HashMap[String, String]())
+    makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, parameters)
+  }
+
+  def makeSCRComponent(_baseAddress: BigInt, id: String, name: String)(implicit p: Parameters): ComponentType = {
+    val mmref = s"${name}_mm"
+    val baseAddress = _baseAddress
+    val registers = testchipip.SCRAddressMap(id).getOrElse(new HashMap[String, BigInt])
+    val busInterfaces = makeSCRInterfaces(mmref) 
+    val addressSpaces = makeSCRAddressSpaces
+    val memoryMaps = makeSCRMemoryMaps(mmref, baseAddress, registers)
+    val model = makeModel(makeSCRPorts)
     val parameters = makeParameters(HashMap[String, String]())
     makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, parameters)
   }
