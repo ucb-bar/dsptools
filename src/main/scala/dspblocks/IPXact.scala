@@ -65,7 +65,7 @@ trait HasDspIPXact extends HasIPXact {
     val ctrlAXIInterface = makeAXI4Interface(mmref, "io_nasti", "axi4_slave", false)
 
     val busInterfaces = new BusInterfaces
-    busInterfaces.getBusInterface().addAll(toCollection(Seq(ctrlAXIInterface)))
+    busInterfaces.getBusInterface().add(ctrlAXIInterface)
     busInterfaces
   }
 
