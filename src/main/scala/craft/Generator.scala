@@ -90,6 +90,8 @@ object Generator extends GeneratorApp with IPXactGeneratorApp  {
     TestGeneration.addSuite(benchmarks)
     TestGeneration.addSuite(new RegressionTestSuite(if (xlen == 64) rv64RegrTestNames else rv32RegrTestNames))
   }
-  generateTestSuiteMakefrags
-  generateParameterDump
+  if (! (longName contains "DspTop")) {
+    generateTestSuiteMakefrags
+    generateParameterDump
+  }
 }
