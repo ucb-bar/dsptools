@@ -1,6 +1,6 @@
 // See LICENSE for license details
 
-package pfb
+package craft
 
 import chisel3._
 import dsptools.DspTester
@@ -8,9 +8,9 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class SRMemModule( dut: (UInt, Bool) => UInt ) extends Module {
   val io = IO(new Bundle {
-    val in = Input(UInt.width(10))
+    val in = Input(UInt(10.W))
     val en = Input(Bool())
-    val out = Output(UInt.width(10))
+    val out = Output(UInt(10.W))
   })
 
   io.out := dut(io.in, io.en)
@@ -23,7 +23,7 @@ class SRMemTester( dut: SRMemModule, input: Seq[(Int, Boolean)], expected_output
     poke(dut.io.in, num)
     poke(dut.io.en, valid)
     if (expected >= 0) {
-      expect(dut.io.out, UInt(expected))
+      expect(dut.io.out, expected.U)
     }
     step(1)
   }})
@@ -44,6 +44,7 @@ class ShiftRegisterMemSpec extends FlatSpec with Matchers {
     0 -> true,
     0 -> true,
     0 -> true,
+    0 -> true,
     0 -> true
   )
 
@@ -54,53 +55,82 @@ class ShiftRegisterMemSpec extends FlatSpec with Matchers {
       c => new SRMemTester(c, testVector, expected)
     } should be (true)
 
-  it should "work with no init and an enable signal" in {
-    def testMem(in: UInt, en: Bool): UInt = ShiftRegisterMem(5, in, en)
+  it should "work with single-ported memories, an enable, and an odd shift" in {
+    def testMem(in: UInt, en: Bool): UInt = ShiftRegisterMem(in, 5, en)
 
     runTest(testMem _,
-      Seq(X, X, X, X, X, X, 1, 2, 3, 4, 5, 0)
-    )
-
-  }
-
-  it should "work with no init and no enable signal" in {
-    def testMem(in: UInt, en: Bool) = ShiftRegisterMem(5, in)
-
-    runTest(testMem _,
-      Seq(X, X, X, X, X, 1, 1, 2, 3, 4, 5, 0)
+      Seq(X, X, X, X, X, X, 1, 2, 3, 4, 5, 0, 0)
     )
   }
 
-  //it should "work with an init and an enable signal" in {
-  //  def testMem(in: UInt, en: Bool) = ShiftRegisterMem(5, in, en, Some(UInt(1)))
+  it should "work with single-ported memories, an enable, and an even shift" in {
+    def testMem(in: UInt, en: Bool): UInt = ShiftRegisterMem(in, 6, en)
+    
+    runTest(testMem _,
+      Seq(X, X, X, X, X, X, X, 1, 2, 3, 4, 5, 0)
+    )
+  }
 
-  //  runTest(testMem _,
-  //    Seq(1, X, 1, 1, 1, 1, 1, 2, 3, 4, 5, 0)
-  //  )
-  //}
+  it should "work with single-ported memories, no enable, and an odd shift" in {
+    def testMem(in: UInt, en: Bool) = ShiftRegisterMem(in, 5)
 
-  //it should "work with an init and no enable signal" in {
-  //  def testMem(in: UInt, en: Bool) = ShiftRegisterMem(5, in, init = Some(UInt(1)))
+    runTest(testMem _,
+      Seq(X, X, X, X, X, 1, 1, 2, 3, 4, 5, 0, 0)
+    )
+  }
 
+  it should "work with single-ported memories, no enable, and an even shift" in {
+    def testMem(in: UInt, en: Bool) = ShiftRegisterMem(in, 6)
 
-  //  runTest(testMem _,
-  //    Seq(1, X, 1, 1, 1, 1, 1, 2, 3, 4, 5, 0)
-  //  )
-  //}
+    runTest(testMem _,
+      Seq(X, X, X, X, X, X, 1, 1, 2, 3, 4, 5, 0)
+    )
+  }
+
+  it should "work with dual-ported memories, an enable, and an odd shift" in {
+    def testMem(in: UInt, en: Bool): UInt = ShiftRegisterMem(in, 5, en, false)
+
+    runTest(testMem _,
+      Seq(X, X, X, X, X, X, 1, 2, 3, 4, 5, 0, 0)
+    )
+  }
+
+  it should "work with dual-ported memories, an enable, and an even shift" in {
+    def testMem(in: UInt, en: Bool): UInt = ShiftRegisterMem(in, 6, en, false)
+    
+    runTest(testMem _,
+      Seq(X, X, X, X, X, X, X, 1, 2, 3, 4, 5, 0)
+    )
+  }
+
+  it should "work with dual-ported memories, no enable, and an odd shift" in {
+    def testMem(in: UInt, en: Bool) = ShiftRegisterMem(in, 5, use_sp_mem = false)
+
+    runTest(testMem _,
+      Seq(X, X, X, X, X, 1, 1, 2, 3, 4, 5, 0, 0)
+    )
+  }
+
+  it should "work with dual-ported memories, no enable, and an even shift" in {
+    def testMem(in: UInt, en: Bool) = ShiftRegisterMem(in, 6, use_sp_mem = false)
+
+    runTest(testMem _,
+      Seq(X, X, X, X, X, X, 1, 1, 2, 3, 4, 5, 0)
+    )
+  }
 
   it should "work with delay 0" in {
-    def testMem(in: UInt, en: Bool) = ShiftRegisterMem(0, in)
+    def testMem(in: UInt, en: Bool) = ShiftRegisterMem(in, 0)
 
     runTest(testMem _, testVector.map(_._1))
 
   }
 
   it should "work with delay 1" in {
-    def testMem(in: UInt, en: Bool) = ShiftRegisterMem(1, in)
-
+    def testMem(in: UInt, en: Bool) = ShiftRegisterMem(in, 1)
 
     runTest(testMem _,
-      Seq(X, 1, 1, 2, 3, 4, 5, 0, 0, 0, 0, 0)
+      Seq(X, 1, 1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 0)
     )
   }
 }
