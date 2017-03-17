@@ -142,7 +142,7 @@ trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with
   // fromSInt also included in Ring
   override def fromInt(n: Int): SInt = super[ConvertableToSInt].fromInt(n)
   // Overflow only on most negative
-  def abs(a: SInt): SInt = Mux(isSignNegative(a), super[SIntRing].minusContext(0.S, a), a)
+  def abs(a: SInt): SInt = Mux(isSignNegative(a), super[SIntRing].minus(0.S, a), ShiftRegister(a, context.numAddPipes))
   // Rounds result to nearest int (half up) for more math-y division
   override def div2(a: SInt, n: Int): SInt = a.widthOption match {
     // If shifting more than width, guaranteed to be closer to 0
