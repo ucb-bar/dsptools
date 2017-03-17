@@ -45,6 +45,9 @@ object ShiftRegisterMem {
     //  out
     } else {
       val mem = SyncReadMem(n, in.cloneType)
+      if (name != null) {
+        mem.suggestName(name)
+      }
       val index_counter = Counter(en, n)._1
       val raddr = index_counter
       val waddr = RegEnable(raddr, (n-1).U, en) //next, init, enable
