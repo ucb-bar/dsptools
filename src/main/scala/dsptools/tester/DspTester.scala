@@ -309,19 +309,18 @@ class DspTester[T <: Module](
     val expectedNewR = roundData(dataReal, expected.real)
     val expectedNewI = roundData(dataImag, expected.imag)
     val path = getName(data)
-    val good = updatableDspVerbose.withValue(dispSub) {
+    val (good, dblValR, dblValI, toleranceR) = updatableDspVerbose.withValue(dispSub) {
       val (dblValR, bitValR) = dspPeek(dataReal)
       val (dblValI, bitValI) = dspPeek(dataImag)
       val (goodR, toleranceR) = checkDecimal(dataReal, expectedNewR, dblValR, bitValR)
       val (goodI, toleranceI) = checkDecimal(dataImag, expectedNewI, dblValI, bitValI)
-      val good = goodR & goodI
-      if (dispDsp || !good) logger println ( { if (!good) Console.RED else "" } +
-          s"${msg}  EXPECT ${path} -> $dblValR + $dblValI i == E " +
-          s"$expectedNewR + $expectedNewI i ${if (good) "PASS" else "FAIL"}, tolerance = $toleranceR, " + 
-          s"${bitInfo(data)}" + 
-          Console.RESET)   
-      good
+      (goodR & goodI, dblValR, dblValI, toleranceR)
     }
+    if (dispDsp || !good) logger println ( { if (!good) Console.RED else "" } +
+      s"${msg}  EXPECT ${path} -> $dblValR + $dblValI i == E " +
+      s"$expectedNewR + $expectedNewI i ${if (good) "PASS" else "FAIL"}, tolerance = $toleranceR, " + 
+      s"${bitInfo(data)}" + 
+      Console.RESET)
     if (!good) fail
     good 
   }  
