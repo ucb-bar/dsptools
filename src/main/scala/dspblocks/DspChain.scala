@@ -87,6 +87,13 @@ trait WithChainHeaderWriter { this: DspChainModule =>
   def annotateHeader = {
     object Chain {
       val chain = nameMangle(id)
+      val chain_scr = SCRAddressMap(outer.scrName).get.map({case (key, value) =>
+        Map(
+          "addrname"  -> key,
+          "addr"      -> value,
+          "blockname" -> nameMangle(outer.scrName)
+        )
+      })
       val blocks = modules.map(mod => {
         Map(
           "addrs"     ->
@@ -403,11 +410,13 @@ abstract class DspChain()
     }
   })
   val flattenedLazySams = lazySams.flatten.toSeq
+  val scrSizeBytes = (scrbuilder.controlNames.length +
+                      scrbuilder.statusNames.length) * (scrbuilder.scrDataBits + 7) /8
   val ctrlAddrMapEntries =
     lazyMods.map(_.addrMapEntry) ++
     flattenedLazySams.map(_.addrMapEntry) ++
     Seq(
-      AddrMapEntry(s"chain", MemSize(BigInt(1 << 8), MemAttr(AddrMapProt.RWX)))
+      AddrMapEntry(s"chain", MemSize(scrSizeBytes, MemAttr(AddrMapProt.RWX)))
     )
   val dataAddrMapEntries =
     lazySams.zipWithIndex.map({
@@ -418,8 +427,21 @@ abstract class DspChain()
       case (None, _) => None
     }).flatten.toSeq
 
-  def makeAddrMap(entries: Seq[AddrMapEntry], start: Long = 0L) =
-    new AddrMap(entries, start=start)
+  def makeAddrMap(entries: Seq[AddrMapEntry], start: Long = 0L) = {
+    val maxSize = entries.map(_.region.size).max
+    // round up to nearest power of 2
+    val newSize = 1L << util.log2Ceil(maxSize)
+    val newEntries = entries.map(e =>
+      AddrMapEntry(e.name, e.region match {
+        case s: MemSize =>
+          s.copy(size = newSize)
+        case r: MemRange =>
+          r.copy(size = newSize)
+        case _ => throw dsptools.DspException("Invalid type of region")
+      })
+    )
+    new AddrMap(newEntries, start=start)
+  }
   def getMemSize(entries: Seq[AddrMapEntry], start: Long = 0L) = {
     val addrMap = makeAddrMap(entries, start)
     MemSize(addrMap.size, addrMap.attr)
@@ -427,6 +449,10 @@ abstract class DspChain()
 
   val ctrlMemSize = getMemSize(ctrlAddrMapEntries)
   val dataMemSize = getMemSize(dataAddrMapEntries)
+
+  /*ctrlAddrMapEntries.foreach {e =>
+    println(s"Entry ${e.name} had size ${e.region.size}")
+  }*/
 
   // the outer lazy module gets its base addresses set by the pbus
   // make an address map now that we have the correct base address
@@ -499,9 +525,11 @@ abstract class DspChainModule(
 
   // the scrfile for the chain is the last entry in the ctrl address map
   // construct it and connect it to a AXI <-> TL converter
-  val scrfile = outer.scrbuilder.generate(ctrlAddrs.entries.last.region.start)
+  val scrBaseAddr = ctrlAddrs.entries.last.region.start
+  val scrfile = outer.scrbuilder.generate(scrBaseAddr)
   val scrfile_tl2axi = Module(new TileLinkIONastiIOConverter())
   scrfile_tl2axi.io.tl <> scrfile.io.tl
+  IPXactComponents._ipxactComponents += DspIPXact.makeSCRComponent(scrBaseAddr, outer.scrName, scrfile_tl2axi.name)(p)
 
   // instantiate modules
   val modules = lazyMods.map(mod => mod.module)

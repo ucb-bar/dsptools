@@ -48,6 +48,9 @@ static sam_capture {{samname}}_capture =
 #define SAM_W_PACKET_COUNT_OFFSET   {{samWPacketCountOffset}}
 #define SAM_W_SYNC_ADDR_OFFSET      {{samWSyncAddrOffset}}
 
+{{#each chain_scr}}
+#define {{blockname}}_{{addrname}} {{addr}}{{/each}}
+
 #define INITIATE_SAM_CAPTURE_ERROR (255)
 #define NOT_IMPLEMENTED_ERROR      (254)
 
