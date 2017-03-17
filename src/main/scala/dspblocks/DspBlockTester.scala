@@ -189,20 +189,61 @@ trait HasDspPokeAs[T <: Module] { this: DspTester[T] =>
             assert(u.getWidth >= r.getWidth,
               s"Error: pokeAs($bundle, $value, $typ): $typ has smaller underlying width than $bundle")
             poke(u, doubleToBigIntBits(value))
-          case c: DspComplex[_]  => c.underlyingType() match {
-            case "fixed" => poke(c.real.asInstanceOf[FixedPoint], value)
-            case "real"  => dspPoke(c.real.asInstanceOf[DspReal], value)
-            case "SInt" => poke(c.real.asInstanceOf[SInt], value.toInt)
-            case _ =>
-              throw DspException(
-                s"pokeAs($bundle, $value, $typ): bundle DspComplex has unknown underlying type ${typ.getClass.getName}")
-          }
+          // poke double into complex as just the real component
+          case c: DspComplex[x] => dspPokeAs(bundle, Complex(value, 0), typ.asInstanceOf[DspComplex[x]])
           case _ =>
             throw DspException(s"pokeAs($bundle, $value, $typ): typ has unknown type ${typ.getClass.getName}")
         }
       case _ =>
         throw DspException(s"pokeAs($bundle, $value, $typ): bundle should be type UInt but is ${bundle.getClass.getName}")
     }
+
+    //scalastyle:off regex
+    if (_verbose) {
+      println(s"pokeAs($bundle, $value, $typ)")
+    }
+    //scalastyle:on regex
+  }
+
+  // [stevo]: poke a complex value in type typ to a UInt input
+  // it's okay if typ has smaller underlying width than the bundle; we assume it just zero-pads
+  //scalastyle:off cyclomatic.complexity
+  def dspPokeAs[U<:Data](bundle: Data, value: Complex, typ: DspComplex[U]): Unit = {
+    bundle match {
+      case u: UInt =>
+        typ.underlyingType() match {
+          case "SInt" =>
+            assert(u.getWidth >= typ.real.asInstanceOf[SInt].getWidth*2,
+              s"Error: pokeAs($bundle, $value, $typ): $typ has smaller underlying width than $bundle")
+            val a: BigInt = BigInt(value.real.round.toInt)
+            val b: BigInt = BigInt(value.imag.round.toInt)
+            poke(u, (a << typ.real.asInstanceOf[SInt].getWidth) + b)
+          case "fixed" =>
+            typ.real.asInstanceOf[FixedPoint].binaryPoint match {
+              case KnownBinaryPoint(binaryPoint) =>
+                assert(u.getWidth >= typ.real.asInstanceOf[FixedPoint].getWidth*2,
+                  s"Error: pokeAs($bundle, $value, $typ): $typ has smaller underlying width than $bundle")
+                // [stevo]: convert negative to two's complement positive
+                val a = toBigIntUnsigned(value.real, typ.real.asInstanceOf[FixedPoint].getWidth, binaryPoint)
+                val b = toBigIntUnsigned(value.imag, typ.imag.asInstanceOf[FixedPoint].getWidth, binaryPoint)
+                poke(u, (a << typ.real.asInstanceOf[FixedPoint].getWidth) + b)
+              case _ =>
+                throw DspException(
+                  s"Error: pokeAs($bundle, $value, $typ): Can't create FixedPoint for $value, from signal template $typ")
+            }
+          case "real" =>
+            assert(u.getWidth >= typ.real.asInstanceOf[DspReal].getWidth*2,
+              s"Error: pokeAs($bundle, $value, $typ): $typ has smaller underlying width than $bundle")
+            val a = doubleToBigIntBits(value.real)
+            val b = doubleToBigIntBits(value.imag)
+            poke(u, (a << typ.real.asInstanceOf[DspReal].getWidth) + b)
+          case _ =>
+            throw DspException(s"pokeAs($bundle, $value, $typ): typ has unknown type ${typ.getClass.getName}")
+        }
+      case _ =>
+        throw DspException(s"pokeAs($bundle, $value, $typ): bundle should be type UInt but is ${bundle.getClass.getName}")
+    }
+
     //scalastyle:off regex
     if (_verbose) {
       println(s"pokeAs($bundle, $value, $typ)")
@@ -622,6 +663,60 @@ trait AXIRWTester[T <: Module] { this: DspTester[T] with HasDspPokeAs[T] =>
     poke(axi.b.ready, 0)
   }
   def axiWriteAs[T<:Data](addr: Int, value: Double, typ: T): Unit = axiWriteAs(BigInt(addr), value, typ)
+
+  // TODO: make this not copy pasta
+  def axiWriteAs[T<:Data](addr: BigInt, value: Complex, typ: DspComplex[T]): Unit =  {
+    // s_write_addr
+    poke(axi.aw.valid, 1)
+    poke(axi.aw.bits.id, 0)
+    poke(axi.aw.bits.user, 0)
+    poke(axi.aw.bits.addr, addr)
+    poke(axi.aw.bits.len, 0)
+    poke(axi.aw.bits.size, log2Up(axiDataBytes))
+    poke(axi.aw.bits.lock, 0)
+    poke(axi.aw.bits.cache, 0)
+    poke(axi.aw.bits.prot, 0)
+    poke(axi.aw.bits.qos, 0)
+    poke(axi.aw.bits.region, 0)
+
+    // s_write_data
+    poke(axi.w.valid, 1)
+    dspPokeAs(axi.w.bits.data, value, typ)
+    poke(axi.w.bits.strb, 0xFF)
+    poke(axi.w.bits.last, 1)
+    poke(axi.w.bits.id, 0)
+    poke(axi.w.bits.user, 0)
+
+    var waited = 0
+    var a_written = false
+    var d_written = false
+    while (!a_written || !d_written) {
+      // check for ready condition
+      if (!a_written) { a_written = aw_ready }
+      if (!d_written) { d_written = w_ready }
+      require(waited < maxWait, "Timeout waiting for AXI AW or W to be ready")
+      step(1)
+      // invalidate when values are received
+      if (a_written) { poke(axi.aw.valid, 0) }
+      if (d_written) { poke(axi.w.valid, 0); poke(axi.w.bits.last, 0) }
+      waited += 1
+    }
+
+    // s_write_stall
+
+    waited = 0
+    do {
+      require(waited < maxWait, "Timeout waiting for AXI B to be valid")
+      step(1)
+      waited += 1
+    } while (!b_ready);
+
+    // s_write_resp
+    poke(axi.b.ready, 1)
+    step(1)
+    poke(axi.b.ready, 0)
+  }
+  def axiWriteAs[T<:Data](addr: Int, value: Complex, typ: DspComplex[T]): Unit =  axiWriteAs(BigInt(addr), value, typ)
 
   def axiRead(addr: BigInt): BigInt = {
 
