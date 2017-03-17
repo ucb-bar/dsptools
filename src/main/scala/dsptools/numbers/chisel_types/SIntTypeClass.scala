@@ -130,7 +130,7 @@ trait BinaryRepresentationSInt extends BinaryRepresentation[SInt] with hasContex
   // signBit relies on Signed, div2 relies on ChiselConvertableFrom
  }
 
-trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with 
+trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with
     ConvertableFromSInt with BinaryRepresentationSInt with IntegerBits[SInt] with hasContext {
   def signBit(a: SInt): Bool = isSignNegative(a)
   // fromSInt also included in Ring
