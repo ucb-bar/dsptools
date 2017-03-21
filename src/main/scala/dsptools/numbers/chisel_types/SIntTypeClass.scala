@@ -136,10 +136,14 @@ trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with
   // fromSInt also included in Ring
   override def fromInt(n: Int): SInt = super[ConvertableToSInt].fromInt(n)
   // Overflow only on most negative
-  def abs(a: SInt): SInt = Mux(isSignNegative(a), super[SIntRing].minus(0.S, a), ShiftRegister(a, context.numAddPipes))
+  def abs(a: SInt): SInt = Mux(isSignNegative(a), super[SIntRing].minus(0.S, a), a)
   //scalastyle:off method.name
   def context_abs(a: SInt): SInt = {
-    Mux(a >= 0.S, ShiftRegister(a, context.numAddPipes), super[SIntRing].minusContext(0.S, a))
+    Mux(
+      ShiftRegister(a, context.numAddPipes) >= 0.S,
+      ShiftRegister(a, context.numAddPipes),
+      super[SIntRing].minusContext(0.S, a)
+    )
   }
 
   // Rounds result to nearest int (half up) for more math-y division

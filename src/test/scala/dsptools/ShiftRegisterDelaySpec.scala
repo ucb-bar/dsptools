@@ -8,6 +8,10 @@ import dsptools.numbers.{DspReal, Signed}
 import dsptools.numbers.implicits._
 import org.scalatest.{FreeSpec, Matchers}
 
+//TODO: DspReal truncate, ceil
+//TODO: FixedPoint ceil
+//TODO: For truncate and ceil, compare delay between Fixed and Real
+
 //scalastyle:off magic.number regex
 
 class CircuitWithDelays[T <: Data : Signed](gen: T) extends Module {
