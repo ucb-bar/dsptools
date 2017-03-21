@@ -24,6 +24,11 @@ object Generator extends GeneratorApp with IPXactGeneratorApp  {
   generateFirrtl
   generateIPXact(IPXactComponents.ipxactComponents())
 
+  /** Output a global address map */
+  def generateAddressMap {
+    AddrMapStringOutput.contents.foreach(c => writeOutputFile(td, s"${names.configs}.addrmap", c))
+  }
+
   // [stevo]: copied from rocketchip
   val rv64RegrTestNames = LinkedHashSet(
         "rv64ud-v-fcvt",
@@ -93,5 +98,11 @@ object Generator extends GeneratorApp with IPXactGeneratorApp  {
   if (! (longName contains "DspTop")) {
     generateTestSuiteMakefrags
     generateParameterDump
+    generateConfigString
+    generateAddressMap
   }
+}
+
+object AddrMapStringOutput {
+  var contents: Option[String] = None
 }
