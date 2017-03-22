@@ -41,7 +41,7 @@ class CeilTruncateCircuitWithDelays(val delays: Int) extends Module {
 
   DspContext.withNumAddPipes(delays) {
     io.outFixedCeil := io.inFixed.ceil()
-    io.outRealCeil := DspRealUtils.ceilContext(io.inReal)
+    io.outRealCeil := io.inReal.context_ceil()
     io.outFixedTruncate := io.inFixed.truncate()
     io.outRealTruncate := io.inReal.truncate()
   }
@@ -127,7 +127,7 @@ class ShiftRegisterDelaySpec extends FreeSpec with Matchers {
     "when used with SInt" in {
       dsptools.Driver.execute(
         () => new AbsCircuitWithDelays(sGen, 3),
-        Array("--backend-name", "firrtl")
+        Array("--backend-name", "verilator")
       ) { c =>
         new CircuitWithDelaysTester(c)
       } should be(true)
@@ -136,7 +136,7 @@ class ShiftRegisterDelaySpec extends FreeSpec with Matchers {
     "when used with FixedPoint" in {
       dsptools.Driver.execute(
         () => new AbsCircuitWithDelays(fGen, 3),
-        Array("--backend-name", "firrtl")
+        Array("--backend-name", "verilator")
       ) { c =>
         new CircuitWithDelaysTester(c)
       } should be(true)
@@ -145,7 +145,7 @@ class ShiftRegisterDelaySpec extends FreeSpec with Matchers {
     "when used with DspReal" in {
       dsptools.Driver.execute(
         () => new AbsCircuitWithDelays(rGen, 8),
-        Array("--backend-name", "firrtl")
+        Array("--backend-name", "verilator")
       ) { c =>
         new CircuitWithDelaysTester(c)
       } should be(true)

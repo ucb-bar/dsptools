@@ -135,12 +135,6 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
   } 
 }
 
-object DspRealUtils extends hasContext {
-  def ceilContext(a: DspReal): DspReal = {
-    ShiftRegister(a, context.numAddPipes).ceil()
-  }
-}
-
 trait DspRealImpl  {
   implicit object DspRealRealImpl extends DspRealReal
 }
