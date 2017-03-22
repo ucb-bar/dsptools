@@ -47,7 +47,12 @@ trait DspRealSigned extends Any with Signed[DspReal] with hasContext {
     ComparisonHelper(a === DspReal(0.0), a < DspReal(0.0))
   }
   def abs(a: DspReal): DspReal = Mux(a < DspReal(0.0), DspReal(0.0) - a, a)
-  def context_abs(a: DspReal): DspReal = Mux(a < DspReal(0.0), DspReal(0.0) - a, a)
+  def context_abs(a: DspReal): DspReal = {
+    Mux(
+      ShiftRegister(a, context.numAddPipes) < DspReal(0.0),
+      DspReal(0.0) - a,
+      ShiftRegister(a, context.numAddPipes))
+  }
 
   override def isSignZero(a: DspReal): Bool = a === DspReal(0.0)
   override def isSignNegative(a:DspReal): Bool = a < DspReal(0.0)
@@ -61,7 +66,9 @@ trait DspRealIsReal extends Any with IsReal[DspReal] with DspRealOrder with DspR
   // Round *half up* -- Different from System Verilog definition! (where half is rounded away from zero)
   // according to 5.7.2 (http://www.ece.uah.edu/~gaede/cpe526/2012%20System%20Verilog%20Language%20Reference%20Manual.pdf)
   def round(a: DspReal): DspReal = floor(a + DspReal(0.5))
-  def truncate(a: DspReal): DspReal = Mux(a < DspReal(0.0), ceil(a), floor(a))
+  def truncate(a: DspReal): DspReal = {
+    Mux(ShiftRegister(a, context.numAddPipes) < DspReal(0.0), ceil(a), floor(ShiftRegister(a, context.numAddPipes)))
+  }
 }
 
 trait ConvertableToDspReal extends ConvertableTo[DspReal] with hasContext {

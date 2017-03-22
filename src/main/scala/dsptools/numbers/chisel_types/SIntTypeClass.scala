@@ -3,8 +3,8 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.util.{ShiftRegister, Cat}
-import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, NoTrim, DspException}
+import chisel3.util.{Cat, ShiftRegister}
+import dsptools.{DspContext, DspException, Grow, NoTrim, Saturate, Wrap, hasContext}
 import chisel3.experimental.FixedPoint
 
 import scala.language.implicitConversions
@@ -72,17 +72,11 @@ trait SIntSigned extends Any with Signed[SInt] with hasContext {
   }
   // isSignPositive, isSignNonZero, isSignNonPositive, isSignNonNegative derived from above (!)
   // abs requires ring (for overflow) so overridden later
-  def context_abs(a: SInt): SInt = {
-    context.overflowType match {
-      case Grow => Mux(a >= 0.S, a, 0.S -& a)
-      case Wrap => Mux(a >= 0.S, a, 0.S -% a)
-      case _ => throw DspException("Saturating abs hasn't been implemented")
-    }
-  }
+  // context_abs requires ring (for overflow) so overridden later
 }
 
 trait SIntIsReal extends Any with IsIntegral[SInt] with SIntOrder with SIntSigned with hasContext {
-  // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself; 
+  // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself;
   // isWhole always true
   // -5, -3, -1, 1, 3, 5, etc.
   def isOdd(a: SInt): Bool = a(0)
@@ -136,13 +130,22 @@ trait BinaryRepresentationSInt extends BinaryRepresentation[SInt] with hasContex
   // signBit relies on Signed, div2 relies on ChiselConvertableFrom
  }
 
-trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with 
+trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with
     ConvertableFromSInt with BinaryRepresentationSInt with IntegerBits[SInt] with hasContext {
   def signBit(a: SInt): Bool = isSignNegative(a)
   // fromSInt also included in Ring
   override def fromInt(n: Int): SInt = super[ConvertableToSInt].fromInt(n)
   // Overflow only on most negative
-  def abs(a: SInt): SInt = Mux(isSignNegative(a), super[SIntRing].minusContext(0.S, a), a)
+  def abs(a: SInt): SInt = Mux(isSignNegative(a), super[SIntRing].minus(0.S, a), a)
+  //scalastyle:off method.name
+  def context_abs(a: SInt): SInt = {
+    Mux(
+      ShiftRegister(a, context.numAddPipes) >= 0.S,
+      ShiftRegister(a, context.numAddPipes),
+      super[SIntRing].minusContext(0.S, a)
+    )
+  }
+
   // Rounds result to nearest int (half up) for more math-y division
   override def div2(a: SInt, n: Int): SInt = a.widthOption match {
     // If shifting more than width, guaranteed to be closer to 0

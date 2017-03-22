@@ -51,7 +51,7 @@ class ResetInverterTransform extends Transform {
     getMyAnnotations(state) match {
       case Nil => state
       case Seq(ResetInverterAnnotation(ModuleName(state.circuit.main, CircuitName(_)))) =>
-        CircuitState(ResetN.run(state.circuit), LowForm)
+        state.copy(circuit = ResetN.run(state.circuit))
       case annotations =>
         throw DspException(s"There should be only one InvertReset annotation: got ${annotations.mkString(" -- ")}")
     }
