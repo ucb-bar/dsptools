@@ -42,16 +42,17 @@ trait DspRealOrder extends Any with Order[DspReal] with hasContext {
   // min, max depends on lt, gt & mux
 }
 
-trait DspRealSigned extends Any with Signed[DspReal] with hasContext {
+trait DspRealSigned extends Any with Signed[DspReal] with DspRealRing with hasContext {
   def signum(a: DspReal): ComparisonBundle = {
     ComparisonHelper(a === DspReal(0.0), a < DspReal(0.0))
   }
   def abs(a: DspReal): DspReal = Mux(a < DspReal(0.0), DspReal(0.0) - a, a)
   def context_abs(a: DspReal): DspReal = {
     Mux(
-      ShiftRegister(a, context.numAddPipes) < DspReal(0.0),
-      DspReal(0.0) - a,
-      ShiftRegister(a, context.numAddPipes))
+      isSignNonNegative(ShiftRegister(a, context.numAddPipes)),
+      ShiftRegister(a, context.numAddPipes),
+      super[DspRealRing].minusContext(DspReal(0.0), a)
+    )
   }
 
   override def isSignZero(a: DspReal): Bool = a === DspReal(0.0)
@@ -60,14 +61,19 @@ trait DspRealSigned extends Any with Signed[DspReal] with hasContext {
 }
 
 trait DspRealIsReal extends Any with IsReal[DspReal] with DspRealOrder with DspRealSigned with hasContext {
-  def ceil(a: DspReal): DspReal = a.ceil()
+  def ceil(a: DspReal): DspReal = {
+    a.ceil()
+  }
+  def context_ceil(a: DspReal): DspReal = {
+    ShiftRegister(a, context.numAddPipes).ceil()
+  }
   def floor(a: DspReal): DspReal = a.floor()
   def isWhole(a: DspReal): Bool = a === round(a)
   // Round *half up* -- Different from System Verilog definition! (where half is rounded away from zero)
   // according to 5.7.2 (http://www.ece.uah.edu/~gaede/cpe526/2012%20System%20Verilog%20Language%20Reference%20Manual.pdf)
   def round(a: DspReal): DspReal = floor(a + DspReal(0.5))
   def truncate(a: DspReal): DspReal = {
-    Mux(ShiftRegister(a, context.numAddPipes) < DspReal(0.0), ceil(a), floor(ShiftRegister(a, context.numAddPipes)))
+    Mux(ShiftRegister(a, context.numAddPipes) < DspReal(0.0), context_ceil(a), floor(ShiftRegister(a, context.numAddPipes)))
   }
 }
 
@@ -129,6 +135,12 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
   } 
 }
 
-trait DspRealImpl {
+object DspRealUtils extends hasContext {
+  def ceilContext(a: DspReal): DspReal = {
+    ShiftRegister(a, context.numAddPipes).ceil()
+  }
+}
+
+trait DspRealImpl  {
   implicit object DspRealRealImpl extends DspRealReal
 }

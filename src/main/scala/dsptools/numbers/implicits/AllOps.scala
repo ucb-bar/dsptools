@@ -85,6 +85,7 @@ final class SignedOps[A: Signed](lhs: A) {
 final class IsRealOps[A <: Data](lhs: A)(implicit ev: IsReal[A]) {
   def isWhole(): Bool = macro Ops.unop[Bool]
   def ceil(): A = macro Ops.unop[A]
+  def context_ceil(): A = macro Ops.unop[A]
   def floor(): A = macro Ops.unop[A]
   def round(): A = macro Ops.unop[A]
   def truncate(): A = ev.truncate(lhs)

@@ -189,6 +189,8 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
       floor(ShiftRegister(a, context.numAddPipes)),
       plusContext(floor(a), one))
   }
+  def context_ceil(a: FixedPoint): FixedPoint = ceil(a)
+
   // Round half up: Can potentially overflow [round half towards positive infinity]
   // NOTE: Apparently different from Java for negatives
   def round(a: FixedPoint): FixedPoint = floor(plusContext(a, 0.5.F(1.BP)))
