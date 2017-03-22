@@ -249,11 +249,13 @@ trait HasDspIPXact extends HasIPXact {
     val addrMap = p(GlobalAddrMap)
     val inputs = p(InPorts)
     val outputs = p(OutPorts)
+    val usePortQueues = p(XBarUsePortQueues)
     val busInterfaces = makeXbarInterfaces(inputs, outputs, mmref, asref) 
     val addressSpaces = makeXbarAddressSpaces(asref, addrMap)
     val memoryMaps = makeXbarMemoryMaps(mmref, inputs, addrMap)
     val model = makeModel(makeXbarPorts(inputs, outputs))
-    val parameters = makeParameters(HashMap[String, String]())
+    val parameters = makeParameters(HashMap[String, String](
+      "usePortQueues" -> usePortQueues.toString))
     makeComponent(name, busInterfaces, addressSpaces, memoryMaps, model, parameters)
   }
 

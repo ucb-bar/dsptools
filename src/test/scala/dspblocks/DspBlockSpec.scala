@@ -155,6 +155,8 @@ class PTBSTester(dut: DspChainWithAXI4SInputModule) extends DspChainTester(dut) 
 }
 
 class DspBlockTesterSpec extends FlatSpec with Matchers {
+  val defaultSAMConfig = SAMConfig(16, 16)
+
   val manager = new TesterOptionsManager {
     testerOptions = TesterOptions(backendName = "verilator", testerSeed = 7L, isVerbose = true)
     interpreterOptions = InterpreterOptions(setVerbose = false, writeVCD = true)
@@ -203,12 +205,12 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
       new Config(
         (pname, site, here) => pname match {
           case DspChainAXI4SInputWidth => 12
-          case DefaultSAMKey => SAMConfig(16, 16)
+          case DefaultSAMKey => defaultSAMConfig
           case DspChainId => "chain"
           case DspChainKey("chain") => DspChainParameters(
             blocks = Seq(
-              ({p: Parameters => new Passthrough()(p)}, "chain:passthrough", BlockConnectEverything),
-              ({p: Parameters => new BarrelShifter()(p)}, "chain:barrelshifter", BlockConnectEverything)
+              ({p: Parameters => new Passthrough()(p)}, "chain:passthrough", BlockConnectEverything, Some(defaultSAMConfig)),
+              ({p: Parameters => new BarrelShifter()(p)}, "chain:barrelshifter", BlockConnectEverything, Some(defaultSAMConfig))
             ),
             logicAnalyzerSamples = 256,
             logicAnalyzerUseCombinationalTrigger = true,
@@ -227,7 +229,7 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
     ).toInstance)
 
     val dut = () => {
-      val lazyChain = LazyModule(new DspChainWithAXI4SInput(0x0000, 0x1000))
+      val lazyChain = LazyModule(new DspChainWithAXI4SInput())
       lazyChain.module
     }
 
@@ -247,8 +249,8 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
           case DspChainId => "chain"
           case DspChainKey("chain") => DspChainParameters(
             blocks = Seq(
-              ({p: Parameters => new Passthrough()(p)}, "chain:passthrough", BlockConnectSAMOnly),
-              ({p: Parameters => new BarrelShifter()(p)}, "chain:barrelshifter", BlockConnectPGLAOnly)
+              ({p: Parameters => new Passthrough()(p)}, "chain:passthrough", BlockConnectSAMOnly, Some(defaultSAMConfig)),
+              ({p: Parameters => new BarrelShifter()(p)}, "chain:barrelshifter", BlockConnectPGLAOnly, Some(defaultSAMConfig))
             ),
             logicAnalyzerSamples = 256,
             logicAnalyzerUseCombinationalTrigger = true,
@@ -267,7 +269,7 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
     ).toInstance)
 
     val dut = () => {
-      val lazyChain = LazyModule(new DspChainWithAXI4SInput(0x0000, 0x1000))
+      val lazyChain = LazyModule(new DspChainWithAXI4SInput())
       lazyChain.module
     }
     chisel3.iotesters.Driver.execute( dut, manager) {

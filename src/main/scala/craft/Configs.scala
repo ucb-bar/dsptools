@@ -66,6 +66,7 @@ object ConfigBuilder {
     }) ++ nastiTLParams(id)
   def nastiTLParams(id: String): Config = new Config(
     (pname, site, here) => pname match {
+      case XBarUsePortQueues => true
       case NastiKey => NastiParameters(64, 32, 1)
       case PAddrBits => 32
       case CacheBlockOffsetBits => 6
@@ -104,6 +105,7 @@ class WithCraft extends Config(
         AddrMapEntry(s"chan1", MemSize(0x200, MemAttr(AddrMapProt.RWX))))
     }
     case XBarQueueDepth => 2
+    case XBarUsePortQueues => true
     case ExtMemSize => 0x800L
     case _ => throw new CDEMatchError
   })
