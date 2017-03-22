@@ -26,7 +26,7 @@ object DspComplex {
 
   // Needed for assigning to results of operations; should not use in user code for making wires
   // Assumes real, imag are not literals
-  private [dsptools] def wire[T <: Data:Ring](real: T, imag: T): DspComplex[T] = {
+  def wire[T <: Data:Ring](real: T, imag: T): DspComplex[T] = {
     val result = Wire(DspComplex(real.cloneType, imag.cloneType))
     result.real := real
     result.imag := imag
