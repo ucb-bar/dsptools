@@ -380,7 +380,12 @@ abstract class DspChain()
     mod
   })
   val lazySams = lazyMods.zip(blocksUseSAM).zip(blocksSAMConfigs).map({ case((mod, useSam), samConfig) =>
-    val samWidth = p(GenKey(mod.id)).lanesOut * p(GenKey(mod.id)).genOut.getWidth //64
+    val samWidth = try {
+      p(GenKey(mod.id)).lanesOut * p(GenKey(mod.id)).genOut.getWidth
+    } catch {
+      case e: ParameterUndefinedException =>
+        p(DspBlockKey(mod.id)).outputWidth
+    }
     val samName = mod.id + ":sam"
     val samParams = p.alterPartial({
       case SAMKey(_id) if _id == samName => samConfig.getOrElse(p(DefaultSAMKey))
@@ -400,8 +405,12 @@ abstract class DspChain()
     if (useSam) {
       println("Creating SAM:")
       println(s"\tBlock ID: ${mod.id}")
-      println(s"\tLanes Out: ${p(GenKey(mod.id)).lanesOut}")
-      println(s"\tgenOut Width: ${p(GenKey(mod.id)).genOut.getWidth}")
+      try {
+        println(s"\tLanes Out: ${p(GenKey(mod.id)).lanesOut}")
+        println(s"\tgenOut Width: ${p(GenKey(mod.id)).genOut.getWidth}")
+      } catch {
+        case e: ParameterUndefinedException =>
+      }
       println(s"\tSAM Width: ${samWidth}")
       val lazySam = LazyModule( new SAMWrapper()(samParams) )
       Some(lazySam)

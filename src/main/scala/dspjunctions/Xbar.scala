@@ -8,6 +8,7 @@ import rocketchip.{ExtMemSize, PeripheryUtils, GlobalAddrMap}
 case object InPorts extends Field[Int]
 case object OutPorts extends Field[Int]
 case object XBarQueueDepth extends Field[Int]
+case object XBarUsePortQueues extends Field[Boolean]
 
 class NastiXBar(topParams: Parameters) extends Module {
   implicit val p = topParams
@@ -22,6 +23,6 @@ class NastiXBar(topParams: Parameters) extends Module {
 
   val bus = Module(new NastiRecursiveInterconnect(
     inPorts, addrMap, p(XBarQueueDepth)))
-  bus.io.masters <> io.in
-  io.out <> bus.io.slaves
+  bus.io.masters <> io.in.map(io => if (p(XBarUsePortQueues)) PeripheryUtils.addQueueAXI(io) else io)
+  io.out <> bus.io.slaves.map(io => if (p(XBarUsePortQueues)) PeripheryUtils.addQueueAXI(io) else io)
 }
