@@ -444,19 +444,26 @@ trait AXIOutputTester[T <: Module] extends OutputTester with InputTester { this:
   def outputStep: Unit = {}
 
   override def playStream(): Unit = {
-    // initiateSamCapture(streamIn.map(_.length).reduce(_+_))
     super[InputTester].playStream()
   }
 
-  // use given SAM by default
-  private def getPrefix(prefix: Option[String]) =
+  def useAXI[T](newAXI: NastiIO)(block: => T) = {
+    val oldAXI = axi
+    axi = newAXI
+    val toret = block
+    axi = oldAXI
+    toret
+  }
+
+  // use last SAM by default
+  private def getSamPrefix(prefix: Option[String]) =
     prefix.getOrElse(flattenedLazySams.last.id)
 
   def initiateSamCapture(nSamps: Int, waitForSync: Boolean = false,
       prefix: Option[String] = None, checkWrites: Boolean = true): Unit = {
     require(streamIn.length <= samSize, "Can't stream in more than the SAM can capture")
 
-    val _prefix = getPrefix(prefix)
+    val _prefix = getSamPrefix(prefix)
 
     val oldAXI = axi
     axi = ctrlAXI
@@ -494,40 +501,111 @@ trait AXIOutputTester[T <: Module] extends OutputTester with InputTester { this:
   }
 
   def getOutputFromSam(prefix: Option[String] = None): Seq[BigInt] = {
-    val _prefix = getPrefix(prefix)
-    val oldAXI = axi
-    axi = ctrlAXI
+    val _prefix = getSamPrefix(prefix)
 
-    val samWWriteCount = addrmap(s"${_prefix}:samWWriteCount")
-    val samWPacketCount = addrmap(s"${_prefix}:samWPacketCount")
-    val samWSyncAddr = addrmap(s"${_prefix}:samWSyncAddr")
+    useAXI(ctrlAXI) {
+      val samWWriteCount = addrmap(s"${_prefix}:samWWriteCount")
+      val samWPacketCount = addrmap(s"${_prefix}:samWPacketCount")
+      val samWSyncAddr = addrmap(s"${_prefix}:samWSyncAddr")
 
-    val samBase = addrmap(s"${_prefix}:data")
-    val base = samBase + axiRead(samWSyncAddr)
-    println(s"SyncAddr is ${base}")
-    val writeCount = axiRead(samWWriteCount)
-    val packetCount = axiRead(samWPacketCount)
+      val samBase = addrmap(s"${_prefix}:data")
+      val base = samBase + axiRead(samWSyncAddr)
+      println(s"SyncAddr is ${base}")
+      val writeCount = axiRead(samWWriteCount)
+      val packetCount = axiRead(samWPacketCount)
 
-    println(s"Reading $writeCount words from $base")
+      println(s"Reading $writeCount words from $base")
 
-    axi = dataAXI
+      useAXI(dataAXI) {
+        val readout = //(base + wordsDumped until writeCount).map(addr => {
+          (0 until writeCount.toInt).map(addr => {
+          axiRead(base + addr * 8)
+        })
+        println(s"Read out $readout")
+        streamOut_.last ++= readout
+        readout
+      }
+    }
+  }
+}
 
-    val readout = //(base + wordsDumped until writeCount).map(addr => {
-      (0 until writeCount.toInt).map(addr => {
-      axiRead(base + addr * 8)
-    })
+trait PGLATester[T <: DspChainModule] extends AXIOutputTester[T] { this: DspTester[T] with AXIRWTester[T] =>
+  // requires axi variable to be set to the correct port (almost certainly ctrlAXI)
+  def decoupledHelper(enAddr: BigInt, finishedAddr: BigInt, maxWait: Int = 100): Boolean = {
+    axiWrite(enAddr, 1)
 
-    streamOut_.last ++= readout
+    var numCycles = 0
+    do {
+      numCycles += 1
+    } while (numCycles < maxWait & axiRead(finishedAddr) == 0)
+    axiWrite(enAddr, 0)
 
-    axi = oldAXI
-
-    println(s"Read out $readout")
-
-    readout
+    // return success if we didn't time out
+    numCycles < maxWait
   }
 
+  def enablePatternGenerator(
+    samples: Seq[BigInt],
+    select: Int = 0,
+    triggerMode: Int = 0,
+    continuous: Boolean = true
+      ): Unit = {
+    val patternGeneratorEnable          = addrmap(s"chain:patternGeneratorEnable")
+    val patternGeneratorSelect          = addrmap(s"chain:patternGeneratorSelect")
+    val patternGeneratorReadyBypass     = addrmap(s"chain:patternGeneratorReadyBypass")
+    val patternGeneratorTriggerMode     = addrmap(s"chain:patternGeneratorTriggerMode")
+    val patternGeneratorLastSample      = addrmap(s"chain:patternGeneratorLastSample")
+    val patternGeneratorContinuous      = addrmap(s"chain:patternGeneratorContinuous")
+    val patternGeneratorArm             = addrmap(s"chain:patternGeneratorArm")
+    val patternGeneratorAbort           = addrmap(s"chain:patternGeneratorAbort")
+    val patternGeneratorControlEnable   = addrmap(s"chain:patternGeneratorControlEnable")
+    val patternGeneratorControlFinished = addrmap(s"chain:patternGeneratorControlFinished")
+    val patternGeneratorWriteAddr       = addrmap(s"chain:patternGeneratorWriteAddr")
+    val patternGeneratorWriteEnable     = addrmap(s"chain:patternGeneratorWriteEnable")
+    val patternGeneratorWriteFinished   = addrmap(s"chain:patternGeneratorWriteFinished")
+    val patternGeneratorState           = addrmap(s"chain:patternGeneratorState")
+    val patternGeneratorNumSampled      = addrmap(s"chain:patternGeneratorNumSampled")
+    val patternGeneratorStarted         = addrmap(s"chain:patternGeneratorStarted")
+    val patternGeneratorOverflow        = addrmap(s"chain:patternGeneratorOverflow")
 
+
+
+    useAXI(ctrlAXI) {
+      // start with abort
+      axiWrite(patternGeneratorAbort, 1)
+      decoupledHelper(patternGeneratorControlEnable, patternGeneratorControlFinished)
+      require(samples.length <= dut.patternGeneratorSamples)
+      for (i <- 0 until samples.length) {
+        axiWrite(patternGeneratorWriteAddr, i)
+        (0 until dut.dataWidthWords).foreach { idx =>
+          val samp = samples(i)
+          val word = (samp >> (idx * 64)) & 0xFFFFFFFFL
+          axiWrite(addrmap(s"chain:patternGeneratorWriteData_$idx"), word)
+        }
+        // wait for transaction to go through
+        decoupledHelper(patternGeneratorWriteEnable, patternGeneratorWriteFinished)
+      }
+      // ignore ready signal always
+      axiWrite(patternGeneratorReadyBypass, 1)
+      axiWrite(patternGeneratorTriggerMode, triggerMode)
+      axiWrite(patternGeneratorLastSample, samples.length-1)
+      axiWrite(patternGeneratorContinuous, continuous.toInt)
+
+      axiWrite(patternGeneratorArm, 0)
+      axiWrite(patternGeneratorAbort, 1)
+      decoupledHelper(patternGeneratorControlEnable, patternGeneratorControlFinished)
+
+      axiWrite(patternGeneratorSelect, select)
+      axiWrite(patternGeneratorEnable, 1)
+
+      axiWrite(patternGeneratorArm, 1)
+      axiWrite(patternGeneratorAbort, 0)
+      decoupledHelper(patternGeneratorControlEnable, patternGeneratorControlFinished)
+
+    }
+  }
 }
+
 
 trait StreamIOTester[T <: DspBlockModule] extends StreamInputTester[T] with StreamOutputTester[T] {
   this: DspTester[T] =>
