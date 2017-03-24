@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.util.RegNext
+import chisel3.util._
 import dsptools._
 import chisel3.experimental.FixedPoint
 import dsptools.numbers.implicits._
