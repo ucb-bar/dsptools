@@ -268,7 +268,7 @@ trait HasPatternGeneratorModule extends HasDspChainParameters with HasDecoupledS
       scrfile.status("patternGeneratorControlFinished"))
 
 
-    patternGenerator.io.signal.ready := true.B
+    patternGenerator.io.signal.ready := scrfile.control("patternGeneratorEnable")
 
     patternGenerator
   }

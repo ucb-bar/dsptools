@@ -54,8 +54,9 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) {
   val wSyncAddr = Reg(init = 0.U(config.memAddrBits.W))
   val synced = Reg(init = false.B)
   val wTrigDelay = Reg(next=io.wTrig)
-  io.wWriteCount := wWriteCount
+  io.wWriteCount  := wWriteCount
   io.wPacketCount := wPacketCount
+  io.wSyncAddr    := wSyncAddr
   when (wState === wIdle && io.wTrig && ~wTrigDelay) {
     wState := wRecord // go straight to record unless asked to wait
     wWriteAddr := io.wStartAddr

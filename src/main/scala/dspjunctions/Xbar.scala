@@ -7,7 +7,10 @@ import rocketchip.{ExtMemSize, PeripheryUtils, GlobalAddrMap}
 
 case object InPorts extends Field[Int]
 case object OutPorts extends Field[Int]
+// Depth of *INTERNAL* crossbar queues
 case object XBarQueueDepth extends Field[Int]
+// Add queues at ports of crossbar. XBarQueueDepth does *NOT*
+// set the depth of these queues
 case object XBarUsePortQueues extends Field[Boolean]
 
 class NastiXBar(topParams: Parameters) extends Module {
