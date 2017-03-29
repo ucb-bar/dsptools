@@ -122,9 +122,9 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) with SAMWidthHelper
   // AXI4 side
   val rIdle :: rWait :: rReadFirst :: rSend :: Nil = Enum(Bits(), 4)
   val rWidth     = powerOfTwoWidth
-  val rState     = Reg(UInt(3.W), init                                            = rIdle)
-  val rAddr      = Reg(UInt(config.memDepth.W))
-  val rLen       = Reg(UInt((nastiXLenBits - log2Ceil(rWidth/nastiXDataBits)).W))
+  val rState     = Reg(UInt(3.W), init = rIdle)
+  val rAddr      = Reg(UInt(log2Ceil(config.memDepth).W))
+  val rLen       = Reg(UInt((nastiXLenBits+1).W))
   val rawData    = Wire(UInt(rWidth.W))
 
   val rData      = Reg(UInt(rWidth.W))
@@ -142,7 +142,7 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) with SAMWidthHelper
     rLen   := io.out.ar.bits.len + 1.U
     rId    := io.out.ar.bits.id
     rState := rWait
-    mem_ren := true.B
+    // mem_ren := true.B
   }
 
   // delay state by a cycle to align with SeqMem, I think
@@ -155,7 +155,7 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) with SAMWidthHelper
     printf("ReadFirst with rCount %d and rLen %d and rData %d and rAddr %d\n", rCount, rLen, rData, rAddr)
     rData  := rawData << (nastiXDataBits.U * rCount)
     rAddr  := rAddr + 1.U
-    rCount := rCount - 1.U
+    rCount := rCount + 1.U
     rState := rSend
     rLen   := rLen - 1.U
   }
@@ -163,17 +163,22 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) with SAMWidthHelper
   // wait for ready from master when in Send state
   when (io.out.r.fire()) {
     printf("R fired with rCount %d and rLen %d and rData %d and rAddr %d\n", rCount, rLen, rData, rAddr)
+    mem_ren := true.B
     when (rLen === 0.U) {
       rState := rIdle
     } .otherwise {
       rLen := rLen - 1.U
-      when (rCount === 0.U) {
-        rData := rawData
-        rCount := rCountMask
-        rAddr := rAddr + 1.U
-      } .otherwise {
+      rCount := rCount + 1.U
+      // This when() is written in this order because 0-width
+      // comparisons to non-zero width nodes are always false.
+      // This means when rWidth = nastiXDataBits that we
+      // are always reading from rawData and always incrementing
+      // rAddr.
+      when (rCount != 0.U) {
         rData := rData << (nastiXDataBits).U
-        rCount := rCount - 1.U
+      } .otherwise {
+        rData := rawData
+        rAddr := rAddr + 1.U
       }
     }
   }
@@ -182,7 +187,7 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) with SAMWidthHelper
   io.out.r.valid := (rState === rSend)
   io.out.r.bits := NastiReadDataChannel(
     id = rId,
-    data = rData(rWidth -1, nastiXDataBits),
+    data = rData(rWidth -1, rWidth - nastiXDataBits),
     last = rLen === 0.U)
 
   // no write capabilities yet

@@ -590,7 +590,8 @@ abstract class DspChainModule(
 
   for (i <- 0 until mod_ios.length - 1) {
     require(mod_ios(i+1).in.bits.getWidth == mod_ios(i).out.bits.getWidth,
-      "Connecting modules with different width IOs")
+      s"Connecting modules with different width IOs: " +
+      s"LHS = ${mod_ios(i + 1).in.bits.getWidth} and RHS = ${mod_ios(i).out.bits.getWidth}")
     mod_ios(i + 1).in <> mod_ios(i).out
   }
 

@@ -147,7 +147,7 @@ static void get_sam_output(sam_capture* cap)
     unsigned long sync_addr    =
         read_reg_debug(ctrl_base + SAM_W_SYNC_ADDR_OFFSET, "wSyncAddr");
     unsigned long state        =
-        read_reg_debug(ctrl_base + SAM_W_STATE_OFFSET, "wSyncAddr");
+        read_reg_debug(ctrl_base + SAM_W_STATE_OFFSET, "wState");
 
 #ifdef CRAFT_DEBUG
     printf("Tuner CTRL base addr:0x%llx\n", ctrl_base);
@@ -155,13 +155,14 @@ static void get_sam_output(sam_capture* cap)
     printf("Tuner write_count   :0x%llx\n", write_count);
     printf("Tuner packet_count  :0x%llx\n", packet_count);
     printf("Tuner sync_addr     :0x%llx\n", sync_addr);
+    printf("Tuner state         :0x%llx\n", state);
 #endif
 
     if (cap->use_dma) {
 #ifdef CRAFT_DEBUG
         printf("Using DMA");
 #endif
-        test_memcpy(arr, (unsigned long*)data_base, write_count * sizeof(unsigned long));
+        test_memcpy(arr, (unsigned long*)data_base, write_count * 8 * sizeof(unsigned long));
         for (i=0L; i<write_count * 8; i++) {
             printf("arr[%d] = %llx\n", i, arr[i]);
         }
