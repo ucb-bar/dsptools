@@ -86,6 +86,7 @@ trait WithChainHeaderWriter { this: DspChainModule =>
     Some(p(DspChainAPIDirectory))
   } catch {
     case e: CDEMatchError => None
+    case f: MatchError => None
   }
   private val badTokens = Seq("-", ":")
   def nameMangle(id: String): String =
