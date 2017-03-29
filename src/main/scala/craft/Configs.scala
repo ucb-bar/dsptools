@@ -86,6 +86,10 @@ object ConfigBuilder {
             dataBits = 64 * 4)
       case _ => throw new CDEMatchError
     })
+  def writeHeaders(dir: String): Config = new Config(
+    (pname, site, here) => pname match {
+      case DspChainAPIDirectory => dir
+    })
 }
 
 class WithCraft extends Config(

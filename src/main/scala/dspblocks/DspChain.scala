@@ -78,13 +78,21 @@ trait HasDspChainParameters extends HasSCRParameters {
   def writeHeader = dspChainExternal.writeHeader
 }
 
+case object DspChainAPIDirectory extends Field[String]
+
 trait WithChainHeaderWriter { this: DspChainModule =>
+  val p: Parameters
+  val headerDirectory = try {
+    Some(p(DspChainAPIDirectory))
+  } catch {
+    case e: CDEMatchError => None
+  }
   private val badTokens = Seq("-", ":")
   def nameMangle(id: String): String =
     badTokens.foldLeft(id) {case (str, token) => str.replace(token, "_") }
   def getSamOffset(regName: String) =
     flattenedSams.head.addrmap(regName) - flattenedSams.head.baseAddr
-  def annotateHeader = {
+  def writeHeaders = {
     object Chain {
       val chain = nameMangle(id)
       val chain_scr = SCRAddressMap(outer.scrName).get.map({case (key, value) =>
@@ -119,21 +127,39 @@ trait WithChainHeaderWriter { this: DspChainModule =>
       val samWWriteCountOffset  = getSamOffset("samWWriteCount")
       val samWPacketCountOffset = getSamOffset("samWPacketCount")
       val samWSyncAddrOffset    = getSamOffset("samWSyncAddr")
+      val samWStateOffset       = getSamOffset("samWState")
     }
+
+    def getResource(name: String):String = {
+      import scala.io.Source
+      val stream = getClass.getResourceAsStream(name)
+      Source.fromInputStream( stream ).getLines.mkString("\n")
+    }
+
+    def writeFile(name: String, contents:String): Unit = {
+      import java.io.{File, PrintWriter}
+      val writer = new PrintWriter(new File(name))
+      writer.write(contents)
+      writer.close()
+    }
+
     val header: String = {
       import com.gilt.handlebars.scala.binding.dynamic._
       import com.gilt.handlebars.scala.Handlebars
-      import scala.io.Source
 
-      val stream = getClass.getResourceAsStream("/chain_api.h")
-      val template = Source.fromInputStream( stream ).getLines.mkString("\n")
+      val template = getResource("/chain_api.h")
       val t= Handlebars(template)
       t(Chain)
     }
-    import java.io.{File, PrintWriter}
-    val writer = new PrintWriter(new File("chain_api.h"))
-    writer.write(header)
-    writer.close()
+
+    headerDirectory match {
+      case Some(d) =>
+        writeFile(d + "/chain_api.h", header)
+        Seq("dma-ext.h", "memcpy-dma.c", "memcpy.h").foreach { s =>
+          writeFile(s"$d/$s", getResource(s"/$s"))
+        }
+      case None =>
+    }
   }
 }
 
@@ -268,7 +294,7 @@ trait HasPatternGeneratorModule extends HasDspChainParameters with HasDecoupledS
       scrfile.status("patternGeneratorControlFinished"))
 
 
-    patternGenerator.io.signal.ready := true.B
+    patternGenerator.io.signal.ready := scrfile.control("patternGeneratorEnable")
 
     patternGenerator
   }
@@ -431,7 +457,7 @@ abstract class DspChain()
     lazySams.zipWithIndex.map({
       case (Some(sam), idx) =>
         Some(
-          AddrMapEntry(s"${lazyMods(idx).id}:sam:data", MemSize(sam.config.memDepth, MemAttr(AddrMapProt.RWX)))
+          AddrMapEntry(s"${lazyMods(idx).id}:sam:data", MemSize(sam.w * sam.config.memDepth / 8, MemAttr(AddrMapProt.RWX)))
         )
       case (None, _) => None
     }).flatten.toSeq
@@ -677,5 +703,5 @@ abstract class DspChainModule(
   dataXbar.io.in(0) <> io.data_axi
   dataXbar.io.out.zip(flattenedSams).foreach{ case (xbar_axi, sam) => xbar_axi <> sam.io.asInstanceOf[SAMWrapperIO].axi_out }
 
-  annotateHeader
+  writeHeaders
 }
