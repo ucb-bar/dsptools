@@ -3,8 +3,10 @@ package craft
 import util.GeneratorApp
 import org.accellera.spirit.v1685_2009.{File => SpiritFile, Parameters => SpiritParameters, _}
 import javax.xml.bind.{JAXBContext, Marshaller}
-import java.io.{File, FileOutputStream}
+import java.io._
+import _root_.firrtl.annotations.AnnotationYamlProtocol._
 import scala.collection.JavaConverters
+import net.jcazevedo.moultingyaml._
 import java.util.Collection
 import java.math.BigInteger
 import rocketchip._
@@ -23,6 +25,17 @@ object Generator extends GeneratorApp with IPXactGeneratorApp  {
   def ipxactDir = td
   generateFirrtl
   generateIPXact(IPXactComponents.ipxactComponents())
+
+  // need to override so we can dump annotations file
+  override def generateFirrtl {
+    chisel3.Driver.dumpFirrtl(circuit, Some(new File(td, s"$longName.fir"))) // FIRRTL
+    
+    // also dump annotations file
+    val annotationFile = new File(td, s"$longName.anno")
+    val af = new FileWriter(annotationFile)
+    af.write(circuit.annotations.toArray.toYaml.prettyPrint)
+    af.close()
+  }
 
   /** Output a global address map */
   def generateAddressMap {
