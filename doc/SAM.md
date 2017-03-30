@@ -18,12 +18,15 @@ These registers are:
 * __wWaitForSync__: When true, the SAM waits for the first Sync signal before recording data. When false, it starts recording when wTrig goes high.
 * __wPacketCount__: Indicates number of packets stored since the last time the SAM was triggered (i.e. the number of times sync (T_LAST) was seen, plus one for the initial data set).
 * __wSyncAddr__: Gives the address at which the first packet start is known from the last time the SAM was triggered (i.e. the address written to the cycle after the first sync appears, or zero when no sync signal appears).
+__wState__: Gives the current state of the SAM. You can check this to be sure you can read out from AXI (if the write state is not idle, you will read zeros)
 
 # Parameters
 
 * __subpackets__: number of data subpackets that are time-multiplexed on the streaming interface input
 * __bufferDepth__: number of packets to store
-* __W__: the width of the streaming data interface (will be expanded to be an integer multiple of the AXI4 crossbar interface width).
+* __ioWidth__: the width of the streaming data interface
+* __memWidth__: ioWidth expanded to be an integer multiple of the AXI4 data width. The extra bits are zero. The memory has entries with width memWidth.
+* __powerOfTwoWidth__: ioWidth expanded to be a power of two. The extra bits are zero. From AXI's perspective, each entry in the SRAM is powerOfTwoWidth wide.
 * __B__: base address for the SAM
 
 # Behavior
