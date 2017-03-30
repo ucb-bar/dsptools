@@ -210,6 +210,7 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
     barrelshiftConnect: BlockConnectionParameters): Parameters = Parameters.root((
     new Config(
       (pname, site, here) => pname match {
+        case dspjunctions.DspChainIncludeJtag => true
         case DspChainAXI4SInputWidth => 12
         case DefaultSAMKey => defaultSAMConfig
         case DspChainId => "chain"

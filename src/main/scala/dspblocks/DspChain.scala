@@ -85,8 +85,7 @@ trait WithChainHeaderWriter { this: DspChainModule =>
   val headerDirectory = try {
     Some(p(DspChainAPIDirectory))
   } catch {
-    case e: CDEMatchError => None
-    case f: MatchError => None
+    case e: ParameterUndefinedException => None
   }
   private val badTokens = Seq("-", ":")
   def nameMangle(id: String): String =
@@ -365,7 +364,7 @@ trait HasLogicAnalyzerModule extends HasDspChainParameters with HasDecoupledSCR 
         )
 }
 
-class DspChainIO()(implicit val p: Parameters) extends Bundle {
+class DspChainIO()(implicit val p: Parameters) extends Bundle with HasDspJtagIO {
   val control_axi = Flipped(new NastiIO())
   val data_axi    = Flipped(new NastiIO())
 }
@@ -537,7 +536,7 @@ abstract class DspChainModule(
   extends LazyModuleImp(outer, override_clock, override_reset)
     with HasDspChainParameters
     with HasPatternGeneratorModule with HasLogicAnalyzerModule
-    with WithChainHeaderWriter {
+    with WithChainHeaderWriter with HasDspJtagModule {
   // This gets connected to the input of the first block
   // Different traits that implement streamIn should be mixed in
   // to feed data into the first block
@@ -580,6 +579,9 @@ abstract class DspChainModule(
   // make sure the pattern generator and logic analyzer are instantitated
   patternGenerator
   logicAnalyzer
+
+  // make sure jtag is connected
+  jtagConnect
 
 
   val maxDataWidth = mod_ios.map(i =>
@@ -642,17 +644,22 @@ abstract class DspChainModule(
 
   val control_axis = (modules ++ flattenedSams).map(_.io.axi) :+ scrfile_tl2axi.io.nasti
 
+  val control_masters = Seq(io.control_axi) ++ jtagCtrlAxiMasters
+  val data_masters    = Seq(io.data_axi) ++ jtagDataAxiMasters
+
   val ctrlOutPorts = control_axis.length
   val dataOutPorts = totalSAMBlocks
 
-  val inPorts = 1
+  val ctrlInPorts = control_masters.length
+  val dataInPorts = data_masters.length
+
   val ctrlXbarParams = p.alterPartial({
     case TLKey("XBar") => p(TLKey("MCtoEdge")).copy(
       overrideDataBitsPerBeat = Some(64),
       nCachingClients = 0,
       nCachelessClients = ctrlOutPorts,
       maxClientXacts = 4,
-      maxClientsPerPort = inPorts)
+      maxClientsPerPort = ctrlInPorts)
     case TLId => "XBar"
     case GlobalAddrMap => {
       val memSize = 0x1000L
@@ -660,7 +667,7 @@ abstract class DspChainModule(
     }
     case XBarQueueDepth => 2
     case ExtMemSize => 0x1000L
-    case InPorts => inPorts
+    case InPorts => ctrlInPorts
     case OutPorts => ctrlOutPorts
     case DspBlockId => s"$id:ctrl"
   })
@@ -670,7 +677,7 @@ abstract class DspChainModule(
       nCachingClients = 0,
       nCachelessClients = dataOutPorts,
       maxClientXacts = 4,
-      maxClientsPerPort = inPorts)
+      maxClientsPerPort = dataInPorts)
     case TLId => "XBar"
     case GlobalAddrMap => {
       val memSize = 0x1000L
@@ -678,7 +685,7 @@ abstract class DspChainModule(
     }
     case XBarQueueDepth => 2
     case ExtMemSize => 0x1000L
-    case InPorts => inPorts
+    case InPorts => dataInPorts
     case OutPorts => dataOutPorts
     case DspBlockId => s"$id:data"
   })
@@ -699,11 +706,19 @@ abstract class DspChainModule(
   IPXactComponents._ipxactComponents += DspIPXact.makeXbarComponent(ctrlXbarParams, ctrlXbar.name)
   IPXactComponents._ipxactComponents += DspIPXact.makeXbarComponent(dataXbarParams, dataXbar.name)
 
-  ctrlXbar.io.in(0) <> io.control_axi
-  ctrlXbar.io.out.zip(control_axis).foreach{ case (xbar_axi, control_axi) => xbar_axi <> control_axi }
+  ctrlXbar.io.in.zip(control_masters).foreach {
+    case (xbar_axi, master) => xbar_axi <> master
+  }
+  ctrlXbar.io.out.zip(control_axis).foreach {
+    case (xbar_axi, control_axi) => xbar_axi <> control_axi
+  }
 
-  dataXbar.io.in(0) <> io.data_axi
-  dataXbar.io.out.zip(flattenedSams).foreach{ case (xbar_axi, sam) => xbar_axi <> sam.io.asInstanceOf[SAMWrapperIO].axi_out }
+  dataXbar.io.in.zip(data_masters).foreach {
+    case (xbar_axi, master) => xbar_axi <> master
+  }
+  dataXbar.io.out.zip(flattenedSams).foreach {
+    case (xbar_axi, sam) => xbar_axi <> sam.io.asInstanceOf[SAMWrapperIO].axi_out
+  }
 
   writeHeaders
 }
