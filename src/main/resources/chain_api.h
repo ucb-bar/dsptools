@@ -63,7 +63,7 @@ static sam_capture {{samname}}_capture =
     typeof(addr) addr_ = (addr);                                  \
     typeof(data) data_ = (data);                                  \
     typeof(name) name_ = (name);                                  \
-    printf("Setting %s = %lld at 0x%llx\n", name_, data_, addr_); \
+    printf("Setting %s = 0x%llx at 0x%llx\n", name_, data_, addr_); \
     write_reg(addr_, data_);                                      \
 })
 #else
@@ -77,7 +77,7 @@ static sam_capture {{samname}}_capture =
     typeof(addr) addr_ = (addr);                             \
     typeof(name) name_ = (name);                             \
     unsigned long ret = read_reg(addr_);                     \
-    printf("Read %s at 0x%llx = %lld\n", name_, addr_, ret); \
+    printf("Read %s at 0x%llx = 0x%llx\n", name_, addr_, ret); \
     ret;                                                     \
 })
 #else
