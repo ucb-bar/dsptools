@@ -92,6 +92,12 @@ object ConfigBuilder {
     })
 }
 
+class WithDspChainIncludeJtag extends Config(
+  (pname, site, here) => pname match {
+    case DspChainIncludeJtag => true
+  }
+)
+
 class WithCraft extends Config(
   (pname, site, here) => pname match {
     case TLKey("XBar") => site(TLKey("MCtoEdge")).copy(
