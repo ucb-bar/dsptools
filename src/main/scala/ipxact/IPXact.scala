@@ -25,7 +25,7 @@ trait HasIPXact {
     (0 until count).map{i => {
       val bridge = new BusInterfaceType.Slave.Bridge
       bridge.setMasterRef(s"${prefix}_${i}")
-      bridge.setOpaque(true)
+      bridge.setOpaque(false)
       bridge
     }}
   }
