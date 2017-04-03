@@ -80,10 +80,9 @@ trait HasDspPokeAs[T <: Module] { this: DspTester[T] =>
             Left(bigIntBitsToDouble(bigInt))
           case r: FixedPoint =>
             val bigInt = peek(u)
-            Left(toDoubleFromUnsigned(bigInt, r.getWidth, r.binaryPoint.get))
-          // TODO:
-          //case s: SInt =>
-          //  Left(peek(s).toDouble)
+            Left(FixedPoint.toDouble(bigInt, r.binaryPoint.get))
+          case _: SInt =>
+            Left(peek(u).toDouble)
           case _ =>
             throw DspException(s"peek($data): data has unknown type ${data.getClass.getName}")
 
@@ -838,6 +837,49 @@ trait AXIRWTester[T <: Module] { this: DspTester[T] with HasDspPokeAs[T] =>
     ret
   }
   def axiRead(addr: Int): BigInt = axiRead(BigInt(addr))
+
+  def axiReadAs[T<:Data](addr: BigInt, typ: T): Double = {
+
+    // s_read_addr
+    poke(axi.ar.valid, 1)
+    poke(axi.ar.bits.id, 0)
+    poke(axi.ar.bits.user, 0)
+    poke(axi.ar.bits.addr, addr)
+    poke(axi.ar.bits.len, 0)
+    poke(axi.ar.bits.size, log2Up(axiDataBytes))
+    poke(axi.ar.bits.lock, 0)
+    poke(axi.ar.bits.cache, 0)
+    poke(axi.ar.bits.prot, 0)
+    poke(axi.ar.bits.qos, 0)
+    poke(axi.ar.bits.region, 0)
+
+    var waited = 0
+    while (!ar_ready) {
+      require(waited < maxWait, "Timeout waiting for AXI AR to be ready")
+      step(1)
+      waited += 1
+    }
+
+    step(1)
+    poke(axi.ar.valid, 0)
+    step(1)
+    poke(axi.r.ready, 1)
+
+    // s_read_data
+    while (!r_ready) {
+      // if (waited >= maxWait) return BigInt(-1)
+      require(waited < maxWait, "Timeout waiting for AXI R to be valid")
+      step(1)
+      waited += 1
+    }
+
+    val ret = dspPeekAs(axi.r.bits.data, typ).left.get
+    step(1)
+    poke(axi.r.ready, 0)
+    step(1)
+    ret
+  }
+  def axiReadAs[T<:Data](addr: Int, typ: T): Double = axiReadAs(BigInt(addr), typ)
 }
 
 abstract class DspBlockTester[V <: DspBlockModule](dut: V, override val maxWait: Int = 100)
