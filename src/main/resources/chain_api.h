@@ -15,6 +15,9 @@
 typedef struct sam_capture {
     unsigned long ctrl_base;
     unsigned long data_base;
+    unsigned long io_width;
+    unsigned long mem_width;
+    unsigned long pow2_width;
     unsigned long n_samps;
     unsigned long start_addr;
     void *output;
@@ -32,6 +35,9 @@ static sam_capture {{samname}}_capture =
 (sam_capture) {
     {{ctrl_base}}, // ctrl_base
     {{data_base}}, // data_base
+    {{io_width}},
+    {{mem_width}},
+    {{pow2_width}},
     0L,            // n_samps
     0L,            // start_addr
     0L,            // output

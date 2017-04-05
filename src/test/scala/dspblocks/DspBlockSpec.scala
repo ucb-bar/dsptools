@@ -269,7 +269,7 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
 
   behavior of "Pattern Generator + Logic Analyzer"
 
-  it should "work with BarrelShifter + Passthrough" in {
+  it should "work with BarrelShifter + Passthrough" ignore {
     SCRAddressMap.contents.clear
 
     implicit val p: Parameters =
