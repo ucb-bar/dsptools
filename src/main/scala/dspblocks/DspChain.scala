@@ -630,6 +630,7 @@ abstract class DspChainModule(
       when (patternGeneratorSelects(currentPatternGen)) {
         mod_ios(i).in.bits  := patternGenerator.io.signal.bits
         mod_ios(i).in.valid := patternGenerator.io.signal.valid
+        mod_ios(i).in.sync  := false.B
       }
       currentPatternGen += 1
     }
@@ -637,6 +638,7 @@ abstract class DspChainModule(
       when (logicAnalyzerSelects(currentLogicAnalyzer)) {
         logicAnalyzer.io.signal.valid := mod_ios(i).out.valid
         logicAnalyzer.io.signal.bits  := mod_ios(i).out.bits
+        logicAnalyzer.io.signal.sync  := false.B
       }
       currentLogicAnalyzer += 1
     }
