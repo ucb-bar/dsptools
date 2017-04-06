@@ -41,7 +41,7 @@ class SAMIO()(implicit p: Parameters) extends NastiBundle()(p) with SAMWidthHelp
   val wTargetCount = Input(UInt(config.memAddrBits.W))
   val wWaitForSync = Input(Bool())
   val wTrig        = Input(Bool())
-  val wPacketCount = Output(UInt(log2Up(config.bufferDepth).W))
+  val wPacketCount = Output(UInt(log2Ceil(config.bufferDepth).W))
   val wSyncAddr    = Output(UInt(config.memAddrBits.W))
   val wState       = Output(UInt(2.W))
 }
@@ -152,7 +152,7 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) with SAMWidthHelper
   }
   when (rState === rReadFirst) {
     mem_ren := true.B
-    printf("ReadFirst with rCount %d and rLen %d and rData %d and rAddr %d\n", rCount, rLen, rData, rAddr)
+    printf("ReadFirst with rCount 0x%x and rLen 0x%x and rData 0x%x and rAddr 0x%x\n", rCount, rLen, rData, rAddr)
     rData  := rawData << (nastiXDataBits.U * rCount)
     rAddr  := rAddr + 1.U
     rCount := rCount + 1.U
@@ -162,7 +162,7 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) with SAMWidthHelper
 
   // wait for ready from master when in Send state
   when (io.out.r.fire()) {
-    printf("R fired with rCount %d and rLen %d and rData %d and rAddr %d\n", rCount, rLen, rData, rAddr)
+    printf("R fired with rCount 0x%x and rLen 0x%x and rData 0x%x and rAddr 0x%x\n", rCount, rLen, rData, rAddr)
     mem_ren := true.B
     when (rLen === 0.U) {
       rState := rIdle

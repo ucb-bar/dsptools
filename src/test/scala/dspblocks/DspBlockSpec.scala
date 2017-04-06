@@ -8,6 +8,7 @@ import craft._
 import diplomacy._
 import dsptools._
 import firrtl_interpreter.InterpreterOptions
+import jtag._
 import org.scalatest._
 import sam._
 import testchipip._
@@ -161,9 +162,43 @@ class PGLAPTBSTester(dut: DspChainWithAXI4SInputModule) extends DspChainTester(d
   }
 }
 
-class DspBlockTesterSpec extends FlatSpec with Matchers {
+object chainParameters {
   val defaultSAMConfig = SAMConfig(16, 16)
 
+  def apply(
+    passthroughConnect: BlockConnectionParameters, 
+    barrelshiftConnect: BlockConnectionParameters): Parameters = Parameters.root((
+    new Config(
+      (pname, site, here) => pname match {
+        case DspChainIncludeJtag => true
+        case DspChainAPIDirectory => "./"
+        case DspChainAXI4SInputWidth => 128
+        case DefaultSAMKey => defaultSAMConfig
+        case DspChainId => "chain"
+        case DspChainKey("chain") => DspChainParameters(
+          blocks = Seq(
+            ({p: Parameters => new Passthrough()(p)}, "chain:passthrough", passthroughConnect, Some(defaultSAMConfig)),
+            ({p: Parameters => new BarrelShifter()(p)}, "chain:barrelshifter", barrelshiftConnect, Some(defaultSAMConfig))
+          ),
+          logicAnalyzerSamples = 256,
+          logicAnalyzerUseCombinationalTrigger = true,
+          patternGeneratorSamples = 256,
+          patternGeneratorUseCombinationalTrigger = true
+        )
+        case PassthroughDelay => 10
+        case IPXactParameters(id) => scala.collection.mutable.Map[String,String]()
+        case _ => throw new CDEMatchError
+      }
+      ) ++
+    ConfigBuilder.dspBlockParams("chain:passthrough", 128) ++
+    ConfigBuilder.buildDSP("chain:passthrough", q => new Passthrough()(q)) ++
+    ConfigBuilder.dspBlockParams("chain:barrelshifter", 128) ++
+    ConfigBuilder.buildDSP("chain:barrelshifter", q => new BarrelShifter()(q))
+  ).toInstance)
+
+}
+
+class DspBlockTesterSpec extends FlatSpec with Matchers {
   val manager = new TesterOptionsManager {
     testerOptions = TesterOptions(backendName = "verilator", testerSeed = 7L, isVerbose = true)
     interpreterOptions = InterpreterOptions(setVerbose = false, writeVCD = true)
@@ -204,36 +239,6 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
   }
 
   behavior of "DspChainTester"
-
-  def chainParameters(
-    passthroughConnect: BlockConnectionParameters, 
-    barrelshiftConnect: BlockConnectionParameters): Parameters = Parameters.root((
-    new Config(
-      (pname, site, here) => pname match {
-        case dspjunctions.DspChainIncludeJtag => true
-        case DspChainAXI4SInputWidth => 12
-        case DefaultSAMKey => defaultSAMConfig
-        case DspChainId => "chain"
-        case DspChainKey("chain") => DspChainParameters(
-          blocks = Seq(
-            ({p: Parameters => new Passthrough()(p)}, "chain:passthrough", passthroughConnect, Some(defaultSAMConfig)),
-            ({p: Parameters => new BarrelShifter()(p)}, "chain:barrelshifter", barrelshiftConnect, Some(defaultSAMConfig))
-          ),
-          logicAnalyzerSamples = 256,
-          logicAnalyzerUseCombinationalTrigger = true,
-          patternGeneratorSamples = 256,
-          patternGeneratorUseCombinationalTrigger = true
-        )
-        case PassthroughDelay => 10
-        case IPXactParameters(id) => scala.collection.mutable.Map[String,String]()
-        case _ => throw new CDEMatchError
-      }
-      ) ++
-    ConfigBuilder.dspBlockParams("chain:passthrough", 12) ++
-    ConfigBuilder.buildDSP("chain:passthrough", q => new Passthrough()(q)) ++
-    ConfigBuilder.dspBlockParams("chain:barrelshifter", 12) ++
-    ConfigBuilder.buildDSP("chain:barrelshifter", q => new BarrelShifter()(q))
-  ).toInstance)
 
   it should "work with Passthrough + BarrelShifter" ignore {
     SCRAddressMap.contents.clear

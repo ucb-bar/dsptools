@@ -68,7 +68,7 @@ class SAMWrapperTester(c: SAMWrapperModule)(implicit p: Parameters) extends DspB
     poke(xbar.ar.bits.user, 0)
     poke(xbar.ar.bits.addr, startAddr*(w/8))
     poke(xbar.ar.bits.len, (w/xbarDataWidth)*addrCount-1)
-    poke(xbar.ar.bits.size, log2Up(xbarDataBytes))
+    poke(xbar.ar.bits.size, log2Ceil(xbarDataBytes))
     poke(xbar.ar.bits.lock, 0)
     poke(xbar.ar.bits.cache, 0)
     poke(xbar.ar.bits.prot, 0)

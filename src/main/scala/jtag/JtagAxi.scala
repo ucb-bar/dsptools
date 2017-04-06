@@ -1,6 +1,6 @@
 // See LICENSE for license details.
 
-package dspjunctions
+package jtag
 
 import cde._
 import chisel3._
@@ -29,7 +29,7 @@ trait HasDspJtagParameters {
   }
 }
 
-trait HasDspJtagIO extends HasDspJtagParameters {
+trait HasDspJtagIO extends Bundle with HasDspJtagParameters {
   val p: Parameters
   val jtag = if (includeJtag) {
       Some(new DspJtagIO)
@@ -38,7 +38,11 @@ trait HasDspJtagIO extends HasDspJtagParameters {
   }
 }
 
-trait HasDspJtagModule extends HasDspJtagParameters {
+trait JtagModule extends Module {
+  val io: HasDspJtagIO
+}
+
+trait HasDspJtagModule extends JtagModule with HasDspJtagParameters {
   val io: HasDspJtagIO
 
   val jtagMaster = if (includeJtag) {
@@ -51,7 +55,7 @@ trait HasDspJtagModule extends HasDspJtagParameters {
     m.io.ctrlAxi
   })
   def jtagDataAxiMasters: Option[NastiIO] = jtagMaster.map(m => {
-    m.io.ctrlAxi
+    m.io.dataAxi
   })
 
   def jtagConnect: Unit = (io.jtag, jtagMaster) match {
@@ -129,6 +133,6 @@ class JtagAxiMaster()(implicit p: Parameters) extends Module {
   io.jtag <> inner.io.jtag
   jtagReset := inner.io.resetOut
 
-  io.ctrlAxi <> AsyncNastiFrom(from_clock=jtagClock, from_reset=jtagReset, from_source=inner.io.ctrlAxi)
-  io.dataAxi <> AsyncNastiFrom(from_clock=jtagClock, from_reset=jtagReset, from_source=inner.io.dataAxi)
+  io.ctrlAxi <> AsyncNastiFrom(from_clock=jtagClock, from_reset=false.B, from_source=inner.io.ctrlAxi)
+  io.dataAxi <> AsyncNastiFrom(from_clock=jtagClock, from_reset=false.B, from_source=inner.io.dataAxi)
 }

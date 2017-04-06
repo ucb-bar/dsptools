@@ -38,7 +38,7 @@ class BarrelShifter()(implicit p: Parameters) extends DspBlock()(p) {
 class BarrelShifterModule(outer: BarrelShifter)(implicit p: Parameters) extends DspBlockModule(outer)(p) {
   require( inputWidth == outputWidth )
 
-  val shiftWidth = util.log2Up(inputWidth)
+  val shiftWidth = util.log2Ceil(inputWidth)
 
   val shiftByInRange = control("shiftBy") < inputWidth.U
   val shiftBy        = Mux(shiftByInRange, control("shiftBy"), 0.U)(shiftWidth - 1, 0)

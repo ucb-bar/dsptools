@@ -59,6 +59,6 @@ case object DefaultSAMKey extends Field[SAMConfig]
 case class SAMConfig(subpackets: Int, bufferDepth: Int) {
   // sanity checks
   val memDepth = subpackets*bufferDepth
-  val memAddrBits = log2Up(memDepth)
+  val memAddrBits = log2Ceil(memDepth)
 }
 
