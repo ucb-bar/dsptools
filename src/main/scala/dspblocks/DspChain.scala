@@ -638,7 +638,6 @@ abstract class DspChainModule(
       when (logicAnalyzerSelects(currentLogicAnalyzer)) {
         logicAnalyzer.io.signal.valid := mod_ios(i).out.valid
         logicAnalyzer.io.signal.bits  := mod_ios(i).out.bits
-        logicAnalyzer.io.signal.sync  := false.B
       }
       currentLogicAnalyzer += 1
     }
