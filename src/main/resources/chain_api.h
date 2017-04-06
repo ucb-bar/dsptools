@@ -43,7 +43,7 @@ static sam_capture {{samname}}_capture =
     0L,            // output
     0L,            // output_size
     0L,            // output_bytes_valid
-    1,             // wait_for_sync
+    0,             // wait_for_sync
     1,             // check_writes
     0,             // use_dma
 };
@@ -122,8 +122,8 @@ static void initiate_sam_capture(sam_capture* cap)
     write_reg_debug(base + SAM_W_START_ADDR_OFFSET,    cap->start_addr, "wStartAddr");
     write_reg_debug(base + SAM_W_TARGET_COUNT_OFFSET,  cap->n_samps, "wTargetCount");
     write_reg_debug(base + SAM_W_TRIG_OFFSET,          0L, "wTrig");
-    write_reg_debug(base + SAM_W_TRIG_OFFSET,          1L, "wTrig");
     write_reg_debug(base + SAM_W_WAIT_FOR_SYNC_OFFSET, cap->wait_for_sync, "wWaitForSync");
+    write_reg_debug(base + SAM_W_TRIG_OFFSET,          1L, "wTrig");
 
     if (cap -> check_writes) {
         if (read_reg_debug(base + SAM_W_START_ADDR_OFFSET, "wStartAddr") !=
@@ -171,7 +171,7 @@ static void get_sam_output(sam_capture* cap)
 #endif
         test_memcpy(arr, (unsigned long*)data_base, write_count * 8 * sizeof(unsigned long));
         for (i=0L; i<write_count * 8; i++) {
-            printf("arr[%d] = %llx\n", i, arr[i]);
+            printf("arr[%d] = 0x%llx\n", i, arr[i]);
         }
     } else {
         for (i=0L; i<write_count * 8; i++) {
