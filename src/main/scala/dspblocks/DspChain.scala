@@ -99,7 +99,7 @@ trait WithChainHeaderWriter { this: DspChainModule =>
       val chain_scr = SCRAddressMap(outer.scrName).get.map({case (key, value) =>
         Map(
           "addrname"  -> key,
-          "addr"      -> s"0x${value.toString(10)}",
+          "addr"      -> s"0x${value.toString(16)}L",
           "blockname" -> nameMangle(outer.scrName)
         )
       })
@@ -109,7 +109,7 @@ trait WithChainHeaderWriter { this: DspChainModule =>
             mod.addrmap.map({case (key, value) =>
               Map(
                 "addrname"  -> key,
-                "addr"      -> s"0x${value.toString(16)}",
+                "addr"      -> s"0x${value.toString(16)}L",
                 "blockname" -> nameMangle(mod.id)
               )
             })
@@ -117,21 +117,21 @@ trait WithChainHeaderWriter { this: DspChainModule =>
       val sam = flattenedSams.map(s => {
         Map(
           "samname"    -> nameMangle(s.id),
-          "ctrl_base" -> s"0x${s.baseAddr.toString(16)}",
-          "data_base" -> s"0x${s.dataBaseAddr.toString(16)}",
+          "ctrl_base" -> s"0x${s.baseAddr.toString(16)}L",
+          "data_base" -> s"0x${s.dataBaseAddr.toString(16)}L",
           "io_width"   -> s.sam.ioWidth,
           "mem_width"  -> s.sam.memWidth,
           "pow2_width" -> s.sam.powerOfTwoWidth
           )
       })
-      val samWStartAddrOffset   = s"0x${getSamOffset("samWStartAddr").toString(16)}"
-      val samWTargetCountOffset = s"0x${getSamOffset("samWTargetCount").toString(16)}"
-      val samWTrigOffset        = s"0x${getSamOffset("samWTrig").toString(16)}"
-      val samWWaitForSyncOffset = s"0x${getSamOffset("samWWaitForSync").toString(16)}"
-      val samWWriteCountOffset  = s"0x${getSamOffset("samWWriteCount").toString(16)}"
-      val samWPacketCountOffset = s"0x${getSamOffset("samWPacketCount").toString(16)}"
-      val samWSyncAddrOffset    = s"0x${getSamOffset("samWSyncAddr").toString(16)}"
-      val samWStateOffset       = s"0x${getSamOffset("samWState").toString(16)}"
+      val samWStartAddrOffset   = s"0x${getSamOffset("samWStartAddr").toString(16)}L"
+      val samWTargetCountOffset = s"0x${getSamOffset("samWTargetCount").toString(16)}L"
+      val samWTrigOffset        = s"0x${getSamOffset("samWTrig").toString(16)}L"
+      val samWWaitForSyncOffset = s"0x${getSamOffset("samWWaitForSync").toString(16)}L"
+      val samWWriteCountOffset  = s"0x${getSamOffset("samWWriteCount").toString(16)}L"
+      val samWPacketCountOffset = s"0x${getSamOffset("samWPacketCount").toString(16)}L"
+      val samWSyncAddrOffset    = s"0x${getSamOffset("samWSyncAddr").toString(16)}L"
+      val samWStateOffset       = s"0x${getSamOffset("samWState").toString(16)}L"
     }
 
     def getResource(name: String):String = {
