@@ -22,4 +22,6 @@ install:
 
 script:
   - sbt "testOnly dspblocks.DspBlockTesterSpec"
+  # AsyncResetReg.v is missing on travis
+  # - sbt "testOnly jtag.JtagAxiSpec"
 
