@@ -176,7 +176,9 @@ class DspTester[T <: Module](
     if (dispDsp) logger println s"  POKE ${getName(c)} <- ${value.toString}, ${bitInfo(c)}"
   }
 
-  def dspPeek(node: Data): (Double, BigInt) = {
+  def dspPeekWithBigInt(node: Data): (Double, BigInt) = dspPeek(node)
+  
+  private def dspPeek(node: Data): (Double, BigInt) = {
     val bi: BigInt = updatableDspVerbose.withValue(dispSub) {
       node match {
         // Unsigned bigint
