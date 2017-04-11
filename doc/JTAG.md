@@ -12,6 +12,7 @@ The Jtag->AXI4 master is added by the rocket parameter `DspChainIncludeJtag`.
 # Implementation
 
 The instruction register is 4 bits long.
+Each AXI channel is connected to either a source or sink JTAG chain.
 The following table shows what specific values of the IR will select.
 
 | IR   | Description       |
@@ -26,12 +27,24 @@ The following table shows what specific values of the IR will select.
 | 7    | Data B sink       |
 | 8    | Data AR source    |
 | 9    | Data R sink       |
-| 14   |  ID code          |
-| 15   |  BYPASS           |
+| 14   | ID code           |
+| 15   | BYPASS            |
+
+Each AXI channel sink or source has a decoupled interface with ready and valid interfaces.
+Each source and sync chain should be connected to an async fifo so ready and valid will be held correctly.
+
+The behavior of a source channel is that the ready signal is latched during the JTAG capture state.
+If ready was true, the valid will be true during the JTAG update state; otherwise, valid will be false.
+It is assumed that if ready was true during the capture state, it will stay ready during the update state.
+In general this is required by the AXI4 spec, but with an async fifo it will be true.
+
+The behavior of a sink channel is that the valid signal is latched with the data during the JTAG capture state.
+Ready will always be true during the capture state.
+
+It is not necessary to reset the IR between multiple of a channel.
 
 # Usage
 
-Each AXI channel is connected to either a source or sink JTAG chain.
 Inputs for source chains consist of the fields of the AXI channel.
 
 * AW consists of (in order)
