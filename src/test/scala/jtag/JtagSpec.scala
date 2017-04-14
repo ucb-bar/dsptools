@@ -52,6 +52,7 @@ trait JtagAxiUtilities extends JtagTestUtilities {
     val strLen    = intToBitString(len, Some(n.nastiXLenBits))
     val strSize   = intToBitString(size, Some(n.nastiXSizeBits))
     val strBurst  = intToBitString(burst, Some(n.nastiXBurstBits))
+    val strLock   = intToBitString(if (lock) 1 else 0, Some(1))
     val strCache  = intToBitString(cache, Some(n.nastiXCacheBits))
     val strProt   = intToBitString(prot, Some(n.nastiXProtBits))
     val strQos    = intToBitString(qos, Some(n.nastiXQosBits))
@@ -59,7 +60,7 @@ trait JtagAxiUtilities extends JtagTestUtilities {
     val strId     = intToBitString(id, Some(n.nastiWIdBits))
     val strUser   = intToBitString(user, Some(n.nastiAWUserBits))
 
-    strAddr + strLen + strSize + strBurst + strCache + strProt +
+    strAddr + strLen + strSize + strBurst + strLock + strCache + strProt +
       strQos + strRegion + strId + strUser
   }
 
@@ -133,6 +134,7 @@ trait JtagAxiUtilities extends JtagTestUtilities {
     val strLen    = intToBitString(len, Some(n.nastiXLenBits))
     val strSize   = intToBitString(size, Some(n.nastiXSizeBits))
     val strBurst  = intToBitString(burst, Some(n.nastiXBurstBits))
+    val strLock   = intToBitString(if (lock) 1 else 0, Some(1))
     val strCache  = intToBitString(cache, Some(n.nastiXCacheBits))
     val strProt   = intToBitString(prot, Some(n.nastiXProtBits))
     val strQos    = intToBitString(qos, Some(n.nastiXQosBits))
@@ -154,7 +156,7 @@ trait JtagAxiUtilities extends JtagTestUtilities {
     resetToIdle(io)
 
     // AR
-    println(s"AR")
+    println(s"AR:\nirAr is $irAr is $strAr")
     idleToIRShift(io)
     irShift(io, intToBitString(irAr, Some(4)).reverse, "?" * 4)
     irShiftToIdle(io)
@@ -166,7 +168,7 @@ trait JtagAxiUtilities extends JtagTestUtilities {
     step(100)
 
     // R
-    println(s"R")
+    println(s"R:\nirR is $irR is $strR")
     idleToIRShift(io)
     irShift(io, intToBitString(irR, Some(4)).reverse, "?" * 4)
     irShiftToIdle(io)
@@ -189,7 +191,7 @@ trait JtagAxiUtilities extends JtagTestUtilities {
     resetToIdle(io)
 
     // AW
-    println("AW")
+    println("AW:\nirAw is $irAw is $strAw")
     idleToIRShift(io)
     irShift(io, intToBitString(irAw, Some(4)).reverse, "?" * 4)
     irShiftToIdle(io)
