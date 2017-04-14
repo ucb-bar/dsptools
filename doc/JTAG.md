@@ -60,7 +60,7 @@ Inputs for source chains consist of the fields of the AXI channel.
     * user
 * W consists of (in order)
     * data
-    * size
+    * last
     * id
     * strb
     * user
