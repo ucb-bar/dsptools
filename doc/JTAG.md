@@ -52,6 +52,7 @@ Inputs for source chains consist of the fields of the AXI channel.
     * len
     * size
     * burst
+    * lock
     * cache
     * prot
     * qos
@@ -69,6 +70,7 @@ Inputs for source chains consist of the fields of the AXI channel.
     * len
     * size
     * burst
+    * lock
     * cache
     * prot
     * qos
