@@ -123,7 +123,8 @@ module BBFLn(
     output reg [63:0] out
 );
   always @* begin
-  out = $realtobits($ln($bitstoreal(in)));
+  //out = $realtobits($ln($bitstoreal(in)));
+  out = $realtobits($exp($bitstoreal(in)));
   end
 endmodule
 
@@ -132,7 +133,8 @@ module BBFLog10(
     output reg [63:0] out
 );
   always @* begin
-  out = $realtobits($log10($bitstoreal(in)));
+  //out = $realtobits($log10($bitstoreal(in)));
+  out = $realtobits($exp($bitstoreal(in)));
   end
 endmodule
 
