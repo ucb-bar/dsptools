@@ -3,7 +3,6 @@
 package dsptools
 
 import chisel3._
-import chisel3.util._
 import dsptools.firrtltools.ResetInverter
 import firrtl._
 import org.scalatest.{FreeSpec, Matchers}

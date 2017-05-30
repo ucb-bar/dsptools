@@ -54,15 +54,17 @@ object Driver {
     optionsManager.interpreterOptions = optionsManager.interpreterOptions.copy(
         blackBoxFactories = optionsManager.interpreterOptions.blackBoxFactories :+ new DspRealFactory)
 
-    val chiselResult: ChiselExecutionResult = chisel3.Driver.execute(optionsManager, dutGenerator)
-    chiselResult match {
-      case ChiselExecutionSuccess(_, emitted, _) =>
-        optionsManager.replConfig = ReplConfig(firrtlSource = emitted)
-        FirrtlRepl.execute(optionsManager)
-        true
-      case ChiselExecutionFailure(message) =>
-        println("Failed to compile circuit") 
-        false
+    logger.Logger.makeScope(optionsManager) {
+      val chiselResult: ChiselExecutionResult = chisel3.Driver.execute(optionsManager, dutGenerator)
+      chiselResult match {
+        case ChiselExecutionSuccess(_, emitted, _) =>
+          optionsManager.replConfig = ReplConfig(firrtlSource = emitted)
+          FirrtlRepl.execute(optionsManager)
+          true
+        case ChiselExecutionFailure(message) =>
+          println("Failed to compile circuit")
+          false
+      }
     }
   }
 
