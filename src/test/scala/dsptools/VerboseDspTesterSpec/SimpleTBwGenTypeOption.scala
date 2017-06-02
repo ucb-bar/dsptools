@@ -3,6 +3,7 @@
 package SimpleTB
 
 import chisel3._
+import chisel3.util._
 import chisel3.internal.firrtl.{Width, BinaryPoint}
 import chisel3.experimental.FixedPoint
 import breeze.math.Complex
