@@ -4,7 +4,7 @@ package dsptools
 
 import chisel3._
 import chisel3.core.FixedPoint
-import dsptools.numbers.{DspReal, DspRealUtils, Signed}
+import dsptools.numbers.{DspReal, Signed}
 import dsptools.numbers.implicits._
 import org.scalatest.{FreeSpec, Matchers}
 
@@ -49,8 +49,8 @@ class CeilTruncateCircuitWithDelays(val delays: Int) extends Module {
 class CircuitWithDelaysTester[T <: Data : Signed](c: AbsCircuitWithDelays[T]) extends DspTester(c) {
   private val delaySize = c.delays
 
-  def oneTest: Unit = {
-    def values: Seq[Double] = (-delaySize.toDouble to delaySize.toDouble by 1.0)
+  def oneTest(): Unit = {
+    def values: Seq[Double] = -delaySize.toDouble to delaySize.toDouble by 1.0
     val inQueue = new mutable.Queue[Double] ++ values
     val outQueue = new mutable.Queue[Double] ++ Seq.fill(delaySize-1)(0.0) ++ values.map(_.abs)
 
@@ -68,10 +68,10 @@ class CircuitWithDelaysTester[T <: Data : Signed](c: AbsCircuitWithDelays[T]) ex
     }
   }
 
-  reset(1)
+  reset()
   poke(c.io.in, 0.0)
   step(10)
-  oneTest
+  oneTest()
 }
 
 class CeilTruncateTester(c: CeilTruncateCircuitWithDelays) extends DspTester(c) {
@@ -81,7 +81,7 @@ class CeilTruncateTester(c: CeilTruncateCircuitWithDelays) extends DspTester(c) 
                inFixedIo: FixedPoint, outFixedIo: FixedPoint,
                inRealIo: DspReal, outRealIo: DspReal,
                delaySize: Int): Unit = {
-    def values: Seq[Double] = (-delaySize.toDouble to delaySize.toDouble by 1.0)
+    def values: Seq[Double] = -delaySize.toDouble to delaySize.toDouble by 1.0
     val inQueue = new mutable.Queue[Double] ++ values
     val outQueue = new mutable.Queue[Double] ++ Seq.fill(delaySize)(0.0) ++ values.map(_.ceil)
 
@@ -104,7 +104,7 @@ class CeilTruncateTester(c: CeilTruncateCircuitWithDelays) extends DspTester(c) 
 
   poke(c.io.inFixed, 0.0)
   poke(c.io.inReal, 0.0)
-  reset(1)
+  reset()
   step(10)
   oneTest(c.io.inFixed, c.io.outFixedCeil, c.io.inReal, c.io.outRealCeil, delaySize)
 }
