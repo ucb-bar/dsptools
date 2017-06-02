@@ -117,7 +117,7 @@ class FixedPointShiftTester(c: FixedPointShifter) extends DspTester(c) {
       step(1)
       expect(c.io.dynamicShiftLeftResult, expectedValue(value, left = true, dynamicShiftValue),
         s"dynamic shift left $dynamicShiftValue of $value should " +
-          "be ${expectedValue(value, left = true, dynamicShiftValue)}")
+          s"be ${expectedValue(value, left = true, dynamicShiftValue)}")
       expect(c.io.dynamicShiftRightResult, expectedValue(value, left = false, dynamicShiftValue),
         s"dynamic shift right $dynamicShiftValue of $value should" +
           s"be ${expectedValue(value, left = false, dynamicShiftValue)}")
