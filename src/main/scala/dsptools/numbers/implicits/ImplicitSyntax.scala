@@ -41,3 +41,7 @@ trait ChiselConvertableFromSyntax {
 trait BinaryRepresentationSyntax {
   implicit def binaryRepresentationOps[A <: Data:BinaryRepresentation](a: A): BinaryRepresentationOps[A] = new BinaryRepresentationOps(a)
 }
+
+trait ContextualRingSyntax {
+  implicit def contextualRingOps[A <: Data:Ring](a: A): ContextualRingOps[A] = new ContextualRingOps(a)
+}

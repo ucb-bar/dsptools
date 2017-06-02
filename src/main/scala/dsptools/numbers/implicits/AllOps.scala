@@ -69,6 +69,7 @@ final class OrderOps[A <: Data](lhs: A)(implicit ev: Order[A]) {
 
 final class SignedOps[A: Signed](lhs: A) {
   def abs(): A = macro Ops.unop[A]
+  def context_abs(): A = macro Ops.unop[A]
   def sign(): Sign = macro Ops.unop[Sign]
   def signum(): Int = macro Ops.unop[Int]
 
@@ -84,6 +85,7 @@ final class SignedOps[A: Signed](lhs: A) {
 final class IsRealOps[A <: Data](lhs: A)(implicit ev: IsReal[A]) {
   def isWhole(): Bool = macro Ops.unop[Bool]
   def ceil(): A = macro Ops.unop[A]
+  def context_ceil(): A = macro Ops.unop[A]
   def floor(): A = macro Ops.unop[A]
   def round(): A = macro Ops.unop[A]
   def truncate(): A = ev.truncate(lhs)
@@ -119,4 +121,11 @@ class BinaryRepresentationOps[A <: Data](lhs: A)(implicit ev: BinaryRepresentati
   def div2(n: Int): A = ev.div2(lhs, n)
   def mul2(n: Int): A = ev.mul2(lhs, n)
   def trimBinary(n: Int): A = ev.trimBinary(lhs, n)
+}
+
+class ContextualRingOps[A <: Data](lhs: A)(implicit ev: Ring[A]) {
+  def context_+(rhs: A): A = ev.plusContext(lhs, rhs)
+  def context_-(rhs: A): A = ev.minusContext(lhs, rhs)
+  def context_*(rhs: A): A = ev.timesContext(lhs, rhs)
+  def context_unary_-(): A = ev.negateContext(lhs)
 }

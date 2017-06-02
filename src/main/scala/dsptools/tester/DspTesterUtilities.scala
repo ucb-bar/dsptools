@@ -63,7 +63,9 @@ object DspTesterUtilities {
     e match {
       case _: SInt | _: FixedPoint => true
       case _: DspReal | _: Bool | _: UInt => false
-      case _ => throw DspException("Not a basic number type!")
+      // Clock isn't a number, but it's still valid IO (should be treated as a Bool)
+      case _: Clock => false
+      case _ => throw DspException("Not a basic number/clock type!")
     }
   }
 

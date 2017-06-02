@@ -84,13 +84,13 @@ class ContextNestingBottom[T <: Data : Ring](gen1: T, gen2: T) extends Module {
   })
 
   DspContext.withOverflowType(Wrap) {
-    io.outWrap := io.in1 + io.in2
+    io.outWrap := io.in1 context_+ io.in2
   }
   DspContext.withOverflowType(Grow) {
-    io.outGrow := io.in1 + io.in2
+    io.outGrow := io.in1 context_+ io.in2
   }
 
-  io.outDefault := io.in1 + io.in2
+  io.outDefault := io.in1 context_+ io.in2
 }
 
 class ContextNestingTop[T <: Data : Ring](gen1: T, gen2: T) extends Module {

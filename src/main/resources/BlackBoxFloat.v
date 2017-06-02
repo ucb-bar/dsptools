@@ -3,7 +3,7 @@ module BBFFromInt(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($itor($signed(in)));
+  out = $realtobits($itor($signed(in)));
   end
 endmodule
 
@@ -13,7 +13,7 @@ module BBFToInt(
     output reg [63:0] out
 );
   always @* begin
-  out <= $rtoi($bitstoreal(in));
+  out = $rtoi($bitstoreal(in));
   end
 endmodule
 
@@ -23,97 +23,97 @@ module BBFAdd(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($bitstoreal(in1) + $bitstoreal(in2));
+  out = $realtobits($bitstoreal(in1) + $bitstoreal(in2));
   end
 endmodule
 
 module BBFSubtract(
     input  [63:0] in1,
     input  [63:0] in2,
-    output [63:0] out
+    output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($bitstoreal(in1) - $bitstoreal(in2));
+  out = $realtobits($bitstoreal(in1) - $bitstoreal(in2));
   end
 endmodule
 
 module BBFMultiply(
     input  [63:0] in1,
     input  [63:0] in2,
-    output [63:0] out
+    output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($bitstoreal(in1) * $bitstoreal(in2));
+  out = $realtobits($bitstoreal(in1) * $bitstoreal(in2));
   end
 endmodule
 
 module BBFDivide(
     input  [63:0] in1,
     input  [63:0] in2,
-    output [63:0] out
+    output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($bitstoreal(in1) / $bitstoreal(in2));
+  out = $realtobits($bitstoreal(in1) / $bitstoreal(in2));
   end
 endmodule
 
 module BBFGreaterThan(
     input  [63:0] in1,
     input  [63:0] in2,
-    output out
+    output reg out
 );
   always @* begin
-  out <= $bitstoreal(in1) > $bitstoreal(in2);
+  out = $bitstoreal(in1) > $bitstoreal(in2);
   end
 endmodule
 
 module BBFGreaterThanEquals(
     input  [63:0] in1,
     input  [63:0] in2,
-    output out
+    output reg out
 );
   always @* begin
-  out <= $bitstoreal(in1) >= $bitstoreal(in2);
+  out = $bitstoreal(in1) >= $bitstoreal(in2);
   end
 endmodule
 
 module BBFLessThan(
     input  [63:0] in1,
     input  [63:0] in2,
-    output out
+    output reg out
 );
   always @* begin
-  out <= $bitstoreal(in1) < $bitstoreal(in2);
+  out = $bitstoreal(in1) < $bitstoreal(in2);
   end
 endmodule
 
 module BBFLessThanEquals(
     input  [63:0] in1,
     input  [63:0] in2,
-    output out
+    output reg out
 );
   always @* begin
-  out <= $bitstoreal(in1) <= $bitstoreal(in2);
+  out = $bitstoreal(in1) <= $bitstoreal(in2);
   end
 endmodule
 
 module BBFEquals(
     input  [63:0] in1,
     input  [63:0] in2,
-    output out
+    output reg out
 );
   always @* begin
-  out <= $bitstoreal(in1) == $bitstoreal(in2);
+  out = $bitstoreal(in1) == $bitstoreal(in2);
   end
 endmodule
 
 module BBFNotEquals(
     input  [63:0] in1,
     input  [63:0] in2,
-    output out
+    output reg out
 );
   always @* begin
-  out <= $bitstoreal(in1) != $bitstoreal(in2);
+  out = $bitstoreal(in1) != $bitstoreal(in2);
   end
 endmodule
 
@@ -123,7 +123,7 @@ module BBFLn(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($ln($bitstoreal(in)));
+  out = $realtobits($ln($bitstoreal(in)));
   end
 endmodule
 
@@ -132,7 +132,7 @@ module BBFLog10(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($log10($bitstoreal(in)));
+  out = $realtobits($log10($bitstoreal(in)));
   end
 endmodule
 
@@ -141,7 +141,7 @@ module BBFExp(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($exp($bitstoreal(in)));
+  out = $realtobits($exp($bitstoreal(in)));
   end
 endmodule
 
@@ -150,7 +150,7 @@ module BBFSqrt(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($sqrt($bitstoreal(in)));
+  out = $realtobits($sqrt($bitstoreal(in)));
   end
 endmodule
 
@@ -160,7 +160,7 @@ module BBFPow(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($pow($bitstoreal(in1), $bitstoreal(in2)));
+  out = $realtobits($pow($bitstoreal(in1), $bitstoreal(in2)));
   end
 endmodule
 
@@ -169,7 +169,7 @@ module BBFFloor(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($floor($bitstoreal(in)));
+  out = $realtobits($floor($bitstoreal(in)));
   end
 endmodule
 
@@ -178,7 +178,7 @@ module BBFCeil(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($ceil($bitstoreal(in)));
+  out = $realtobits($ceil($bitstoreal(in)));
   end
 endmodule
 
@@ -188,7 +188,7 @@ module BBFSin(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($sin($bitstoreal(in)));
+  out = $realtobits($sin($bitstoreal(in)));
   end
 endmodule
 
@@ -197,7 +197,7 @@ module BBFCos(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($cos($bitstoreal(in)));
+  out = $realtobits($cos($bitstoreal(in)));
   end
 endmodule
 
@@ -206,7 +206,7 @@ module BBFTan(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($tan($bitstoreal(in)));
+  out = $realtobits($tan($bitstoreal(in)));
   end
 endmodule
 
@@ -215,7 +215,7 @@ module BBFASin(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($asin($bitstoreal(in)));
+  out = $realtobits($asin($bitstoreal(in)));
   end
 endmodule
 
@@ -224,7 +224,7 @@ module BBFACos(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($acos($bitstoreal(in)));
+  out = $realtobits($acos($bitstoreal(in)));
   end
 endmodule
 
@@ -233,7 +233,7 @@ module BBFATan(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($atan($bitstoreal(in)));
+  out = $realtobits($atan($bitstoreal(in)));
   end
 endmodule
 
@@ -243,7 +243,7 @@ module BBFATan2(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($atan2($bitstoreal(in1), $bitstoreal(in2)));
+  out = $realtobits($atan2($bitstoreal(in1), $bitstoreal(in2)));
   end
 endmodule
 
@@ -253,7 +253,7 @@ module BBFHypot(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($hypot($bitstoreal(in1), $bitstoreal(in2)));
+  out = $realtobits($hypot($bitstoreal(in1), $bitstoreal(in2)));
   end
 endmodule
 
@@ -262,7 +262,7 @@ module BBFSinh(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($sinh($bitstoreal(in)));
+  out = $realtobits($sinh($bitstoreal(in)));
   end
 endmodule
 
@@ -271,7 +271,7 @@ module BBFCosh(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($cosh($bitstoreal(in)));
+  out = $realtobits($cosh($bitstoreal(in)));
   end
 endmodule
 
@@ -280,7 +280,7 @@ module BBFTanh(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($tanh($bitstoreal(in)));
+  out = $realtobits($tanh($bitstoreal(in)));
   end
 endmodule
 
@@ -289,7 +289,7 @@ module BBFASinh(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($asinh($bitstoreal(in)));
+  out = $realtobits($asinh($bitstoreal(in)));
   end
 endmodule
 
@@ -298,7 +298,7 @@ module BBFACosh(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($acosh($bitstoreal(in)));
+  out = $realtobits($acosh($bitstoreal(in)));
   end
 endmodule
 
@@ -307,7 +307,7 @@ module BBFATanh(
     output reg [63:0] out
 );
   always @* begin
-  out <= $realtobits($atanh($bitstoreal(in)));
+  out = $realtobits($atanh($bitstoreal(in)));
   end
 endmodule
 */

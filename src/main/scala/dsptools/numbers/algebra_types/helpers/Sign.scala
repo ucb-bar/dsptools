@@ -3,6 +3,8 @@
 package dsptools.numbers
 
 import chisel3._
+import chisel3.util.ShiftRegister
+import dsptools.hasContext
 
 import scala.language.implicitConversions
 
@@ -69,6 +71,7 @@ object Sign {
     override def sign(a: Sign): Sign = a
     def signum(a: Sign): ComparisonBundle = ComparisonHelper(a.zero, a.neg)
     def abs(a: Sign): Sign = if (a == Negative) Positive else a
+    def context_abs(a: Sign): Sign = if (a == Negative) Positive else a
 
     def compare(x: Sign, y: Sign): ComparisonBundle = {
       val eq = Mux(x.zero,
@@ -94,13 +97,16 @@ object Sign {
   implicit final val SignMultiplicativeGroup: MultiplicativeCMonoid[Sign] =
     Multiplicative(SignAlgebra)
 
+  //scalastyle:off method.name
   implicit def SignAction[A<: Data](implicit A: AdditiveGroup[A]): MultiplicativeAction[A, Sign] =
-    new MultiplicativeAction[A, Sign] {
+    new MultiplicativeAction[A, Sign] with hasContext {
       // Multiply a # by a sign
-      def gtimesl(s: Sign, a: A): A = Mux(s.zero,
-        A.zero,
-        Mux(s.neg, A.negate(a), a)
-      )
+      def gtimesl(s: Sign, a: A): A = {
+        Mux(ShiftRegister(s.zero, context.numAddPipes),
+          ShiftRegister(A.zero, context.numAddPipes),
+          Mux(ShiftRegister(s.neg, context.numAddPipes), A.negate(a), ShiftRegister(a, context.numAddPipes))
+        )
+      }
       def gtimesr(a: A, s: Sign): A = gtimesl(s, a)
     }
 }

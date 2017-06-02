@@ -2,7 +2,9 @@
 
 package dsptools.numbers
 
+import chisel3.util.ShiftRegister
 import chisel3.{Bool, Data, Mux}
+import dsptools.hasContext
 
 /**
   * Much of this is drawn from non/spire, but using Chisel Bools instead of
@@ -23,6 +25,8 @@ trait Signed[A] extends Any {
 
   /** An idempotent function that ensures an object has a non-negative sign. */
   def abs(a: A): A
+  //noinspection ScalaStyle
+  def context_abs(a: A): A
 
   def isSignZero(a: A): Bool = signum(a).eq
   def isSignPositive(a: A): Bool = !isSignZero(a) && !isSignNegative(a)
@@ -40,8 +44,14 @@ object Signed {
   def apply[A <: Data](implicit s: Signed[A]): Signed[A] = s
 }
 
-private class OrderedRingIsSigned[A <: Data](implicit o: Order[A], r: Ring[A]) extends Signed[A] {
+//scalastyle:off method.name
+private class OrderedRingIsSigned[A <: Data](implicit o: Order[A], r: Ring[A]) extends Signed[A] with hasContext {
   def signum(a: A): ComparisonBundle = o.compare(a, r.zero)
-  def abs(a: A): A = Mux(signum(a).lt, r.negate(a), a)
+  def abs(a: A): A = {
+    Mux(signum(a).lt, r.negate(a), a)
+  }
+  def context_abs(a: A): A = {
+    Mux(signum(ShiftRegister(a, context.numAddPipes)).lt, r.negateContext(a), ShiftRegister(a, context.numAddPipes))
+  }
 }
 

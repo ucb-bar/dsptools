@@ -2,8 +2,7 @@
 
 package examples
 
-import chisel3.core._
-import chisel3.iotesters.{Backend, PeekPokeTester}
+import chisel3._
 import dsptools.{ReplOptionsManager, DspTester}
 import dsptools.numbers.DspReal
 import org.scalatest.{FlatSpec, Matchers}
@@ -40,9 +39,7 @@ class RealAdderTester(c: RealAdder) extends DspTester(c) {
     poke(c.io.a2, j)
     step(1)
 
-    val result = peek(c.io.c)
-
-    println(s"peek $result")
+    expect(c.io.c, i + j)
   }
 }
 
@@ -51,7 +48,7 @@ class RealAdderSpec extends FlatSpec with Matchers {
   behavior of "adder circuit on blackbox real"
 
   it should "allow registers to be declared that infer widths" in {
-    chisel3.iotesters.Driver(() => new RealAdder) { c =>
+    dsptools.Driver.execute(() => new RealAdder, Array("--backend-name", "firrtl")) { c =>
       new RealAdderTester(c)
     } should be (true)
   }

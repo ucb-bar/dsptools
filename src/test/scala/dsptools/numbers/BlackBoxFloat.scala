@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.iotesters.{ChiselFlatSpec, TesterOptionsManager}
+import chisel3.iotesters.{ChiselFlatSpec, PeekPokeTester, TesterOptionsManager}
 import chisel3.testers.BasicTester
 import chisel3.util._
 import dsptools.DspTester
@@ -91,6 +91,10 @@ object FloatOpCodes {
   val ASinh = 22
   val ACosh = 23
   val ATanh = 24
+  val GreaterThan = 25
+  val GreaterThanOrEqual = 26
+  val LessThan = 27
+  val LessThanOrEqual = 28
 }
 
 class FloatOps extends Module {
@@ -99,6 +103,7 @@ class FloatOps extends Module {
     val in2 = Input(DspReal(1.0))
     val opsel = Input(UInt(64.W))
     val out = Output(DspReal(1.0))
+    val boolOut = Output(Bool())
   })
 }
 
@@ -117,6 +122,9 @@ class FloatOpsWithTrig extends FloatOps {
     is(Pow.U) { io.out := io.in1.pow(io.in2) }
     is(Floor.U) { io.out := io.in1.floor() }
     is(Ceil.U) { io.out := io.in1.ceil() }
+
+    is(GreaterThan.U) { io.boolOut := io.in1 > io.in2 }
+    is(GreaterThanOrEqual.U) { io.boolOut := io.in1 >= io.in2 }
 
     is(Sin.U) { io.out := io.in1.sin() }
     is(Cos.U) { io.out := io.in1.cos() }
@@ -150,6 +158,8 @@ class FloatOpsWithoutTrig extends FloatOps {
     is(Pow.U) { io.out := io.in1.pow(io.in2) }
     is(Floor.U) { io.out := io.in1.floor() }
     is(Ceil.U) { io.out := io.in1.ceil() }
+    is(GreaterThan.U) { io.boolOut := io.in1 > io.in2 }
+    is(GreaterThanOrEqual.U) { io.boolOut := io.in1 >= io.in2 }
   }
 }
 
@@ -223,6 +233,17 @@ class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends 
     // dspExpect(c.io.out, math.atanh(a), "atanh should work on reals")
   }
 
+  for {
+    x <- -1.0 to 1.0 by 1.0
+    y <- -1.0 to 1.0 by 1.0
+  } {
+    poke(c.io.in1, x)
+    poke(c.io.in2, y)
+    poke(c.io.opsel, GreaterThan)
+    expect(c.io.boolOut, x > y, s"$x > $y should be ${x > y}")
+    step(1)
+  }
+
 }
 
 class BlackBoxFloatSpec extends ChiselFlatSpec {
@@ -263,4 +284,30 @@ class BlackBoxFloatSpec extends ChiselFlatSpec {
       new FloatOpTester(c, testTrigFuncs = false)
     } should be(true)
   }
+
+  "greater than" should "work with negatives" in {
+    val optionsManager = new TesterOptionsManager {
+      interpreterOptions = interpreterOptions.copy(
+        blackBoxFactories = interpreterOptions.blackBoxFactories :+ new DspRealFactory)
+    }
+
+    dsptools.Driver.execute(() => new NegCircuit, optionsManager) { c =>
+      new NegCircuitTester(c)
+    } should be(true)
+  }
+}
+
+class NegCircuit extends Module {
+  val io = IO(new Bundle {
+    val in1 = DspReal()
+    val in2 = DspReal()
+    val out = Bool()
+  })
+  io.out := io.in1 > io.in2
+}
+
+class NegCircuitTester(c: NegCircuit) extends DspTester(c) {
+  poke(c.io.in1, -1.0)
+  poke(c.io.in2, -2.0)
+  expect(c.io.out, false)
 }

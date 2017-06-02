@@ -10,13 +10,16 @@ import chisel3.internal.firrtl.KnownBinaryPoint
 
 import scala.language.implicitConversions
 
+//scalastyle:off method.name
+
 /**
   * Defines basic math functions for FixedPoint numbers
   */
 trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
   def zero: FixedPoint = 0.0.F(0.BP)
   def one: FixedPoint= 1.0.F(0.BP)
-  def plus(f: FixedPoint, g: FixedPoint): FixedPoint = {
+  def plus(f: FixedPoint, g: FixedPoint): FixedPoint = f + g
+  def plusContext(f: FixedPoint, g: FixedPoint): FixedPoint = {
     // TODO: Saturating mux should be outside of ShiftRegister
     val sum = context.overflowType match {
       case Grow => f +& g
@@ -25,7 +28,8 @@ trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
     }
     ShiftRegister(sum, context.numAddPipes)
   }
-  override def minus(f: FixedPoint, g: FixedPoint): FixedPoint = {
+  override def minus(f: FixedPoint, g: FixedPoint): FixedPoint = f - g
+  def minusContext(f: FixedPoint, g: FixedPoint): FixedPoint = {
     val diff = context.overflowType match {
       case Grow => f -& g
       case Wrap => f -% g
@@ -33,8 +37,12 @@ trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
     }
     ShiftRegister(diff, context.numAddPipes)
   }
-  def negate(f: FixedPoint): FixedPoint = minus(zero, f)
-  // Times moved later b/c need trim binary
+  def negate(f: FixedPoint): FixedPoint = -f
+  def negateContext(f: FixedPoint): FixedPoint = minus(zero, f)
+
+  def times(f: FixedPoint, g: FixedPoint): FixedPoint = f * g
+
+  // timesContext moved later b/c need trim binary
 }
 
 trait FixedPointOrder extends Any with Order[FixedPoint] with hasContext {
@@ -61,7 +69,12 @@ trait FixedPointIsReal extends Any with IsReal[FixedPoint] with FixedPointOrder 
   def floor(a: FixedPoint): FixedPoint = a.setBinaryPoint(0)
   def isWhole(a: FixedPoint): Bool = a === floor(a)
   // Truncate = round towards zero (integer part without fractional bits)
-  def truncate(a: FixedPoint): FixedPoint = Mux(isSignNegative(a), ceil(a), floor(a))
+  def truncate(a: FixedPoint): FixedPoint = {
+    Mux(isSignNegative(ShiftRegister(a, context.numAddPipes)),
+      ceil(a),
+      floor(ShiftRegister(a, context.numAddPipes))
+    )
+  }
   // ceil, round moved to FixedPointReal to get access to ring
 }
 
@@ -129,7 +142,7 @@ trait BinaryRepresentationFixedPoint extends BinaryRepresentation[FixedPoint] wi
 
  }
 
-trait FixedPointReal extends FixedPointRing with FixedPointIsReal with ConvertableToFixedPoint with 
+trait FixedPointReal extends FixedPointRing with FixedPointIsReal with ConvertableToFixedPoint with
     ConvertableFromFixedPoint with BinaryRepresentationFixedPoint with RealBits[FixedPoint] with hasContext {
 
   def trimBinary(a: FixedPoint, n: Option[Int]): FixedPoint = {
@@ -149,16 +162,16 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     }
   }
 
-  def times(f: FixedPoint, g: FixedPoint): FixedPoint = {
+  def timesContext(f: FixedPoint, g: FixedPoint): FixedPoint = {
     // TODO: Overflow via ranging in FIRRTL?
     // Rounding after registering to make retiming easier to recognize
-    val outTemp = ShiftRegister(f * g, context.numMulPipes)   
+    val outTemp = ShiftRegister(f * g, context.numMulPipes)
     val newBP = (f.binaryPoint, g.binaryPoint) match {
       case (KnownBinaryPoint(i), KnownBinaryPoint(j)) => Some(i.max(j) + context.binaryPointGrowth)
       case (_, _) => None
     }
     trimBinary(outTemp, newBP)
-  }  
+  }
 
   def signum(a: FixedPoint): ComparisonBundle = {
     ComparisonHelper(a === zero, a < zero)
@@ -170,16 +183,31 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
   }
 
   // Can potentially overflow
-  def ceil(a: FixedPoint): FixedPoint = Mux(isWhole(a), floor(a), plus(floor(a), one))
+  def ceil(a: FixedPoint): FixedPoint = {
+    Mux(
+      isWhole(ShiftRegister(a, context.numAddPipes)),
+      floor(ShiftRegister(a, context.numAddPipes)),
+      plusContext(floor(a), one))
+  }
+  def context_ceil(a: FixedPoint): FixedPoint = ceil(a)
+
   // Round half up: Can potentially overflow [round half towards positive infinity]
   // NOTE: Apparently different from Java for negatives
-  def round(a: FixedPoint): FixedPoint = floor(plus(a, 0.5.F(1.BP)))
+  def round(a: FixedPoint): FixedPoint = floor(plusContext(a, 0.5.F(1.BP)))
 
   def signBit(a: FixedPoint): Bool = isSignNegative(a)
   // fromFixedPoint also included in Ring
   override def fromInt(n: Int): FixedPoint = super[ConvertableToFixedPoint].fromInt(n)
   // Overflow only on most negative
-  def abs(a: FixedPoint): FixedPoint = Mux(isSignNegative(a), super[FixedPointRing].minus(zero, a), a)
+  def abs(a: FixedPoint): FixedPoint = {
+    Mux(isSignNegative(a), super[FixedPointRing].minus(zero, a), a)
+  }
+  def context_abs(a: FixedPoint): FixedPoint = {
+    Mux(
+      isSignNegative(ShiftRegister(a, context.numAddPipes)),
+      super[FixedPointRing].minusContext(zero, a),
+      ShiftRegister(a, context.numAddPipes))
+  }
 
   def intPart(a: FixedPoint): SInt = truncate(a).asSInt
 
