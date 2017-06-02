@@ -110,18 +110,26 @@ class NumbersSpec extends FreeSpec with Matchers {
         }
       }
     }
-      "trimType controls how a * b, a.trimBinary(n) and a.div2(n) should round results" - {
-        "TrimType tests" in {
-          def f(w: Int, b: Int): FixedPoint = FixedPoint(w.W, b.BP)
-          dsptools.Driver.execute(
-            //            () => new TrimTypeCircuit(f(4, 2), f(10, 5), f(10, 5))) { c =>
-            () => new TrimTypeCircuit(f(4, 2), f(10, 5), f(20, 7)),
-            Array("--backend-name", "verilator")
-          ) { c =>
-            new TrimTypeCircuitTester(c)
-          } should be(true)
-        }
+    "trimType controls how a * b, a.trimBinary(n) and a.div2(n) should round results" - {
+      "TrimType tests" in {
+        def f(w: Int, b: Int): FixedPoint = FixedPoint(w.W, b.BP)
+        dsptools.Driver.execute(
+          () => new TrimTypeCircuit(f(4, 2), f(10, 5), f(20, 7)),
+          Array("--backend-name", "verilator")
+        ) { c =>
+          new TrimTypeCircuitTester(c)
+        } should be(true)
       }
+    }
+    "Test for BinaryRepresentation section of Numbers Spec" in {
+      def f(w: Int, b: Int): FixedPoint = FixedPoint(w.W, b.BP)
+      dsptools.Driver.execute(
+        () => new BinaryRepr(u(8), s(8), f(10, 2)),
+        Array("--backend-name", "verilator")
+      ) { c =>
+        new BinaryReprTester(c)
+      } should be(true)
+    }
   }
 }
 
@@ -183,12 +191,12 @@ class OverflowTypeCircuit[T <: Data : Ring, U <: Data : Ring]
     val subGrow = Output(gen3)
   })
 
-  val regAddWrap = RegNext(DspContext.withOverflowType(Wrap) { io.a + io.b })
-  val regAddGrow = RegNext(DspContext.withOverflowType(Grow) { io.a + io.b })
+  val regAddWrap = RegNext(DspContext.withOverflowType(Wrap) { io.a context_+ io.b })
+  val regAddGrow = RegNext(DspContext.withOverflowType(Grow) { io.a context_+ io.b })
 
-  val regSubWrap = RegNext(DspContext.withOverflowType(Wrap) { io.a - io.b })
-  val regSubGrow = RegNext(if (io.a.isInstanceOf[UInt]) 0.U else DspContext.withOverflowType(Grow) { io.a - io.b })
-//  val regSubGrow = RegNext(DspContext.withOverflowType(Grow) { io.a - io.b })
+  val regSubWrap = RegNext(DspContext.withOverflowType(Wrap) { io.a context_- io.b })
+  val regSubGrow = RegNext(if (io.a.isInstanceOf[UInt]) 0.U else DspContext.withOverflowType(Grow) { io.a context_- io.b })
+//  val regSubGrow = RegNext(DspContext.withOverflowType(Grow) { io.a context_- io.b })
 
   io.addWrap := regAddWrap
   io.addGrow := regAddGrow
@@ -214,6 +222,87 @@ class BadUIntSubtractWithGrow2[T <: Data : Ring](gen: T) extends Module {
     val b = Input(gen)
     val o = Output(gen)
   })
-  val r = RegNext(DspContext.withOverflowType(Grow) { io.a - io.b })
+  val r = RegNext(DspContext.withOverflowType(Grow) { io.a context_- io.b })
   io.o := r
+}
+
+class BinaryReprTester(c: BinaryRepr[UInt, SInt, FixedPoint]) extends DspTester(c) {
+  poke(c.io.uIn, 0)
+  expect(c.io.uOut, 0.0)
+
+  poke(c.io.sIn, 0)
+  expect(c.io.sOut, 0.0)
+
+  poke(c.io.fIn, 0.0)
+  expect(c.io.fOut, 0.0)
+
+  step(1)
+
+  poke(c.io.sIn, 1)
+  expect(c.io.sOut, 0.0)
+
+  poke(c.io.fIn, 1.0)
+  expect(c.io.fOut, 0.0)
+
+  step(1)
+
+  poke(c.io.sIn, -1)
+  expect(c.io.sOut, 1.0)
+
+  poke(c.io.fIn, -1.0)
+  expect(c.io.fOut, 1.0)
+
+  step(1)
+
+  poke(c.io.uIn, 3)
+  expect(c.io.uDiv2, 0.0)
+
+  poke(c.io.sIn, 3)
+  expect(c.io.sDiv2, 0.0)
+
+  poke(c.io.fIn, 3.5)
+  expect(c.io.fOut, 0.0)
+
+  step(1)
+  poke(c.io.uIn, 48)
+  expect(c.io.uDiv2, 12.0)
+
+  poke(c.io.sIn, 32)
+  expect(c.io.sDiv2,8.0)
+
+  poke(c.io.fIn, 14.0)
+  expect(c.io.fDiv2, 3.5)
+}
+
+class BinaryRepr[TU <: Data : RealBits, TS <: Data : RealBits, TF <: Data : RealBits]
+(uGen: TU, sGen: TS, fGen: TF)
+  extends Module {
+  val io = IO(new Bundle {
+    val uIn = Input(uGen)
+    val sIn = Input(sGen)
+    val fIn = Input(fGen)
+    val uOut = Output(UInt(1.W))
+    val sOut = Output(UInt(1.W))
+    val fOut = Output(UInt(1.W))
+
+    val uDiv2 = Output(uGen)
+    val sDiv2 = Output(sGen)
+    val fDiv2 = Output(fGen)
+
+    val uMul2 = Output(UInt((uGen.getWidth * 2).W))
+    val sMul2 = Output(SInt((sGen.getWidth * 2).W))
+    val fMul2 = Output(FixedPoint(20.W, 2.BP))
+  })
+
+  io.uOut := io.uIn.signBit()
+  io.sOut := io.sIn.signBit()
+  io.fOut := io.fIn.signBit()
+
+  io.uDiv2 := io.uIn.div2(2)
+  io.sDiv2 := io.sIn.div2(2)
+  io.fDiv2 := io.fIn.div2(2)
+
+  io.uMul2 := io.uIn.mul2(2)
+  io.sMul2 := io.sIn.mul2(2)
+  io.fMul2 := io.fIn.mul2(2)
 }

@@ -77,12 +77,12 @@ class DoesAbs[TU <: Data: Signed : Ring, TS <: Data : Signed : Ring, TF <: Data 
     val fAbsWrap = Output(FixedPoint(5.W, 2.BP))
   })
 
-  io.uAbsGrow := DspContext.withOverflowType(Grow) { io.uIn.abs() }
-  io.uAbsWrap := DspContext.withOverflowType(Wrap) { io.uIn.abs() }
+  io.uAbsGrow := DspContext.withOverflowType(Grow) { io.uIn.context_abs() }
+  io.uAbsWrap := DspContext.withOverflowType(Wrap) { io.uIn.context_abs() }
 
-  io.sAbsGrow := DspContext.withOverflowType(Grow) { io.sIn.abs() }
-  io.sAbsWrap := DspContext.withOverflowType(Wrap) { io.sIn.abs() }
+  io.sAbsGrow := DspContext.withOverflowType(Grow) { io.sIn.context_abs() }
+  io.sAbsWrap := DspContext.withOverflowType(Wrap) { io.sIn.context_abs() }
 
-  io.fAbsGrow := DspContext.withOverflowType(Grow) { io.fIn.abs() }
-  io.fAbsWrap := DspContext.withOverflowType(Wrap) { io.fIn.abs() }
+  io.fAbsGrow := DspContext.withOverflowType(Grow) { io.fIn.context_abs() }
+  io.fAbsWrap := DspContext.withOverflowType(Wrap) { io.fIn.context_abs() }
 }

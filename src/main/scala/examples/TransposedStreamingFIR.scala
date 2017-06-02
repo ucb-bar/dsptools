@@ -43,7 +43,7 @@ class ConstantTapTransposedStreamingFIR[T <: Data:Ring:ConvertableTo, V:Converta
   }
 
   io.output.bits := last
-  io.output.valid := Reg(next=io.input.valid)
+  io.output.valid := RegNext(io.input.valid)
 }
 
 class TransposedStreamingFIR[T <: Data:Ring](inputGenerator: => T, outputGenerator: => T,

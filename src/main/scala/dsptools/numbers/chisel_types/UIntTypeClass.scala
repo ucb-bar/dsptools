@@ -15,7 +15,8 @@ import scala.language.implicitConversions
 trait UIntRing extends Any with Ring[UInt] with hasContext {
   def zero: UInt = 0.U
   def one: UInt = 1.U
-  def plus(f: UInt, g: UInt): UInt = {
+  def plus(f: UInt, g: UInt): UInt = f + g
+  def plusContext(f: UInt, g: UInt): UInt = {
     // TODO: Saturating mux should be outside of ShiftRegister
     val sum = context.overflowType match {
       case Grow => f +& g
@@ -24,7 +25,8 @@ trait UIntRing extends Any with Ring[UInt] with hasContext {
     }
     ShiftRegister(sum, context.numAddPipes)
   }
-  override def minus(f: UInt, g: UInt): UInt = {
+  override def minus(f: UInt, g: UInt): UInt = f - g
+  def minusContext(f: UInt, g: UInt): UInt = {
     val diff = context.overflowType match {
       case Grow => throw DspException("OverflowType Grow is not supported for UInt subtraction")
       case Wrap => f -% g
@@ -32,8 +34,10 @@ trait UIntRing extends Any with Ring[UInt] with hasContext {
     }
     ShiftRegister(diff.asUInt, context.numAddPipes)
   }
-  def negate(f: UInt): UInt = throw DspException("Can't negate UInt and get UInt")
-  def times(f: UInt, g: UInt): UInt = {
+  def negate(f: UInt): UInt = -f
+  def negateContext(f: UInt): UInt = throw DspException("Can't negate UInt and get UInt")
+  def times(f: UInt, g: UInt): UInt = f * g
+  def timesContext(f: UInt, g: UInt): UInt = {
     // TODO: Overflow via ranging in FIRRTL?
     ShiftRegister(f * g, context.numMulPipes)
   }  
@@ -57,6 +61,7 @@ trait UIntSigned extends Any with Signed[UInt] with hasContext {
     ComparisonHelper(a === 0.U, a < 0.U)
   }
   def abs(a: UInt): UInt = a // UInts are unsigned!
+  def context_abs(a: UInt): UInt = a // UInts are unsigned!
   override def isSignZero(a: UInt): Bool = a === 0.U
   override def isSignPositive(a: UInt): Bool = !isSignZero(a)
   override def isSignNegative(a: UInt): Bool = false.B

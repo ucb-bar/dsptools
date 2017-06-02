@@ -36,7 +36,7 @@ class SimpleDspModule[T <: Data:RealBits](gen: T, val addPipes: Int) extends Mod
   // add addPipes # of ShiftRegister after the sum. If you don't wrap the sum in 
   // DspContext.withNumAddPipes(addPipes), the default # of addPipes is used.
   DspContext.withNumAddPipes(addPipes) { 
-    io.z := io.x + io.y
+    io.z := io.x context_+ io.y
   }
 }
 

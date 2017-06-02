@@ -13,15 +13,19 @@ import scala.language.implicitConversions
 trait DspRealRing extends Any with Ring[DspReal] with hasContext {
   def one: DspReal = DspReal(1.0)
   def zero: DspReal = DspReal(0.0)
-  def plus(f: DspReal, g: DspReal): DspReal = {
+  def plus(f: DspReal, g: DspReal): DspReal = f + g
+  def plusContext(f: DspReal, g: DspReal): DspReal = {
     ShiftRegister(f + g, context.numAddPipes)
   }
-  override def minus(f: DspReal, g: DspReal): DspReal = {
+  override def minus(f: DspReal, g: DspReal): DspReal = f - g
+  def minusContext(f: DspReal, g: DspReal): DspReal = {
     ShiftRegister(f - g, context.numAddPipes)
   }
   def negate(f: DspReal): DspReal = minus(zero, f)
-  def times(f: DspReal, g: DspReal): DspReal = {
-    ShiftRegister(f * g, context.numMulPipes)   
+  def negateContext(f: DspReal): DspReal = minusContext(zero, f)
+  def times(f: DspReal, g: DspReal): DspReal = f * g
+  def timesContext(f: DspReal, g: DspReal): DspReal = {
+    ShiftRegister(f * g, context.numMulPipes)
   }
 }
 
@@ -38,11 +42,18 @@ trait DspRealOrder extends Any with Order[DspReal] with hasContext {
   // min, max depends on lt, gt & mux
 }
 
-trait DspRealSigned extends Any with Signed[DspReal] with hasContext {
+trait DspRealSigned extends Any with Signed[DspReal] with DspRealRing with hasContext {
   def signum(a: DspReal): ComparisonBundle = {
     ComparisonHelper(a === DspReal(0.0), a < DspReal(0.0))
   }
   def abs(a: DspReal): DspReal = Mux(a < DspReal(0.0), DspReal(0.0) - a, a)
+  def context_abs(a: DspReal): DspReal = {
+    Mux(
+      isSignNonNegative(ShiftRegister(a, context.numAddPipes)),
+      ShiftRegister(a, context.numAddPipes),
+      super[DspRealRing].minusContext(DspReal(0.0), a)
+    )
+  }
 
   override def isSignZero(a: DspReal): Bool = a === DspReal(0.0)
   override def isSignNegative(a:DspReal): Bool = a < DspReal(0.0)
@@ -50,13 +61,20 @@ trait DspRealSigned extends Any with Signed[DspReal] with hasContext {
 }
 
 trait DspRealIsReal extends Any with IsReal[DspReal] with DspRealOrder with DspRealSigned with hasContext {
-  def ceil(a: DspReal): DspReal = a.ceil()
+  def ceil(a: DspReal): DspReal = {
+    a.ceil()
+  }
+  def context_ceil(a: DspReal): DspReal = {
+    ShiftRegister(a, context.numAddPipes).ceil()
+  }
   def floor(a: DspReal): DspReal = a.floor()
   def isWhole(a: DspReal): Bool = a === round(a)
   // Round *half up* -- Different from System Verilog definition! (where half is rounded away from zero)
   // according to 5.7.2 (http://www.ece.uah.edu/~gaede/cpe526/2012%20System%20Verilog%20Language%20Reference%20Manual.pdf)
   def round(a: DspReal): DspReal = floor(a + DspReal(0.5))
-  def truncate(a: DspReal): DspReal = Mux(a < DspReal(0.0), ceil(a), floor(a))
+  def truncate(a: DspReal): DspReal = {
+    Mux(ShiftRegister(a, context.numAddPipes) < DspReal(0.0), context_ceil(a), floor(ShiftRegister(a, context.numAddPipes)))
+  }
 }
 
 trait ConvertableToDspReal extends ConvertableTo[DspReal] with hasContext {
@@ -117,6 +135,6 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
   } 
 }
 
-trait DspRealImpl {
+trait DspRealImpl  {
   implicit object DspRealRealImpl extends DspRealReal
 }

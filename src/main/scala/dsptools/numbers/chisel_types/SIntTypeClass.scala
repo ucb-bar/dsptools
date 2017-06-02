@@ -3,8 +3,8 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.util.{ShiftRegister, Cat}
-import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, NoTrim, DspException}
+import chisel3.util.{Cat, ShiftRegister}
+import dsptools.{DspContext, DspException, Grow, NoTrim, Saturate, Wrap, hasContext}
 import chisel3.experimental.FixedPoint
 
 import scala.language.implicitConversions
@@ -15,7 +15,8 @@ import scala.language.implicitConversions
 trait SIntRing extends Any with Ring[SInt] with hasContext {
   def zero: SInt = 0.S
   def one: SInt = 1.S
-  def plus(f: SInt, g: SInt): SInt = {
+  def plus(f: SInt, g: SInt): SInt = f + g
+  def plusContext(f: SInt, g: SInt): SInt = {
     // TODO: Saturating mux should be outside of ShiftRegister
     val sum = context.overflowType match {
       case Grow => f +& g
@@ -24,7 +25,8 @@ trait SIntRing extends Any with Ring[SInt] with hasContext {
     }
     ShiftRegister(sum, context.numAddPipes)
   }
-  override def minus(f: SInt, g: SInt): SInt = {
+  override def minus(f: SInt, g: SInt): SInt = f - g
+  def minusContext(f: SInt, g: SInt): SInt = {
     val diff = context.overflowType match {
       case Grow => f -& g
       case Wrap => f -% g
@@ -32,8 +34,15 @@ trait SIntRing extends Any with Ring[SInt] with hasContext {
     }
     ShiftRegister(diff, context.numAddPipes)
   }
-  def negate(f: SInt): SInt = minus(0.S, f)
-  def times(f: SInt, g: SInt): SInt = {
+  def negate(f: SInt): SInt = {
+    -f
+  }
+  def negateContext(f: SInt): SInt = {
+    //TODO: should this be minusContext, had been just minus
+    minusContext(0.S, f)
+  }
+  def times(f: SInt, g: SInt): SInt = f * g
+  def timesContext(f: SInt, g: SInt): SInt = {
     // TODO: Overflow via ranging in FIRRTL?
     ShiftRegister(f * g, context.numMulPipes)
   }  
@@ -63,10 +72,11 @@ trait SIntSigned extends Any with Signed[SInt] with hasContext {
   }
   // isSignPositive, isSignNonZero, isSignNonPositive, isSignNonNegative derived from above (!)
   // abs requires ring (for overflow) so overridden later
+  // context_abs requires ring (for overflow) so overridden later
 }
 
 trait SIntIsReal extends Any with IsIntegral[SInt] with SIntOrder with SIntSigned with hasContext {
-  // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself; 
+  // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself;
   // isWhole always true
   // -5, -3, -1, 1, 3, 5, etc.
   def isOdd(a: SInt): Bool = a(0)
@@ -120,13 +130,22 @@ trait BinaryRepresentationSInt extends BinaryRepresentation[SInt] with hasContex
   // signBit relies on Signed, div2 relies on ChiselConvertableFrom
  }
 
-trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with 
+trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with
     ConvertableFromSInt with BinaryRepresentationSInt with IntegerBits[SInt] with hasContext {
   def signBit(a: SInt): Bool = isSignNegative(a)
   // fromSInt also included in Ring
   override def fromInt(n: Int): SInt = super[ConvertableToSInt].fromInt(n)
   // Overflow only on most negative
   def abs(a: SInt): SInt = Mux(isSignNegative(a), super[SIntRing].minus(0.S, a), a)
+  //scalastyle:off method.name
+  def context_abs(a: SInt): SInt = {
+    Mux(
+      ShiftRegister(a, context.numAddPipes) >= 0.S,
+      ShiftRegister(a, context.numAddPipes),
+      super[SIntRing].minusContext(0.S, a)
+    )
+  }
+
   // Rounds result to nearest int (half up) for more math-y division
   override def div2(a: SInt, n: Int): SInt = a.widthOption match {
     // If shifting more than width, guaranteed to be closer to 0

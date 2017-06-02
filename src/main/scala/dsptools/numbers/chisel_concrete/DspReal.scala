@@ -1,7 +1,11 @@
+// See LICENSE for license details.
+
 package dsptools.numbers
+
 import chisel3._
 import chisel3.util.Mux1H
 
+//scalastyle:off number.of.methods
 class DspReal(lit: Option[BigInt] = None) extends Bundle {
   
   val node: UInt = lit match {
@@ -105,7 +109,7 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
 
   // Assumes you're using chisel testers
   private def backendIsVerilator: Boolean = {
-    chisel3.iotesters.Driver.optionsManager.testerOptions.backendName == "verilator"  
+    chisel3.iotesters.Driver.optionsManager.testerOptions.backendName == "verilator"
   }
 
   // The following are currently not supported with Verilator, so they've been implemented through other means
@@ -122,6 +126,7 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
   // TODO: Check out http://www.netlib.org/fdlibm/k_sin.c
   // Swept in increments of 0.0001pi, and got ~11 decimal digits of accuracy
   // Can add more half angle recursion for more precision
+  //scalastyle:off magic.number
   def sin (dummy: Int = 0): DspReal = {
     if (backendIsVerilator) {
       // Taylor series; Works best close to 0 (-pi/2, pi/2) -- so normalize! 
@@ -161,15 +166,17 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
       val sinNegPiOver4Out = sinPiOver2((normalizedHalfPi + halfPi) / DspReal(2.0))
       val sinPiOver2Out = sinPiOver2(normalizedHalfPi)
 
-      val outTemp1 = Mux( normalizedHalfPi > pi/DspReal(4), 
-                          one - DspReal(2) * sinPiOver4Out * sinPiOver4Out, 
+      val outTemp1 = Mux( normalizedHalfPi > pi/DspReal(4),
+                          one - DspReal(2) * sinPiOver4Out * sinPiOver4Out,
                           sinPiOver2Out)
-      val outTemp2 = Mux(normalizedHalfPi < pi/DspReal(-4), 
+      val outTemp2 = Mux(normalizedHalfPi < pi/DspReal(-4),
                         DspReal(-1) * (one - DspReal(2) * sinNegPiOver4Out * sinNegPiOver4Out),
                         outTemp1)
       Mux(q3, zero - outTemp2, outTemp2)
     }
-    else oneOperandOperator(Module(new BBFSin()))
+    else {
+      oneOperandOperator(Module(new BBFSin()))
+    }
   }
 
   def cos (dummy: Int = 0): DspReal = {
