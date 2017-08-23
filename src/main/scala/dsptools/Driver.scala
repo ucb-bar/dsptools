@@ -21,9 +21,9 @@ object Driver {
     val om = optionsManager match {
       case d: DspTesterOptionsManager => Some(d)
       case _ => None
-    }                       
+    }
 
-    optionsManagerVar.withValue(om) {                          
+    optionsManagerVar.withValue(om) {
       optionsManager.interpreterOptions = optionsManager.interpreterOptions.copy(
           blackBoxFactories = optionsManager.interpreterOptions.blackBoxFactories :+ new DspRealFactory)
       iotesters.Driver.execute(dutGenerator, optionsManager)(testerGen)
@@ -71,8 +71,7 @@ object Driver {
 }
 
 class ReplOptionsManager
-  extends ExecutionOptionsManager("dsptools-repl")
-    with HasInterpreterOptions
+  extends InterpreterOptionsManager
     with HasChiselExecutionOptions
     with HasFirrtlOptions
     with HasReplConfig
