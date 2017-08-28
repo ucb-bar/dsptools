@@ -13,7 +13,7 @@ resolvers ++= Seq (
   Resolver.sonatypeRepo("releases")
 )
 
-libraryDependencies ++= Seq("chisel3", "chisel-iotesters", "dsptools", "testchipip", "builtin-debugger", "tapeout", "chisel-jtag").map {
+libraryDependencies ++= Seq("chisel3", "chisel-iotesters", "dsptools").map {
   dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
 }
 

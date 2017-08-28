@@ -12,15 +12,16 @@ import jtag._
 object BinaryParse {
   // from https://stackoverflow.com/questions/7197119/how-to-write-binary-literals-in-scala
   implicit class IntToBase(val digits: String) extends AnyVal {
-    def base(b:Int) = Integer.parseInt(digits, b)
-    def b = base(2)
-    def o = base(8)
-    def x = base(16)
+    def base(b:Int): Int = Integer.parseInt(digits, b)
+    def b: Int = base(2)
+    def o: Int = base(8)
+    def x: Int = base(16)
   }
 }
 
 /** Test helper for working with Tristate Bundles and allowing Xs in expects.
   */
+/*
 trait TristateTestUtility extends ImplicitPokeTester {
   import scala.language.implicitConversions
 
@@ -62,3 +63,4 @@ trait TristateTestUtility extends ImplicitPokeTester {
     }
   }
 }
+*/

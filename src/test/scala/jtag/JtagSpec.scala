@@ -1,7 +1,7 @@
 // See LICENSE for license details.
 
 package jtag
-
+/*
 import cde._
 import chisel3.util.log2Ceil
 import chisel3.iotesters._
@@ -353,3 +353,4 @@ class JtagAxiSpec extends FlatSpec with Matchers with JtagAxiUtilities {
     }
   }
 }
+*/

@@ -8,7 +8,7 @@ import chisel3.iotesters.experimental.ImplicitPokeTester
 
 import chisel3._
 import jtag._
-
+/*
 trait ChainIOUtils extends ImplicitPokeTester {
   // CaptureUpdateChain test utilities
   def nop(io: ChainIO)(implicit t: InnerTester) {
@@ -101,3 +101,4 @@ trait ChainIOUtils extends ImplicitPokeTester {
     check(io.update.valid, 1)
   }
 }
+*/

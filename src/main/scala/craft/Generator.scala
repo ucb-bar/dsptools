@@ -1,5 +1,6 @@
 package craft
 
+/*
 import util.GeneratorApp
 import org.accellera.spirit.v1685_2009.{File => SpiritFile, Parameters => SpiritParameters, _}
 import javax.xml.bind.{JAXBContext, Marshaller}
@@ -119,3 +120,4 @@ object Generator extends GeneratorApp with IPXactGeneratorApp  {
 object AddrMapStringOutput {
   var contents: Option[String] = None
 }
+*/

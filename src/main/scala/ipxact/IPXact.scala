@@ -1,16 +1,18 @@
 package ipxact
 
-import util.GeneratorApp
+// import util.GeneratorApp
 import org.accellera.spirit.v1685_2009.{File => SpiritFile, Parameters => SpiritParameters, _}
 import javax.xml.bind.{JAXBContext, Marshaller}
 import java.io.{File, FileOutputStream}
-import scala.collection.JavaConverters
+
+import scala.collection.{JavaConverters, mutable}
 import java.util.Collection
 import java.math.BigInteger
-import junctions._
-import rocketchip._
+import java.util
+// import junctions._
+// import rocketchip._
 import scala.collection.mutable.HashMap
-import cde._
+import freechips.rocketchip.config._
 
 trait HasIPXact {
 
@@ -18,13 +20,13 @@ trait HasIPXact {
   //////////// BUS INTERFACES //////////////////
   //////////////////////////////////////////////
 
-  def toCollection[T](seq: Seq[T]): Collection[T] =
+  def toCollection[T](seq: Seq[T]): util.Collection[T] =
     JavaConverters.asJavaCollectionConverter(seq).asJavaCollection
 
   def makeBridge(count: Int, prefix: String): Seq[BusInterfaceType.Slave.Bridge] = {
     (0 until count).map{i => {
       val bridge = new BusInterfaceType.Slave.Bridge
-      bridge.setMasterRef(s"${prefix}_${i}")
+      bridge.setMasterRef(s"${prefix}_$i")
       bridge.setOpaque(false)
       bridge
     }}
@@ -45,7 +47,7 @@ trait HasIPXact {
 
   def makePortMaps(mappings: Seq[(String, String)]): BusInterfaceType.PortMaps = {
     val portmaps = new BusInterfaceType.PortMaps
-    portmaps.getPortMap().addAll(toCollection(
+    portmaps.getPortMap.addAll(toCollection(
       mappings.sorted.map { case (log, phys) => makePortMap(log, phys) }))
     portmaps
   }
@@ -185,7 +187,7 @@ trait HasIPXact {
       mmRefType.setMemoryMapRef(ref)
       val slave = new BusInterfaceType.Slave
       slave.setMemoryMapRef(mmRefType)
-      if (noutputs > 0) { slave.getBridge().addAll(toCollection(makeBridge(noutputs, output_prefix))) }
+      if (noutputs > 0) { slave.getBridge.addAll(toCollection(makeBridge(noutputs, output_prefix))) }
       busif.setSlave(slave)
     }
     busif
@@ -198,7 +200,7 @@ trait HasIPXact {
   // name = name of the address block
   // base address = base address of the address block
   // registers = list of register names, each assumed to each be widthValue wide
-  def makeAddressBlock(name: String, baseAddr: BigInt, registers: HashMap[String, BigInt], widthValue: Int): AddressBlockType = {
+  def makeAddressBlock(name: String, baseAddr: BigInt, registers: mutable.HashMap[String, BigInt], widthValue: Int): AddressBlockType = {
     val addrBlockMap = new AddressBlockType
     addrBlockMap.setName(name)
     val baseAddress = new BaseAddress
@@ -218,7 +220,7 @@ trait HasIPXact {
 
     if (widthValue == 64) {
       addrBlockMap.setUsage(UsageType.REGISTER)
-      val registerBlock = addrBlockMap.getRegister()
+      val registerBlock = addrBlockMap.getRegister
       registers.foreach { case(mname: String, addr: BigInt) => 
         val register = new RegisterFile.Register
         register.setName(mname)
@@ -255,8 +257,8 @@ trait HasIPXact {
     // Generate the subspaceMaps, one for each baseAddress.
     val memoryMap = new MemoryMapType
     memoryMap.setName(mmref)
-    addrBlocks.foreach(memoryMap.getMemoryMap().add(_))
-    subspaceRefs.foreach(memoryMap.getMemoryMap().add(_))
+    addrBlocks.foreach(memoryMap.getMemoryMap.add(_))
+    subspaceRefs.foreach(memoryMap.getMemoryMap.add(_))
     memoryMap.setAddressUnitBits(BigInteger.valueOf(64))
     memoryMap
   }
@@ -318,60 +320,60 @@ trait HasIPXact {
     )
 
     ports.sorted.map { case (name, portdir, width) =>
-      makePort(s"${prefix}_${name}", portdir, width) 
+      makePort(s"${prefix}_$name", portdir, width)
     }
   }
 
-  def makeAXI4Ports(prefix: String, direction: Boolean, config: HasNastiParameters): Seq[PortType] = {
+  def makeAXI4Ports(prefix: String, direction: Boolean, config: Any): Seq[PortType] = {
     val ports = Seq(
       ("ar_valid", direction, 1),
-      ("ar_ready", !direction, 1),
-      ("ar_bits_id", direction, config.nastiXIdBits),
-      ("ar_bits_addr", direction, config.nastiXAddrBits),
-      ("ar_bits_size", direction, config.nastiXSizeBits),
-      ("ar_bits_len", direction, config.nastiXLenBits),
-      ("ar_bits_burst", direction, config.nastiXBurstBits),
-      ("ar_bits_lock", direction, 1),
-      ("ar_bits_cache", direction, config.nastiXCacheBits),
-      ("ar_bits_prot", direction, config.nastiXProtBits),
-      ("ar_bits_qos", direction, config.nastiXQosBits),
-      ("ar_bits_region", direction, config.nastiXRegionBits),
-      ("ar_bits_user", direction, config.nastiXUserBits),
-      ("aw_valid", direction, 1),
-      ("aw_ready", !direction, 1),
-      ("aw_bits_id", direction, config.nastiXIdBits),
-      ("aw_bits_addr", direction, config.nastiXAddrBits),
-      ("aw_bits_size", direction, config.nastiXSizeBits),
-      ("aw_bits_len", direction, config.nastiXLenBits),
-      ("aw_bits_burst", direction, config.nastiXBurstBits),
-      ("aw_bits_lock", direction, 1),
-      ("aw_bits_cache", direction, config.nastiXCacheBits),
-      ("aw_bits_prot", direction, config.nastiXProtBits),
-      ("aw_bits_qos", direction, config.nastiXQosBits),
-      ("aw_bits_region", direction, config.nastiXRegionBits),
-      ("aw_bits_user", direction, config.nastiXUserBits),
-      ("w_valid", direction, 1),
-      ("w_ready", !direction, 1),
-      ("w_bits_data", direction, config.nastiXDataBits),
-      ("w_bits_strb", direction, config.nastiWStrobeBits),
-      ("w_bits_last", direction, 1),
-      ("w_bits_user", direction, config.nastiXUserBits),
-      ("r_valid", !direction, 1),
-      ("r_ready", direction, 1),
-      ("r_bits_id", !direction, config.nastiXIdBits),
-      ("r_bits_resp", !direction, config.nastiXRespBits),
-      ("r_bits_data", !direction, config.nastiXDataBits),
-      ("r_bits_last", !direction, 1),
-      ("r_bits_user", !direction, config.nastiXUserBits),
-      ("b_valid", !direction, 1),
-      ("b_ready", direction, 1),
-      ("b_bits_id", !direction, config.nastiXIdBits),
-      ("b_bits_resp", !direction, config.nastiXRespBits),
-      ("b_bits_user", !direction, config.nastiXUserBits)
+      ("ar_ready", !direction, 1)// ,
+      // ("ar_bits_id", direction, config.nastiXIdBits),
+      // ("ar_bits_addr", direction, config.nastiXAddrBits),
+      // ("ar_bits_size", direction, config.nastiXSizeBits),
+      // ("ar_bits_len", direction, config.nastiXLenBits),
+      // ("ar_bits_burst", direction, config.nastiXBurstBits),
+      // ("ar_bits_lock", direction, 1),
+      // ("ar_bits_cache", direction, config.nastiXCacheBits),
+      // ("ar_bits_prot", direction, config.nastiXProtBits),
+      // ("ar_bits_qos", direction, config.nastiXQosBits),
+      // ("ar_bits_region", direction, config.nastiXRegionBits),
+      // ("ar_bits_user", direction, config.nastiXUserBits),
+      // ("aw_valid", direction, 1),
+      // ("aw_ready", !direction, 1),
+      // ("aw_bits_id", direction, config.nastiXIdBits),
+      // ("aw_bits_addr", direction, config.nastiXAddrBits),
+      // ("aw_bits_size", direction, config.nastiXSizeBits),
+      // ("aw_bits_len", direction, config.nastiXLenBits),
+      // ("aw_bits_burst", direction, config.nastiXBurstBits),
+      // ("aw_bits_lock", direction, 1),
+      // ("aw_bits_cache", direction, config.nastiXCacheBits),
+      // ("aw_bits_prot", direction, config.nastiXProtBits),
+      // ("aw_bits_qos", direction, config.nastiXQosBits),
+      // ("aw_bits_region", direction, config.nastiXRegionBits),
+      // ("aw_bits_user", direction, config.nastiXUserBits),
+      // ("w_valid", direction, 1),
+      // ("w_ready", !direction, 1),
+      // ("w_bits_data", direction, config.nastiXDataBits),
+      // ("w_bits_strb", direction, config.nastiWStrobeBits),
+      // ("w_bits_last", direction, 1),
+      // ("w_bits_user", direction, config.nastiXUserBits),
+      // ("r_valid", !direction, 1),
+      // ("r_ready", direction, 1),
+      // ("r_bits_id", !direction, config.nastiXIdBits),
+      // ("r_bits_resp", !direction, config.nastiXRespBits),
+      // ("r_bits_data", !direction, config.nastiXDataBits),
+      // ("r_bits_last", !direction, 1),
+      // ("r_bits_user", !direction, config.nastiXUserBits),
+      // ("b_valid", !direction, 1),
+      // ("b_ready", direction, 1),
+      // ("b_bits_id", !direction, config.nastiXIdBits),
+      // ("b_bits_resp", !direction, config.nastiXRespBits),
+      // ("b_bits_user", !direction, config.nastiXUserBits)
     )
 
     ports.sorted.map { case (name, portdir, width) =>
-      makePort(s"${prefix}_${name}", portdir, width) 
+      makePort(s"${prefix}_$name", portdir, width)
     }
   }
 
@@ -382,7 +384,7 @@ trait HasIPXact {
     )
 
     ports.sorted.map { case (name, portdir, width) =>
-      makePort(s"${name}", portdir, width) 
+      makePort(s"$name", portdir, width)
     }
   }
 
@@ -432,7 +434,7 @@ trait HasIPXact {
     }}
 
     val fileSets = new FileSets
-    fileSets.getFileSet().add(fileSet)
+    fileSets.getFileSet.add(fileSet)
     fileSets
   }
 
@@ -440,7 +442,7 @@ trait HasIPXact {
   //////////// Parameters //////////////////////
   //////////////////////////////////////////////
 
-  def makeParameters(parameterMap: HashMap[String, String]): SpiritParameters = {
+  def makeParameters(parameterMap: mutable.HashMap[String, String]): SpiritParameters = {
     val parameters = new SpiritParameters()
     for ( (name, value) <- parameterMap ) {
       val nameValuePairType = new NameValuePairType
@@ -448,7 +450,7 @@ trait HasIPXact {
       val nameValuePairTypeValue = new NameValuePairType.Value
       nameValuePairTypeValue.setValue(value)
       nameValuePairType.setValue(nameValuePairTypeValue)
-      parameters.getParameter().add(nameValuePairType)
+      parameters.getParameter.add(nameValuePairType)
     }
     parameters
   }

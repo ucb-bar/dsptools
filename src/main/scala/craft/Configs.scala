@@ -1,13 +1,7 @@
 package craft
 
-import cde._
 import chisel3._
 import chisel3.experimental._
-import rocketchip._
-import uncore.tilelink._
-import uncore.coherence.{MICoherence, NullRepresentation}
-import uncore.agents.CacheBlockBytes
-import junctions._
 
 import dspblocks._
 import dspjunctions._
@@ -15,6 +9,7 @@ import dsptools.numbers.{Field =>_, _}
 import dsptools.numbers.implicits._
 import jtag._
 
+/*
 object ConfigBuilder {
   def genParams[T <: Data](
     id: String,
@@ -122,3 +117,4 @@ class WithCraft extends Config(
   })
 
 class CraftConfig extends Config(new WithCraft ++ new BaseConfig)
+*/

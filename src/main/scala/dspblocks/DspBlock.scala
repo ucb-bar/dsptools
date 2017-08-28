@@ -2,171 +2,202 @@
 
 package dspblocks
 
-import cde._
 import chisel3._
-import dspjunctions._
-// import junctions would import dsptools.junctions._
-import _root_.junctions._
-import uncore.tilelink._
-import uncore.converters._
-import rocketchip._
-import rocketchip.PeripheryUtils
-import diplomacy._
-import testchipip._
-//import dsptools.Utilities._
-import scala.math._
-import ipxact._
+import chisel3.internal.firrtl.Width
+import freechips.rocketchip.amba.apb._
+import freechips.rocketchip.amba.axi4._
+import freechips.rocketchip.amba.axi4stream._
+import freechips.rocketchip.config._
+import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.regmapper._
+import freechips.rocketchip.tilelink._
 
-case object DspBlockId extends Field[String]
-case class DspBlockKey(id: String) extends Field[DspBlockParameters]
+import scala.language.implicitConversions // for csrField conversion
 
-case class DspBlockParameters (
-  inputWidth: Int,
-  outputWidth: Int
+sealed trait CSRType
+case object CSRControl extends CSRType
+case object CSRStatus extends CSRType
+
+object CSR {
+  //               dir           width  init
+  type RegInfo = (CSRType, Width, BigInt)
+  type Map     = scala.collection.Map[String, RegInfo]
+}
+
+trait CSRField {
+  def name: String
+}
+
+trait HasCSR {
+  implicit def csrFieldToString(in: CSRField): String = in.name
+  val csrMap = scala.collection.mutable.Map[String, CSR.RegInfo]()
+
+
+  def addStatus(name: String, init: BigInt = 0, width: Width = 64.W): Unit = {
+    csrMap += (name -> (CSRStatus, width, init))
+  }
+
+  def addControl(name: String, init: BigInt = 0, width: Width = 64.W): Unit = {
+    csrMap += (name -> (CSRControl, width, init))
+  }
+}
+
+trait DspBlock[D, U, EO, EI, B <: Data] {
+  val streamNode: MixedNode[
+    AXI4StreamMasterPortParameters,
+    AXI4StreamSlavePortParameters,
+    AXI4StreamEdgeParameters,
+    AXI4StreamBundle,
+    AXI4StreamMasterPortParameters,
+    AXI4StreamSlavePortParameters,
+    AXI4StreamEdgeParameters,
+    AXI4StreamBundle]
+
+  val mem: Option[MixedNode[D, U, EI, B, D, U, EO, B]]
+}
+
+case class DspBlockBlindNodes[D, U, EO, EI, B <: Data]
+(
+  val streamIn:  () => AXI4StreamBlindInputNode,
+  val streamOut: () => AXI4StreamBlindOutputNode,
+  val mem:       () => MixedNode[D, U, EI, B, D, U, EO, B]
 )
 
-trait HasDspBlockParameters {
+object DspBlock {
+  type AXI4BlindNodes = DspBlockBlindNodes[
+    AXI4MasterPortParameters,
+    AXI4SlavePortParameters,
+    AXI4EdgeParameters,
+    AXI4EdgeParameters,
+    AXI4Bundle]
+}
+
+class CSRRecord(csrMap: CSR.Map) extends Record {
+  val elements = new scala.collection.immutable.ListMap() ++
+    csrMap map { case (name, (dir, width, _)) =>
+      val gen = dir match {
+        case CSRStatus  => Input(UInt(width))
+        case CSRControl => Output(UInt(width))
+      }
+      name -> gen
+    }
+  def apply(field: CSRField) = elements(field.name)
+  def apply(name: String) = elements(name)
+  override def cloneType = new CSRRecord(csrMap).asInstanceOf[this.type]
+}
+
+trait CSRIO extends Bundle {
+  val csrMap: CSR.Map
+  lazy val csrs = new CSRRecord(csrMap)
+}
+
+trait CSRModule extends HasRegMap {
+  val io: CSRIO
+  val csrMap: CSR.Map
+
+  val widthToRegMap = csrMap map { case (name, (dir, width, init)) =>
+    val reg = RegInit(init.U(width))
+    reg.suggestName(name)
+    dir match {
+      case CSRStatus => reg := io.csrs(name)
+      case CSRControl => io.csrs(name) := reg
+    }
+    reg -> width
+  }
+
+  val addrs = widthToRegMap.scanLeft(0) { case (widthIn, (_, width)) =>
+    val widthToBytes = (width.get + 7) / 8
+    widthIn + widthToBytes
+  }
+  val mapping: Seq[RegField.Map] = widthToRegMap.zip(addrs).map { case ((reg, width), addr) =>
+    val widthToBytes = (width.get + 7) / 8
+    addr -> Seq(RegField(widthToBytes * 8, reg))
+  }.toSeq
+
+  val addrmap: Map[String, Int] = csrMap.zip(addrs).map { case ((name, _), addr) => name -> addr }.toMap
+
+  def addrmap(field: CSRField): Int = addrmap(field.name)
+
+  regmap(mapping: _*)
+}
+
+trait TLHasCSR extends HasCSR { this: TLDspBlock =>
+  val csrBase: BigInt
+  val csrSize: BigInt
+  val csrDevname = "tlsram:reg"
+  val csrDevcompat: Seq[String] = Seq()
+
+  val beatBytes: Int
+
+  def makeCSRs(dummy: Int = 0) = {
+    require(mem.isDefined, "Need memory interface for CSR")
+
+    val myMapping = csrMap
+    val csrs = LazyModule(
+      new TLRegisterRouter(csrBase, csrDevname, csrDevcompat, size=csrSize, beatBytes=beatBytes)(
+      new TLRegBundle((), _) with CSRIO { lazy val csrMap = myMapping })(
+      new TLRegModule((), _, _) with CSRModule { lazy val csrMap = myMapping }))
+
+    csrs.node := mem.get
+    csrs
+  }
+}
+
+trait APBHasCSR extends HasCSR { this: APBDspBlock =>
+  val csrBase: Int
+  val csrSize: Int
+  val beatBytes: Int
+
+  def makeCSRs(dummy: Int = 0) = {
+    require(mem.isDefined, "Need memory interface for CSR")
+
+    val myMapping = csrMap
+    val csrs = LazyModule(
+      new APBRegisterRouter(csrBase, size = csrSize, beatBytes = beatBytes)(
+      new APBRegBundle((), _) with CSRIO { lazy val csrMap = myMapping })(
+      new APBRegModule((), _, _) with CSRModule { lazy val csrMap = myMapping }))
+    csrs.node := mem.get
+    csrs
+  }
+}
+
+trait AXI4HasCSR extends HasCSR { this: AXI4DspBlock =>
+  def csrBase: Int
+  def csrSize: Int
+  def beatBytes: Int
+  def csrAddress: AddressSet
+
+  val mem = Some(AXI4InputNode())
+
+  lazy val csrs = {
+    val myMapping = csrMap
+    LazyModule(
+      new AXI4RegisterRouter(csrBase, size = csrSize, beatBytes = beatBytes)(
+        new AXI4RegBundle((), _) with CSRIO { lazy val csrMap = myMapping })(
+        new AXI4RegModule((), _, _) with CSRModule { lazy val csrMap = myMapping }) {
+        lazy val addrmap = module.addrmap
+      })
+  }
+
+  def makeCSRs(dummy: Int = 0) = {
+    csrs.node := mem.get
+    csrs
+  }
+}
+
+trait TLDspBlock extends DspBlock[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle] {
   implicit val p: Parameters
-  def dspBlockExternal = p(DspBlockKey(p(DspBlockId)))
-  def inputWidth  = dspBlockExternal.inputWidth
-  def outputWidth = dspBlockExternal.outputWidth
-  def id: String = p(DspBlockId)
+  val bus = LazyModule(new TLXbar)
+  val mem = Some(bus.node)
 }
 
-// uses DspBlockId
-case class GenKey(id: String) extends Field[GenParameters]
-
-trait GenParameters {
-  def genIn [T <: Data]: T
-  def genOut[T <: Data]: T = genIn[T]
-  def lanesIn: Int
-  def lanesOut: Int = lanesIn
-}
-
-trait HasGenParameters[T <: Data, V <: Data] extends HasDspBlockParameters {
-  def genExternal            = p(GenKey(p(DspBlockId)))
-  def genIn(dummy: Int = 0)  = genExternal.genIn[T]
-  def genOut(dummy: Int = 0) = genExternal.genOut[V]
-  def lanesIn                = genExternal.lanesIn
-  def lanesOut               = genExternal.lanesOut
-  override def inputWidth    = lanesIn * genIn().getWidth
-  override def outputWidth   = lanesOut * genOut().getWidth
-  // todo some assertions that the width is correct
-}
-
-trait HasGenDspParameters[T <: Data, V <: Data] extends HasDspBlockParameters with HasGenParameters[T, V] {
-  def portSize[U <: Data](lanes: Int, in: U): Int = {
-    val unpadded = lanes * in.getWidth
-    val topad = (8 - (unpadded % 8)) % 8
-    unpadded + topad
-  }
-  abstract override def inputWidth     = portSize(lanesIn,  genIn())
-  abstract override def outputWidth    = portSize(lanesOut, genOut())
-}
-
-trait DspBlockIO {
-  def inputWidth: Int
-  def outputWidth: Int
+trait APBDspBlock extends DspBlock[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle] {
   implicit val p: Parameters
-
-  val in  = Input( ValidWithSync(UInt(inputWidth.W)))
-  val out = Output(ValidWithSync(UInt(outputWidth.W)))
-  val axi = Flipped(new NastiIO())
+  val bus = LazyModule(new APBFanout)
+  val mem = Some(bus.node)
 }
 
-class BasicDspBlockIO()(implicit val p: Parameters) extends Bundle with HasDspBlockParameters with DspBlockIO {
-  override def cloneType: this.type = new BasicDspBlockIO()(p).asInstanceOf[this.type]
+trait AXI4DspBlock extends DspBlock[AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters, AXI4Bundle] {
+  implicit val p: Parameters
+  // don't define mem b/c we don't have a bus for axi4 yet
 }
-
-
-trait HasBaseAddr {
-  private var _baseAddr: () => BigInt = () => BigInt(0)
-  def baseAddr: BigInt = _baseAddr()
-  def setBaseAddr(base: () => BigInt): Unit = {
-    _baseAddr = base
-  }
-}
-trait HasAddrMapEntry {
-  val p: Parameters
-  private def addrMapEntryName = p(DspBlockId)
-  def size: Int
-  def addrMapEntrySize = BigInt(size)*8
-  def addrMapEntry = AddrMapEntry(addrMapEntryName,
-    MemSize(addrMapEntrySize, MemAttr(AddrMapProt.RW))
-    )
-}
-
-trait HasSCRBuilder {
-  val p: Parameters
-  def scrName: String
-  val scrbuilder = new SCRBuilder(scrName)
-}
-
-abstract class DspBlock()(implicit val p: Parameters) extends LazyModule
-    with HasDspBlockParameters with HasBaseAddr with HasAddrMapEntry with HasSCRBuilder {
-  override def module: DspBlockModule
-  def scrName = p(DspBlockId)
-
-  def size = scrbuilder.controlNames.length + scrbuilder.statusNames.length
-
-  addStatus("uuid")
-  addControl("Wrapback")
-
-  def addControl(name: String, init: UInt = null) = {
-    scrbuilder.addControl(name, init)
-  }
-  def addStatus(name: String) {
-    scrbuilder.addStatus(name)
-  }
-
-}
-
-abstract class DspBlockModule(val outer: DspBlock, b: => Option[Bundle with DspBlockIO] = None)
-  (implicit val p: Parameters) extends LazyModuleImp(outer) with HasDspBlockParameters {
-  val io: Bundle with DspBlockIO = IO(b.getOrElse(new BasicDspBlockIO))
-
-  def addrmap = testchipip.SCRAddressMap(outer.scrbuilder.devName).get
-
-  val baseAddr = outer.baseAddr
-
-  def unpackInput[T <: Data](lanes: Int, genIn: T) = {
-    val i = Wire(ValidWithSync(Vec(lanes, genIn.cloneType)))
-    i.valid := io.in.valid
-    i.sync  := io.in.sync
-    val w = i.bits.fromBits(io.in.bits)
-    i.bits  := w
-    i
-  }
-  def unpackOutput[T <: Data](lanes: Int, genOut: T) = {
-    val o = Wire(ValidWithSync(Vec(lanes, genOut.cloneType)))
-    io.out.valid := o.valid
-    io.out.sync  := o.sync
-    io.out.bits  := o.bits.asUInt
-    o
-  }
-
-  lazy val scr: SCRFile = {
-    println(s"Base address for $name is ${outer.baseAddr}")
-    val scr_ = outer.scrbuilder.generate(outer.baseAddr)
-    val tl2axi = Module(new TileLinkIONastiIOConverter())
-    tl2axi.io.tl <> scr_.io.tl
-    io.axi <> tl2axi.io.nasti
-    scr_
-  }
-
-  def control(name: String) = scr.control(name)
-  def status(name : String) = scr.status(name)
-
-  val uuid = this.hashCode
-  status("uuid") := uuid.U
-}
-
-class GenDspBlockIO[T <: Data, V <: Data]()(implicit val p: Parameters)
-  extends Bundle with HasGenDspParameters[T, V] with DspBlockIO {
-  override def cloneType = new GenDspBlockIO()(p).asInstanceOf[this.type]
-}
-
-abstract class GenDspBlockModule[T <: Data, V <: Data]
-  (outer: DspBlock)(implicit p: Parameters) extends DspBlockModule(outer, Some(new GenDspBlockIO[T, V]))
-  with HasGenDspParameters[T, V]
-

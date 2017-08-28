@@ -2,6 +2,7 @@
 
 package dspblocks
 
+/*
 import cde._
 import chisel3.iotesters._
 import craft._
@@ -289,3 +290,4 @@ class DspBlockTesterSpec extends FlatSpec with Matchers {
   }
 }
 
+*/

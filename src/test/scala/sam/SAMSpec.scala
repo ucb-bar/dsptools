@@ -5,7 +5,7 @@ import dsptools.numbers.implicits._
 //import dsptools.Utilities._
 import dsptools.{DspContext, Grow}
 import spire.algebra.{Field, Ring}
-import breeze.math.{Complex}
+import breeze.math.Complex
 import breeze.linalg._
 import breeze.signal._
 import breeze.signal.support._
@@ -24,6 +24,7 @@ import scala.math._
 import org.scalatest.Tag
 import scala.collection.mutable.ArrayBuffer
 
+/*
 import cde._
 import junctions._
 import uncore.tilelink._
@@ -159,3 +160,4 @@ class SAMWrapperSpec extends FlatSpec with Matchers {
     chisel3.iotesters.Driver.execute(dut, manager) { c => new SAMWrapperTester(c) } should be (true)
   }
 }
+*/

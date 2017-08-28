@@ -19,16 +19,17 @@ class SRMemModule( dut: (UInt, Bool) => UInt ) extends Module {
 // expected_output < 0 means don't care
 class SRMemTester( dut: SRMemModule, input: Seq[(Int, Boolean)], expected_output: Seq[Int], verbose: Boolean = true)
   extends DspTester(dut) {
-  input.zip(expected_output).foreach({case ((num, valid), expected) => {
+  input.zip(expected_output).foreach({case ((num, valid), expected) =>
     poke(dut.io.in, num)
     poke(dut.io.en, valid)
     if (expected >= 0) {
       expect(dut.io.out, expected.U)
     }
     step(1)
-  }})
+  })
 }
 
+//noinspection RedundantDefaultArgument,RedundantDefaultArgument,RedundantDefaultArgument,RedundantDefaultArgument
 class ShiftRegisterMemSpec extends FlatSpec with Matchers {
   behavior of "ShiftRegisterMem"
 
@@ -88,7 +89,7 @@ class ShiftRegisterMemSpec extends FlatSpec with Matchers {
   }
 
   it should "work with dual-ported memories, an enable, and an odd shift" in {
-    def testMem(in: UInt, en: Bool): UInt = ShiftRegisterMem(in, 5, en, false)
+    def testMem(in: UInt, en: Bool): UInt = ShiftRegisterMem(in, 5, en, use_sp_mem = false)
 
     runTest(testMem _,
       Seq(X, X, X, X, X, X, 1, 2, 3, 4, 5, 0, 0)
@@ -96,7 +97,7 @@ class ShiftRegisterMemSpec extends FlatSpec with Matchers {
   }
 
   it should "work with dual-ported memories, an enable, and an even shift" in {
-    def testMem(in: UInt, en: Bool): UInt = ShiftRegisterMem(in, 6, en, false)
+    def testMem(in: UInt, en: Bool): UInt = ShiftRegisterMem(in, 6, en, use_sp_mem = false)
     
     runTest(testMem _,
       Seq(X, X, X, X, X, X, X, 1, 2, 3, 4, 5, 0)
