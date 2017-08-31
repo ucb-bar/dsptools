@@ -23,7 +23,7 @@ trait VerilogTbDump {
   val dsptestersOpt = dsptools.Driver.optionsManager.dspTesterOptions
   val verilogTb = dsptestersOpt.genVerilogTb
 
-  val (inputs, outputs) = TestersCompatibility.getDataNames("io", dut.io) partition (_._1.dir == chisel3.INPUT)
+  // val (inputs, outputs) = TestersCompatibility.getDataNames("io", dut.io) partition (_._1.dir == chisel3.INPUT)
 
   if (verilogTb) initVerilogTbFile()
   else deleteVerilogTbFile
@@ -55,14 +55,14 @@ trait VerilogTbDump {
     tb write "  reg clock = 1;\n"
     tb write "  reg reset = 1;\n"
       
-    inputs foreach { case (node, name) =>
-      val s = signPrefix(node)
-      tb write s"  reg$s[${node.getWidth-1}:0] $name = 0;\n"
-    }
-    outputs foreach { case (node, name) =>
-      val s = signPrefix(node)
-      tb write s"  wire$s[${node.getWidth-1}:0] ${name};\n"
-    }
+    // inputs foreach { case (node, name) =>
+    //   val s = signPrefix(node)
+    //   tb write s"  reg$s[${node.getWidth-1}:0] $name = 0;\n"
+    // }
+    // outputs foreach { case (node, name) =>
+    //   val s = signPrefix(node)
+    //   tb write s"  wire$s[${node.getWidth-1}:0] ${name};\n"
+    // }
 
     tb write "\n  always #`HALF_CLK_PERIOD clock = ~clock;\n"
 
@@ -74,7 +74,7 @@ trait VerilogTbDump {
     tb write s"  ${dutName} ${dutName}(\n"
     tb write "    .clock(clock),\n"
     tb write "    .reset(reset),\n"
-    tb write ((inputs ++ outputs).unzip._2 map (name => s"    .${name}(${name})") mkString ",\n")
+    // tb write ((inputs ++ outputs).unzip._2 map (name => s"    .${name}(${name})") mkString ",\n")
     tb write ");\n\n"
 
     // Inputs fed delta after clk rising edge; read delta after clk rising edge
@@ -105,31 +105,31 @@ trait VerilogTbDump {
   }
 
   def pokePrint(signal: Bits, value: BigInt) {
-    if (verilogTb) {
-      val matchingInput = inputs find (_._1 == signal)
-      matchingInput match {
-        case Some((_, name)) => {
-          // Don't have 0-width inputs (issue for >= #'s)
-          val bitLength = value.bitLength.max(1) 
-          val id = if (value >= 0) s"$bitLength\'d" else ""
-          tb write s"    $name = $id$value;\n"
-        }
-        case _ => // Don't print if not input
-      }
-    }
+    // if (verilogTb) {
+    //   val matchingInput = inputs find (_._1 == signal)
+    //   matchingInput match {
+    //     case Some((_, name)) => {
+    //       // Don't have 0-width inputs (issue for >= #'s)
+    //       val bitLength = value.bitLength.max(1) 
+    //       val id = if (value >= 0) s"$bitLength\'d" else ""
+    //       tb write s"    $name = $id$value;\n"
+    //     }
+    //     case _ => // Don't print if not input
+    //   }
+    // }
   }
 
   def peekPrint(signal: Bits, res: BigInt) {
-    if (verilogTb) {
-      val matchingOutput = outputs find (_._1 == signal)
-      matchingOutput match {
-        case Some((_, name)) => {
-          //nodeName, nodeVal, expVal, cycle
-          tb write "    `expect(\"%s\",%s,%d,cycle)\n".format(name,name,res)
-        }
-        case _ => // Don't print if not output
-      }
-    }
+    // if (verilogTb) {
+    //   val matchingOutput = outputs find (_._1 == signal)
+    //   matchingOutput match {
+    //     case Some((_, name)) => {
+    //       //nodeName, nodeVal, expVal, cycle
+    //       tb write "    `expect(\"%s\",%s,%d,cycle)\n".format(name,name,res)
+    //     }
+    //     case _ => // Don't print if not output
+    //   }
+    // }
   }
 
 }
