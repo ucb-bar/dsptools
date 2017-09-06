@@ -15,7 +15,7 @@ env:
 
 install:
   # Install dependencies
-  - bash .install_deps.sh
+  - bash .install_verilator.sh
 
 script:
   - sbt test
