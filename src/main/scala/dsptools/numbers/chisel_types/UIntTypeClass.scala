@@ -136,6 +136,7 @@ trait UIntInteger extends UIntRing with UIntIsReal with ConvertableToUInt with
   def signBit(a: UInt): Bool = isSignNegative(a)
   // fromUInt also included in Ring
   override def fromInt(n: Int): UInt = super[ConvertableToUInt].fromInt(n)
+  override def fromBigInt(n: BigInt): UInt = super[ConvertableToUInt].fromBigInt(n)
 }
 
 trait UIntImpl {

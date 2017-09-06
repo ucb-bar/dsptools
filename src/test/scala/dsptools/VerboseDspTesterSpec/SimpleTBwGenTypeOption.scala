@@ -412,7 +412,7 @@ class SimpleTBSpec extends FlatSpec with Matchers {
       val opt = new DspTesterOptionsManager {
         dspTesterOptions = optionsPassTB.dspTesterOptions
         testerOptions = optionsPassTB.testerOptions
-//        commonOptions = optionsPassTB.commonOptions.copy(targetDirName = "test_run_dir/io_fix_tb")
+        commonOptions = optionsPassTB.commonOptions.copy(targetDirName = "test_run_dir/io_fix_tb")
       }
       var tbFileLoc: String = ""
       dsptools.Driver.execute(() => new SimpleIOModule(p.genShortF, p.genLongF, includeR = false, p), 
@@ -421,6 +421,7 @@ class SimpleTBSpec extends FlatSpec with Matchers {
         tbFileLoc = tester.tbFileName
         tester
       } } should be (true)
+      println(s"The file is here: ${tbFileLoc}")
       val tbTxt = scala.io.Source.fromFile(tbFileLoc).getLines
       // This is a lot easier in Scala 2.12.x
       val resourceGoldenModel = getClass.getResourceAsStream("/TBGoldenModel.v")

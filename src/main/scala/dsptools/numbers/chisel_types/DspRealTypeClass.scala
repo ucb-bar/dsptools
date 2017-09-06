@@ -117,6 +117,7 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
   import dsptools.numbers.implicits._
   def signBit(a: DspReal): Bool = isSignNegative(a)
   override def fromInt(n: Int): DspReal = super[ConvertableToDspReal].fromInt(n)
+  override def fromBigInt(n: BigInt): DspReal = super[ConvertableToDspReal].fromBigInt(n)
   def intPart(a: DspReal): SInt = truncate(a).toSInt()
   // TODO: Implement? Will it ever be used? instead of div2?
   def shr(a: DspReal, n: Int): DspReal = throw DspException(">> for DspReal is unimplemented")

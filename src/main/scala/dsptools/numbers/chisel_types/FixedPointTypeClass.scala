@@ -198,6 +198,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
   def signBit(a: FixedPoint): Bool = isSignNegative(a)
   // fromFixedPoint also included in Ring
   override def fromInt(n: Int): FixedPoint = super[ConvertableToFixedPoint].fromInt(n)
+  override def fromBigInt(n: BigInt): FixedPoint = super[ConvertableToFixedPoint].fromBigInt(n)
   // Overflow only on most negative
   def abs(a: FixedPoint): FixedPoint = {
     Mux(isSignNegative(a), super[FixedPointRing].minus(zero, a), a)

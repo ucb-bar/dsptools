@@ -65,8 +65,8 @@ object Sign {
   }
 
   class SignAlgebra extends CMonoid[Sign] with Signed[Sign] with Order[Sign] {
-    def id: Sign = Positive
-    def op(a: Sign, b: Sign): Sign = a * b
+    def empty: Sign = Positive
+    def combine(a: Sign, b: Sign): Sign = a * b
 
     override def sign(a: Sign): Sign = a
     def signum(a: Sign): ComparisonBundle = ComparisonHelper(a.zero, a.neg)

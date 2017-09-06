@@ -135,6 +135,7 @@ trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with
   def signBit(a: SInt): Bool = isSignNegative(a)
   // fromSInt also included in Ring
   override def fromInt(n: Int): SInt = super[ConvertableToSInt].fromInt(n)
+  override def fromBigInt(n: BigInt): SInt = super[ConvertableToSInt].fromBigInt(n)
   // Overflow only on most negative
   def abs(a: SInt): SInt = Mux(isSignNegative(a), super[SIntRing].minus(0.S, a), a)
   //scalastyle:off method.name

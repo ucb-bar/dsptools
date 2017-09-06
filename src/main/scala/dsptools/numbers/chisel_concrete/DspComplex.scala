@@ -34,7 +34,8 @@ object DspComplex {
   }
 
   // Constant j
-  def j[T <: Data:Ring] : DspComplex[T] = DspComplex(Ring[T].zero, Ring[T].one)
+  // TODO(Paul): this call to wire() should be removed when chisel has literal bundles
+  def j[T <: Data:Ring] : DspComplex[T] = wire(Ring[T].zero, Ring[T].one)
 
   // Creates a DspComplex literal of type DspComplex[T] from a Breeze Complex
   // Note: when T is FixedPoint, the # of fractional bits is determined via DspContext
