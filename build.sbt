@@ -4,7 +4,7 @@ name := "dsptools"
 
 organization := "edu.berkeley.cs"
 
-version := "1.0"
+version := "1.1-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 
