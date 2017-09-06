@@ -1,6 +1,8 @@
 DSP Tools Development Environment
 ===================
 
+[![Build Status](https://travis-ci.org/ucb-bar/dsptools.svg?branch=master)](https://travis-ci.org/ucb-bar/dsptools)
+
 This repository serves as a good starting point for making and easily testing your various DSP
  generators in Chisel *(1 generator at a time)*. See [UC Berkeley Chisel](https://chisel.eecs.berkeley.edu) homepage for more information about Chisel.
 
