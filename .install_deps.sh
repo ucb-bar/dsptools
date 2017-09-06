@@ -4,3 +4,4 @@ set -x
 if [ ! -d "$INSTALL_DIR" ]; then
     mkdir -p "$INSTALL_DIR"
 fi
+
