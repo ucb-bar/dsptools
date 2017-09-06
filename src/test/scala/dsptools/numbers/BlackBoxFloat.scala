@@ -299,9 +299,9 @@ class BlackBoxFloatSpec extends ChiselFlatSpec {
 
 class NegCircuit extends Module {
   val io = IO(new Bundle {
-    val in1 = DspReal()
-    val in2 = DspReal()
-    val out = Bool()
+    val in1 = Input(DspReal())
+    val in2 = Input(DspReal())
+    val out = Output(Bool())
   })
   io.out := io.in1 > io.in2
 }
@@ -309,5 +309,5 @@ class NegCircuit extends Module {
 class NegCircuitTester(c: NegCircuit) extends DspTester(c) {
   poke(c.io.in1, -1.0)
   poke(c.io.in2, -2.0)
-  expect(c.io.out, false)
+  expect(c.io.out, true)
 }

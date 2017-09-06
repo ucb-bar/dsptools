@@ -71,7 +71,7 @@ object Driver {
 }
 
 class ReplOptionsManager
-  extends ExecutionOptionsManager("dsptools-repl")
+  extends InterpreterOptionsManager
     with HasInterpreterOptions
     with HasChiselExecutionOptions
     with HasFirrtlOptions

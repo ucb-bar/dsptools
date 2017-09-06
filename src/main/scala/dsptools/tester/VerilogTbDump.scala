@@ -23,7 +23,10 @@ trait VerilogTbDump {
   val dsptestersOpt = dsptools.Driver.optionsManager.dspTesterOptions
   val verilogTb = dsptestersOpt.genVerilogTb
 
-  val (inputs, outputs) = TestersCompatibility.getDataNames("io", dut.io) partition (_._1.dir == chisel3.INPUT)
+  val (inputs, outputs) = TestersCompatibility.getDataNames("io", dut.io) partition {
+    case (dat, name) =>
+      DataMirror.directionOf(dat) == chisel3.core.ActualDirection.Input
+  }
 
   if (verilogTb) initVerilogTbFile()
   else deleteVerilogTbFile
