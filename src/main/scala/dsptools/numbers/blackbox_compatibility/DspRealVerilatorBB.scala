@@ -5,12 +5,11 @@ package dsptools.numbers
 import chisel3._
 import chisel3.util.HasBlackBoxResource
 
+/*
+ * Uses classname to find verilog implementation of blackbox
+ */
 trait BlackBoxWithVerilog extends BlackBox with HasBlackBoxResource {
-  def addVerilog(): Unit = {
-    // Must be located in resources folder
-    val blackBoxFloatVerilog = "/BlackBoxFloat.v"
-    setResource(blackBoxFloatVerilog)
-  }
+  setResource("/" + this.getClass.getSimpleName + ".v")
 }
 
 class BlackboxOneOperand extends BlackBoxWithVerilog {
@@ -36,85 +35,87 @@ class BlackboxTwoOperandBool extends BlackBoxWithVerilog {
   })
 }
 
-class BBFAdd extends BlackboxTwoOperand { addVerilog() }
+class BBFAdd extends BlackboxTwoOperand
 
-class BBFSubtract extends BlackboxTwoOperand { addVerilog() }
+class BBFSubtract extends BlackboxTwoOperand
 
-class BBFMultiply extends BlackboxTwoOperand { addVerilog() }
+class BBFMultiply extends BlackboxTwoOperand
 
-class BBFDivide extends BlackboxTwoOperand { addVerilog() }
+class BBFDivide extends BlackboxTwoOperand
 
-class BBFGreaterThan extends BlackboxTwoOperandBool { addVerilog() }
+class BBFGreaterThan extends BlackboxTwoOperandBool
 
-class BBFGreaterThanEquals extends BlackboxTwoOperandBool { addVerilog() }
+class BBFGreaterThanEquals extends BlackboxTwoOperandBool
 
-class BBFLessThan extends BlackboxTwoOperandBool { addVerilog() }
+class BBFLessThan extends BlackboxTwoOperandBool
 
-class BBFLessThanEquals extends BlackboxTwoOperandBool { addVerilog() }
+class BBFLessThanEquals extends BlackboxTwoOperandBool
 
-class BBFEquals extends BlackboxTwoOperandBool { addVerilog() }
+class BBFEquals extends BlackboxTwoOperandBool
 
-class BBFNotEquals extends BlackboxTwoOperandBool { addVerilog() }
+class BBFNotEquals extends BlackboxTwoOperandBool
 
 /** Math operations from IEEE.1364-2005 **/
-class BBFLn extends BlackboxOneOperand { addVerilog() }
+class BBFLn extends BlackboxOneOperand
 
-class BBFLog10 extends BlackboxOneOperand { addVerilog() }
+class BBFLog10 extends BlackboxOneOperand
 
-class BBFExp extends BlackboxOneOperand { addVerilog() }
+class BBFExp extends BlackboxOneOperand
 
-class BBFSqrt extends BlackboxOneOperand { addVerilog() }
+class BBFSqrt extends BlackboxOneOperand
 
-class BBFPow extends BlackboxTwoOperand { addVerilog() }
+class BBFPow extends BlackboxTwoOperand
 
-class BBFFloor extends BlackboxOneOperand { addVerilog() }
+class BBFFloor extends BlackboxOneOperand
 
-class BBFCeil extends BlackboxOneOperand { addVerilog() }
+class BBFCeil extends BlackboxOneOperand
 
 // Not supported by Verilator -- need to build out own approximation
-class BBFSin extends BlackboxOneOperand { addVerilog() }
+class BBFSin extends BlackboxOneOperand
 
-class BBFCos extends BlackboxOneOperand { addVerilog() }
+class BBFCos extends BlackboxOneOperand
 
-class BBFTan extends BlackboxOneOperand { addVerilog() }
+class BBFTan extends BlackboxOneOperand
 
-class BBFASin extends BlackboxOneOperand { addVerilog() }
+class BBFASin extends BlackboxOneOperand
 
-class BBFACos extends BlackboxOneOperand { addVerilog() }
+class BBFACos extends BlackboxOneOperand
 
-class BBFATan extends BlackboxOneOperand { addVerilog() }
+class BBFATan extends BlackboxOneOperand
 
-class BBFATan2 extends BlackboxTwoOperand { addVerilog() }
+class BBFATan2 extends BlackboxTwoOperand
 
-class BBFHypot extends BlackboxTwoOperand { addVerilog() }
+class BBFHypot extends BlackboxTwoOperand
 
-class BBFSinh extends BlackboxOneOperand { addVerilog() }
+class BBFSinh extends BlackboxOneOperand
 
-class BBFCosh extends BlackboxOneOperand { addVerilog() }
+class BBFCosh extends BlackboxOneOperand
 
-class BBFTanh extends BlackboxOneOperand { addVerilog() }
+class BBFTanh extends BlackboxOneOperand
 
-class BBFASinh extends BlackboxOneOperand { addVerilog() }
+class BBFASinh extends BlackboxOneOperand
 
-class BBFACosh extends BlackboxOneOperand { addVerilog() }
+class BBFACosh extends BlackboxOneOperand
 
-class BBFATanh extends BlackboxOneOperand { addVerilog() }
+class BBFATanh extends BlackboxOneOperand
 
-class BBFFromInt extends BlackBoxWithVerilog {
-  val io = IO(new Bundle() {
-    val in = Input(UInt(DspReal.underlyingWidth.W))
-    val out = Output(UInt(DspReal.underlyingWidth.W))
-  })
-  addVerilog()
-}
+class BBFFromInt extends BlackboxOneOperand
 
-class BBFToInt extends BlackBoxWithVerilog {
-  val io = IO(new Bundle() {
-    val in = Input(UInt(DspReal.underlyingWidth.W))
-    val out = Output(UInt(DspReal.underlyingWidth.W))
-  })
-  addVerilog()
-}
+// BlackBoxWithVerilog {
+//   val io = IO(new Bundle() {
+//     val in = Input(UInt(DspReal.underlyingWidth.W))
+//     val out = Output(UInt(DspReal.underlyingWidth.W))
+//   })
+// }
+
+class BBFToInt extends BlackboxOneOperand
+
+// BlackBoxWithVerilog {
+//   val io = IO(new Bundle() {
+//     val in = Input(UInt(DspReal.underlyingWidth.W))
+//     val out = Output(UInt(DspReal.underlyingWidth.W))
+//   })
+// }
 
 // Not used
 //class BBFIntPart extends BlackboxOneOperand { addVerilog() }
