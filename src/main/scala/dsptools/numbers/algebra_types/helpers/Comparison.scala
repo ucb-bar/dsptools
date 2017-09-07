@@ -15,7 +15,7 @@ class ComparisonBundle extends Bundle {
 // Note: Only useful with Partial Order (when comparisons might not be valid)
 object ComparisonHelper {
   def apply(valid: Bool, eq: Bool, lt: Bool): ValidIO[ComparisonBundle] = {
-    val ret = Valid(new ComparisonBundle())
+    val ret = Wire(Valid(new ComparisonBundle().cloneType))
     ret.bits.eq := eq
     ret.bits.lt := lt
     ret.valid := valid
