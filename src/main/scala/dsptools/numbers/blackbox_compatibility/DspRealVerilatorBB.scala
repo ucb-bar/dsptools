@@ -101,21 +101,7 @@ class BBFATanh extends BlackboxOneOperand
 
 class BBFFromInt extends BlackboxOneOperand
 
-// BlackBoxWithVerilog {
-//   val io = IO(new Bundle() {
-//     val in = Input(UInt(DspReal.underlyingWidth.W))
-//     val out = Output(UInt(DspReal.underlyingWidth.W))
-//   })
-// }
-
 class BBFToInt extends BlackboxOneOperand
-
-// BlackBoxWithVerilog {
-//   val io = IO(new Bundle() {
-//     val in = Input(UInt(DspReal.underlyingWidth.W))
-//     val out = Output(UInt(DspReal.underlyingWidth.W))
-//   })
-// }
 
 // Not used
 //class BBFIntPart extends BlackboxOneOperand { addVerilog() }
