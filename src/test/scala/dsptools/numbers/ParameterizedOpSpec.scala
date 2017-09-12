@@ -9,7 +9,6 @@ import chisel3.iotesters.TesterOptionsManager
 import dsptools.DspTester
 import org.scalatest.{FreeSpec, Matchers}
 import dsptools.numbers._
-import dsptools.numbers.implicits._
 import dsptools._
 
 //scalastyle:off magic.number

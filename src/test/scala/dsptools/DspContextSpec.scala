@@ -3,8 +3,7 @@
 package dsptools
 
 import chisel3._
-import dsptools.numbers.Ring
-import dsptools.numbers.implicits._
+import dsptools.numbers._
 import org.scalatest.{FreeSpec, Matchers}
 
 //scalastyle:off magic.number

@@ -7,9 +7,8 @@ import chisel3.util._
 import chisel3.internal.firrtl.{Width, BinaryPoint}
 import chisel3.experimental.FixedPoint
 import breeze.math.Complex
-import dsptools.numbers.{Real, DspReal, DspComplex}
-import dsptools.numbers.implicits._
 import dsptools.{DspTester, DspTesterOptionsManager, DspTesterOptions}
+import dsptools.numbers._
 import org.scalatest.{FlatSpec, Matchers}
 import chisel3.iotesters.TesterOptions
 

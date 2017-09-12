@@ -107,6 +107,14 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
     oneOperandOperator(Module(new BBFCeil()))
   }
 
+  def round(): DspReal = (this + DspReal(0.5)).floor()
+
+  def truncate(): DspReal = {
+    Mux(this < DspReal(0.0), this.ceil(), this.floor())
+  }
+
+  def abs(): DspReal = Mux(this < DspReal(0.0), DspReal(0.0) - this, this)
+
   // Assumes you're using chisel testers
   private def backendIsVerilator: Boolean = {
     chisel3.iotesters.Driver.optionsManager.testerOptions.backendName == "verilator"
@@ -139,7 +147,6 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
         val terms = TrigUtility.sinCoeff(nmax).zip(xpow) map { case ((c, scale), x) => DspReal(c) * x / DspReal(scale)}
         terms.reduceRight(_ + _) * in
       }
-      import dsptools.numbers.implicits._
       val num2Pi = (this / twoPi).truncate()
       // Repeats every 2*pi, so normalize to -pi, pi
       val normalized2Pi= this - num2Pi * twoPi
@@ -191,7 +198,6 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
       def tanPiOver2(in: DspReal): DspReal = {
         in.sin()/in.cos()
       }
-      import dsptools.numbers.implicits._
       val numPi = (this / pi).truncate()
       // Repeats every pi, so normalize to -pi/2, pi/2
       // tan(x + pi) = tan(x)
@@ -220,7 +226,6 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
         val terms2 = TrigUtility.atanCoeff2(m).zip(xpow2) map { case (c, x) => DspReal(c) * x }
         (terms1 ++ terms2).reduceRight(_ + _) * in
       }
-      import dsptools.numbers.implicits._
       val isNeg = this.signBit()
       // arctan(-x) = -arctan(x)
       val inTemp = this.abs()
@@ -256,7 +261,6 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
   // y.atan2(x)
   def atan2 (arg1: DspReal): DspReal = {
     if (backendIsVerilator) {
-      import dsptools.numbers.implicits._
       val x = arg1
       val y = this
       val atanArg = y / x

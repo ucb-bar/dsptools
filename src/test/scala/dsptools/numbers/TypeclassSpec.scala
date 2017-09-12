@@ -5,7 +5,6 @@ package dsptools.numbers
 import chisel3._
 import chisel3.iotesters._
 import dsptools.numbers._
-import dsptools.numbers.implicits._
 import org.scalatest.{FreeSpec, Matchers}
 
 /*
