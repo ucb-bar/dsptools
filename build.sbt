@@ -39,7 +39,7 @@ libraryDependencies ++= Seq(
   "org.scalanlp" %% "breeze" % "0.13.2",
   "org.scalatest" %% "scalatest" % "3.0.1",
   "org.scalacheck" %% "scalacheck" % "1.13.4",
-  "co.theasi" %% "plotly" % "0.1"
+  "co.theasi" %% "plotly" % "0.2.0"
 ) ++ chiselDeps.libraries
 
 lazy val dsptools = (project in file("."))
