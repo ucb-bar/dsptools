@@ -630,63 +630,6 @@ package dspblocks
 //   def axiDataWidth = axi.w.bits.data.getWidth
 //   def axiDataBytes = axiDataWidth / 8
 //   def burstLen = axiDataBytes
-//   def axiWrite(addr: BigInt, value: BigInt): Unit = {
-// 
-//     // s_write_addr
-//     poke(axi.aw.valid, 1)
-//     poke(axi.aw.bits.id, 0)
-//     poke(axi.aw.bits.user, 0)
-//     poke(axi.aw.bits.addr, addr)
-//     poke(axi.aw.bits.len, 0)
-//     poke(axi.aw.bits.size, log2Ceil(axiDataBytes))
-//     poke(axi.aw.bits.lock, 0)
-//     poke(axi.aw.bits.cache, 0)
-//     poke(axi.aw.bits.prot, 0)
-//     poke(axi.aw.bits.qos, 0)
-//     poke(axi.aw.bits.region, 0)
-// 
-//     // s_write_data
-//     poke(axi.w.valid, 1)
-//     poke(axi.w.bits.data, value)
-//     poke(axi.w.bits.strb, 0xFF)
-//     poke(axi.w.bits.last, 1)
-//     poke(axi.w.bits.id, 0)
-//     poke(axi.w.bits.user, 0)
-// 
-//     var waited = 0
-//     var a_written = false
-//     var d_written = false
-//     while (!a_written || !d_written) {
-//       // check for ready condition
-//       if (!a_written) { a_written = aw_ready }
-//       if (!d_written) { d_written = w_ready }
-//       // if (waited >= maxWait) return BigInt(-1)
-//       require(waited < maxWait, "Timeout waiting for AXI AW or W to be ready")
-//       step(1)
-//       // invalidate when values are received
-//       if (a_written) { poke(axi.aw.valid, 0) }
-//       if (d_written) { poke(axi.w.valid, 0); poke(axi.w.bits.last, 0) }
-//       waited += 1
-//     }
-// 
-//     // s_write_stall
-// 
-//     waited = 0
-//     do {
-//       require(waited < maxWait, "Timeout waiting for AXI B to be valid")
-//       step(1)
-//       waited += 1
-//     } while (!b_ready);
-// 
-//     // s_write_resp
-//     poke(axi.b.ready, 1)
-//     step(1)
-//     poke(axi.b.ready, 0)
-//   }
-//   def axiWrite(addr: Int, value: Int): Unit = axiWrite(BigInt(addr), BigInt(value))
-//   def axiWrite(addr: BigInt, value: Int): Unit = axiWrite(addr, BigInt(value))
-//   def axiWrite(addr: Int, value: BigInt): Unit = axiWrite(BigInt(addr), value)
-// 
 //   def axiWriteAs[T<:Data](addr: BigInt, value: Double, typ: T): Unit = {
 // 
 //     // s_write_addr
@@ -740,7 +683,6 @@ package dspblocks
 //     poke(axi.b.ready, 0)
 //   }
 //   def axiWriteAs[T<:Data](addr: Int, value: Double, typ: T): Unit = axiWriteAs(BigInt(addr), value, typ)
-// 
 //   // TODO: make this not copy pasta
 //   def axiWriteAs[T<:Data](addr: BigInt, value: Complex, typ: DspComplex[T]): Unit =  {
 //     // s_write_addr
@@ -794,50 +736,6 @@ package dspblocks
 //     poke(axi.b.ready, 0)
 //   }
 //   def axiWriteAs[T<:Data](addr: Int, value: Complex, typ: DspComplex[T]): Unit =  axiWriteAs(BigInt(addr), value, typ)
-// 
-//   def axiRead(addr: BigInt): BigInt = {
-// 
-//     // s_read_addr
-//     poke(axi.ar.valid, 1)
-//     poke(axi.ar.bits.id, 0)
-//     poke(axi.ar.bits.user, 0)
-//     poke(axi.ar.bits.addr, addr)
-//     poke(axi.ar.bits.len, 0)
-//     poke(axi.ar.bits.size, log2Ceil(axiDataBytes))
-//     poke(axi.ar.bits.lock, 0)
-//     poke(axi.ar.bits.cache, 0)
-//     poke(axi.ar.bits.prot, 0)
-//     poke(axi.ar.bits.qos, 0)
-//     poke(axi.ar.bits.region, 0)
-// 
-//     var waited = 0
-//     while (!ar_ready) {
-//       require(waited < maxWait, "Timeout waiting for AXI AR to be ready")
-//       step(1)
-//       waited += 1
-//     }
-// 
-//     step(1)
-//     poke(axi.ar.valid, 0)
-//     step(1)
-//     poke(axi.r.ready, 1)
-// 
-//     // s_read_data
-//     while (!r_ready) {
-//       // if (waited >= maxWait) return BigInt(-1)
-//       require(waited < maxWait, "Timeout waiting for AXI R to be valid")
-//       step(1)
-//       waited += 1
-//     }
-// 
-//     val ret = peek(axi.r.bits.data)
-//     step(1)
-//     poke(axi.r.ready, 0)
-//     step(1)
-//     ret
-//   }
-//   def axiRead(addr: Int): BigInt = axiRead(BigInt(addr))
-// 
 //   def axiReadAs[T<:Data](addr: BigInt, typ: T): Double = {
 // 
 //     // s_read_addr

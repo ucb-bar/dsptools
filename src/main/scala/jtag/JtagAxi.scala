@@ -4,7 +4,6 @@ package jtag
 
 import chisel3._
 import chisel3.experimental.withClockAndReset
-import chisel3.util._
 import jtag._
 // import junctions._
 // import uncore.converters._

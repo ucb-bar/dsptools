@@ -11,14 +11,9 @@ import breeze.signal._
 import breeze.signal.support._
 import breeze.signal.support.CanFilter._
 import chisel3._
-import chisel3.util._
 import chisel3.iotesters._
 import firrtl_interpreter.InterpreterOptions
-import dsptools.numbers.{DspReal, SIntOrder, SIntRing}
-import dsptools.{DspContext, DspTester, Grow}
 import org.scalatest.{FlatSpec, Matchers}
-import dsptools.numbers.implicits._
-import dsptools.numbers.{DspComplex, Real}
 import scala.util.Random
 import scala.math._
 import org.scalatest.Tag

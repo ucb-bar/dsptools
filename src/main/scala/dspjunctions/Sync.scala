@@ -3,7 +3,7 @@
 package dspjunctions
 
 import chisel3._
-import chisel3.util._
+import chisel3.util.{DecoupledIO, Valid}
 
 trait WithSync {
   val sync = Output(Bool())

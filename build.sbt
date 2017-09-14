@@ -17,13 +17,17 @@ libraryDependencies ++= Seq("chisel3", "chisel-iotesters", "dsptools").map {
   dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
 }
 
+libraryDependencies ++= Seq("rocketchip").map {
+  dep: String => "berkeley" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
+}
+
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls")
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
   "chisel3" -> "3.1-SNAPSHOT",
   "chisel-iotesters" -> "1.2-SNAPSHOT",
-  "dsptools" -> "1.0",
+  "dsptools" -> "1.1-SNAPSHOT",
   "rocketchip" -> "1.2",
   "builtin-debugger" -> "0",
   "testchipip" -> "1.0",
@@ -32,3 +36,5 @@ val defaultVersions = Map(
 )
 
 libraryDependencies += "com.gilt" %% "handlebars-scala" % "2.1.1"
+
+libraryDependencies += "co.theasi" %% "plotly" % "0.2.0"

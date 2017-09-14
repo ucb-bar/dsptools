@@ -1,7 +1,6 @@
 package craft
 
 import chisel3._
-import dsptools._
 import dspblocks._
 import dspjunctions._
 import freechips.rocketchip.config._

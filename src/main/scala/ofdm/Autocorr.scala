@@ -1,16 +1,19 @@
-package autocorr
-
+package ofdm
 
 import chisel3._
+import chisel3.experimental.FixedPoint
 import chisel3.core.requireIsChiselType
 import chisel3.util._
 import dspblocks._
+import dsptools.numbers._
 import dsptools.numbers.implicits._
-import dsptools.numbers.Ring
-import freechips.rocketchip.amba.axi4._
+import freechips.rocketchip.amba.axi4.{AXI4BlindInputNode, AXI4MasterParameters, AXI4MasterPortParameters}
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
+import freechips.rocketchip.coreplex.BaseCoreplexConfig
 import freechips.rocketchip.diplomacy._
+
+import scala.collection.Seq
 
 case class AutocorrParams[T <: Data]
 (
@@ -117,12 +120,12 @@ class AutocorrModule[T <: Data : Ring](outer: Autocorr[T]) extends LazyModuleImp
   val csrs = outer.csrs.module.io.csrs
 
   // cast input to T
-  val io_in:  IrrevocableIO[AXI4StreamBundlePayload]         = io.in(0)
+  val io_in         = io.in(0)
   val io_in_data: T = io_in.bits.data.asTypeOf(genIn)
-  val io_out: IrrevocableIO[AXI4StreamBundlePayload]        = io.out(0)
+  val io_out        = io.out(0)
 
   // add delayed path to correlate with
-  val shr = Module(new AutocorrShiftRegister(genIn, shrMaxDepth))
+  val shr = Module(new ShiftRegisterMem(genIn, shrMaxDepth))
 
   shr.io.depth.bits  := csrs(CSRDepthApart)
   shr.io.depth.valid := csrs(CSRSetDepthApart) =/= 0.U
@@ -133,7 +136,18 @@ class AutocorrModule[T <: Data : Ring](outer: Autocorr[T]) extends LazyModuleImp
   val shr_in_delay               = RegNext(io_in_data)
 
   // correlate short and long path
-  val prod: T = shr_in_delay * shr.io.out.bits
+  val toMult: T = shr.io.out.bits match {
+    case m: DspComplex[_] => m.conj().asInstanceOf[T]
+    case b => b
+  }
+  val prod: T = shr_in_delay * toMult /*match {
+    case m: DspComplex[_] => {
+      val w = Wire(m.cloneType)
+      w.real := m.abssq()
+      w.imag := 0.U.asTypeOf(m.imag)
+      w.asInstanceOf[T]
+    }
+  }*/
 
   // sliding window
   val sum = Module(new OverlapSum(genOut, maxOverlap, pipeDelay = outer.autocorrParams.addPipeDelay))
@@ -143,7 +157,7 @@ class AutocorrModule[T <: Data : Ring](outer: Autocorr[T]) extends LazyModuleImp
 
   // pipeline the multiply here
   sum.io.in.bits := ShiftRegister(prod, outer.autocorrParams.mulPipeDelay, en = io_in.fire())
-  sum.io.in.valid := ShiftRegister(shr_out_valid, outer.autocorrParams.mulPipeDelay, en = io_in.fire())
+  sum.io.in.valid := ShiftRegister(shr_out_valid, outer.autocorrParams.mulPipeDelay, resetData = false.B, en = io_in.fire())
 
   val sum_out_packed = sum.io.out.bits.asUInt
   val sum_out_irrevocable = Wire(Irrevocable(sum_out_packed.cloneType))
@@ -160,78 +174,42 @@ class AutocorrModule[T <: Data : Ring](outer: Autocorr[T]) extends LazyModuleImp
 
   // keep track of in-flight transactions
   val inFlight = RegInit(0.U(log2Ceil(queueDepth + 1).W))
-  inFlight := inFlight + io_in.fire() - io_out.fire()
+  inFlight := inFlight + sum_out_irrevocable.fire() - io_out.fire()
   assert(!(inFlight === 0.U) || !io_out.fire(),
     s"When there are 0 in-flight transactions, there should be no output")
 
   io_in.ready := inFlight < queueDepth.U
-
 }
 
-class AutocorrShiftRegister[T <: Data](val gen: T, val maxDepth: Int) extends Module {
-  require(maxDepth > 1, s"Depth must be > 1, got $maxDepth")
+object BuildSampleAutocorr {
+  def main(args: Array[String]): Unit = {
+    implicit val p: Parameters = Parameters.root((new BaseCoreplexConfig).toInstance)
+    val params = AutocorrParams(
+      DspComplex(FixedPoint(16.W, 14.BP), FixedPoint(16.W, 14.BP)),
+      //DspComplex(FixedPoint(8.W, 4.BP), FixedPoint(8.W, 4.BP)),
+      // genOut=Some(DspComplex(FixedPoint(16.W, 8.BP), FixedPoint(16.W, 8.BP))),
+      maxApart = 32,
+      maxOverlap = 32,
+      address = AddressSet(0x0, 0xffffffffL),
+      beatBytes = 8)
+    val inWidthBytes = 4 //(params.genIn.getWidth + 7) / 8
+    val outWidthBytes = 4 //params.genOut.map(x => (x.getWidth + 7)/8).getOrElse(inWidthBytes)
 
-  val io = IO(new Bundle {
-    val depth = Input(Valid(UInt(log2Ceil(maxDepth + 1).W)))
-    val in    = Input(Valid(gen.cloneType))
-    val out   = Output(Valid(gen.cloneType))
-  })
+    println(s"In bytes = $inWidthBytes and out bytes = $outWidthBytes")
 
-  val mem        = SyncReadMem(maxDepth, gen)
-  val readIdx    = Wire(UInt(log2Ceil(maxDepth).W))
-  val readIdxReg = RegInit(0.U(log2Ceil(maxDepth).W) - (maxDepth - 1).U)
-  val writeIdx   = RegInit(0.U(log2Ceil(maxDepth).W))
+    val blindParams = DspBlockBlindNodes(
+      streamIn  = () => AXI4StreamBlindInputNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters(
+        "autocorr",
+        bundleParams = AXI4StreamBundleParameters(n = inWidthBytes)
+      ))))),
+      streamOut = () => AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters(Seq(AXI4StreamSlaveParameters(
+        bundleParams = AXI4StreamBundleParameters(n = outWidthBytes)
+      ))))),
+      mem       = () => AXI4BlindInputNode(Seq(AXI4MasterPortParameters(Seq(
+        AXI4MasterParameters(
+          "autocorr"))))
 
-  when (io.depth.valid) {
-    val diff = writeIdx - io.depth.bits
-    when (diff >= 0.U) {
-      readIdx := diff
-    }   .otherwise {
-      readIdx := maxDepth.U - diff
-    }
-  }   .otherwise {
-    readIdx := readIdxReg
-  }
-
-  when (io.in.valid) {
-    readIdxReg := Mux(readIdx < (maxDepth - 1).U, readIdx + 1.U, 0.U)
-    writeIdx := Mux(writeIdx < (maxDepth - 1).U, writeIdx + 1.U, 0.U)
-  }   .otherwise {
-    readIdxReg := readIdx
-  }
-
-  mem.write(writeIdx, io.in.bits)
-  io.out.bits := mem.read(readIdx)
-  io.out.valid := RegNext(io.in.fire(), init = false.B)
-}
-
-class OverlapSum[T <: Data : Ring](val gen: T, val maxDepth: Int, val pipeDelay: Int = 1) extends Module {
-  require(maxDepth > 0, s"Depth must be > 0, got $maxDepth")
-
-  val io = IO(new Bundle {
-    val depth = Input(Valid(UInt(log2Ceil(maxDepth + 1).W)))
-    val in    = Input(Valid(gen.cloneType))
-    val out   = Output(Valid(gen.cloneType))
-  })
-
-  val depth = RegInit(maxDepth.U)
-  when (io.depth.valid) {
-    depth := io.depth.bits
-  }
-
-  val shr                                                = Reg(Vec(maxDepth - 1, gen.cloneType))
-  val shrSelected: IndexedSeq[T] = shr.zipWithIndex.map { case (reg, idx) =>
-      val included: Bool = (idx + 1).U < depth
-      Mux(included, reg, 0.U.asTypeOf(reg)) //Ring[T].zero) //0.U.asTypeOf(reg))
-  }
-  val sum: T = (Seq(io.in.bits) ++ shrSelected).reduce(_ + _)
-  io.out.bits := ShiftRegister(sum, pipeDelay)
-  io.out.valid := ShiftRegister(io.in.fire(), pipeDelay, false.B, true.B)
-
-  shr.scanLeft(io.in.bits) { case (in, out) =>
-      when (io.in.fire()) {
-        out := in
-      }
-      out
+      ))
+    chisel3.Driver.execute(Array("-X", "verilog"), () => LazyModule(new AutocorrBlind(params, blindParams)).module)
   }
 }

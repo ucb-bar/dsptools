@@ -1,13 +1,13 @@
-package autocorr
+package ofdm
 
 import chisel3._
 import chisel3.iotesters.PeekPokeTester
 
-import scala.collection.mutable
+import scala.collection._
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
-class ShiftRegisterTester(c: AutocorrShiftRegister[UInt], depth: Int) extends PeekPokeTester(c) {
+class OverlapSumTester(c: OverlapSum[UInt], depth: Int) extends PeekPokeTester(c) {
   val width: Int = c.gen.getWidth
 
   var validIns : ArrayBuffer[BigInt] = mutable.ArrayBuffer[BigInt]()
@@ -22,7 +22,7 @@ class ShiftRegisterTester(c: AutocorrShiftRegister[UInt], depth: Int) extends Pe
   poke(c.io.depth.valid, 0)
   expect(c.io.out.valid, 0)
 
-  for (i <- 0 until 100 * depth) {
+  for (_ <- 0 until depth * 100) {
     val in = BigInt(width, Random)
     val valid = Random.nextBoolean()
 
@@ -39,10 +39,13 @@ class ShiftRegisterTester(c: AutocorrShiftRegister[UInt], depth: Int) extends Pe
     step(1)
   }
 
-  // println(s"validIns = $validIns")
-  // println(s"validOuts = ${validOuts.drop(depth)}")
-
-  validOuts.drop(depth).zip(validIns).zipWithIndex.foreach { case ((out, in), idx) =>
-      require(out == in, s"Output $idx incorrect: got $out, should be $in")
+  val computedOuts: immutable.IndexedSeq[BigInt] = (0 until validIns.length - depth) map { i =>
+    val partialSumTerms = (0 until depth) map (j =>
+      validIns(i + j))
+    val partialSum = partialSumTerms.sum % (1L << width)
+    partialSum
+  }
+  computedOuts.zip(validOuts.drop(depth - 1)).foreach { case (computed, seen) =>
+      require(computed == seen, s"Computed $computed but saw $seen")
   }
 }

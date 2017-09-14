@@ -5,8 +5,6 @@ import chisel3.experimental._
 
 import dspblocks._
 import dspjunctions._
-import dsptools.numbers.{Field =>_, _}
-import dsptools.numbers.implicits._
 import jtag._
 
 /*

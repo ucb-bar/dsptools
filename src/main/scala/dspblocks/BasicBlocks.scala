@@ -3,7 +3,6 @@
 package dspblocks
 
 import chisel3._
-import chisel3.util.ShiftRegister
 import freechips.rocketchip.config._
 
 // case object PassthroughDelay extends Field[Int]

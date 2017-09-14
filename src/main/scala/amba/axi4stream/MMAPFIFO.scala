@@ -2,8 +2,8 @@ package freechips.rocketchip.amba.axi4stream
 
 import chisel3._
 import chisel3.internal.firrtl.Width
-import chisel3.util._
 import chisel3.iotesters._
+import chisel3.util._
 import dspblocks._
 import freechips.rocketchip.config._
 import freechips.rocketchip.diplomacy._
