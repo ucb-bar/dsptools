@@ -6,7 +6,7 @@ import chisel3._
 import chisel3.iotesters._
 import dsptools.numbers._
 import dsptools.numbers.implicits._
-import org.scalatest.FreeSpec
+import org.scalatest.{FreeSpec, Matchers}
 
 /*
  * These tests mostly exist to ensure that expressions of the form
@@ -69,35 +69,35 @@ class FuncTester[T <: FuncModule[SInt]](dut: T, inputs: Seq[Int], outputs: Seq[I
     }
 }
 
-class TypeclassSpec extends FreeSpec {
+class TypeclassSpec extends FreeSpec with Matchers {
   "Ring[T].func() should work" in {
     dsptools.Driver.execute( () => new RingModule(SInt(10.W)) ) { c =>
       new FuncTester(c, Seq(2, -3), Seq(2, -3))
-    }
+    } should be (true)
   }
   "Eq[T].func() should work" in {
     dsptools.Driver.execute( () => new EqModule(SInt(10.W)) ) { c =>
       new FuncTester(c, Seq(2, 0), Seq(2, 1))
-    }
+    } should be (true)
   }
   "Integer[T].func() should work" in {
-    dsptools.Driver.execute( () => new RingModule(SInt(10.W)) ) { c =>
-      new FuncTester(c, Seq(2, -3), Seq(3, -2))
-    }
+    dsptools.Driver.execute( () => new IntegerModule(SInt(10.W)) ) { c =>
+      new FuncTester(c, Seq(2, -3), Seq(2, -3))
+    } should be (true)
   }
   "Order[T].func() should work" in {
-    dsptools.Driver.execute( () => new RingModule(SInt(10.W)) ) { c =>
+    dsptools.Driver.execute( () => new OrderModule(SInt(10.W)) ) { c =>
       new FuncTester(c, Seq(2, -3), Seq(2, -3))
-    }
+    } should be (true)
   }
   "PartialOrder[T].func() should work" in {
-    dsptools.Driver.execute( () => new RingModule(SInt(10.W)) ) { c =>
+    dsptools.Driver.execute( () => new PartialOrderModule(SInt(10.W)) ) { c =>
       new FuncTester(c, Seq(2, -3), Seq(2, -3))
-    }
+    } should be (true)
   }
   "Signed[T].func() should work" in {
-    dsptools.Driver.execute( () => new RingModule(SInt(10.W)) ) { c =>
+    dsptools.Driver.execute( () => new SignedModule(SInt(10.W)) ) { c =>
       new FuncTester(c, Seq(2, -3), Seq(2, 3))
-    }
+    } should be (true)
   }
 }

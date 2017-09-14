@@ -4,7 +4,7 @@ name := "dsptools"
 
 organization := "edu.berkeley.cs"
 
-version := "1.0"
+version := "1.0-SNAPSHOT_2017-09-14"
 
 scalaVersion := "2.11.7"
 
@@ -21,8 +21,8 @@ scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:refle
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel3" -> "3.0-SNAPSHOT_2017-08-16",
-  "chisel-iotesters" -> "1.1-SNAPSHOT_2017-08-16"
+  "chisel3" -> "3.0-SNAPSHOT_2017-09-14",
+  "chisel-iotesters" -> "1.1-SNAPSHOT_2017-09-14"
 )
 
 libraryDependencies ++= Seq(
