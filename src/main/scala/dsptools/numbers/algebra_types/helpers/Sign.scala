@@ -8,12 +8,6 @@ import dsptools.hasContext
 
 import scala.language.implicitConversions
 
-class SignBundle extends Bundle {
-  val zero = Bool()
-  // ignore neg if zero is true
-  val neg  = Bool()
-}
-
 /**
   * Much of this is drawn from non/spire, but using Chisel Bools instead of
   * Java Bools. I suppose a more general solution would be generic in
@@ -23,34 +17,50 @@ class SignBundle extends Bundle {
 /**
   * A simple ADT representing the `Sign` of an object.
   */
-sealed class Sign(that: SignBundle) extends SignBundle {
-  import Sign._
+sealed class Sign(zeroInit: Option[Boolean] = None, negInit: Option[Boolean] = None) extends Bundle {
+  // import Sign._
+  val zero = zeroInit.map{_.B}.getOrElse(Bool())
+  // ignore neg if zero is true
+  val neg  = negInit.map{_.B}.getOrElse(Bool())
 
-  zero := that.zero
-  neg  := that.neg
+  def unary_-(): Sign = Sign(this.zero, !this.neg)
 
-  def unary_-(): Sign = new Sign(Sign(this.zero, !this.neg))
-
-  def *(that: Sign): Sign = new Sign(Sign(
+  def *(that: Sign): Sign = Sign(
     this.zero || that.zero,
     this.neg ^ that.neg
-  ))
+  )
 
-  def **(that: Int): Sign = **(UInt(that.W))
+  def **(that: Int): Sign = {
+    val evenPow = that % 2 == 0
+    Sign(zero, if (evenPow) false.B else neg)
+  }
+
   // LSB indicates even or oddness -- only negative if this is negative and 
   // it's raised by an odd power
-  def **(that: UInt): Sign = new Sign(Sign(this.zero, this.neg && that(0)))
+  def **(that: UInt): Sign = Sign(this.zero, this.neg && that(0))
+
+  override def cloneType = new Sign(zeroInit, negInit).asInstanceOf[this.type]
 }
 
 object Sign {
-  case object Zero extends Sign(Sign(true.B, false.B))
-  case object Positive extends Sign(Sign(false.B, false.B))
-  case object Negative extends Sign(Sign(false.B, true.B))
+  case object Zero extends Sign(Some(true), Some(false))
+  case object Positive extends Sign(Some(false), Some(false))
+  case object Negative extends Sign(Some(false), Some(true))
 
-  def apply(zero: Bool, neg: Bool): SignBundle = {
-    val bundle = new SignBundle
-    bundle.zero := zero
-    bundle.neg  := neg
+  def apply(zero: Bool, neg: Bool): Sign = {
+    val zeroLit = zero.litArg.map{_.num != BigInt(0)}
+    val negLit  = neg.litArg.map{_.num != BigInt(0)}
+    val isLit = zeroLit.isDefined && negLit.isDefined
+    val wireWrapIfNotLit: Sign => Sign = s => if (isLit) { s } else Wire(s)
+    val bundle = wireWrapIfNotLit(
+      new Sign(zeroInit=zeroLit, negInit=negLit)
+    )
+    if (!zero.isLit) {
+      bundle.zero := zero
+    }
+    if (!neg.isLit) {
+      bundle.neg  := neg
+    }
     bundle
   }
 
@@ -58,10 +68,7 @@ object Sign {
     if (i == 0) Zero else if (i > 0) Positive else Negative
 
   implicit def apply(i: ComparisonBundle): Sign = {
-    val bundle = new SignBundle
-    bundle.zero := i.eq
-    bundle.neg := i.lt
-    new Sign(bundle)
+    Sign(i.eq, i.lt)
   }
 
   class SignAlgebra extends CMonoid[Sign] with Signed[Sign] with Order[Sign] {
