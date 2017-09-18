@@ -4,8 +4,7 @@ package dsptools
 
 import chisel3._
 import chisel3.core.FixedPoint
-import dsptools.numbers.{DspReal, Signed}
-import dsptools.numbers.implicits._
+import dsptools.numbers._
 import org.scalatest.{FreeSpec, Matchers}
 
 import scala.collection.mutable

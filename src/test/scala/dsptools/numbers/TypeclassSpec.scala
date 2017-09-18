@@ -7,7 +7,6 @@ import chisel3.experimental.FixedPoint
 import chisel3.iotesters._
 import dsptools._
 import dsptools.numbers._
-import dsptools.numbers.implicits._
 import org.scalatest.{FreeSpec, Matchers}
 
 /*

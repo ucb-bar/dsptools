@@ -6,8 +6,7 @@ import chisel3.core._
 import chisel3.iotesters.{Backend}
 import chisel3.{Bundle, Module}
 import dsptools.{DspContext, DspTester}
-import dsptools.numbers.{FixedPointRing, DspComplexRing, DspComplex}
-import dsptools.numbers.implicits._
+import dsptools.numbers._
 import org.scalatest.{Matchers, FlatSpec}
 import spire.algebra.Ring
 

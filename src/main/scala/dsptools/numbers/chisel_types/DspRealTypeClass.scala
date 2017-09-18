@@ -46,7 +46,7 @@ trait DspRealSigned extends Any with Signed[DspReal] with DspRealRing with hasCo
   def signum(a: DspReal): ComparisonBundle = {
     ComparisonHelper(a === DspReal(0.0), a < DspReal(0.0))
   }
-  def abs(a: DspReal): DspReal = Mux(a < DspReal(0.0), DspReal(0.0) - a, a)
+  def abs(a: DspReal): DspReal = a.abs()
   def context_abs(a: DspReal): DspReal = {
     Mux(
       isSignNonNegative(ShiftRegister(a, context.numAddPipes)),
@@ -71,7 +71,7 @@ trait DspRealIsReal extends Any with IsReal[DspReal] with DspRealOrder with DspR
   def isWhole(a: DspReal): Bool = a === round(a)
   // Round *half up* -- Different from System Verilog definition! (where half is rounded away from zero)
   // according to 5.7.2 (http://www.ece.uah.edu/~gaede/cpe526/2012%20System%20Verilog%20Language%20Reference%20Manual.pdf)
-  def round(a: DspReal): DspReal = floor(a + DspReal(0.5))
+  def round(a: DspReal): DspReal = a.round()
   def truncate(a: DspReal): DspReal = {
     Mux(ShiftRegister(a, context.numAddPipes) < DspReal(0.0), context_ceil(a), floor(ShiftRegister(a, context.numAddPipes)))
   }
@@ -114,7 +114,6 @@ trait BinaryRepresentationDspReal extends BinaryRepresentation[DspReal] with has
 
 trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspReal with 
     ConvertableFromDspReal with BinaryRepresentationDspReal with RealBits[DspReal] with hasContext {
-  import dsptools.numbers.implicits._
   def signBit(a: DspReal): Bool = isSignNegative(a)
   override def fromInt(n: Int): DspReal = super[ConvertableToDspReal].fromInt(n)
   override def fromBigInt(n: BigInt): DspReal = super[ConvertableToDspReal].fromBigInt(n)
