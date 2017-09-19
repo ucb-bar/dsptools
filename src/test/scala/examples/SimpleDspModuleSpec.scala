@@ -5,9 +5,7 @@ import chisel3._
 // Allows you to use FixedPoint
 import chisel3.experimental.FixedPoint
 // If you want to take advantage of type classes >> Data:RealBits (i.e. pass in FixedPoint or DspReal)
-import dsptools.numbers.{RealBits}
-// Required for you to use operators defined via type classes (+ has special Dsp overflow behavior, etc.)
-import dsptools.numbers.implicits._
+import dsptools.numbers._
 // Enables you to set DspContext's for things like overflow behavior, rounding modes, etc.
 import dsptools.DspContext
 // Use DspTester, specify options for testing (i.e. expect tolerances on fixed point, etc.)

@@ -4,8 +4,7 @@ package examples
 
 import chisel3._
 import chisel3.util.log2Ceil
-import dsptools.numbers.{DspComplex, RealBits}
-import dsptools.numbers.implicits._
+import dsptools.numbers._
 
 //scalastyle:off magic.number
 

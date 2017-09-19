@@ -3,9 +3,10 @@
 package dsptools.numbers
 
 import chisel3._
+import chisel3.experimental.FixedPoint
 import chisel3.iotesters._
+import dsptools._
 import dsptools.numbers._
-import dsptools.numbers.implicits._
 import org.scalatest.{FreeSpec, Matchers}
 
 /*
@@ -58,46 +59,101 @@ class PartialOrderModule[T <: Data : PartialOrder : Ring](gen: T) extends FuncMo
   gen, {in: T => PartialOrderFunc(in)})
 
 class SignedModule[T <: Data : Signed](gen: T) extends FuncModule(
-  gen, {in: T => Signed[T].abs(in) }
+  gen, {in: T => Mux(Signed[T].sign(in).neg, Signed[T].abs(in), Mux(Signed[T].sign(in).zero, in, in)) }
 )
 
-class FuncTester[T <: FuncModule[SInt]](dut: T, inputs: Seq[Int], outputs: Seq[Int])
-  extends PeekPokeTester(dut) {
-    inputs.zip(outputs).foreach { case(in, out) =>
-      poke(dut.io.in, in)
-      expect(dut.io.out, out)
-    }
+trait FuncTester[T <: Data, V] {
+  def dut: FuncModule[T]
+  def testInputs: Seq[V]
+  def testOutputs: Seq[V]
+
+  def myPoke(port: T, value: V): Unit
+  def myExpect(port: T, value: V): Unit
+
+  testInputs.zip(testOutputs).foreach { case(in, out) =>
+    myPoke(dut.io.in, in)
+    myExpect(dut.io.out, out)
+  }
+}
+
+class SIntFuncTester[T <: FuncModule[SInt]](dut: T, val testInputs: Seq[Int], val testOutputs: Seq[Int])
+extends PeekPokeTester(dut) with FuncTester[SInt, Int] {
+  def myPoke(port: SInt, value: Int)   = poke(port, value)
+  def myExpect(port: SInt, value: Int) = expect(port, value)
+}
+
+class FixedPointFuncTester[T <: FuncModule[FixedPoint]](dut: T, val testInputs: Seq[Double], val testOutputs: Seq[Double])
+extends DspTester(dut) with FuncTester[FixedPoint, Double] {
+  def myPoke(port: FixedPoint, value: Double) = poke(port, value)
+  def myExpect(port: FixedPoint, value: Double) = expect(port, value)
+}
+
+class DspRealFuncTester[T <: FuncModule[DspReal]](dut: T, val testInputs: Seq[Double], val testOutputs: Seq[Double])
+extends DspTester(dut) with FuncTester[DspReal, Double] {
+  def myPoke(port: DspReal, value: Double) = poke(port, value)
+  def myExpect(port: DspReal, value: Double) = expect(port, value)
 }
 
 class TypeclassSpec extends FreeSpec with Matchers {
   "Ring[T].func() should work" in {
     dsptools.Driver.execute( () => new RingModule(SInt(10.W)) ) { c =>
-      new FuncTester(c, Seq(2, -3), Seq(2, -3))
+      new SIntFuncTester(c, Seq(2, -3), Seq(2, -3))
+    } should be (true)
+    dsptools.Driver.execute( () => new RingModule(FixedPoint(10.W, 4.BP)) ) { c =>
+      new FixedPointFuncTester(c, Seq(2, -3), Seq(2, -3))
+    } should be (true)
+    dsptools.Driver.execute( () => new RingModule(DspReal()) ) { c =>
+      new DspRealFuncTester(c, Seq(2, -3), Seq(2, -3))
     } should be (true)
   }
   "Eq[T].func() should work" in {
     dsptools.Driver.execute( () => new EqModule(SInt(10.W)) ) { c =>
-      new FuncTester(c, Seq(2, 0), Seq(2, 1))
+      new SIntFuncTester(c, Seq(2, 0), Seq(2, 1))
     } should be (true)
+    dsptools.Driver.execute( () => new EqModule(FixedPoint(10.W, 4.BP)) ) { c =>
+      new FixedPointFuncTester(c, Seq(2, 0), Seq(2, 1))
+    } should be (true)
+    // Needs fix to chisel literals
+    // dsptools.Driver.execute( () => new EqModule(DspReal()) ) { c =>
+    //   new DspRealFuncTester(c, Seq(2, 0), Seq(2, 1))
+    // } should be (true)
   }
   "Integer[T].func() should work" in {
     dsptools.Driver.execute( () => new IntegerModule(SInt(10.W)) ) { c =>
-      new FuncTester(c, Seq(2, -3), Seq(2, -3))
+      new SIntFuncTester(c, Seq(2, -3), Seq(2, -3))
     } should be (true)
   }
   "Order[T].func() should work" in {
     dsptools.Driver.execute( () => new OrderModule(SInt(10.W)) ) { c =>
-      new FuncTester(c, Seq(2, -3), Seq(2, -3))
+      new SIntFuncTester(c, Seq(2, -3), Seq(2, -3))
+    } should be (true)
+    dsptools.Driver.execute( () => new OrderModule(FixedPoint(10.W, 4.BP)) ) { c =>
+      new FixedPointFuncTester(c, Seq(2, -3), Seq(2, -3))
+    } should be (true)
+    dsptools.Driver.execute( () => new OrderModule(DspReal()) ) { c =>
+      new DspRealFuncTester(c, Seq(2, -3), Seq(2, -3))
     } should be (true)
   }
   "PartialOrder[T].func() should work" in {
     dsptools.Driver.execute( () => new PartialOrderModule(SInt(10.W)) ) { c =>
-      new FuncTester(c, Seq(2, -3), Seq(2, -3))
+      new SIntFuncTester(c, Seq(2, -3), Seq(2, -3))
+    } should be (true)
+    dsptools.Driver.execute( () => new PartialOrderModule(FixedPoint(10.W, 4.BP)) ) { c =>
+      new FixedPointFuncTester(c, Seq(2, -3), Seq(2, -3))
+    } should be (true)
+    dsptools.Driver.execute( () => new PartialOrderModule(DspReal()) ) { c =>
+      new DspRealFuncTester(c, Seq(2, -3), Seq(2, -3))
     } should be (true)
   }
   "Signed[T].func() should work" in {
     dsptools.Driver.execute( () => new SignedModule(SInt(10.W)) ) { c =>
-      new FuncTester(c, Seq(2, -3), Seq(2, 3))
+      new SIntFuncTester(c, Seq(2, -3), Seq(2, 3))
+    } should be (true)
+    dsptools.Driver.execute( () => new SignedModule(FixedPoint(10.W, 4.BP)) ) { c =>
+      new FixedPointFuncTester(c, Seq(2, -3), Seq(2, 3))
+    } should be (true)
+    dsptools.Driver.execute( () => new SignedModule(DspReal()) ) { c =>
+      new DspRealFuncTester(c, Seq(2, -3), Seq(2, 3))
     } should be (true)
   }
 }

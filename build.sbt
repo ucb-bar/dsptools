@@ -12,12 +12,11 @@ organization := "edu.berkeley.cs"
 
 version := "1.1-SNAPSHOT"
 
-crossScalaVersions := Seq("2.11.11", "2.12.3")
-
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
+// NOTE: These need to be "published" versions so Travis can find them.
 val defaultVersions = Map(
-  "chisel3" -> "3.1-SNAPSHOT",
-  "chisel-iotesters" -> "1.2-SNAPSHOT"
+  "chisel3" -> "3.0-SNAPSHOT",
+  "chisel-iotesters" -> "1.1-SNAPSHOT"
 )
 
 def chiselVersion(proj: String): String = {
@@ -44,3 +43,27 @@ libraryDependencies ++= Seq(
 
 lazy val dsptools = (project in file("."))
   .dependsOn(dependentProjects.map(classpathDependency(_)):_*)
+
+pomExtra := pomExtra.value ++ (
+<scm>
+  <url>https://github.com/ucb-bar/dsptools.git</url>
+  <connection>scm:git:github.com/ucb-bar/dsptools.git</connection>
+</scm>
+<developers>
+  <developer>
+    <id>grebe</id>
+    <name>Paul Rigge</name>
+    <url>http://www.eecs.berkeley.edu/~rigge/</url>
+  </developer>
+  <developer>
+    <id>shunshou</id>
+    <name>Angie Wang</name>
+    <url>https://www.linkedin.com/in/angie-wang-ee/</url>
+  </developer>
+  <developer>
+    <id>chick</id>
+    <name>Charles Markley</name>
+    <url>https://aspire.eecs.berkeley.edu/author/chick/</url>
+  </developer>
+ </developers>
+)
