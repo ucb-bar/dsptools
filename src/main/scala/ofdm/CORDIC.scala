@@ -1,16 +1,18 @@
 package ofdm
 
+import breeze.numerics.{atan, atanh, pow}
 import chisel3._
+import chisel3.core.FixedPoint
 import chisel3.util._
+import dsptools.SyncROM
 import dsptools.numbers._
-import dsptools.numbers.implicits._
-import ofdm.CORDICStageSelConfig.{DFunc, MFunc}
+import ofdm.CORDICStageSelConfig.{DFunc, MFunc, ROMFunc}
 
 import scala.collection.immutable.ListMap
 
 object AddSub {
   def apply[T <: Data : Ring](sel: Bool, a: T, b: T): T = {
-    Mux(sel, a - b, a + b)
+    Mux(sel, a + b, a - b)
   }
 }
 
@@ -23,7 +25,7 @@ abstract class CORDICStageSelConfig[T <: Data] {
 }
 
 object CORDICStageSelVectoring {
-  def apply(xsgn : Bool, ysgn: Bool, zsgn: Bool, record: CORDICConfigRecord) = ysgn
+  def apply(xsgn : Bool, ysgn: Bool, zsgn: Bool, record: CORDICConfigRecord) =  ysgn
 }
 
 object CORDICStageSelRotation {
@@ -119,6 +121,8 @@ class ConfigurableCORDICStageSelConfig[T <: Data : Ring] extends CORDICStageSelC
 object CORDICStageSelConfig {
   type DFunc = (Bool, Bool, Bool, CORDICConfigRecord) => Bool
   type MFunc[T] = (T, CORDICConfigRecord) => T
+  //                 size, proto =>  addr  config              => value
+  type ROMFunc[T] = (Int,  T)    => (UInt, CORDICConfigRecord) => T
 
   def CircularVectoringStageSelConfig[T <: Data] = VectoringCORDICStageSelConfig(CORDICStageMCircular.apply[T])
   def CircularRotationStageSelConfig[T <: Data]  = RotationCORDICStageSelConfig(CORDICStageMCircular.apply[T])
@@ -128,6 +132,53 @@ object CORDICStageSelConfig {
 
   def HyperbolicVectoringStageSelConfig[T <: Data : Ring] = VectoringCORDICStageSelConfig(CORDICStageMHyperbolic.apply[T])
   def HyperbolicRotationStageSelConfig[T <: Data : Ring]  = RotationCORDICStageSelConfig(CORDICStageMHyperbolic.apply[T])
+}
+
+object CORDICConstantGeneration {
+  def arctan(n: Int): Seq[Double] = linear(n).map { atan(_) }
+  def linear(n: Int): Seq[Double] = (0 until n) map { case i =>
+      pow(2.0, -i)
+  }
+  def arctanh(n: Int): Seq[Double] = linear(n).map { atanh(_) }
+  def conv[T <: Data : ConvertableTo](in: Double, proto: T): BigInt = {
+    ConvertableTo[T].fromDouble(in, proto).litValue()
+  }
+  def makeCircularROM[T <: Data : ConvertableTo](n: Int, proto: T): (UInt, CORDICConfigRecord) => T = (addr, config) => {
+    val table = arctan(n).map(conv(_, proto)) // map(ConvertableTo[T].fromDouble(_, proto).toBigInt())
+    val rom = Module(new SyncROM(s"circularTable${n}", table))
+    rom.io.addr := addr
+    Cat(0.U(1.W), rom.io.data).asTypeOf(proto)
+  }
+  def makeLinearROM[T <: Data : ConvertableTo : BinaryRepresentation](n: Int, proto: T): (UInt, CORDICConfigRecord) => T = (addr, config) => {
+    val unit = ConvertableTo[T].fromDouble(pow(2.0, -n))
+    unit << ((n -1).U - addr)
+  }
+  def makeHyperbolicROM[T <: Data : ConvertableTo](n: Int, proto: T): (UInt, CORDICConfigRecord) => T = (addr, config) => {
+    val table = arctanh(n).map(conv(_, proto)) // map(ConvertableTo[T].fromDouble(_, proto).toBigInt())
+    val rom = new SyncROM(s"circularTable${n}", table)
+    rom.io.addr := addr
+    rom.io.data.asTypeOf(proto)
+  }
+  def makeConfigurableROM[T <: Data : ConvertableTo : BinaryRepresentation](n: Int, proto: T):
+  (UInt, CORDICConfigRecord) => T = (addr, config) => {
+    val circularROM = makeCircularROM(n, proto)
+    val linearROM   = makeLinearROM(n, proto)
+    val hyperROM    = makeHyperbolicROM(n, proto)
+
+    val circularValue = circularROM(addr, config)
+    val linearValue   = linearROM(addr, config)
+    val hyperValue    = hyperROM(addr, config)
+
+    config match {
+      case c: ConfigurableCORDICConfigRecord =>
+        val mode = c.mode
+        val isCircular   = mode === ConfigurableCORDICConfigRecord.CIRCULAR
+        val isLinear     = mode === ConfigurableCORDICConfigRecord.LINEAR
+        val isHyperbolic = mode === ConfigurableCORDICConfigRecord.HYPERBOLIC
+        Mux(isCircular, circularValue, Mux(isLinear, linearValue, hyperValue))
+      case _ => throw new Exception("Configurable ROM should have config record of type ConfigurableCORDICConfigRecord")
+    }
+  }
 }
 
 case class CORDICStageParams[T <: Data]
@@ -145,7 +196,7 @@ class CORDICStageIO[T <: Data : Ring](params: CORDICStageParams[T]) extends Bund
   val zin   = Input(params.protoZ)
   val ROMin = Input(params.protoZ)
 
-  val config = Flipped(params.config.record)
+  val config = Input(params.config.record)
   val nShift = Input(UInt(log2Ceil(params.maxShift + 1).W))
 
   val xout  = Output(params.protoX)
@@ -170,10 +221,10 @@ class CORDICStage[T <: Data : Ring : Signed : BinaryRepresentation](params: CORD
   io.xout := AddSub(!d, io.xin, my)
 
   // compute y
-  io.yout := AddSub(d, xshift, io.yin)
+  io.yout := AddSub(d, io.yin, xshift)
 
   // compute z
-  io.zout := AddSub(!d, io.ROMin, io.zin)
+  io.zout := AddSub(!d, io.zin, io.ROMin)
  }
 
 case class IterativeCORDICParams[T <: Data]
@@ -183,26 +234,45 @@ case class IterativeCORDICParams[T <: Data]
   val protoZ: T,
   nStages: Int,
   stagesPerCycle: Int,
-  stageConfig: CORDICStageSelConfig[T]
+  stageConfig: CORDICStageSelConfig[T],
+  makeROM: ROMFunc[T]
 )
 
 class IterativeCORDICChannel[T <: Data](params: IterativeCORDICParams[T]) extends Bundle {
   val x = Output(params.protoX.cloneType)
   val y = Output(params.protoY.cloneType)
   val z = Output(params.protoZ.cloneType)
+
+  override def cloneType = new IterativeCORDICChannel(params).asInstanceOf[this.type]
 }
 
 class IterativeCORDICIO[T <: Data](params: IterativeCORDICParams[T]) extends Bundle {
   val in  = Flipped(Decoupled(new IterativeCORDICChannel(params)))
   val out = Decoupled(new IterativeCORDICChannel(params))
 
-  val config = Flipped(params.stageConfig.record)
+  val config = Input(params.stageConfig.record)
 }
 
-class IterativeCORDIC[T <: Data : Ring : Signed : BinaryRepresentation](params: IterativeCORDICParams[T]) extends Module {
+class IterativeCORDIC[T <: Data : Ring : Signed : BinaryRepresentation](params: IterativeCORDICParams[T])
+  extends Module {
+
   val io = IO(new IterativeCORDICIO(params))
 
-  val xyzreg = Reg(io.in.bits.cloneType)
+
+  val STATE_IDLE      = 0
+  val STATE_IN_FLIGHT = 1
+  val STATE_OUTPUT    = 2
+
+  val state = RegInit(UInt(), STATE_IDLE.U)
+  val xyzreg: IterativeCORDICChannel[T] = Reg(io.in.bits.cloneType)
+  val configReg = Reg(io.config.cloneType)
+
+  val currentStage = Reg(UInt(log2Ceil(params.nStages).W))
+  val romAddr      = Mux(io.in.fire(), 0.U, currentStage + 1.U)
+
+
+  io.in.ready := (state === STATE_IDLE.U)
+  io.out.valid := (state === STATE_OUTPUT.U)
 
   val stageParams = CORDICStageParams(
     protoX = params.protoX,
@@ -213,9 +283,132 @@ class IterativeCORDIC[T <: Data : Ring : Signed : BinaryRepresentation](params: 
   )
 
   val stage = Module(new CORDICStage(stageParams))
+  val rom    = params.makeROM(params.nStages, params.protoZ)
+  val romOut = rom(romAddr, configReg)
 
-  stage.io.config <> io.config
+  stage.io.config <> configReg
+  stage.io.xin    := xyzreg.x
+  stage.io.yin    := xyzreg.y
+  stage.io.zin    := xyzreg.z
+  stage.io.nShift := currentStage
+  stage.io.ROMin  := romOut
 
+  io.out.bits.x  := xyzreg.x
+  io.out.bits.y  := xyzreg.y
+  io.out.bits.z  := xyzreg.z
 
+  when (io.in.fire()) {
+    state        := STATE_IN_FLIGHT.U
 
+    xyzreg       := io.in.bits
+    configReg    := io.config
+    currentStage := 0.U
+  }
+
+  when (state === STATE_IN_FLIGHT.U) {
+    xyzreg.x := stage.io.xout
+    xyzreg.y := stage.io.yout
+    xyzreg.z := stage.io.zout
+
+    currentStage := currentStage + 1.U
+    when (currentStage === (params.nStages - 1).U) {
+      state := STATE_OUTPUT.U
+    }
+  }
+
+  when (io.out.fire()) {
+    state := STATE_IDLE.U
+  }
+}
+
+object IterativeCORDIC {
+  def circularVectoring[T <: Data : Ring : Signed : BinaryRepresentation : ConvertableTo]
+  (protoXY: T, protoZ: T, nStages: Option[Int] = None, stagesPerCycle: Int = 1): IterativeCORDIC[T] = {
+    val trueNStages = nStages.getOrElse(protoXY.getWidth)
+    val params = IterativeCORDICParams(
+      protoX = protoXY,
+      protoY = protoXY,
+      protoZ = protoZ,
+      nStages = trueNStages,
+      stagesPerCycle = stagesPerCycle,
+      CORDICStageSelConfig.CircularVectoringStageSelConfig[T],
+      CORDICConstantGeneration.makeCircularROM[T]
+    )
+    new IterativeCORDIC(params)
+  }
+
+  def circularRotation[T <: Data : Ring : Signed : BinaryRepresentation : ConvertableTo]
+  (protoXY: T, protoZ: T, nStages: Option[Int] = None, stagesPerCycle: Int = 1): IterativeCORDIC[T] = {
+    val trueNStages = nStages.getOrElse(protoXY.getWidth)
+    val params = IterativeCORDICParams(
+      protoX = protoXY,
+      protoY = protoXY,
+      protoZ = protoZ,
+      nStages = trueNStages,
+      stagesPerCycle = stagesPerCycle,
+      CORDICStageSelConfig.CircularRotationStageSelConfig[T],
+      CORDICConstantGeneration.makeCircularROM[T]
+    )
+    new IterativeCORDIC(params)
+  }
+
+  def division[T <: Data : Ring : Signed : ConvertableTo : BinaryRepresentation]
+  (protoXY: T, protoZ: T, nStages: Option[Int] = None, stagesPerCycle: Int = 1): IterativeCORDIC[T] = {
+    val trueNStages = nStages.getOrElse(protoXY.getWidth)
+    val params = IterativeCORDICParams(
+      protoX = protoXY,
+      protoY = protoXY,
+      protoZ = protoZ,
+      nStages = trueNStages,
+      stagesPerCycle = stagesPerCycle,
+      CORDICStageSelConfig.DivisionStageSelConfig[T],
+      CORDICConstantGeneration.makeLinearROM[T]
+    )
+    new IterativeCORDIC(params)
+  }
+
+  def multiplication[T <: Data : Ring : Signed : ConvertableTo : BinaryRepresentation]
+  (protoXY: T, protoZ: T, nStages: Option[Int] = None, stagesPerCycle: Int = 1): IterativeCORDIC[T] = {
+    val trueNStages = nStages.getOrElse(protoXY.getWidth)
+    val params = IterativeCORDICParams(
+      protoX = protoXY,
+      protoY = protoXY,
+      protoZ = protoZ,
+      nStages = trueNStages,
+      stagesPerCycle = stagesPerCycle,
+      CORDICStageSelConfig.MultiplicationStageSelConfig[T],
+      CORDICConstantGeneration.makeLinearROM[T]
+    )
+    new IterativeCORDIC(params)
+  }
+
+  def hyperbolicVectoring[T <: Data : Ring : Signed : ConvertableTo : ConvertableFrom : BinaryRepresentation]
+  (protoXY: T, protoZ: T, nStages: Option[Int] = None, stagesPerCycle: Int = 1): IterativeCORDIC[T] = {
+    val trueNStages = nStages.getOrElse(protoXY.getWidth)
+    val params = IterativeCORDICParams(
+      protoX = protoXY,
+      protoY = protoXY,
+      protoZ = protoZ,
+      nStages = trueNStages,
+      stagesPerCycle = stagesPerCycle,
+      CORDICStageSelConfig.HyperbolicVectoringStageSelConfig[T],
+      CORDICConstantGeneration.makeCircularROM[T]
+    )
+    new IterativeCORDIC(params)
+  }
+
+  def hyperbolicRotation[T <: Data : Ring : Signed : ConvertableTo : ConvertableFrom : BinaryRepresentation]
+  (protoXY: T, protoZ: T, nStages: Option[Int] = None, stagesPerCycle: Int = 1): IterativeCORDIC[T] = {
+    val trueNStages = nStages.getOrElse(protoXY.getWidth)
+    val params = IterativeCORDICParams(
+      protoX = protoXY,
+      protoY = protoXY,
+      protoZ = protoZ,
+      nStages = trueNStages,
+      stagesPerCycle = stagesPerCycle,
+      CORDICStageSelConfig.HyperbolicRotationStageSelConfig[T],
+      CORDICConstantGeneration.makeCircularROM[T]
+    )
+    new IterativeCORDIC(params)
+  }
 }

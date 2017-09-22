@@ -3,7 +3,6 @@ package ofdm
 import chisel3._
 import chisel3.util._
 import dsptools.numbers._
-import dsptools.numbers.implicits._
 
 object TreeReduce {
   def apply[V](in: Seq[V], func: (V, V) => V): V = {

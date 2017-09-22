@@ -6,7 +6,6 @@ import chisel3.core.requireIsChiselType
 import chisel3.util._
 import dspblocks._
 import dsptools.numbers._
-import dsptools.numbers.implicits._
 import freechips.rocketchip.amba.axi4.{AXI4BlindInputNode, AXI4MasterParameters, AXI4MasterPortParameters}
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters

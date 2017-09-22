@@ -3,7 +3,6 @@ package ofdm
 import chisel3._
 import chisel3.util.Valid
 import dsptools.numbers._
-import dsptools.numbers.implicits._
 import ieee80211.IEEE80211
 
 class FIRIO[T <: Data](protoIn: T, protoOut: T) extends Bundle {
