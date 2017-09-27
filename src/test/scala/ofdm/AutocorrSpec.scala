@@ -99,11 +99,10 @@ class AutocorrSpec extends FlatSpec with Matchers {
     val blindNodes = DspBlockBlindNodes(
       streamIn  = () => AXI4StreamBlindInputNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters(
         "autocorr",
-        bundleParams = AXI4StreamBundleParameters(n = inWidthBytes)
+        n = inWidthBytes
       ))))),
-      streamOut = () => AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters(Seq(AXI4StreamSlaveParameters(
-        bundleParams = AXI4StreamBundleParameters(n = outWidthBytes)
-      ))))),
+      streamOut = () => AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters(
+      ))),
       mem       = () => AXI4BlindInputNode(Seq(AXI4MasterPortParameters(Seq(
         AXI4MasterParameters(
           "autocorr"))))
@@ -153,11 +152,9 @@ class AutocorrSpec extends FlatSpec with Matchers {
     val blindNodes = DspBlockBlindNodes(
       streamIn  = () => AXI4StreamBlindInputNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters(
         "autocorr",
-        bundleParams = AXI4StreamBundleParameters(n = inWidthBytes)
+        n = inWidthBytes
       ))))),
-      streamOut = () => AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters(Seq(AXI4StreamSlaveParameters(
-        bundleParams = AXI4StreamBundleParameters(n = outWidthBytes)
-      ))))),
+      streamOut = () => AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters())),
       mem       = () => AXI4BlindInputNode(Seq(AXI4MasterPortParameters(Seq(
         AXI4MasterParameters(
           "autocorr"))))

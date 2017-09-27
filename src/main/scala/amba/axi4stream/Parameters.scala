@@ -1,40 +1,75 @@
 package freechips.rocketchip.amba.axi4stream
 
 import chisel3._
+import chisel3.util.log2Ceil
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
+
 import scala.math.max
 
 case class AXI4StreamSlaveParameters(
-  bundleParams: AXI4StreamBundleParameters = AXI4StreamBundleParameters(8),
+  numEndpoints: Int = 1,
+  hasData: Boolean = true,
+  hasStrb: Boolean = false,
+  hasKeep: Boolean = false,
   nodePath: Seq[BaseNode] = Seq(),
   alwaysReady: Boolean = false,
   interleavedIdDest: Option[Int] = None)
 {
+  require(numEndpoints >= 1)
   interleavedIdDest.foreach { x => require(x >= 0) }
+
+  def union(in: AXI4StreamSlaveParameters):AXI4StreamSlaveParameters =
+    AXI4StreamSlaveParameters(
+      numEndpoints + in.numEndpoints,
+      hasData || in.hasData,
+      hasStrb || in.hasStrb,
+      hasKeep || in.hasKeep,
+      nodePath ++ in.nodePath,
+      alwaysReady && in.alwaysReady,
+      (interleavedIdDest, in.interleavedIdDest) match {
+        case (Some(mine), Some(theirs)) => Some(mine min theirs)
+        case (Some(mine), _)            => Some(mine)
+        case (_         , Some(theirs)) => Some(theirs)
+        case _                          => None
+      }
+  )
 
   val name: String = nodePath.lastOption.map(_.lazyModule.name).getOrElse("disconnected")
 }
 
 case class AXI4StreamSlavePortParameters(
-  slaves: Seq[AXI4StreamSlaveParameters])
+  slaves: Seq[AXI4StreamSlaveParameters] = Seq(AXI4StreamSlaveParameters()))
 {
-  val bundleParameters: AXI4StreamBundleParameters = AXI4StreamBundleParameters.union(slaves.map(_.bundleParams))
+  val slaveParams: AXI4StreamSlaveParameters = slaves.reduce((x, y) => x.union(y))
 }
 
 case class AXI4StreamMasterParameters(
-  name: String,
-  bundleParams: AXI4StreamBundleParameters = AXI4StreamBundleParameters(8),
-  interleavedIdDest: Option[Int] = None,
+  name: String = "",
+  n: Int = 8,
+  u: Int = 0,
+  numMasters: Int = 1,
   nodePath: Seq[BaseNode] = Seq())
 {
-  interleavedIdDest.foreach { x => require(x >= 0) }
+  require(n >= 0)
+  require(u >= 0)
+  require(numMasters >= 1)
+
+  def union(in: AXI4StreamMasterParameters): AXI4StreamMasterParameters = {
+    AXI4StreamMasterParameters(
+      name + "|" + in.name,
+      n max in.n,
+      u max in.u,
+      numMasters + in.numMasters,
+      nodePath ++ in.nodePath
+    )
+  }
 }
 
 case class AXI4StreamMasterPortParameters(
-  masters: Seq[AXI4StreamMasterParameters])
+  masters: Seq[AXI4StreamMasterParameters] = Seq(AXI4StreamMasterParameters()))
 {
-  val bundleParameters: AXI4StreamBundleParameters = AXI4StreamBundleParameters.union(masters.map(_.bundleParams))
+  val masterParams: AXI4StreamMasterParameters = masters.reduce((x, y) => x.union(y))
 }
 
 case class AXI4StreamBundleParameters(
@@ -80,8 +115,18 @@ object AXI4StreamBundleParameters
 
   def union(x: Seq[AXI4StreamBundleParameters]): AXI4StreamBundleParameters = x.foldLeft(emptyBundleParameters)((x, y) => x.union(y))
 
-  def joinEdge(master: AXI4StreamMasterPortParameters, slave: AXI4StreamSlavePortParameters): AXI4StreamBundleParameters =
-    master.bundleParameters.union(slave.bundleParameters)
+  def joinEdge(master: AXI4StreamMasterPortParameters, slave: AXI4StreamSlavePortParameters): AXI4StreamBundleParameters = {
+    val m = master.masterParams
+    val s = slave.slaveParams
+    AXI4StreamBundleParameters(
+      m.n,
+      log2Ceil(m.numMasters),
+      log2Ceil(s.numEndpoints),
+      m.u,
+      s.hasData,
+      s.hasStrb,
+      s.hasKeep)
+  }
 
 }
 

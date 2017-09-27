@@ -63,6 +63,7 @@ case class DspBlockBlindNodes[D, U, EO, EI, B <: Data]
   val mem:       () => MixedNode[D, U, EI, B, D, U, EO, B]
 )
 
+
 object DspBlock {
   type AXI4BlindNodes = DspBlockBlindNodes[
     AXI4MasterPortParameters,
@@ -70,6 +71,36 @@ object DspBlock {
     AXI4EdgeParameters,
     AXI4EdgeParameters,
     AXI4Bundle]
+
+  def blindWrapper[D, U, EO, EI, B <: Data]
+  (mod: () => DspBlock[D, U, EO, EI, B],
+   blindParams: DspBlockBlindNodes[D, U, EO, EI, B])(implicit p: Parameters): DspBlock[D, U, EO, EI, B] = {
+    class BlindWrapper extends LazyModule with DspBlock[D, U, EO, EI, B] {
+      val streamIn  = blindParams.streamIn()
+      val streamOut = blindParams.streamOut()
+      val memNode   = blindParams.mem()
+      val mem = Some(memNode)
+      val streamNode = streamIn
+
+      val internal = mod()
+
+      internal.streamNode := streamIn
+      streamOut      := internal.streamNode
+      internal.mem.map { m => m := memNode }
+
+
+      lazy val module = new LazyModuleImp(this) {
+        val io = IO(new Bundle {
+          val in = streamIn.bundleIn
+          val out = streamOut.bundleOut
+          val mem = memNode.bundleOut
+        })
+      }
+
+    }
+
+    LazyModule(new BlindWrapper)
+  }
 }
 
 class CSRRecord(csrMap: CSR.Map) extends Record {

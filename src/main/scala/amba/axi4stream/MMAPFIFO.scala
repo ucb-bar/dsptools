@@ -36,9 +36,7 @@ class APBInStreamOutFIFO(val csrBase: Int, val memAddress: AddressSet, val beatB
       APBMasterParameters(
         "abc")
     ))))
-  val streamNode = AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters(Seq(AXI4StreamSlaveParameters(
-    bundleParams = AXI4StreamBundleParameters(1)
-    )))))
+  val streamNode = AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters()))
 
   mem.get := outerAPB
   internal.memNode := mem.get
@@ -74,8 +72,7 @@ class APBInStreamOutFIFOInternal(val memAddress: AddressSet, val beatBytes: Int 
   val streamNode = AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters(
     Seq(AXI4StreamMasterParameters(
       "fifoOut",
-      AXI4StreamBundleParameters(
-        n = beatBytes)
+      n = beatBytes
       )))))
 
   lazy val module = new APBInStreamOutFIFOInternalModule(this)

@@ -15,8 +15,8 @@ object AXI4StreamImp extends NodeImp[AXI4StreamMasterPortParameters, AXI4StreamS
 
   def colour = "#00ccdd"
 
-  override def labelI(ei: AXI4StreamEdgeParameters): String = ei.slave.bundleParameters.dataBits.toString
-  override def labelO(eo: AXI4StreamEdgeParameters): String = eo.slave.bundleParameters.dataBits.toString
+  override def labelI(ei: AXI4StreamEdgeParameters): String = ei.master.masterParams.name
+  override def labelO(eo: AXI4StreamEdgeParameters): String = eo.master.masterParams.name
 
   override def mixO(pd: AXI4StreamMasterPortParameters, node: OutwardNode[AXI4StreamMasterPortParameters, AXI4StreamSlavePortParameters, AXI4StreamBundle]): AXI4StreamMasterPortParameters =
     pd.copy(masters = pd.masters.map { c => c.copy (nodePath = node +: c.nodePath) })
@@ -32,6 +32,17 @@ case class AXI4StreamAdapterNode(
   slaveFn:  AXI4StreamSlavePortParameters  => AXI4StreamSlavePortParameters,
   numPorts: Range.Inclusive = 0 to 999)
   extends AdapterNode(AXI4StreamImp)(masterFn, slaveFn, numPorts)
+
+object AXI4StreamAdapterNode {
+  def widthAdapter(in: AXI4StreamMasterPortParameters, dataWidthConversion: Int => Int): AXI4StreamMasterPortParameters = {
+    val masters = in.masters
+    val newMasters = masters.map { case m =>
+        val n = m.n
+        m.copy(n = dataWidthConversion(n))
+    }
+    AXI4StreamMasterPortParameters(newMasters)
+  }
+}
 
 case class AXI4StreamOutputNode() extends OutputNode(AXI4StreamImp)
 case class AXI4StreamInputNode() extends InputNode(AXI4StreamImp)

@@ -57,9 +57,8 @@ class TLInStreamOutFIFOInternal(memAddress: AddressSet, beatBytes: Int, csrs: CS
   val streamNode = AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters(
     Seq(AXI4StreamMasterParameters(
       "fifoOut",
-      AXI4StreamBundleParameters(
-        n = beatBytes)
-    )))))
+      n = beatBytes)
+    ))))
 
   lazy val module = new LazyModuleImp(this){
     val io: Bundle {
@@ -89,9 +88,8 @@ object JustForNow2 {
   def main(args: Array[String]): Unit = {
     import freechips.rocketchip.coreplex._
     implicit val p: Parameters = Parameters.root((new BaseCoreplexConfig).toInstance)
-    val outerAXI4S = () => AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters(Seq(AXI4StreamSlaveParameters(
-      bundleParams = AXI4StreamBundleParameters(1)
-    )))))
+    val outerAXI4S = () => AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters(
+    )))
     val outerTL = () => TLBlindInputNode(Seq(TLClientPortParameters(Seq(TLClientParameters("tlfifo")))))
     val dut = () => LazyModule(new TLInStreamOutFIFO(0, 512, AddressSet(0x200, 0xff), 8, outerAXI4Sfunc=Some(outerAXI4S), outerTLfunc=Some(outerTL))(p)).module
     chisel3.Driver.execute(Array("-X", "verilog"), dut)
