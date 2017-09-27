@@ -61,10 +61,10 @@ class DspComplexRing[T <: Data:Ring] extends Ring[DspComplex[T]] with hasContext
 
 class DspComplexEq[T <: Data:Eq] extends Eq[DspComplex[T]] with hasContext {
   override def eqv(x: DspComplex[T], y: DspComplex[T]): Bool = {
-    (x.real === y.real) && (x.imag === y.imag)
+    Eq[T].eqv(x.real, y.real) && Eq[T].eqv(x.imag, y.imag)
   }
   override def neqv(x: DspComplex[T], y: DspComplex[T]): Bool = {
-    (x.real =/= y.real) || (x.imag =/= y.imag)
+    Eq[T].neqv(x.real, y.real) || Eq[T].neqv(x.imag, y.imag)
   }
 }
 

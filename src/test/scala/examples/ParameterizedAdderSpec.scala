@@ -6,9 +6,7 @@ import chisel3._
 import chisel3.experimental.FixedPoint
 import dsptools.DspTester
 import dsptools.numbers._
-import dsptools.numbers.implicits._
 import org.scalatest.{FlatSpec, Matchers}
-import spire.algebra.Ring
 
 //scalastyle:off magic.number
 

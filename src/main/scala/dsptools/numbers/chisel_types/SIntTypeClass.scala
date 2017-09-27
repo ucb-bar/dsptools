@@ -153,7 +153,6 @@ trait SIntInteger extends SIntRing with SIntIsReal with ConvertableToSInt with
     case Some(w) if n > w => 0.S
     // TODO: Is this too conservative?
     case _ => {
-      import dsptools.numbers.implicits._
       val div2Out = DspContext.withTrimType(NoTrim) { asFixed(a).div2(n) }
       div2Out.trimBinary(0).asSInt
     }
