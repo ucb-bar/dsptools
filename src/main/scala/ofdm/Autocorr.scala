@@ -51,6 +51,19 @@ case object CSRSetDepthOverlap extends CSRField {
   val name = "setDepthOverlap"
 }
 
+object AutocorrBlind {
+  def apply[T <: Data : Ring]
+  (
+    autocorrParams: AutocorrParams[T],
+    blindNodes: DspBlock.AXI4BlindNodes
+  )(implicit p: Parameters): LazyModule with AXI4DspBlock = {
+    DspBlock.blindWrapper(
+      () => new Autocorr(autocorrParams),
+      blindNodes
+    ).asInstanceOf[LazyModule with AXI4DspBlock]
+  }
+}
+
 class AutocorrBlind[T <: Data : Ring](val autocorrParams: AutocorrParams[T],
                                       blindNodes: DspBlock.AXI4BlindNodes)(
                                      implicit p: Parameters) extends LazyModule {

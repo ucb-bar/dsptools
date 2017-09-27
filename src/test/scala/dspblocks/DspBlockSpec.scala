@@ -2,6 +2,59 @@
 
 package dspblocks
 
+import chisel3._
+import chisel3.experimental._
+import dsptools.numbers.DspComplex
+import freechips.rocketchip.amba.axi4.{AXI4BlindInputNode, AXI4MasterParameters, AXI4MasterPortParameters}
+import freechips.rocketchip.amba.axi4stream._
+import freechips.rocketchip.config.Parameters
+import freechips.rocketchip.coreplex.BaseCoreplexConfig
+import freechips.rocketchip.diplomacy.AddressSet
+import ofdm.{AutocorrBlind, AutocorrParams}
+import org.scalatest.{FlatSpec, Matchers}
+
+import scala.collection.Seq
+
+class DspBlockSpec extends FlatSpec with Matchers {
+  implicit val p: Parameters = Parameters.root((new BaseCoreplexConfig).toInstance)
+
+  behavior of "Blind Wrapper"
+
+  it should "wrap an autocorr" in {
+
+
+
+    val params = AutocorrParams(
+      DspComplex(FixedPoint(32.W, 20.BP), FixedPoint(32.W, 20.BP)),
+      //DspComplex(FixedPoint(8.W, 4.BP), FixedPoint(8.W, 4.BP)),
+      // genOut=Some(DspComplex(FixedPoint(16.W, 8.BP), FixedPoint(16.W, 8.BP))),
+      maxApart = 32,
+      maxOverlap = 161,
+      address = AddressSet(0x0, 0xffffffffL),
+      beatBytes = 8)
+    val inWidthBytes = 8 //(params.genIn.getWidth + 7) / 8
+    val outWidthBytes = 8 //params.genOut.map(x => (x.getWidth + 7)/8).getOrElse(inWidthBytes)
+
+    println(s"In bytes = $inWidthBytes and out bytes = $outWidthBytes")
+
+    val blindNodes = DspBlockBlindNodes(
+      streamIn  = () => AXI4StreamBlindInputNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters(
+        "autocorr",
+        n = inWidthBytes
+      ))))),
+      streamOut = () => AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters())),
+      mem       = () => AXI4BlindInputNode(Seq(AXI4MasterPortParameters(Seq(
+        AXI4MasterParameters(
+          "autocorr"))))
+
+      ))
+
+    println(chisel3.Driver.emit(() => AutocorrBlind(params, blindNodes).module.asInstanceOf[RawModule]))
+    println(chisel3.Driver.emitVerilog(AutocorrBlind(params, blindNodes).module.asInstanceOf[RawModule]))
+
+  }
+}
+
 /*
 import cde._
 import chisel3.iotesters._

@@ -73,16 +73,19 @@ object DspBlock {
     AXI4Bundle]
 
   def blindWrapper[D, U, EO, EI, B <: Data]
-  (mod: () => DspBlock[D, U, EO, EI, B],
+  (mod: () => LazyModule with DspBlock[D, U, EO, EI, B],
    blindParams: DspBlockBlindNodes[D, U, EO, EI, B])(implicit p: Parameters): DspBlock[D, U, EO, EI, B] = {
     class BlindWrapper extends LazyModule with DspBlock[D, U, EO, EI, B] {
+
       val streamIn  = blindParams.streamIn()
       val streamOut = blindParams.streamOut()
       val memNode   = blindParams.mem()
       val mem = Some(memNode)
       val streamNode = streamIn
 
-      val internal = mod()
+      val internal = LazyModule(mod())
+
+      // override def name: String = internal.name + "Blind"
 
       internal.streamNode := streamIn
       streamOut      := internal.streamNode
