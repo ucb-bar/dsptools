@@ -346,14 +346,19 @@ class DspReal(lit: Option[BigInt] = None) extends Bundle {
 
 object DspReal {
   val underlyingWidth = 64
-  
+  private val zero = DspReal(0.0, false)
+
   /** Creates a Real with a constant value.
     */
-  def apply(value: Double): DspReal = {
+  def apply(value: Double, addZero: Boolean = true): DspReal = {
     // See http://stackoverflow.com/questions/21212993/unsigned-variables-in-scala
     def longAsUnsignedBigInt(in: Long): BigInt = (BigInt(in >>> 1) << 1) + (in & 1)
     def doubleToBigInt(in: Double): BigInt = longAsUnsignedBigInt(java.lang.Double.doubleToRawLongBits(in))
-    new DspReal(Some(doubleToBigInt(value)))
+    if (addZero) {
+      new DspReal(Some(doubleToBigInt(value))) + zero
+    } else {
+      new DspReal(Some(doubleToBigInt(value)))
+    }
   }
 
   /**
