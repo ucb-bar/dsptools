@@ -12,7 +12,7 @@ import dsptools.DspTester
 
 class BlackBoxFloatTester extends BasicTester {
   val (cnt, _) = Counter(true.B, 10)
-  val accum = RegInit(Wire(DspReal(1.0)))
+  val accum = RegInit(DspReal(0))
 
   private val addOut = accum + DspReal(1.0)
   private val mulOut = addOut * DspReal(2.0)
@@ -105,6 +105,9 @@ class FloatOps extends Module {
     val out = Output(DspReal(1.0))
     val boolOut = Output(Bool())
   })
+
+  io.boolOut := false.B
+  io.out := DspReal(0)
 }
 
 class FloatOpsWithTrig extends FloatOps {
