@@ -26,8 +26,13 @@ class PeakDetectIO[T <: Data : Real](p: PeakDetectParams[T]) extends Bundle {
   val out = Output(Valid(new SampleAndCorr(p.protoCorr, p.getProtoRaw)))
   val outLast = Output(Bool())
 
-  val energyFF = Input(p.protoEnergyFF.cloneType)
-  val energyMult = Input(p.protoEnergyMult.cloneType)
+  val config = new PeakDetectConfigIO(p)
+}
+
+class PeakDetectConfigIO[T <: Data](p: PeakDetectParams[T]) extends Bundle {
+  val energyFF     = Input(p.protoEnergyFF.cloneType)
+  val energyMult   = Input(p.protoEnergyMult.cloneType)
+  val energyOffset = Input(p.protoEnergyMult.cloneType)
 }
 
 class PeakDetect[T <: Data : Real](p: PeakDetectParams[T]) extends Module {
@@ -45,13 +50,13 @@ class PeakDetect[T <: Data : Real](p: PeakDetectParams[T]) extends Module {
   io.out.valid := io.in.fire()
   io.outLast := false.B
 
-  val hasBigEnergy = instEnergy * io.energyMult > accumEnergy
+  val hasBigEnergy = instEnergy * io.config.energyMult > accumEnergy + io.config.energyOffset
   val hasNewMax    = (!hasMaxInShr) || (instEnergy > currentMax)
 
 
   printf("hasMaxInShr %d\n\n", hasMaxInShr)
   when (io.in.fire()) {
-    accumEnergy := instEnergy + (accumEnergy * io.energyFF)
+    accumEnergy := instEnergy + (accumEnergy * io.config.energyFF)
 
     when (hasMaxInShr) {
       when (hasNewMax) {

@@ -6,7 +6,7 @@ import chisel3.core.requireIsChiselType
 import chisel3.util._
 import dspblocks._
 import dsptools.numbers._
-import freechips.rocketchip.amba.axi4.{AXI4BlindInputNode, AXI4MasterParameters, AXI4MasterPortParameters}
+import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.coreplex.BaseCoreplexConfig
@@ -16,19 +16,19 @@ import scala.collection.Seq
 
 case class AutocorrParams[T <: Data]
 (
-  genIn: T,
+  protoIn: T,
   maxApart: Int,
   maxOverlap: Int,
   address: AddressSet,
-  genOut: Option[T] = None,
+  protoOut: Option[T] = None,
   name: String = "autocorr",
   base: Int = 0,
   beatBytes: Int = 4,
   addPipeDelay: Int = 3,
   mulPipeDelay: Int = 3
 ) {
-  requireIsChiselType(genIn,  s"genIn ($genIn) must be chisel type")
-  genOut.foreach(g => requireIsChiselType(g, s"genOut ($g) must be chisel type"))
+  requireIsChiselType(protoIn,  s"genIn ($protoIn) must be chisel type")
+  protoOut.foreach(g => requireIsChiselType(g, s"genOut ($g) must be chisel type"))
 }
 
 /* Depth of shift register used for autocorr */
@@ -56,11 +56,11 @@ object AutocorrBlind {
   (
     autocorrParams: AutocorrParams[T],
     blindNodes: DspBlock.AXI4BlindNodes
-  )(implicit p: Parameters): LazyModule with AXI4DspBlock = {
+  )(implicit p: Parameters) = {
     DspBlock.blindWrapper(
       () => new Autocorr(autocorrParams),
       blindNodes
-    ).asInstanceOf[LazyModule with AXI4DspBlock]
+    ) //.asInstanceOf[LazyModule with AXI4DspBlock]
   }
 }
 
@@ -81,11 +81,9 @@ class AutocorrBlind[T <: Data : Ring](val autocorrParams: AutocorrParams[T],
 }
 
 class AutocorrBlindModule[T <: Data : Ring](val outer: AutocorrBlind[T]) extends LazyModuleImp(outer) {
-  val io = IO(new Bundle {
-    val in = outer.streamIn.bundleOut
-    val out = outer.streamOut.bundleIn
-    val mem = outer.mem.bundleOut
-  })
+  val (in, _) = outer.streamIn.in.unzip
+  val (out, _) = outer.streamOut.out.unzip
+  val (mem, _) = outer.mem.out.unzip
 
 }
 
@@ -110,7 +108,7 @@ class Autocorr[T <: Data : Ring](val autocorrParams: AutocorrParams[T])
 
   // csrs.node := mem.get
 
-  lazy val module = new AutocorrModule(this)
+  lazy val module = Module(new AutocorrModule(this))
 }
 
 class AutocorrModule[T <: Data : Ring](outer: Autocorr[T]) extends LazyModuleImp(outer) {
@@ -118,23 +116,22 @@ class AutocorrModule[T <: Data : Ring](outer: Autocorr[T]) extends LazyModuleImp
   val memNode     = outer.mem.get
 
   // get fields from outer class
-  val genIn      : T   = outer.autocorrParams.genIn
-  val genOut     : T   = outer.autocorrParams.genOut.getOrElse(genIn)
+  val genIn      : T   = outer.autocorrParams.protoIn
+  val genOut     : T   = outer.autocorrParams.protoOut.getOrElse(genIn)
   val shrMaxDepth: Int = outer.autocorrParams.maxApart
   val maxOverlap : Int = outer.autocorrParams.maxOverlap
 
-  val io = IO(new Bundle {
-    val in  = streamNode.bundleIn
-    val out = streamNode.bundleOut
-    val mem = memNode.bundleIn
-  })
+
+  val (in, _) = streamNode.in.unzip
+  val (out, _) = streamNode.out.unzip
+  val (mem, _) = memNode.in.unzip
 
   val csrs = outer.csrs.module.io.csrs
 
   // cast input to T
-  val io_in         = io.in(0)
+  val io_in         = in(0)
   val io_in_data: T = io_in.bits.data.asTypeOf(genIn)
-  val io_out        = io.out(0)
+  val io_out        = out(0)
 
   // add delayed path to correlate with
   val shr = Module(new ShiftRegisterMem(genIn, shrMaxDepth))
@@ -193,6 +190,72 @@ class AutocorrModule[T <: Data : Ring](outer: Autocorr[T]) extends LazyModuleImp
   io_in.ready := inFlight < queueDepth.U
 }
 
+class AutocorrConfigIO[T <: Data](params: AutocorrParams[T]) extends Bundle {
+  val depthApart = Input(UInt(log2Ceil(params.maxApart+1).W))
+  val depthOverlap = Input(UInt(log2Ceil(params.maxOverlap+1).W))
+}
+
+class AutocorrSimpleIO[T <: Data](params: AutocorrParams[T]) extends Bundle {
+  val in = Flipped(Valid(params.protoIn))
+  val out = Valid(params.protoOut.getOrElse(params.protoIn))
+
+  val config = new AutocorrConfigIO(params)
+}
+
+class AutocorrSimple[T <: Data : Ring](params: AutocorrParams[T]) extends Module {
+  // get fields from outer class
+  val genIn      : T   = params.protoIn
+  val genOut     : T   = params.protoOut.getOrElse(genIn)
+  val shrMaxDepth: Int = params.maxApart
+  val maxOverlap : Int = params.maxOverlap
+
+  val io = IO(new AutocorrSimpleIO(params))
+
+  // add delayed path to correlate with
+  val shr = Module(new ShiftRegisterMem(genIn, shrMaxDepth))
+
+  shr.io.depth.bits  := io.config.depthApart
+  shr.io.depth.valid := io.config.depthApart =/= RegNext(io.config.depthApart)
+  shr.io.in.valid    := io.in.fire()
+  shr.io.in.bits     := io.in.bits
+
+  val shr_out_valid              = RegNext(shr.io.in.valid)
+  val shr_in_delay               = RegNext(io.in.bits)
+
+  // correlate short and long path
+  val toMult: T = shr.io.out.bits match {
+    case m: DspComplex[_] => m.conj().asInstanceOf[T]
+    case b => b
+  }
+  val prod: T = shr_in_delay * toMult /*match {
+    case m: DspComplex[_] => {
+      val w = Wire(m.cloneType)
+      w.real := m.abssq()
+      w.imag := 0.U.asTypeOf(m.imag)
+      w.asInstanceOf[T]
+    }
+  }*/
+
+  // sliding window
+  val sum = Module(new OverlapSum(genOut, maxOverlap, pipeDelay = params.addPipeDelay))
+
+  sum.io.depth.bits := io.config.depthOverlap
+  sum.io.depth.valid := io.config.depthOverlap =/= RegNext(io.config.depthOverlap)
+
+  // pipeline the multiply here
+  sum.io.in.bits := ShiftRegister(prod, params.mulPipeDelay, en = io.in.fire())
+  sum.io.in.valid := ShiftRegister(shr_out_valid, params.mulPipeDelay, resetData = false.B, en = io.in.fire())
+
+  val sum_out_packed = sum.io.out.bits.asUInt
+  val sum_out_irrevocable = Wire(Irrevocable(sum_out_packed.cloneType))
+  sum_out_irrevocable.bits := sum_out_packed
+  sum_out_irrevocable.valid := sum.io.out.valid
+
+  io.out.valid := sum.io.out.valid
+  io.out.bits := sum.io.out.bits
+
+}
+
 object BuildSampleAutocorr {
   def main(args: Array[String]): Unit = {
     implicit val p: Parameters = Parameters.root((new BaseCoreplexConfig).toInstance)
@@ -210,16 +273,9 @@ object BuildSampleAutocorr {
     println(s"In bytes = $inWidthBytes and out bytes = $outWidthBytes")
 
     val blindParams = DspBlockBlindNodes(
-      streamIn  = () => AXI4StreamBlindInputNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters(
-        "autocorr",
-        n = inWidthBytes
-      ))))),
-      streamOut = () => AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters())),
-      mem       = () => AXI4BlindInputNode(Seq(AXI4MasterPortParameters(Seq(
-        AXI4MasterParameters(
-          "autocorr"))))
-
-      ))
+      streamIn  = () => AXI4StreamIdentityNode(),
+      streamOut = () => AXI4StreamIdentityNode(),
+      mem       = () => AXI4IdentityNode())
     chisel3.Driver.execute(Array("-X", "verilog"), () => LazyModule(new AutocorrBlind(params, blindParams)).module)
   }
 }

@@ -4,6 +4,7 @@ package dspblocks
 
 import chisel3._
 import chisel3.internal.firrtl.Width
+import chisel3.util.log2Ceil
 import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
@@ -40,9 +41,20 @@ trait HasCSR {
   def addControl(name: String, init: BigInt = 0, width: Width = 64.W): Unit = {
     csrMap += (name -> (CSRControl, width, init))
   }
+
+  def status(name: String): UInt = {
+    require(csrMap(name)._1 == CSRStatus, s"Register $name is not a status")
+    getCSRByName(name)
+  }
+
+  def control(name: String): UInt = {
+    require(csrMap(name)._1 == CSRControl, s"Register $name is not a status")
+    getCSRByName(name)
+  }
+  protected def getCSRByName(name: String): UInt
 }
 
-trait DspBlock[D, U, EO, EI, B <: Data] {
+trait DspBlock[D, U, EO, EI, B <: Data] extends LazyModule {
   val streamNode: MixedNode[
     AXI4StreamMasterPortParameters,
     AXI4StreamSlavePortParameters,
@@ -56,13 +68,71 @@ trait DspBlock[D, U, EO, EI, B <: Data] {
   val mem: Option[MixedNode[D, U, EI, B, D, U, EO, B]]
 }
 
+
 case class DspBlockBlindNodes[D, U, EO, EI, B <: Data]
 (
-  val streamIn:  () => AXI4StreamBlindInputNode,
-  val streamOut: () => AXI4StreamBlindOutputNode,
+  val streamIn:  () => AXI4StreamIdentityNode,
+  val streamOut: () => AXI4StreamIdentityNode,
   val mem:       () => MixedNode[D, U, EI, B, D, U, EO, B]
 )
 
+object DspBlockBlindNodes {
+  def apply[D, U, EO, EI, B <: Data]
+  (
+    streamParams: AXI4StreamBundleParameters = AXI4StreamBundleParameters(n=8),
+    mem: () => MixedNode[D, U, EI, B, D, U, EO, B],
+    name: String = ""
+  )(implicit valName: ValName): DspBlockBlindNodes[D, U, EO, EI, B] = {
+    DspBlockBlindNodes(
+      streamIn = () => AXI4StreamIdentityNode(),
+      streamOut = () => AXI4StreamIdentityNode(),
+      mem = mem
+    )
+  }
+}
+
+class BlindWrapper[D, U, EO, EI, B <: Data, T <: LazyModule with DspBlock[D, U, EO, EI, B]]
+(mod: () => T, blindParams: DspBlockBlindNodes[D, U, EO, EI, B])
+(implicit p: Parameters)
+extends LazyModule with DspBlock[D, U, EO, EI, B] {
+  val streamIn  = blindParams.streamIn()
+  val streamOut = blindParams.streamOut()
+  val memNode   = blindParams.mem()
+  val mem = Some(memNode)
+  val streamNode = streamIn
+
+  val internal: T = LazyModule(mod())
+
+  internal.streamNode := streamIn
+  streamOut           := internal.streamNode
+  internal.mem.map { m => m := memNode }
+
+  lazy val module = new BlindWrapperModule(this)
+}
+
+class BlindWrapperModule[D, U, EO, EI, B <: Data, T <: DspBlock[D, U, EO, EI, B]]
+(val outer: BlindWrapper[D, U, EO, EI, B, T]) extends LazyModuleImp(outer) {
+  override def desiredName: String =
+    "BlindModule" //outer.internal.module.name + "Blind"
+
+  val (in, _) = outer.streamIn.in.unzip
+  val (out, _) = outer.streamOut.out.unzip
+  val (mem, _) = outer.memNode.out.unzip
+}
+
+object BlindWrapperModule {
+  type AXI4BlindWrapperModule[T <: DspBlock[
+    AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters, AXI4Bundle]]
+  = BlindWrapperModule[AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters, AXI4Bundle, T]
+
+  type TLBlindWrapperModule[T <: DspBlock[
+    TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle]]
+  = BlindWrapperModule[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle, T]
+
+  type APBBlindWrapperModule[T <: DspBlock[
+    APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle]]
+  = BlindWrapperModule[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle, T]
+}
 
 object DspBlock {
   type AXI4BlindNodes = DspBlockBlindNodes[
@@ -72,37 +142,10 @@ object DspBlock {
     AXI4EdgeParameters,
     AXI4Bundle]
 
-  def blindWrapper[D, U, EO, EI, B <: Data]
-  (mod: () => LazyModule with DspBlock[D, U, EO, EI, B],
-   blindParams: DspBlockBlindNodes[D, U, EO, EI, B])(implicit p: Parameters): DspBlock[D, U, EO, EI, B] = {
-    class BlindWrapper extends LazyModule with DspBlock[D, U, EO, EI, B] {
-
-      val streamIn  = blindParams.streamIn()
-      val streamOut = blindParams.streamOut()
-      val memNode   = blindParams.mem()
-      val mem = Some(memNode)
-      val streamNode = streamIn
-
-      val internal = LazyModule(mod())
-
-      // override def name: String = internal.name + "Blind"
-
-      internal.streamNode := streamIn
-      streamOut      := internal.streamNode
-      internal.mem.map { m => m := memNode }
-
-
-      lazy val module = new LazyModuleImp(this) {
-        val io = IO(new Bundle {
-          val in = streamIn.bundleIn
-          val out = streamOut.bundleOut
-          val mem = memNode.bundleOut
-        })
-      }
-
-    }
-
-    LazyModule(new BlindWrapper)
+  def blindWrapper[D, U, EO, EI, B <: Data, T <: DspBlock[D, U, EO, EI, B]]
+  (mod: () => T, blindParams: DspBlockBlindNodes[D, U, EO, EI, B])
+  (implicit p: Parameters): BlindWrapper[D, U, EO, EI, B, T]= {
+    new BlindWrapper(mod, blindParams)
   }
 }
 
@@ -163,18 +206,22 @@ trait TLHasCSR extends HasCSR { this: TLDspBlock =>
 
   val beatBytes: Int
 
+  lazy val csrs = {
+    val myMapping = csrMap
+    LazyModule(
+      new TLRegisterRouter(csrBase, csrDevname, csrDevcompat, size=csrSize, beatBytes=beatBytes)(
+        new TLRegBundle((), _) with CSRIO { lazy val csrMap = myMapping })(
+        new TLRegModule((), _, _) with CSRModule { lazy val csrMap = myMapping }))
+  }
+
   def makeCSRs(dummy: Int = 0) = {
     require(mem.isDefined, "Need memory interface for CSR")
-
-    val myMapping = csrMap
-    val csrs = LazyModule(
-      new TLRegisterRouter(csrBase, csrDevname, csrDevcompat, size=csrSize, beatBytes=beatBytes)(
-      new TLRegBundle((), _) with CSRIO { lazy val csrMap = myMapping })(
-      new TLRegModule((), _, _) with CSRModule { lazy val csrMap = myMapping }))
 
     csrs.node := mem.get
     csrs
   }
+
+  override def getCSRByName(name: String): UInt = csrs.module.io.csrs(name)
 }
 
 trait APBHasCSR extends HasCSR { this: APBDspBlock =>
@@ -182,14 +229,21 @@ trait APBHasCSR extends HasCSR { this: APBDspBlock =>
   val csrSize: Int
   val beatBytes: Int
 
+  protected def getCSRByName(name: String): UInt = {
+    csrs.module.io.csrs(name)
+  }
+
+  lazy val csrs = {
+    val myMapping = csrMap
+    LazyModule(
+      new APBRegisterRouter(csrBase, size = csrSize, beatBytes = beatBytes)(
+        new APBRegBundle((), _) with CSRIO { lazy val csrMap = myMapping })(
+        new APBRegModule((), _, _) with CSRModule { lazy val csrMap = myMapping }))
+  }
+
   def makeCSRs(dummy: Int = 0) = {
     require(mem.isDefined, "Need memory interface for CSR")
 
-    val myMapping = csrMap
-    val csrs = LazyModule(
-      new APBRegisterRouter(csrBase, size = csrSize, beatBytes = beatBytes)(
-      new APBRegBundle((), _) with CSRIO { lazy val csrMap = myMapping })(
-      new APBRegModule((), _, _) with CSRModule { lazy val csrMap = myMapping }))
     csrs.node := mem.get
     csrs
   }
@@ -201,37 +255,43 @@ trait AXI4HasCSR extends HasCSR { this: AXI4DspBlock =>
   def beatBytes: Int
   def csrAddress: AddressSet
 
-  val mem = Some(AXI4InputNode())
+  val mem = Some(AXI4IdentityNode())
+
+  protected def getCSRByName(name: String): UInt = {
+    csrs.module.io.csrs(name)
+  }
 
   lazy val csrs = {
     val myMapping = csrMap
-    LazyModule(
+    val csrs = LazyModule(
       new AXI4RegisterRouter(csrBase, size = csrSize, beatBytes = beatBytes)(
         new AXI4RegBundle((), _) with CSRIO { lazy val csrMap = myMapping })(
         new AXI4RegModule((), _, _) with CSRModule { lazy val csrMap = myMapping }) {
         lazy val addrmap = module.addrmap
       })
+    //mem.get := csrs.node
+    //csrs.node := mem.get
+    csrs
   }
 
   def makeCSRs(dummy: Int = 0) = {
+    require(mem.isDefined, "Need memory interface for CSR")
+
     csrs.node := mem.get
     csrs
   }
 }
 
 trait TLDspBlock extends DspBlock[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle] {
-  implicit val p: Parameters
   val bus = LazyModule(new TLXbar)
   val mem = Some(bus.node)
 }
 
 trait APBDspBlock extends DspBlock[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle] {
-  implicit val p: Parameters
   val bus = LazyModule(new APBFanout)
   val mem = Some(bus.node)
 }
 
 trait AXI4DspBlock extends DspBlock[AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters, AXI4Bundle] {
-  implicit val p: Parameters
   // don't define mem b/c we don't have a bus for axi4 yet
 }

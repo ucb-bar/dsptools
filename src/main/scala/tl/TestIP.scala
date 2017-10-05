@@ -2,9 +2,7 @@
 
 package freechips.rocketchip.tilelink
 
-import chisel3._
-import chisel3.iotesters._
-import freechips.rocketchip.tilelink._
+import chisel3.experimental.BaseModule
 
 object TLMasterModle {
   case class AChannel(
@@ -48,12 +46,15 @@ object TLMasterModle {
 }
 
 //noinspection RedundantDefaultArgument
-trait TLMasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
+trait TLMasterModel[T <: BaseModule] { this: chisel3.iotesters.PeekPokeTester[T] =>
   import TLMasterModle._
 
   def memTL: TLBundle
 
-  def tlInit(): Unit = {
+  def tlReset(): Unit = {
+    pokeA(AChannel())
+    pokeC(CChannel())
+    pokeE(EChannel())
     poke(memTL.a.valid, 0)
     poke(memTL.b.ready, 0)
     poke(memTL.c.valid, 0)
@@ -61,8 +62,7 @@ trait TLMasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
     poke(memTL.e.valid, 0)
   }
 
-  def tlWriteA(a: AChannel): Unit = {
-    poke(memTL.a.valid, 1)
+  def pokeA(a: AChannel): Unit = {
     poke(memTL.a.bits.opcode,  a.opcode)
     poke(memTL.a.bits.param,   a.param)
     poke(memTL.a.bits.size,    a.size)
@@ -70,6 +70,11 @@ trait TLMasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
     poke(memTL.a.bits.address, a.address)
     poke(memTL.a.bits.mask,    a.mask)
     poke(memTL.a.bits.data,    a.data)
+  }
+
+  def tlWriteA(a: AChannel): Unit = {
+    poke(memTL.a.valid, 1)
+    pokeA(a)
 
     while(peek(memTL.a.ready) != BigInt(0)) {
       step(1)
@@ -78,12 +83,7 @@ trait TLMasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
     poke(memTL.a.valid, 0)
   }
 
-  def tlReadB(): BChannel = {
-    poke(memTL.b.ready, 1)
-
-    while (peek(memTL.b.valid) != BigInt(0)) {
-      step(1)
-    }
+  def peekB(): BChannel = {
 
     val opcode  = peek(memTL.b.bits.opcode)
     val param   = peek(memTL.b.bits.param)
@@ -92,10 +92,6 @@ trait TLMasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
     val address = peek(memTL.b.bits.address)
     val mask    = peek(memTL.b.bits.mask)
     val data    = peek(memTL.b.bits.data)
-
-    step(1)
-
-    poke(memTL.b.ready, 0)
 
     BChannel(
       opcode=opcode,
@@ -107,8 +103,21 @@ trait TLMasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
       data=data)
   }
 
-  def tlWriteC(c: CChannel): Unit = {
-    poke(memTL.c.valid, 1)
+  def tlReadB(): BChannel = {
+    poke(memTL.b.ready, 1)
+
+    while (peek(memTL.b.valid) != BigInt(0)) {
+      step(1)
+    }
+
+    step(1)
+
+    poke(memTL.b.ready, 0)
+
+    peekB()
+  }
+
+  def pokeC(c: CChannel): Unit = {
     poke(memTL.c.bits.opcode,  c.opcode)
     poke(memTL.c.bits.param,   c.param)
     poke(memTL.c.bits.size,    c.size)
@@ -117,6 +126,12 @@ trait TLMasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
     poke(memTL.c.bits.data,    c.data)
     poke(memTL.c.bits.error,   c.error)
 
+  }
+
+  def tlWriteC(c: CChannel): Unit = {
+    poke(memTL.c.valid, 1)
+    pokeC(c)
+
     while(peek(memTL.c.ready) != BigInt(0)) {
       step(1)
     }
@@ -124,13 +139,7 @@ trait TLMasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
     poke(memTL.c.valid, 0)
   }
 
-  def tlReadD(): DChannel = {
-    poke(memTL.d.ready, 1)
-
-    while (peek(memTL.d.valid) != BigInt(0)) {
-      step(1)
-    }
-
+  def peekD(): DChannel = {
     val opcode  = peek(memTL.d.bits.opcode)
     val param   = peek(memTL.d.bits.param)
     val size    = peek(memTL.d.bits.size)
@@ -138,10 +147,6 @@ trait TLMasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
     val sink    = peek(memTL.d.bits.sink)
     val data    = peek(memTL.d.bits.data)
     val error   = peek(memTL.d.bits.error)
-
-    step(1)
-
-    poke(memTL.d.ready, 0)
 
     DChannel(
       opcode=opcode,
@@ -153,10 +158,27 @@ trait TLMasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
       error=error != BigInt(0))
   }
 
+  def tlReadD(): DChannel = {
+    poke(memTL.d.ready, 1)
+
+    while (peek(memTL.d.valid) != BigInt(0)) {
+      step(1)
+    }
+
+
+    step(1)
+
+    poke(memTL.d.ready, 0)
+    peekD()
+  }
+
+  def pokeE(e: EChannel): Unit = {
+    poke(memTL.e.bits.sink,   e.sink)
+  }
+
   def tlWriteE(e: EChannel): Unit = {
     poke(memTL.e.valid, 1)
-
-    poke(memTL.e.bits.sink,   e.sink)
+    pokeE(e)
 
     while(peek(memTL.e.ready) != BigInt(0)) {
       step(1)
@@ -165,14 +187,15 @@ trait TLMasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
     poke(memTL.e.valid, 0)
   }
 
-  def tlWrite(addr: BigInt, data: BigInt): Unit = {
+  def tlWriteWord(addr: BigInt, data: BigInt): Unit = {
     tlWriteA(AChannel(opcode = 0 /* PUT */, address=addr, data=data))
     tlReadD()
   }
 
-  def tlRead(addr: BigInt): BigInt = {
+  def tlReadWord(addr: BigInt): BigInt = {
     tlWriteA(AChannel(opcode = 4 /* GET */, address=addr))
     val d = tlReadD()
     d.data
   }
+
 }

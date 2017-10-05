@@ -5,18 +5,13 @@ import chisel3.internal.sourceinfo.SourceInfo
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
 
-object AXI4StreamImp extends NodeImp[AXI4StreamMasterPortParameters, AXI4StreamSlavePortParameters, AXI4StreamEdgeParameters, AXI4StreamEdgeParameters, AXI4StreamBundle]
+object AXI4StreamImp extends SimpleNodeImp[AXI4StreamMasterPortParameters, AXI4StreamSlavePortParameters, AXI4StreamEdgeParameters, AXI4StreamBundle]
 {
-  def edgeO(pd: AXI4StreamMasterPortParameters, pu: AXI4StreamSlavePortParameters): AXI4StreamEdgeParameters = AXI4StreamEdgeParameters(pd, pu)
-  def edgeI(pd: AXI4StreamMasterPortParameters, pu: AXI4StreamSlavePortParameters): AXI4StreamEdgeParameters = AXI4StreamEdgeParameters(pd, pu)
-
-  def bundleO(eo: AXI4StreamEdgeParameters): AXI4StreamBundle = AXI4StreamBundle(eo.bundle)
-  def bundleI(ei: AXI4StreamEdgeParameters): AXI4StreamBundle = AXI4StreamBundle(ei.bundle)
+  def edge(pd: AXI4StreamMasterPortParameters, pu: AXI4StreamSlavePortParameters, p: Parameters, sourceInfo: SourceInfo): AXI4StreamEdgeParameters = AXI4StreamEdgeParameters(pd, pu, p, sourceInfo)
+  def bundle(e: AXI4StreamEdgeParameters): AXI4StreamBundle = AXI4StreamBundle(e.bundle)
+  def render(e: AXI4StreamEdgeParameters) = RenderedEdge(colour = "#0033ff", label = e.master.masterParams.n.toString)
 
   def colour = "#00ccdd"
-
-  override def labelI(ei: AXI4StreamEdgeParameters): String = ei.master.masterParams.name
-  override def labelO(eo: AXI4StreamEdgeParameters): String = eo.master.masterParams.name
 
   override def mixO(pd: AXI4StreamMasterPortParameters, node: OutwardNode[AXI4StreamMasterPortParameters, AXI4StreamSlavePortParameters, AXI4StreamBundle]): AXI4StreamMasterPortParameters =
     pd.copy(masters = pd.masters.map { c => c.copy (nodePath = node +: c.nodePath) })
@@ -24,13 +19,13 @@ object AXI4StreamImp extends NodeImp[AXI4StreamMasterPortParameters, AXI4StreamS
     pu.copy(slaves = pu.slaves.map { m => m.copy (nodePath = node +: m.nodePath) })
 }
 
-case class AXI4StreamIdentityNode() extends IdentityNode(AXI4StreamImp)
-case class AXI4StreamMasterNode(portParams: Seq[AXI4StreamMasterPortParameters]) extends SourceNode(AXI4StreamImp)(portParams)
-case class AXI4StreamSlaveNode(portParams: Seq[AXI4StreamSlavePortParameters]) extends SinkNode(AXI4StreamImp)(portParams)
+case class AXI4StreamIdentityNode()(implicit valName: ValName) extends IdentityNode(AXI4StreamImp)()
+case class AXI4StreamMasterNode(portParams: Seq[AXI4StreamMasterPortParameters])(implicit valName: ValName) extends SourceNode(AXI4StreamImp)(portParams)
+case class AXI4StreamSlaveNode(portParams: Seq[AXI4StreamSlavePortParameters])(implicit valName: ValName) extends SinkNode(AXI4StreamImp)(portParams)
 case class AXI4StreamAdapterNode(
   masterFn: AXI4StreamMasterPortParameters => AXI4StreamMasterPortParameters,
   slaveFn:  AXI4StreamSlavePortParameters  => AXI4StreamSlavePortParameters,
-  numPorts: Range.Inclusive = 0 to 999)
+  numPorts: Range.Inclusive = 0 to 999)(implicit valName: ValName)
   extends AdapterNode(AXI4StreamImp)(masterFn, slaveFn, numPorts)
 
 object AXI4StreamAdapterNode {
@@ -44,11 +39,3 @@ object AXI4StreamAdapterNode {
   }
 }
 
-case class AXI4StreamOutputNode() extends OutputNode(AXI4StreamImp)
-case class AXI4StreamInputNode() extends InputNode(AXI4StreamImp)
-
-case class AXI4StreamBlindOutputNode(portParams: Seq[AXI4StreamSlavePortParameters]) extends BlindOutputNode(AXI4StreamImp)(portParams)
-case class AXI4StreamBlindInputNode(portParams: Seq[AXI4StreamMasterPortParameters]) extends BlindInputNode(AXI4StreamImp)(portParams)
-
-case class AXI4StreamInternalOutputNode(portParams: Seq[AXI4StreamSlavePortParameters]) extends InternalOutputNode(AXI4StreamImp)(portParams)
-case class AXI4StreamInternalInputNode(portParams: Seq[AXI4StreamMasterPortParameters]) extends InternalInputNode(AXI4StreamImp)(portParams)

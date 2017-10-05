@@ -5,11 +5,12 @@ package dspblocks
 import chisel3._
 import chisel3.experimental._
 import dsptools.numbers.DspComplex
-import freechips.rocketchip.amba.axi4.{AXI4BlindInputNode, AXI4MasterParameters, AXI4MasterPortParameters}
+import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.coreplex.BaseCoreplexConfig
-import freechips.rocketchip.diplomacy.AddressSet
+import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.tilelink._
 import ofdm.{AutocorrBlind, AutocorrParams}
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -38,19 +39,58 @@ class DspBlockSpec extends FlatSpec with Matchers {
     println(s"In bytes = $inWidthBytes and out bytes = $outWidthBytes")
 
     val blindNodes = DspBlockBlindNodes(
-      streamIn  = () => AXI4StreamBlindInputNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters(
-        "autocorr",
-        n = inWidthBytes
-      ))))),
-      streamOut = () => AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters())),
-      mem       = () => AXI4BlindInputNode(Seq(AXI4MasterPortParameters(Seq(
-        AXI4MasterParameters(
-          "autocorr"))))
+      streamIn  = () => AXI4StreamIdentityNode(),
+      streamOut = () => AXI4StreamIdentityNode(),
+      mem       = () => AXI4IdentityNode()
+      )
 
-      ))
+    // println(chisel3.Driver.emit(() => LazyModule(AutocorrBlind(params, blindNodes)).module))
+    println(chisel3.Driver.emitVerilog(LazyModule(AutocorrBlind(params, blindNodes)).module))
 
-    println(chisel3.Driver.emit(() => AutocorrBlind(params, blindNodes).module.asInstanceOf[RawModule]))
-    println(chisel3.Driver.emitVerilog(AutocorrBlind(params, blindNodes).module.asInstanceOf[RawModule]))
+  }
+
+  behavior of "Passthrough"
+
+  it should "work with AXI4" in {
+    val params = PassthroughParams(depth = 5)
+    val blindNodes = DspBlockBlindNodes(
+      streamIn = () => AXI4StreamIdentityNode(),
+      streamOut = () => AXI4StreamIdentityNode(),
+      mem       = () => AXI4IdentityNode()
+    )
+
+    val dut = () => LazyModule(DspBlock.blindWrapper(() => new AXI4Passthrough(params), blindNodes)).module
+
+    // println(chisel3.Driver.emit(dut))
+    // println(chisel3.Driver.emitVerilog(dut()))
+
+    /*chisel3.iotesters.Driver.execute(Array("-tbn", "firrtl", "-fiwv"), dut) {
+      c => new AXI4PassthroughTester(c)
+    } should be (true)*/
+  }
+
+  it should "work with TL" in {
+    val params = PassthroughParams(depth = 5)
+    val blindNodes = DspBlockBlindNodes.apply(
+      AXI4StreamBundleParameters(
+      n = 8,
+      i = 1,
+      d = 1,
+      u = 1,
+      hasData = true,
+      hasKeep = true,
+      hasStrb = true
+    ),
+      mem = () => TLIdentityNode())
+
+    val dut = () => LazyModule(DspBlock.blindWrapper( () => new TLPassthrough(params), blindNodes)).module
+
+    println(chisel3.Driver.emit(dut))
+    println(chisel3.Driver.emitVerilog(dut()))
+
+    /*chisel3.iotesters.Driver.execute(Array("-tbn", "firrtl", "-fiwv"), dut) {
+      c => new TLPassthroughTester(c)
+    } should be (true)*/
 
   }
 }

@@ -334,7 +334,7 @@ object IterativeCORDIC {
       CORDICStageSelConfig.CircularVectoringStageSelConfig[T],
       CORDICConstantGeneration.makeCircularROM[T]
     )
-    new IterativeCORDIC(params)
+    Module(new IterativeCORDIC(params))
   }
 
   def circularRotation[T <: Data : Ring : Signed : BinaryRepresentation : ConvertableTo]
@@ -349,7 +349,7 @@ object IterativeCORDIC {
       CORDICStageSelConfig.CircularRotationStageSelConfig[T],
       CORDICConstantGeneration.makeCircularROM[T]
     )
-    new IterativeCORDIC(params)
+    Module(new IterativeCORDIC(params))
   }
 
   def division[T <: Data : Ring : Signed : ConvertableTo : BinaryRepresentation]
@@ -364,7 +364,7 @@ object IterativeCORDIC {
       CORDICStageSelConfig.DivisionStageSelConfig[T],
       CORDICConstantGeneration.makeLinearROM[T]
     )
-    new IterativeCORDIC(params)
+    Module(new IterativeCORDIC(params))
   }
 
   def multiplication[T <: Data : Ring : Signed : ConvertableTo : BinaryRepresentation]
@@ -379,7 +379,7 @@ object IterativeCORDIC {
       CORDICStageSelConfig.MultiplicationStageSelConfig[T],
       CORDICConstantGeneration.makeLinearROM[T]
     )
-    new IterativeCORDIC(params)
+    Module(new IterativeCORDIC(params))
   }
 
   def hyperbolicVectoring[T <: Data : Ring : Signed : ConvertableTo : ConvertableFrom : BinaryRepresentation]
@@ -394,7 +394,7 @@ object IterativeCORDIC {
       CORDICStageSelConfig.HyperbolicVectoringStageSelConfig[T],
       CORDICConstantGeneration.makeCircularROM[T]
     )
-    new IterativeCORDIC(params)
+    Module(new IterativeCORDIC(params))
   }
 
   def hyperbolicRotation[T <: Data : Ring : Signed : ConvertableTo : ConvertableFrom : BinaryRepresentation]
@@ -409,6 +409,6 @@ object IterativeCORDIC {
       CORDICStageSelConfig.HyperbolicRotationStageSelConfig[T],
       CORDICConstantGeneration.makeCircularROM[T]
     )
-    new IterativeCORDIC(params)
+    Module(new IterativeCORDIC(params))
   }
 }

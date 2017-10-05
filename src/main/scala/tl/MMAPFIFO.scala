@@ -12,6 +12,7 @@ import freechips.rocketchip.util.HeterogeneousBag
 
 import scala.collection.mutable
 
+/*
 class TLInStreamOutFIFO(val csrBase: BigInt, val csrSize: BigInt, val memAddress: AddressSet, val beatBytes: Int = 4, name: Option[String] = None, errors: Seq[AddressSet] = Seq(), val outerTLfunc: Option[() => TLBlindInputNode] = None, val outerAXI4Sfunc: Option[() => AXI4StreamBlindOutputNode] = None)(implicit p: Parameters) extends LazyModule with TLHasCSR with TLDspBlock
 {
 
@@ -27,8 +28,6 @@ class TLInStreamOutFIFO(val csrBase: BigInt, val csrSize: BigInt, val memAddress
   addControl("end")
   addControl("en")
   addControl("repeat")
-  val csrs = makeCSRs()
-
 
   val streamNode: MixedNode[AXI4StreamMasterPortParameters, AXI4StreamSlavePortParameters, AXI4StreamEdgeParameters, AXI4StreamBundle, AXI4StreamMasterPortParameters, AXI4StreamSlavePortParameters, AXI4StreamEdgeParameters, AXI4StreamBundle] = outerAXI4Sfunc.map(_()).getOrElse(new AXI4StreamOutputNode)
 
@@ -76,10 +75,10 @@ package tester {
   class MMAPFIFOTester(c: TLInStreamOutFIFOModule) extends PeekPokeTester(c) with TLMasterModel[TLInStreamOutFIFOModule] {
     val memTL = c.io.mem(0)
 
-    tlWrite(0, 3)
-    tlWrite(4, 2)
+    tlWriteWord(0, 3)
+    tlWriteWord(4, 2)
 
-    println(s"Read out ${tlRead(0)} at addr 0")
+    println(s"Read out ${tlReadWord(0)} at addr 0")
   }
 
 }
@@ -98,3 +97,4 @@ object JustForNow2 {
     chisel3.iotesters.Driver.execute(Array("--backend-name", "firrtl", "-fiwv"), dut) { c=> new tester.MMAPFIFOTester(c) }
   }
 }
+*/

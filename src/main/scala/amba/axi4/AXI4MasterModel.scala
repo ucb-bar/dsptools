@@ -1,6 +1,6 @@
 package amba.axi4
 
-import chisel3.Module
+import chisel3.experimental.BaseModule
 import chisel3.util.IrrevocableIO
 import freechips.rocketchip.amba.axi4._
 
@@ -60,12 +60,12 @@ object AXI4MasterModel {
   val RRESP_DECERR = BigInt(3)
 }
 
-trait AXI4MasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
+trait AXI4MasterModel[T <: BaseModule] { this: chisel3.iotesters.PeekPokeTester[T] =>
   import AXI4MasterModel._
 
   def memAXI: AXI4Bundle
 
-  val maxWait = 500
+  def maxWait = 500
 
   def fire(io: IrrevocableIO[_]): Boolean = {
     return (peek(io.valid) != BigInt(0)) && (peek(io.ready) != BigInt(0))
@@ -169,8 +169,11 @@ trait AXI4MasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =
     cyclesWaited = 0
     poke(memAXI.b.ready, 1)
     var bFinished = false
+    var b = peekB(memAXI.b.bits)
+
     while (!bFinished) {
       bFinished = peek(memAXI.b.valid) != BigInt(0)
+      b = peekB(memAXI.b.bits)
       require(cyclesWaited < maxWait, s"Timeout waiting for B to be valid ($maxWait cycles)")
       step(1)
       cyclesWaited += 1
@@ -178,8 +181,7 @@ trait AXI4MasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =
 
     poke(memAXI.b.ready, 0)
 
-    val b = peekB(memAXI.b.bits)
-    //require(b.id == awChannel.id, s"Got bad id (${b.id} != ${awChannel.id})")
+    require(b.id == awChannel.id, s"Got bad id (${b.id} != ${awChannel.id})")
     require(b.resp == BRESP_OKAY, s"BRESP not OKAY (got ${b.resp}")
 
   }
@@ -188,6 +190,9 @@ trait AXI4MasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =
       addr = addr,
       size = 3        // 8 bytes
     )
+
+    pokeAR(memAXI.ar.bits, arChannel)
+    poke(memAXI.ar.valid, 1)
     
     var cyclesWaited = 0
     var arFinished = false
@@ -199,7 +204,27 @@ trait AXI4MasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =
       cyclesWaited += 1
     }
 
-    val rChannel = peekR(memAXI.r.bits)
+    poke(memAXI.ar.valid, 0)
+    poke(memAXI.r.ready, 1)
+    //step(1)
+
+    var rFinished = false
+    cyclesWaited = 0
+    var rChannel = peekR(memAXI.r.bits)
+
+    while (!rFinished) {
+      rFinished = peek(memAXI.r.valid) != BigInt(0)
+      if (rFinished) {
+        rChannel = peekR(memAXI.r.bits)
+      }
+      step(1)
+      require(cyclesWaited < maxWait, s"Timeout waiting for R to be ready ($maxWait cycles)")
+
+      cyclesWaited += 1
+    }
+
+    poke(memAXI.r.ready, 0)
+
     require(rChannel.last != BigInt(0))
     require(rChannel.id == arChannel.id, s"Got id ${rChannel.id} instead of ${arChannel.id}")
     require(rChannel.resp == RRESP_OKAY, s"RRESP not OKAY (got ${rChannel.resp}")

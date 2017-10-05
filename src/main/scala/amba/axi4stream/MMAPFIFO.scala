@@ -26,17 +26,12 @@ class APBInStreamOutFIFO(val csrBase: Int, val memAddress: AddressSet, val beatB
   addControl("end")
   addControl("en") //, width=1.W)
   addControl("repeat") //, width=1.W)
-  val csrs = makeCSRs()
 
   val internal = LazyModule(new APBInStreamOutFIFOInternal(memAddress, beatBytes, new CSRRecord(csrMap)))
 
   // Only used because this is being used as top level
-  val outerAPB = APBBlindInputNode(Seq(APBMasterPortParameters(
-    Seq(
-      APBMasterParameters(
-        "abc")
-    ))))
-  val streamNode = AXI4StreamBlindOutputNode(Seq(AXI4StreamSlavePortParameters()))
+  val outerAPB = APBIdentityNode()
+  val streamNode = AXI4StreamIdentityNode()
 
   mem.get := outerAPB
   internal.memNode := mem.get
@@ -46,12 +41,11 @@ class APBInStreamOutFIFO(val csrBase: Int, val memAddress: AddressSet, val beatB
 
 }
 
-class APBInStreamOutFIFOModule(outer: APBInStreamOutFIFO) extends LazyModuleImp(outer) {
+class APBInStreamOutFIFOModule(outer: APBInStreamOutFIFO) extends LazyRawModuleImp(outer) {
+  // val (auto, dangles) = instantiate()
 
-  val io = IO(new Bundle {
-    val mem = outer.outerAPB.bundleIn
-    val stream = outer.streamNode.bundleOut(0)
-  })
+  val (mem, _) = outer.outerAPB.in(0)
+  val (stream, _) = outer.streamNode.out(0)
 
   outer.internal.module.io.csrs := outer.csrs.module.io.csrs
 }
@@ -83,9 +77,10 @@ class APBInStreamOutFIFOInternalModule(outer: APBInStreamOutFIFOInternal) extend
 
   val io = IO(new Bundle {
     val csrs = Input(outer.csrsIO.cloneType)
-    val mem  = outer.memNode.bundleIn
-    val stream = outer.streamNode.bundleOut
   })
+
+  val (mem, _) = outer.memNode.in.unzip
+  val (stream, _) = outer.streamNode.out.unzip
 
   val csrStart                            = io.csrs("start")
   val csrEnd                              = io.csrs("end")
@@ -120,57 +115,58 @@ class APBInStreamOutFIFOInternalModule(outer: APBInStreamOutFIFOInternal) extend
   def bigBits(x: BigInt, tail: List[Boolean] = List.empty[Boolean]): List[Boolean] =
     if (x == 0) tail.reverse else bigBits(x >> 1, ((x & 1) == 1) :: tail)
 
-  val read : Bool = io.mem(0).psel && !io.mem(0).penable && !io.mem(0).pwrite
-  val write: Bool = io.mem(0).psel && !io.mem(0).penable && io.mem(0).pwrite
+  val read : Bool = mem(0).psel && !mem(0).penable && !mem(0).pwrite
+  val write: Bool = mem(0).psel && !mem(0).penable && mem(0).pwrite
   val mask : List[Boolean]      = bigBits(memAddress.mask >> log2Ceil(beatBytes))
-  val inPaddr                         = Cat((mask zip (io.mem(0).paddr >> log2Ceil(beatBytes)).toBools).filter(_._1).map(_._2).reverse)
+  val inPaddr                         = Cat((mask zip (mem(0).paddr >> log2Ceil(beatBytes)).toBools).filter(_._1).map(_._2).reverse)
 
   val paddr                           = Mux(read || write, inPaddr, count)
-  val legal: Bool = memAddress.contains(io.mem(0).paddr)
+  val legal: Bool = memAddress.contains(mem(0).paddr)
 
-  val mem = SyncReadMem(1 << mask.count(b => b), Vec(beatBytes, Bits(width = 8.W)))
+  val sram = SyncReadMem(1 << mask.count(b => b), Vec(beatBytes, Bits(width = 8.W)))
 
   when (write && legal) {
-    mem.write(paddr, Vec.tabulate(beatBytes) { i => io.mem(0).pwdata(8 * (i + 1) - 1, 8 * i) }, io.mem(0).pstrb.toBools)
+    sram.write(paddr, Vec.tabulate(beatBytes) { i => mem(0).pwdata(8 * (i + 1) - 1, 8 * i) }, mem(0).pstrb.toBools)
   }
 
-  io.mem(0).pready  := true.B
-  io.mem(0).pslverr := RegNext(!legal)
-  io.mem(0).prdata  := mem.readAndHold(paddr, read).asUInt
+  mem(0).pready  := true.B
+  mem(0).pslverr := RegNext(!legal)
+  mem(0).prdata  := sram.readAndHold(paddr, read).asUInt
 
   val streamData = Wire(UInt())
   val streamDataReg = Reg(UInt())
   val streamDataRegValid = RegInit(false.B)
 
   when (!read && !write) {
-    streamData := mem.read(paddr).asUInt
+    streamData := sram.read(paddr).asUInt
   }
   when (ShiftRegister(!read && !write, 2)) {
     streamDataReg := streamData
     streamDataRegValid := true.B
   }
 
-  io.stream(0).valid := RegNext(!read && !write)
-  io.stream(0).bits.data := streamData
+  stream(0).valid := RegNext(!read && !write)
+  stream(0).bits.data := streamData
 
   when (streamDataRegValid) {
-    io.stream(0).valid := true.B
-    io.stream(0).bits.data := streamDataReg
+    stream(0).valid := true.B
+    stream(0).bits.data := streamDataReg
   }
 
-  when (io.stream(0).fire()) {
+  when (stream(0).fire()) {
     streamDataRegValid := false.B
     advanceCount := true.B
   }
 
   // TODO: valid should not go high->low until it sees a ready
   when (!csrEn) {
-    io.stream(0).valid := false.B
+    stream(0).valid := false.B
   }
 
-  io.stream(0).bits.last := RegNext(count === csrEnd)
+  stream(0).bits.last := RegNext(count === csrEnd)
 }
 
+/*
 package tester {
 
   class MMAPFIFOTester(c: APBInStreamOutFIFOModule) extends
@@ -232,3 +228,4 @@ object JustForNow {
     chisel3.iotesters.Driver.execute(Array("--backend-name", "firrtl", "-fiwv"), dut) { c=> new tester.MMAPFIFOTester(c) }
   }
 }
+*/

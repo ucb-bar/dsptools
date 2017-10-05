@@ -38,8 +38,9 @@ class PeakDetectSpec extends FlatSpec with Matchers {
     Driver.execute(() => new PeakDetect(p)
     , optionsManager = manager) { c => new dsptools.DspTester(c) {
 
-      poke(c.io.energyFF, 99.0/100.0)
-      poke(c.io.energyMult, 100.0 * 8.0) // 1/(1-energyFF) = 100, 8.0=9dB
+      poke(c.io.config.energyFF, 99.0/100.0)
+      poke(c.io.config.energyMult, 100.0 * 8.0) // 1/(1-energyFF) = 100, 8.0=9dB
+      poke(c.io.config.energyOffset, 0.0) // don't use
 
       poke(c.io.in.valid, 1)
       // don't care about raw signal in this tester

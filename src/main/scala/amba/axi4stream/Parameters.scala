@@ -1,6 +1,7 @@
 package freechips.rocketchip.amba.axi4stream
 
 import chisel3._
+import chisel3.internal.sourceinfo.SourceInfo
 import chisel3.util.log2Ceil
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
@@ -132,7 +133,9 @@ object AXI4StreamBundleParameters
 
 case class AXI4StreamEdgeParameters(
   master: AXI4StreamMasterPortParameters,
-  slave:  AXI4StreamSlavePortParameters)
+  slave:  AXI4StreamSlavePortParameters,
+  p: Parameters,
+  sourceInfo: SourceInfo)
 {
   val bundle: AXI4StreamBundleParameters = AXI4StreamBundleParameters.joinEdge(master, slave)
 }

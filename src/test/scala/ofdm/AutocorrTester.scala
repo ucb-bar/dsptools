@@ -22,7 +22,7 @@ class AutocorrTester[T <: Data : Ring, V](c: AutocorrBlindModule[T], overlap: Bi
   extends PeekPokeTester(c) with AXI4MasterModel[AutocorrBlindModule[T]] {
   implicit def field2String(f: CSRField): String = f.name
 
-  val memAXI = c.io.mem(0)
+  val memAXI = c.mem(0)
 
   val csrs = c.outer.autocorr.csrs.addrmap
   axiReset()
@@ -44,8 +44,8 @@ class AutocorrDataTester[T <: Data : Ring](c: AutocorrBlindModule[T],
   // for this tester, we're less worried about checking the io semantics and more concerned with showing that the
   // autocorrelation is doing the right mathematical operation
   // input will always be valid, output will always be ready
-  val io_in  = c.io.in(0)
-  val io_out = c.io.out(0)
+  val io_in  = c.in(0)
+  val io_out = c.out(0)
 
   poke(io_in.valid, 1)
   poke(io_in.bits.last, 0)

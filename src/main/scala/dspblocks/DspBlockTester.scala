@@ -2,6 +2,16 @@
 
 package dspblocks
 
+import chisel3._
+import chisel3.iotesters.PeekPokeTester
+
+trait AXI4StreamTester[T <: Module] { this: PeekPokeTester[T] =>
+
+  // TODO manage streaming arrays, also use peek poke packers
+  // def
+
+}
+
 // import breeze.math.Complex
 // import cde._
 // import chisel3._
