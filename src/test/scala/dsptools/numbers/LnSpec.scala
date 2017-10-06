@@ -11,8 +11,8 @@ import org.scalatest.FreeSpec
 
 class LnModule extends Module {
   val io = IO(new Bundle {
-    val num = Input(DspReal(1.0))
-    val ln = Output(DspReal(1.0))
+    val num = Input(DspReal())
+    val ln = Output(DspReal())
   })
 
   io.ln := io.num.ln()
