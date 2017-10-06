@@ -95,6 +95,8 @@ class Interface[R <: Data:Real](genShort: R, genLong: R, includeR: Boolean, p: T
   val vecLen = p.vecLen
 
   val r = if (includeR) Some(DspReal()) else None
+  val RP = if (includeR) Some(DspReal()) else None
+  val RN = if (includeR) Some(DspReal()) else None
   val b = Bool()
   val cGenL = DspComplex(genLong)
   val cFS = DspComplex(FixedPoint(smallW, smallBP))
@@ -172,6 +174,10 @@ class SimpleLitModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boo
 
   io.o.short.gen := lutGen(io.i.short.u)
   io.o.short.s := lutS(io.i.short.u)
+  if (includeR) {
+    io.o.RP.get := litRP.get
+    io.o.RN.get := litRN.get
+  }
 
 }
 
@@ -244,8 +250,8 @@ class PassLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) 
   val lutVals = c.lutVals
 
   if (c.includeR) {
-    checkP(c.litRP.get, posLit)
-    checkP(c.litRN.get, negLit)
+    checkP(c.io.o.RP.get, posLit)
+    checkP(c.io.o.RN.get, negLit)
   }
   
   // expect properly rounds doubles to ints for SInt
