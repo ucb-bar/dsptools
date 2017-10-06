@@ -17,13 +17,14 @@ class FixedRing1(val width: Int, val binaryPoint: Int) extends Module {
     val ceil = Output(FixedPoint(width.W, binaryPoint.BP))
     val isWhole = Output(Bool())
     val round = Output(FixedPoint(width.W, binaryPoint.BP))
-    val real = Output(DspReal(1.0))
+    val real = Output(DspReal())
   })
 
   io.floor := io.in.floor()
   io.ceil := io.in.ceil()
   io.isWhole := io.in.isWhole()
   io.round := io.in.round()
+  io.real := DspReal(0)
 }
 
 class FixedRing1Tester(c: FixedRing1) extends DspTester(c) {
