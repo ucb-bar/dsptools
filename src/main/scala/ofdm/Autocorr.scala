@@ -273,8 +273,8 @@ object BuildSampleAutocorr {
     println(s"In bytes = $inWidthBytes and out bytes = $outWidthBytes")
 
     val blindParams = DspBlockBlindNodes(
-      streamIn  = () => AXI4StreamIdentityNode(),
-      streamOut = () => AXI4StreamIdentityNode(),
+      streamIn  = () => AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters())),
+      streamOut = () => AXI4StreamSlaveNode(Seq(AXI4StreamSlavePortParameters())),
       mem       = () => AXI4IdentityNode())
     chisel3.Driver.execute(Array("-X", "verilog"), () => LazyModule(new AutocorrBlind(params, blindParams)).module)
   }

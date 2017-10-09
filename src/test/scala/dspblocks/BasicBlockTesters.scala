@@ -4,6 +4,7 @@ import amba.axi4.AXI4MasterModel
 import chisel3._
 import chisel3.iotesters.PeekPokeTester
 import dspblocks.BlindWrapperModule._
+import freechips.rocketchip.amba.apb.APBMasterModel
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.tilelink.TLMasterModel
 
@@ -23,6 +24,7 @@ abstract class PassthroughTester[D, U, EO, EI, B <: Data, T <: Passthrough[D, U,
   val expectedDepth = c.outer.internal.params.depth
   println(s"Depth was $depth, should be $expectedDepth")
   require(depth == expectedDepth, s"Depth was $depth, should be $expectedDepth")
+
 
   var currentIn   = 0
   var expectedOut = 0
@@ -65,6 +67,20 @@ class AXI4PassthroughTester(c: AXI4BlindWrapperModule[AXI4Passthrough])
 
   def readAddr(addr: BigInt): BigInt = {
     axiReadWord(addr)
+  }
+}
+
+class APBPassthroughTester(c: APBBlindWrapperModule[APBPassthrough])
+  extends PassthroughTester(c)
+    with APBMasterModel[APBBlindWrapperModule[APBPassthrough]] {
+  def memAPB = c.mem(0)
+
+  def resetMem(): Unit = {
+    apbReset()
+  }
+
+  def readAddr(addr: BigInt): BigInt = {
+    apbRead(addr)
   }
 }
 

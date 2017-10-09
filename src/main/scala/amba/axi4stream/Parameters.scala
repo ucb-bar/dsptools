@@ -105,20 +105,21 @@ case class AXI4StreamBundleParameters(
 //noinspection RedundantDefaultArgument
 object AXI4StreamBundleParameters
 {
-  val emptyBundleParameters = AXI4StreamBundleParameters(
+  /*val emptyBundleParameters = AXI4StreamBundleParameters(
     0,
     0,
     0,
     0,
     hasData = false,
     hasStrb = false,
-    hasKeep = false)
+    hasKeep = false)*/
 
-  def union(x: Seq[AXI4StreamBundleParameters]): AXI4StreamBundleParameters = x.foldLeft(emptyBundleParameters)((x, y) => x.union(y))
+  // def union(x: Seq[AXI4StreamBundleParameters]): AXI4StreamBundleParameters = x.foldLeft(emptyBundleParameters)((x, y) => x.union(y))
 
   def joinEdge(master: AXI4StreamMasterPortParameters, slave: AXI4StreamSlavePortParameters): AXI4StreamBundleParameters = {
     val m = master.masterParams
     val s = slave.slaveParams
+
     AXI4StreamBundleParameters(
       m.n,
       log2Ceil(m.numMasters),

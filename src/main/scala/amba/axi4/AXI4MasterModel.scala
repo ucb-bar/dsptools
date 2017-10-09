@@ -200,6 +200,10 @@ trait AXI4MasterModel[T <: BaseModule] { this: chisel3.iotesters.PeekPokeTester[
     while (!arFinished) {
       arFinished = peek(memAXI.ar.ready) != BigInt(0)
       require(cyclesWaited < maxWait, s"Timeout waiting for AR to be ready ($maxWait cycles)")
+      /*if (cyclesWaited >= maxWait) {
+        println(s"Timeout waiting for AR to be ready ($maxWait cycles)")
+        arFinished = true
+      }*/
       step(1)
       cyclesWaited += 1
     }
@@ -219,6 +223,10 @@ trait AXI4MasterModel[T <: BaseModule] { this: chisel3.iotesters.PeekPokeTester[
       }
       step(1)
       require(cyclesWaited < maxWait, s"Timeout waiting for R to be ready ($maxWait cycles)")
+      /*if (cyclesWaited >= maxWait) {
+        println(s"Timeout waiting for R to be ready ($maxWait cycles)")
+        rFinished = true // hack hack hack
+      }*/
 
       cyclesWaited += 1
     }

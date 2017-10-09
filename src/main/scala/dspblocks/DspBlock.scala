@@ -13,6 +13,7 @@ import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.regmapper._
 import freechips.rocketchip.tilelink._
 
+import scala.collection.Seq
 import scala.language.implicitConversions // for csrField conversion
 
 sealed trait CSRType
@@ -71,8 +72,8 @@ trait DspBlock[D, U, EO, EI, B <: Data] extends LazyModule {
 
 case class DspBlockBlindNodes[D, U, EO, EI, B <: Data]
 (
-  val streamIn:  () => AXI4StreamIdentityNode,
-  val streamOut: () => AXI4StreamIdentityNode,
+  val streamIn:  () => AXI4StreamMasterNode,
+  val streamOut: () => AXI4StreamSlaveNode,
   val mem:       () => MixedNode[D, U, EI, B, D, U, EO, B]
 )
 
@@ -84,22 +85,37 @@ object DspBlockBlindNodes {
     name: String = ""
   )(implicit valName: ValName): DspBlockBlindNodes[D, U, EO, EI, B] = {
     DspBlockBlindNodes(
-      streamIn = () => AXI4StreamIdentityNode(),
-      streamOut = () => AXI4StreamIdentityNode(),
+      streamIn = () => AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters(
+        Seq(AXI4StreamMasterParameters(
+          n = streamParams.n,
+          u = streamParams.u,
+          numMasters = 1 << streamParams.i
+        ))
+      ))),
+      streamOut = () => AXI4StreamSlaveNode(Seq(AXI4StreamSlavePortParameters(
+        Seq(AXI4StreamSlaveParameters(
+          numEndpoints = 1 << streamParams.d,
+          hasData = streamParams.hasData,
+          hasStrb = streamParams.hasStrb,
+          hasKeep = streamParams.hasKeep
+        ))
+      ))),
       mem = mem
     )
   }
 }
 
-class BlindWrapper[D, U, EO, EI, B <: Data, T <: LazyModule with DspBlock[D, U, EO, EI, B]]
+class BlindWrapper[D, U, EO, EI, B <: Data, T <: DspBlock[D, U, EO, EI, B]]
 (mod: () => T, blindParams: DspBlockBlindNodes[D, U, EO, EI, B])
 (implicit p: Parameters)
-extends LazyModule with DspBlock[D, U, EO, EI, B] {
+extends DspBlock[D, U, EO, EI, B] {
   val streamIn  = blindParams.streamIn()
   val streamOut = blindParams.streamOut()
+
   val memNode   = blindParams.mem()
   val mem = Some(memNode)
   val streamNode = streamIn
+
 
   val internal: T = LazyModule(mod())
 
@@ -115,9 +131,29 @@ class BlindWrapperModule[D, U, EO, EI, B <: Data, T <: DspBlock[D, U, EO, EI, B]
   override def desiredName: String =
     "BlindModule" //outer.internal.module.name + "Blind"
 
-  val (in, _) = outer.streamIn.in.unzip
-  val (out, _) = outer.streamOut.out.unzip
-  val (mem, _) = outer.memNode.out.unzip
+
+  val (streamIn, _) = outer.streamIn.out.unzip
+  val (streamOut, _) = outer.streamOut.in.unzip
+  val (memNode, _) = outer.memNode.out.unzip
+
+  val in = streamIn.map { case i =>
+    val in = IO(Flipped(i.chiselCloneType))
+    i <> in
+    in
+  }
+
+  val out = streamOut.map { case o =>
+    val out = IO(o.chiselCloneType)
+    out <> o
+    out
+  }
+
+  val mem = memNode.map { case m =>
+    val mem = IO(Flipped(m.chiselCloneType))
+    m <> mem
+    mem
+  }
+
 }
 
 object BlindWrapperModule {

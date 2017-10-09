@@ -97,8 +97,8 @@ class AutocorrSpec extends FlatSpec with Matchers {
     println(s"In bytes = $inWidthBytes and out bytes = $outWidthBytes")
 
     val blindNodes = DspBlockBlindNodes(
-      streamIn  = () => AXI4StreamIdentityNode(),
-      streamOut = () => AXI4StreamIdentityNode(),
+      streamIn  = () => AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters())),
+      streamOut = () => AXI4StreamSlaveNode(Seq(AXI4StreamSlavePortParameters())),
       mem       = () => AXI4IdentityNode())
 
     val pattern = Seq(
@@ -142,8 +142,8 @@ class AutocorrSpec extends FlatSpec with Matchers {
     println(s"In bytes = $inWidthBytes and out bytes = $outWidthBytes")
 
     val blindNodes = DspBlockBlindNodes(
-      streamIn  = () => AXI4StreamIdentityNode(),
-      streamOut = () => AXI4StreamIdentityNode(),
+      streamIn  = () => AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters())),
+      streamOut = () => AXI4StreamSlaveNode(Seq(AXI4StreamSlavePortParameters())),
       mem       = () => AXI4IdentityNode())
 
     val values = Seq.fill(200)(Complex(0,0)) ++ IEEE80211.stf ++ Seq.fill(100)(Complex(0,0)) ++

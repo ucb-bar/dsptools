@@ -2,12 +2,16 @@
 
 package freechips.rocketchip.amba.apb
 
-import chisel3._
+import chisel3.experimental.RawModule
 import chisel3.iotesters._
 import freechips.rocketchip.amba.apb._
 
-trait APBMasterModel[T <: Module] { this: chisel3.iotesters.PeekPokeTester[T] =>
+trait APBMasterModel[T <: RawModule] { this: chisel3.iotesters.PeekPokeTester[T] =>
   def memAPB: APBBundle
+
+  def apbReset(): Unit = {
+
+  }
 
   def apbWrite(addr: Int, data: Int): Unit =
     apbWrite(BigInt(addr), BigInt(data))

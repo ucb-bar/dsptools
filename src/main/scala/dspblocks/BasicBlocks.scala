@@ -4,6 +4,7 @@ package dspblocks
 
 import chisel3._
 import chisel3.util._
+import freechips.rocketchip.amba.apb.{APBBundle, APBEdgeParameters, APBMasterPortParameters, APBSlavePortParameters}
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream.AXI4StreamIdentityNode
 import freechips.rocketchip.config._
@@ -60,6 +61,16 @@ class AXI4Passthrough(params: PassthroughParams)(implicit p: Parameters)
 
   makeCSRs()
 
+}
+
+class APBPassthrough(params: PassthroughParams)(implicit p: Parameters)
+  extends Passthrough[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle](params)
+    with APBDspBlock with APBHasCSR {
+  override val csrBase   = 0
+  override val csrSize   = 32
+  override val beatBytes = 8
+
+  makeCSRs()
 }
 
 class TLPassthrough(params: PassthroughParams)(implicit p: Parameters)
