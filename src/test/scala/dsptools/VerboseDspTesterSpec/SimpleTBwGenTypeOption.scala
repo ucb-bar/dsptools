@@ -133,6 +133,10 @@ class SimpleIOModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Bool
   io.o.vS := RegNext(io.i.vS)
   io.o.vF := RegNext(io.i.vF)
 
+  if (includeR) {
+    io.o.RP.get := DspReal(0)
+    io.o.RN.get := DspReal(0)
+  }
 }
 
 class SimpleLitModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boolean, val p: TestParams) 
@@ -172,13 +176,22 @@ class SimpleLitModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boo
   val lutGen = Vec(lutGenSeq)
   val lutS = Vec(lutSSeq)
 
+  io.o.vU := RegNext(io.i.vU)
+  io.o.vS := RegNext(io.i.vS)
+  io.o.vF := RegNext(io.i.vF)
+  io.o.long := io.i.long
+  io.o.short := io.i.short
+  io.o.b := io.i.b
+  io.o.cGenL := io.i.cGenL
+  io.o.cFS := io.i.cFS
   io.o.short.gen := lutGen(io.i.short.u)
   io.o.short.s := lutS(io.i.short.u)
   if (includeR) {
     io.o.RP.get := litRP.get
     io.o.RN.get := litRN.get
+    io.o.r.get := io.i.r.get
+    io.o.cR.get := io.i.cR.get
   }
-
 }
 
 class PassIOTester[R <: Data:Real](c: SimpleIOModule[R]) extends DspTester(c) with EasyPeekPoke {
