@@ -20,7 +20,7 @@ object DspTesterUtilities {
     val neg = bi < 0
     val neededWidth = if (neg) bi.bitLength + 1 else bi.bitLength
     require(neededWidth <= totalWidth, "Double -> BigInt width larger than total width allocated!")
-    if (neg) (((BigInt(1) << totalWidth) - 1) ^ -bi) + BigInt(1)
+    if (neg) (BigInt(1) << totalWidth) + bi
     else bi
   }
 
