@@ -9,17 +9,19 @@ import freechips.rocketchip.diplomacy.AddressSet
 import ieee80211.IEEE80211
 import org.scalatest.{FlatSpec, Matchers}
 
+import scala.util.DynamicVariable
+
 class SyncSpec extends FlatSpec with Matchers {
 
   behavior of "Sync Block"
 
-  val testSignal = IEEE80211.stf ++ Seq.fill(5000) { Complex(1, 0) }
+  val testSignal = IEEE80211.stf ++ Seq.fill(500) { Complex(1, 0) }
 
   it should "correct CFO of 50 kHz with STF" in {
     val cfoSignal = IEEE80211.addCFO(testSignal, -50.0e3)
 
-    val protoIn  = FixedPoint(12.W, 10.BP)
-    val protoOut = FixedPoint(12.W, 10.BP)
+    val protoIn  = FixedPoint(16.W, 14.BP)
+    val protoOut = FixedPoint(16.W, 14.BP)
     val protoCORDIC = FixedPoint(16.W, 12.BP)
     val protoAutocorr = protoIn
     val protoBig = FixedPoint(32.W, 16.BP)
@@ -54,14 +56,16 @@ class SyncSpec extends FlatSpec with Matchers {
 
     chisel3.iotesters.Driver.execute(Array("-tbn", "verilator"), dut _) {
       c => new DspTester(c) {
-        step(5)
-        poke(c.io.autocorrFF, 0.5)
-        poke(c.io.autocorrConfig.depthApart, 64)
-        poke(c.io.autocorrConfig.depthOverlap, 64)
-        poke(c.io.peakDetectConfig.energyOffset, 1.0)
-        poke(c.io.peakDetectConfig.energyFF, 0.5)
-        poke(c.io.peakDetectConfig.energyMult, 2.0)
-        poke(c.io.freqScaleFactor, -1.0 / (2 * math.Pi *64.0))
+        updatableSubVerbose.withValue(true) { updatableDspVerbose.withValue(true) {
+          step(5)
+          poke(c.io.autocorrFF, 0.5)
+          poke(c.io.autocorrConfig.depthApart, 64)
+          poke(c.io.autocorrConfig.depthOverlap, 64)
+          poke(c.io.peakDetectConfig.energyOffset, 1.0)
+          poke(c.io.peakDetectConfig.energyFF, 0.5)
+          poke(c.io.peakDetectConfig.energyMult, 2.0)
+          poke(c.io.freqScaleFactor, -1.0 / (2 * math.Pi * 64.0))
+        }}
 
         var output = Seq[Complex]()
 

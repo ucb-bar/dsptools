@@ -4,7 +4,8 @@ import amba.axi4.AXI4MasterModel
 import breeze.math.Complex
 import chisel3._
 import chisel3.iotesters.PeekPokeTester
-import dspblocks.{CSRField, PeekPokePackers}
+import dspblocks.BlindWrapperModule.AXI4BlindWrapperModule
+import dspblocks.{AXI4PassthroughTester, CSRField, PeekPokePackers}
 import dsptools.numbers._
 import dsptools.numbers.implicits._
 import freechips.rocketchip.amba.axi4stream.AXI4StreamBundlePayload
@@ -18,13 +19,13 @@ case class PeekPoke[T, V](
                       poke: V => T
                       )
 
-class AutocorrTester[T <: Data : Ring, V](c: AutocorrBlindModule[T], overlap: BigInt = 4, apart: BigInt = 16)
-  extends PeekPokeTester(c) with AXI4MasterModel[AutocorrBlindModule[T]] {
+class AutocorrTester[T <: Data : Ring, V](c: AXI4BlindWrapperModule[Autocorr[T]], overlap: BigInt = 4, apart: BigInt = 16)
+  extends PeekPokeTester(c) with AXI4MasterModel[AXI4BlindWrapperModule[Autocorr[T]]] {
   implicit def field2String(f: CSRField): String = f.name
 
   val memAXI = c.mem(0)
 
-  val csrs = c.outer.autocorr.csrs.addrmap
+  val csrs = c.outer.internal.csrs.addrmap
   axiReset()
   // set depths
   axiWriteWord(csrs(CSRDepthOverlap), overlap)
@@ -37,7 +38,7 @@ class AutocorrTester[T <: Data : Ring, V](c: AutocorrBlindModule[T], overlap: Bi
 
 }
 
-class AutocorrDataTester[T <: Data : Ring](c: AutocorrBlindModule[T],
+class AutocorrDataTester[T <: Data : Ring](c: AXI4BlindWrapperModule[Autocorr[T]],
                                               in: Seq[BigInt], out: mutable.ArrayBuffer[BigInt],
                                               overlap: BigInt = 4, apart: BigInt = 16)
   extends AutocorrTester(c, overlap, apart) {

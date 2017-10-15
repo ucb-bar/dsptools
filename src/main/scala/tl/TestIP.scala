@@ -8,10 +8,10 @@ object TLMasterModle {
   case class AChannel(
     opcode:  BigInt = 0, // PutFullData
     param:   BigInt = 0, // toT
-    size:    BigInt = 0,
+    size:    BigInt = 8,
     source:  BigInt = 0,
     address: BigInt = 0,
-    mask:    BigInt = 0,
+    mask:    BigInt = 0xff,
     data:    BigInt = 0)
 
   case class BChannel(
@@ -188,7 +188,7 @@ trait TLMasterModel[T <: BaseModule] { this: chisel3.iotesters.PeekPokeTester[T]
   }
 
   def tlWriteWord(addr: BigInt, data: BigInt): Unit = {
-    tlWriteA(AChannel(opcode = 0 /* PUT */, address=addr, data=data))
+    tlWriteA(AChannel(opcode = 0 /* PUT */, address=addr, data=data, mask = BigInt("1"*64, 2)))
     tlReadD()
   }
 

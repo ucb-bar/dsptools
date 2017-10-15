@@ -4,7 +4,7 @@ package dspblocks
 
 import chisel3._
 import chisel3.internal.firrtl.Width
-import chisel3.util.log2Ceil
+import chisel3.util.{HasBlackBoxResource, log2Ceil}
 import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
@@ -21,7 +21,7 @@ case object CSRControl extends CSRType
 case object CSRStatus extends CSRType
 
 object CSR {
-  //               dir           width  init
+  //              type     width  init
   type RegInfo = (CSRType, Width, BigInt)
   type Map     = scala.collection.Map[String, RegInfo]
 }
@@ -321,6 +321,7 @@ trait AXI4HasCSR extends HasCSR { this: AXI4DspBlock =>
 trait TLDspBlock extends DspBlock[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle] {
   val bus = LazyModule(new TLXbar)
   val mem = Some(bus.node)
+
 }
 
 trait APBDspBlock extends DspBlock[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle] {

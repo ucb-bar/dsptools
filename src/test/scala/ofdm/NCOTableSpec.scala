@@ -10,7 +10,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import co.theasi.plotly._
 
 class NCOTableSpec extends FlatSpec with Matchers {
-  def dut[T <: Data : Ring : ConvertableTo](params: NCOTableParams[T]): () => NCOTable[T] = () => {
+  def dut[T <: Data : Ring : BinaryRepresentation : ConvertableTo](params: NCOTableParams[T]): () => NCOTable[T] = () => {
     new NCOTable(params)
   }
 

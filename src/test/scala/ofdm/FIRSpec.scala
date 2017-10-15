@@ -48,8 +48,5 @@ class FIRSpec extends FlatSpec with Matchers {
     val ys = out.map(x => 10*log10(x.abs))
     println(s"Absolute values are $ys")
 
-    val plot = Plot().withScatter(xs, ys)
-    draw(plot, "STF Correlation Magnitude Signed")
-
   }
 }

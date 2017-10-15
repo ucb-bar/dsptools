@@ -5,7 +5,6 @@ package dspblocks
 import chisel3._
 import chisel3.experimental._
 import dsptools.numbers.DspComplex
-
 import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
@@ -13,8 +12,7 @@ import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.coreplex.BaseCoreplexConfig
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.tilelink._
-
-import ofdm.{AutocorrBlind, AutocorrParams}
+import ofdm.{Autocorr, AutocorrParams}
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.collection.Seq
@@ -36,19 +34,18 @@ class DspBlockSpec extends FlatSpec with Matchers {
       maxOverlap = 161,
       address = AddressSet(0x0, 0xffffffffL),
       beatBytes = 8)
-    val inWidthBytes = 8 //(params.genIn.getWidth + 7) / 8
-    val outWidthBytes = 8 //params.genOut.map(x => (x.getWidth + 7)/8).getOrElse(inWidthBytes)
-
-    println(s"In bytes = $inWidthBytes and out bytes = $outWidthBytes")
 
     val blindNodes = DspBlockBlindNodes(
-      streamIn  = () => AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters())),
-      streamOut = () => AXI4StreamSlaveNode(Seq(AXI4StreamSlavePortParameters())),
-      mem       = () => AXI4IdentityNode()
+      streamIn  = () => AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters("autocorr"))))),
+      streamOut = () => AXI4StreamSlaveNode(Seq(AXI4StreamSlavePortParameters(Seq(AXI4StreamSlaveParameters())))),
+      mem       = () => AXI4MasterNode(Seq(AXI4MasterPortParameters(Seq(AXI4MasterParameters("passthrough")))))
       )
 
+    val dut = () => LazyModule(DspBlock.blindWrapper(() => new Autocorr(params), blindNodes)).module
     // println(chisel3.Driver.emit(() => LazyModule(AutocorrBlind(params, blindNodes)).module))
-    println(chisel3.Driver.emitVerilog(LazyModule(AutocorrBlind(params, blindNodes)).module))
+
+
+    println(chisel3.Driver.emitVerilog({dut()}))
 
   }
 
@@ -128,7 +125,7 @@ class DspBlockSpec extends FlatSpec with Matchers {
     //println(chisel3.Driver.emit(dut))
     //println(chisel3.Driver.emitVerilog(dut()))
 
-    chisel3.iotesters.Driver.execute(Array("-tbn", "firrtl", "-fiwv"), dut) {
+    chisel3.iotesters.Driver.execute(Array("-tbn", "verilator", "-fiwv"), dut) {
       c => new TLPassthroughTester(c)
     } should be (true)
 

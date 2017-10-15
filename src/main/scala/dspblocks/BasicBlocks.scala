@@ -3,7 +3,8 @@
 package dspblocks
 
 import chisel3._
-import chisel3.util._
+import chisel3.experimental.dontTouch
+import chisel3.util.{HasBlackBoxResource, _}
 import freechips.rocketchip.amba.apb.{APBBundle, APBEdgeParameters, APBMasterPortParameters, APBSlavePortParameters}
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream.AXI4StreamIdentityNode
@@ -81,50 +82,16 @@ class TLPassthrough(params: PassthroughParams)(implicit p: Parameters)
   override val beatBytes = 8
 
   makeCSRs()
+  class PlusargReaderHack extends BlackBox with HasBlackBoxResource {
+    override def desiredName: String = "plusarg_reader"
+    val io = IO(new Bundle {
+      val out = Output(UInt(32.W))
+    })
+
+    setResource("/plusarg_reader.v")
+  }
+  override lazy val module = new PassthroughModule(this) {
+    val hack = Module(new PlusargReaderHack)
+    dontTouch(hack.io.out)
+  }
 }
-// case object PassthroughDelay extends Field[Int]
-// 
-// trait HasPassthroughParameters {
-//   val p: Parameters
-// 
-//   def passthroughDelay = p(PassthroughDelay)
-// }
-// 
-// class Passthrough()(implicit p: Parameters) extends DspBlock()(p) {
-//   lazy val module = new PassthroughModule(this)
-// 
-//   addStatus("delay")
-// }
-// 
-// class PassthroughModule(outer: Passthrough)(implicit p: Parameters) extends DspBlockModule(outer)(p) with HasPassthroughParameters {
-//   val zeroBundle     = Wire(io.in.cloneType)
-//   zeroBundle.valid  := false.B
-//   zeroBundle.sync   := false.B
-//   zeroBundle.bits   := 0.U
-//   status("delay")   := passthroughDelay.U
-//   io.out            := ShiftRegister(io.in, passthroughDelay, zeroBundle, true.B)
-// }
-// 
-// class BarrelShifter()(implicit p: Parameters) extends DspBlock()(p) {
-//   lazy val module = new BarrelShifterModule(this)
-// 
-//   addControl("shiftBy", 0.U)
-// }
-// 
-// class BarrelShifterModule(outer: BarrelShifter)(implicit p: Parameters) extends DspBlockModule(outer)(p) {
-//   require( inputWidth == outputWidth )
-// 
-//   val shiftWidth = util.log2Ceil(inputWidth)
-// 
-//   val shiftByInRange = control("shiftBy") < inputWidth.U
-//   val shiftBy        = Mux(shiftByInRange, control("shiftBy"), 0.U)(shiftWidth - 1, 0)
-//   val shiftDown      = Mux(shiftBy === 0.U, 0.U, inputWidth.U - shiftBy)
-//   val shifted        = Mux(shiftBy === 0.U,
-//                            io.in.bits,
-//                            (io.in.bits << shiftBy) | (io.in.bits >> shiftDown)
-//                            )
-// 
-//   io.out.bits  := shifted
-//   io.out.valid := io.in.valid
-//   io.out.sync  := io.in.sync
-// }

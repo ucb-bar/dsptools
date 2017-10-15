@@ -56,7 +56,7 @@ class NCOTableIO[T <: Data](params: NCOTableParams[T]) extends Bundle {
   val cosOut = Output(params.protoOut.cloneType)
 }
 
-class NCOTable[T <: Data : Ring : ConvertableTo](params: NCOTableParams[T]) extends Module {
+class NCOTable[T <: Data : Ring : BinaryRepresentation : ConvertableTo](params: NCOTableParams[T]) extends Module {
   val io = IO(new NCOTableIO(params))
 
   // quarter wave
@@ -103,8 +103,11 @@ class NCOTable[T <: Data : Ring : ConvertableTo](params: NCOTableParams[T]) exte
     (~addr).asUInt()
   }
 
-  val sinIsOne = WireInit(false.B)
-  val cosIsOne = WireInit(false.B)
+  val sinIsOne = Reg(Bool())
+  val cosIsOne = Reg(Bool())
+
+  sinIsOne := false.B
+  cosIsOne := false.B
 
   switch(msbs) {
     is("b00".U) {
@@ -161,21 +164,29 @@ class NCOTable[T <: Data : Ring : ConvertableTo](params: NCOTableParams[T]) exte
     else (1 to i).map(BigInt(_)).reduce(_*_).toDouble
   }
 
+
+  val n = params.protoOut match {
+    case f: FixedPoint => f.binaryPoint.get
+    case _ => 64
+  }
+
   // compute terms of the taylor approximation
   val (sinTerms, cosTerms) = (Seq((sinOut, cosOut)) ++  (1 to params.nInterpolationTerms).map { case i =>
+
     val coeff = ConvertableTo[T].fromDouble(math.pow(2.0 * Pi, i) / fact(i) /* / math.pow(Pi, i) */, params.protoOut)
     // coeff * x^i
-    val coeff_x_xi = coeff * TreeReduce(Seq.fill(i){x}, (x:T, y:T) => x * y)
+    val coeff_x_xi = (coeff * TreeReduce(Seq.fill(i){x}, (x:T, y:T) => (x * y).trimBinary(n))).trimBinary(n)
 
-    val sinTerm = coeff_x_xi * sinDerivs((i-1) % 4)
-    val cosTerm = coeff_x_xi * cosDerivs((i-1) % 4)
+
+    val sinTerm = (coeff_x_xi * sinDerivs((i-1) % 4)).trimBinary(n)
+    val cosTerm = (coeff_x_xi * cosDerivs((i-1) % 4)).trimBinary(n)
 
     (sinTerm, cosTerm)
   }).unzip
 
   // add all the terms
-  val sinInterp = TreeReduce(sinTerms, (x:T, y:T) => x+y)
-  val cosInterp = TreeReduce(cosTerms, (x:T, y:T) => x+y)
+  val sinInterp = TreeReduce(sinTerms, (x:T, y:T) => (x+y).trimBinary(n))
+  val cosInterp = TreeReduce(cosTerms, (x:T, y:T) => (x+y).trimBinary(n))
 
   io.sinOut := sinInterp
   io.cosOut := cosInterp

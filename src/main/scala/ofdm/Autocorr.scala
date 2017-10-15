@@ -51,6 +51,7 @@ case object CSRSetDepthOverlap extends CSRField {
   val name = "setDepthOverlap"
 }
 
+/*
 object AutocorrBlind {
   def apply[T <: Data : Ring]
   (
@@ -86,6 +87,7 @@ class AutocorrBlindModule[T <: Data : Ring](val outer: AutocorrBlind[T]) extends
   val (mem, _) = outer.mem.out.unzip
 
 }
+*/
 
 class Autocorr[T <: Data : Ring](val autocorrParams: AutocorrParams[T])
                                 (implicit p: Parameters) extends LazyModule
@@ -108,7 +110,7 @@ class Autocorr[T <: Data : Ring](val autocorrParams: AutocorrParams[T])
 
   // csrs.node := mem.get
 
-  lazy val module = Module(new AutocorrModule(this))
+  lazy val module = new AutocorrModule(this)
 }
 
 class AutocorrModule[T <: Data : Ring](outer: Autocorr[T]) extends LazyModuleImp(outer) {
@@ -276,6 +278,6 @@ object BuildSampleAutocorr {
       streamIn  = () => AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters())),
       streamOut = () => AXI4StreamSlaveNode(Seq(AXI4StreamSlavePortParameters())),
       mem       = () => AXI4IdentityNode())
-    chisel3.Driver.execute(Array("-X", "verilog"), () => LazyModule(new AutocorrBlind(params, blindParams)).module)
+    chisel3.Driver.execute(Array("-X", "verilog"), () => LazyModule(DspBlock.blindWrapper(() => new Autocorr(params), blindParams)).module)
   }
 }

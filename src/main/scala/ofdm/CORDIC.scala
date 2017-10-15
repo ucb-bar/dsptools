@@ -150,8 +150,13 @@ object CORDICConstantGeneration {
     Cat(0.U(1.W), rom.io.data).asTypeOf(proto)
   }
   def makeLinearROM[T <: Data : ConvertableTo : BinaryRepresentation](n: Int, proto: T): (UInt, CORDICConfigRecord) => T = (addr, config) => {
-    val unit = ConvertableTo[T].fromDouble(pow(2.0, -n))
-    unit << ((n -1).U - addr)
+    //val unit = 1.U(2.W).asTypeOf(proto)
+
+    // unit << ((n ).U - addr)
+    /*Mux(addr < n.U,
+      Cat(0.U(1.W), 1.U << ((n - 1).U - addr)).asTypeOf(proto),
+      0.U(2.W).asTypeOf(proto))*/
+    RegNext((1.S << ( (n-2).U - addr )).asTypeOf(proto))
   }
   def makeHyperbolicROM[T <: Data : ConvertableTo](n: Int, proto: T): (UInt, CORDICConfigRecord) => T = (addr, config) => {
     val table = arctanh(n).map(conv(_, proto)) // map(ConvertableTo[T].fromDouble(_, proto).toBigInt())
@@ -227,7 +232,7 @@ class CORDICStage[T <: Data : Ring : Signed : BinaryRepresentation](params: CORD
   io.zout := AddSub(!d, io.zin, io.ROMin)
  }
 
-case class IterativeCORDICParams[T <: Data]
+case class CORDICParams[T <: Data]
 (
   val protoX: T,
   val protoY: T,
@@ -238,22 +243,22 @@ case class IterativeCORDICParams[T <: Data]
   makeROM: ROMFunc[T]
 )
 
-class IterativeCORDICChannel[T <: Data](params: IterativeCORDICParams[T]) extends Bundle {
+class CORDICChannel[T <: Data](params: CORDICParams[T]) extends Bundle {
   val x = Output(params.protoX.cloneType)
   val y = Output(params.protoY.cloneType)
   val z = Output(params.protoZ.cloneType)
 
-  override def cloneType = new IterativeCORDICChannel(params).asInstanceOf[this.type]
+  override def cloneType = new CORDICChannel(params).asInstanceOf[this.type]
 }
 
-class IterativeCORDICIO[T <: Data](params: IterativeCORDICParams[T]) extends Bundle {
-  val in  = Flipped(Decoupled(new IterativeCORDICChannel(params)))
-  val out = Decoupled(new IterativeCORDICChannel(params))
+class IterativeCORDICIO[T <: Data](params: CORDICParams[T]) extends Bundle {
+  val in  = Flipped(Decoupled(new CORDICChannel(params)))
+  val out = Decoupled(new CORDICChannel(params))
 
   val config = Input(params.stageConfig.record)
 }
 
-class IterativeCORDIC[T <: Data : Ring : Signed : BinaryRepresentation](params: IterativeCORDICParams[T])
+class IterativeCORDIC[T <: Data : Ring : Signed : BinaryRepresentation](params: CORDICParams[T])
   extends Module {
 
   val io = IO(new IterativeCORDICIO(params))
@@ -264,7 +269,7 @@ class IterativeCORDIC[T <: Data : Ring : Signed : BinaryRepresentation](params: 
   val STATE_OUTPUT    = 2
 
   val state = RegInit(UInt(), STATE_IDLE.U)
-  val xyzreg: IterativeCORDICChannel[T] = Reg(io.in.bits.cloneType)
+  val xyzreg: CORDICChannel[T] = Reg(io.in.bits.cloneType)
   val configReg = Reg(io.config.cloneType)
 
   val currentStage = Reg(UInt(log2Ceil(params.nStages).W))
@@ -325,7 +330,7 @@ object IterativeCORDIC {
   def circularVectoring[T <: Data : Ring : Signed : BinaryRepresentation : ConvertableTo]
   (protoXY: T, protoZ: T, nStages: Option[Int] = None, stagesPerCycle: Int = 1): IterativeCORDIC[T] = {
     val trueNStages = nStages.getOrElse(protoXY.getWidth)
-    val params = IterativeCORDICParams(
+    val params = CORDICParams(
       protoX = protoXY,
       protoY = protoXY,
       protoZ = protoZ,
@@ -334,13 +339,13 @@ object IterativeCORDIC {
       CORDICStageSelConfig.CircularVectoringStageSelConfig[T],
       CORDICConstantGeneration.makeCircularROM[T]
     )
-    Module(new IterativeCORDIC(params))
+    new IterativeCORDIC(params)
   }
 
   def circularRotation[T <: Data : Ring : Signed : BinaryRepresentation : ConvertableTo]
   (protoXY: T, protoZ: T, nStages: Option[Int] = None, stagesPerCycle: Int = 1): IterativeCORDIC[T] = {
     val trueNStages = nStages.getOrElse(protoXY.getWidth)
-    val params = IterativeCORDICParams(
+    val params = CORDICParams(
       protoX = protoXY,
       protoY = protoXY,
       protoZ = protoZ,
@@ -349,13 +354,13 @@ object IterativeCORDIC {
       CORDICStageSelConfig.CircularRotationStageSelConfig[T],
       CORDICConstantGeneration.makeCircularROM[T]
     )
-    Module(new IterativeCORDIC(params))
+    new IterativeCORDIC(params)
   }
 
   def division[T <: Data : Ring : Signed : ConvertableTo : BinaryRepresentation]
   (protoXY: T, protoZ: T, nStages: Option[Int] = None, stagesPerCycle: Int = 1): IterativeCORDIC[T] = {
     val trueNStages = nStages.getOrElse(protoXY.getWidth)
-    val params = IterativeCORDICParams(
+    val params = CORDICParams(
       protoX = protoXY,
       protoY = protoXY,
       protoZ = protoZ,
@@ -364,13 +369,13 @@ object IterativeCORDIC {
       CORDICStageSelConfig.DivisionStageSelConfig[T],
       CORDICConstantGeneration.makeLinearROM[T]
     )
-    Module(new IterativeCORDIC(params))
+    new IterativeCORDIC(params)
   }
 
   def multiplication[T <: Data : Ring : Signed : ConvertableTo : BinaryRepresentation]
   (protoXY: T, protoZ: T, nStages: Option[Int] = None, stagesPerCycle: Int = 1): IterativeCORDIC[T] = {
     val trueNStages = nStages.getOrElse(protoXY.getWidth)
-    val params = IterativeCORDICParams(
+    val params = CORDICParams(
       protoX = protoXY,
       protoY = protoXY,
       protoZ = protoZ,
@@ -379,13 +384,13 @@ object IterativeCORDIC {
       CORDICStageSelConfig.MultiplicationStageSelConfig[T],
       CORDICConstantGeneration.makeLinearROM[T]
     )
-    Module(new IterativeCORDIC(params))
+    new IterativeCORDIC(params)
   }
 
   def hyperbolicVectoring[T <: Data : Ring : Signed : ConvertableTo : ConvertableFrom : BinaryRepresentation]
   (protoXY: T, protoZ: T, nStages: Option[Int] = None, stagesPerCycle: Int = 1): IterativeCORDIC[T] = {
     val trueNStages = nStages.getOrElse(protoXY.getWidth)
-    val params = IterativeCORDICParams(
+    val params = CORDICParams(
       protoX = protoXY,
       protoY = protoXY,
       protoZ = protoZ,
@@ -394,13 +399,13 @@ object IterativeCORDIC {
       CORDICStageSelConfig.HyperbolicVectoringStageSelConfig[T],
       CORDICConstantGeneration.makeCircularROM[T]
     )
-    Module(new IterativeCORDIC(params))
+    new IterativeCORDIC(params)
   }
 
   def hyperbolicRotation[T <: Data : Ring : Signed : ConvertableTo : ConvertableFrom : BinaryRepresentation]
   (protoXY: T, protoZ: T, nStages: Option[Int] = None, stagesPerCycle: Int = 1): IterativeCORDIC[T] = {
     val trueNStages = nStages.getOrElse(protoXY.getWidth)
-    val params = IterativeCORDICParams(
+    val params = CORDICParams(
       protoX = protoXY,
       protoY = protoXY,
       protoZ = protoZ,
@@ -409,6 +414,58 @@ object IterativeCORDIC {
       CORDICStageSelConfig.HyperbolicRotationStageSelConfig[T],
       CORDICConstantGeneration.makeCircularROM[T]
     )
-    Module(new IterativeCORDIC(params))
+    new IterativeCORDIC(params)
   }
+}
+
+
+class PipelinedCORDICIO[T <: Data](params: CORDICParams[T]) extends Bundle {
+  val in  = Flipped(Valid(new CORDICChannel(params)))
+  val out = Valid(new CORDICChannel(params))
+
+  val config = Input(params.stageConfig.record)
+}
+
+class PipelinedCORDIC[T <: Data : Ring : Signed : BinaryRepresentation](params: CORDICParams[T])
+  extends Module {
+
+  val io = IO(new PipelinedCORDICIO(params))
+
+  val (out, _) = (0 until params.nStages).foldLeft( (io.in, io.config) ) { case ((stageIO, configIO), currentStage) =>
+
+    val stageParams = CORDICStageParams(
+      protoX = params.protoX,
+      protoY = params.protoY,
+      protoZ = params.protoZ,
+      maxShift = currentStage,
+      config = params.stageConfig
+    )
+
+    val romOut = params.makeROM(params.nStages, params.protoZ)(currentStage.U, configIO)
+
+    val stage = Module(new CORDICStage(stageParams))
+    stage.io.config <> configIO
+    stage.io.xin := stageIO.bits.x
+    stage.io.yin := stageIO.bits.y
+    stage.io.zin    := stageIO.bits.z
+    stage.io.nShift := currentStage.U
+    stage.io.ROMin  := romOut
+
+    val out = Wire(stageIO)
+    val stageValid = RegInit(false.B)
+    val stageOut = Reg(stageIO.bits)
+    val configOut = RegNext(configIO)
+
+    stageValid := stageIO.valid
+    stageOut.x := stage.io.xout
+    stageOut.y := stage.io.yout
+    stageOut.z := stage.io.zout
+
+    out.valid := stageValid
+    out.bits := stageOut
+
+    (out, configOut)
+  }
+
+  io.out := out
 }

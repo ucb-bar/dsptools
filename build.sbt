@@ -37,5 +37,5 @@ val defaultVersions = Map(
 
 libraryDependencies += "com.gilt" %% "handlebars-scala" % "2.1.1"
 
-libraryDependencies += "co.theasi" %% "plotly" % "0.2.1-SNAPSHOT" % "test"
+// libraryDependencies += "co.theasi" %% "plotly" % "0.2.1-SNAPSHOT" % "test"
 

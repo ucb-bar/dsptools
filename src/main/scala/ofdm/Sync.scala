@@ -38,12 +38,13 @@ class Sync[T <: Data : Real : BinaryRepresentation](params: SyncParams[T])/*(imp
   val peakDetect = Module(new PeakDetect(params.peakDetectParams))
   peakDetect.io.config <> io.peakDetectConfig
 
-  val cordic = IterativeCORDIC.circularVectoring(autocorr.io.out.bits.real.cloneType, params.protoAngle)
+  val cordic = Module(IterativeCORDIC.circularVectoring(autocorr.io.out.bits.real.cloneType, params.protoAngle))
 
   autocorr.io.in := io.in
   matchedFilter.io.in := io.in
 
-  val delayedIn = ShiftRegister(io.in.bits, n = params.autocorrParams.maxApart + 1, en = io.in.valid, resetData = 0.U.asTypeOf(io.in.bits))
+  val delay = params.autocorrParams.maxApart + cordic.io.out.bits.z.getWidth + 1
+  val delayedIn = ShiftRegister(io.in.bits, n = delay, en = io.in.valid, resetData = 0.U.asTypeOf(io.in.bits))
 
   val sampleAndCorr: Valid[SampleAndCorr[T]] = {
     val wire = Wire(Valid(new SampleAndCorr[T](matchedFilter.io.out.bits.real, io.in.bits.real)))

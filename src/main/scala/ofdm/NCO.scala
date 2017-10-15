@@ -33,7 +33,7 @@ class NCOIO[T <: Data : Real](params: NCOParams[T]) extends Bundle {
   val out  = Output(Valid(DspComplex(params.protoOut, params.protoOut)))
 }
 
-class NCO[T <: Data : Real](params: NCOParams[T]) extends Module {
+class NCO[T <: Data : Real : BinaryRepresentation](params: NCOParams[T]) extends Module {
   val io = IO(new NCOIO(params))
 
 

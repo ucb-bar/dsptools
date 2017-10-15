@@ -7,7 +7,7 @@ import dsptools.numbers.implicits._
 import org.scalatest.{FlatSpec, Matchers}
 
 class CORDICSpec extends FlatSpec with Matchers {
-  behavior of "CORDIC with fixed point"
+  behavior of "Iterative CORDIC with fixed point"
 
   it should "convert rectangular to polar" in {
     chisel3.iotesters.Driver.execute(
@@ -62,4 +62,51 @@ class CORDICSpec extends FlatSpec with Matchers {
       }
     }
   }
+
+  it should "divide correctly" in {
+    chisel3.iotesters.Driver.execute(
+      //Array("-tbn", "firrtl", "-fiwv"),
+      Array("-tbn", "verilator", "--wave-form-file-name", "IterativeCORDIC.vcd"),
+      () => IterativeCORDIC.division(FixedPoint(16.W, 8.BP), FixedPoint(32.W, 8.BP), nStages = Some(10))) { c=>
+        new FixedPointIterativeCORDICTester(c) {
+          //val result = rect2PolarTrial(0.5, 0.5)
+          //step(3)
+          //println(s"The result was $result")
+
+          for {
+            j <- (1 to 4)
+            i <- (1 to 6)
+          } {
+            val div = trial(i.toDouble, j.toDouble, 0.0)//rect2PolarTrial(i.toDouble, j.toDouble)._2
+            println(s"$j / $i = $div")
+          }
+        }
+      }
+  }
+
+  behavior of "Iterative CORDIC with SInt"
+  it should "divide correctly" in {
+    chisel3.iotesters.Driver.execute(
+      //Array("-tbn", "firrtl", "-fiwv"),
+      Array("-tbn", "verilator", "--wave-form-file-name", "IterativeCORDIC.vcd", "-tiv"),
+      () => IterativeCORDIC.division(SInt(16.W), SInt(16.W), nStages = Some(16))) { c=>
+      new SIntIterativeCORDICTester(c) {
+        //val result = rect2PolarTrial(0.5, 0.5)
+        //step(3)
+        //println(s"The result was $result")
+
+        for {
+          i <- (1 to 4)
+          j <- (1 to 6)
+        } {
+          val div = trial((i * 1).toDouble, j.toDouble, 0.0)//rect2PolarTrial(i.toDouble, j.toDouble)._2
+          println(s"$j / $i = $div")
+        }
+      }
+    }
+  }
+
+  behavior of "Pipelined CORDIC with fixed point"
+
+
 }

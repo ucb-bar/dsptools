@@ -162,8 +162,5 @@ class AutocorrSpec extends FlatSpec with Matchers {
     val xs = (0 to unpackedOut.length)
     val ys = unpackedOut.map(x => 10*log10(x.abs))
     println(s"Absolute values are $ys")
-
-    val plot = Plot().withScatter(xs, ys)
-    draw(plot, "STF Autocorr Magnitude Signed")
-  }
+ }
 }
