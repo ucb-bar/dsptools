@@ -13,14 +13,14 @@ import chisel3.iotesters.TestersCompatibility
 
 object DspTesterUtilities {
  
-  // Converts negative Double's to their 2's complement BigInt equivalents 
+  // Converts signed Double's to their 2's complement BigInt equivalents (unsigned)
   // (totalWidth, fractionalWidth of some FixedPoint)
-  def toBigIntUnsigned(x: Double, totalWidth: Int, fractionalWidth: Int): BigInt = {
+  def signedToBigIntUnsigned(x: Double, totalWidth: Int, fractionalWidth: Int): BigInt = {
     val bi = FixedPoint.toBigInt(x, fractionalWidth)
     val neg = bi < 0
-    val neededWidth = if (neg) bi.bitLength + 1 else bi.bitLength
+    val neededWidth = bi.bitLength + 1
     require(neededWidth <= totalWidth, "Double -> BigInt width larger than total width allocated!")
-    if (neg) (BigInt(1) << neededWidth) + bi 
+    if (neg) (BigInt(1) << totalWidth) + bi
     else bi
   }
 
