@@ -18,7 +18,7 @@ class DspTesterUtilitiesSpec extends FlatSpec with Matchers {
 
     def check_conversion(value: Double, totalWidth: Int, fractionalWidth: Int, verbose: Boolean = false): Unit = {
       if (verbose) { println(s"value = $value\ntotal width = $totalWidth\nfractional width = $fractionalWidth") }
-      var bi = toBigIntUnsigned(value, totalWidth, fractionalWidth)
+      var bi = signedToBigIntUnsigned(value, totalWidth, fractionalWidth)
       if (verbose) { println(s"result = $bi") }
       // check sign, flip if necessary
       if (totalWidth > 0 && bi.testBit(totalWidth-1)) {
