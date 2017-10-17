@@ -62,8 +62,8 @@ class DspTesterUtilitiesSpec extends FlatSpec with Matchers {
   }
 
   it should "fail to convert doubles to BigInts when not enough space is supplied" in {
-    intercept[IllegalArgumentException] { toBigIntUnsigned(2.0, 4, 2) }
-    intercept[IllegalArgumentException] { toBigIntUnsigned(-2.25, 4, 2) }
+    intercept[IllegalArgumentException] { signedToBigIntUnsigned(2.0, 4, 2) }
+    intercept[IllegalArgumentException] { signedToBigIntUnsigned(-2.25, 4, 2) }
   }
 
 }
