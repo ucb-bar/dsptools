@@ -5,8 +5,10 @@ package dsptools.numbers
 import chisel3._
 import chisel3.util.{ShiftRegister, Cat}
 import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floor, NoTrim, DspException}
-import chisel3.experimental.FixedPoint
-import chisel3.internal.firrtl.KnownBinaryPoint
+import chisel3.experimental.{Interval, FixedPoint}
+import chisel3.internal.firrtl.{KnownWidth, KnownBinaryPoint}
+import firrtl.ir.IntWidth
+import firrtl.passes.IsKnown
 
 import scala.language.implicitConversions
 
@@ -72,8 +74,9 @@ trait DspRealIsReal extends Any with IsReal[DspReal] with DspRealOrder with DspR
   // Round *half up* -- Different from System Verilog definition! (where half is rounded away from zero)
   // according to 5.7.2 (http://www.ece.uah.edu/~gaede/cpe526/2012%20System%20Verilog%20Language%20Reference%20Manual.pdf)
   def round(a: DspReal): DspReal = a.round()
+  // TODO: Make context truncate
   def truncate(a: DspReal): DspReal = {
-    Mux(ShiftRegister(a, context.numAddPipes) < DspReal(0.0), context_ceil(a), floor(ShiftRegister(a, context.numAddPipes)))
+    Mux(a < DspReal(0.0), ceil(a), floor(a))
   }
 }
 
@@ -110,9 +113,10 @@ trait BinaryRepresentationDspReal extends BinaryRepresentation[DspReal] with has
   override def div2(a: DspReal, n: Int): DspReal = a / DspReal(math.pow(2, n))
   // Used purely for fixed point precision adjustment -- just passes DspReal through
   def trimBinary(a: DspReal, n: Option[Int]): DspReal = a
+  override def clip(a: DspReal, b: DspReal): DspReal = a
  }
 
-trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspReal with 
+trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspReal with
     ConvertableFromDspReal with BinaryRepresentationDspReal with RealBits[DspReal] with hasContext {
   def signBit(a: DspReal): Bool = isSignNegative(a)
   override def fromInt(n: Int): DspReal = super[ConvertableToDspReal].fromInt(n)
@@ -132,7 +136,18 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
       round(a * DspReal((1 << bp).toDouble)).toSInt().asFixed.div2(bp)
     }
     out
-  } 
+  }
+  // Need proto for DspReal conversion
+  def toInterval(a: DspReal, proto: Interval): Interval = {
+    val width = proto.range.width
+    (width, proto.range.binaryPoint) match {
+      case (IntWidth(w), KnownBinaryPoint(bp)) =>
+        val fix = asFixed(a, FixedPoint(KnownWidth(w.toInt), proto.range.binaryPoint))
+        ChiselConvertableFrom[FixedPoint].toInterval(fix, proto)
+      case _ =>
+        throw new Exception("Prototype Interval should have known range + bp.")
+    }
+  }
 }
 
 trait DspRealImpl  {

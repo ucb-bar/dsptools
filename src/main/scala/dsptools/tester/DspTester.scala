@@ -255,11 +255,11 @@ class DspTester[T <: Module](
     def toMax(w: Int): BigInt = (BigInt(1) << w) - 1
     // <=
     val fixTolInt = toMax(fixTol)
-    val floTolDec = math.pow(10,-realTol)
+    val floTolDec = scala.math.pow(10,-realTol)
     // Error checking does a bad job of handling really small numbers,
     // so let's just force the really small numbers to 0
-    val expected0 = if (math.abs(expected) < floTolDec/100) 0.0 else expected
-    val dblVal0 = if (math.abs(dblVal) < floTolDec/100) 0.0 else dblVal
+    val expected0 = if (scala.math.abs(expected) < floTolDec/100) 0.0 else expected
+    val dblVal0 = if (scala.math.abs(dblVal) < floTolDec/100) 0.0 else dblVal
     val expectedBits = data match {
       case _: DspReal => DspTesterUtilities.doubleToBigIntBits(expected0)     // unsigned BigInt
       case f: FixedPoint => f.binaryPoint match {
@@ -282,7 +282,7 @@ class DspTester[T <: Module](
     }
     val good = {
       if (dblVal0 != expected0) {
-        val gotDiffDbl = math.abs(dblVal0-expected0)
+        val gotDiffDbl = scala.math.abs(dblVal0-expected0)
         val gotDiffBits = (bitVal - expectedBits).abs
         val passDbl = gotDiffDbl <= tolDec
         val passBits = gotDiffBits <= tolerance
@@ -296,15 +296,21 @@ class DspTester[T <: Module](
 
   // Expect on DspReal goes straight to here
   def expect(data: Data, expected: Double): Boolean = expect(data, expected, msg = "")
-  def expect(data: Data, expected: Double, msg: String): Boolean = {
+  def expectWithoutFailure(data: Data, expected: Double, msg: String = ""): Boolean = {
     val expectedNew = roundData(data, expected)
     val path = getName(data)
     val (dblVal, bitVal) = updatableDspVerbose.withValue(dispSub) { dspPeek(data) }
     val (good, tolerance) = checkDecimal(data, expectedNew, dblVal, bitVal)
-    if (dispDsp || !good) logger info ( { if (!good) Console.RED else "" } +
+    if (dispDsp) logger info
+      (
         s"$msg  EXPECT $path -> $dblVal == E " +
         s"$expectedNew ${if (good) "PASS" else "FAIL"}, tolerance = $tolerance, ${bitInfo(data)}" +
-        Console.RESET)
+        Console.RESET
+      )
+    good
+  }
+  def expect(data: Data, expected: Double, msg: String): Boolean = {
+    val good = expectWithoutFailure(data, expected, msg)
     if (!good) fail
     good
   }

@@ -20,5 +20,8 @@ trait BinaryRepresentation[A <: Data] extends Any {
   def mul2(a: A, n: Int): A = shl(a, n)
   // Trim to n fractional bits (with DspContext) -- doens't affect DspReal
   def trimBinary(a: A, n: Int): A = trimBinary(a, Some(n))
-  def trimBinary(a: A, n: Option[Int]): A 
+  def trimBinary(a: A, n: Option[Int]): A
+
+  // Clip A to B (range)
+  def clip(a: A, b: A): A = ???
 }

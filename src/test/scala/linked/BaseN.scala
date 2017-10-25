@@ -1,0 +1,1 @@
+../../../main/scala/dsptools/numbers/representations/BaseN.scala

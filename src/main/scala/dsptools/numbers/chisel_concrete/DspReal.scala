@@ -10,7 +10,7 @@ class DspReal(val lit: Option[BigInt] = None) extends Bundle {
   
   val node: UInt = lit match {
     case Some(x) => x.U(DspReal.underlyingWidth.W)
-    case _ => Output(UInt(DspReal.underlyingWidth.W))
+    case _ => UInt(DspReal.underlyingWidth.W)
   }
 
   private def oneOperandOperator(blackbox_gen: => BlackboxOneOperand) : DspReal = {

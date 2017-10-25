@@ -5,8 +5,9 @@ package dsptools.numbers
 import chisel3._
 import chisel3.util.{ShiftRegister, Cat}
 import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floor, NoTrim, DspException}
-import chisel3.experimental.FixedPoint
-import chisel3.internal.firrtl.KnownBinaryPoint
+import chisel3.experimental.{Interval, FixedPoint}
+import chisel3.internal.firrtl.{IntervalRange, KnownBinaryPoint}
+import firrtl.ir.Closed
 
 import scala.language.implicitConversions
 
@@ -38,7 +39,7 @@ trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
     ShiftRegister(diff, context.numAddPipes)
   }
   def negate(f: FixedPoint): FixedPoint = -f
-  def negateContext(f: FixedPoint): FixedPoint = minus(zero, f)
+  def negateContext(f: FixedPoint): FixedPoint = minusContext(zero, f)
 
   def times(f: FixedPoint, g: FixedPoint): FixedPoint = f * g
 
@@ -69,10 +70,11 @@ trait FixedPointIsReal extends Any with IsReal[FixedPoint] with FixedPointOrder 
   def floor(a: FixedPoint): FixedPoint = a.setBinaryPoint(0)
   def isWhole(a: FixedPoint): Bool = a === floor(a)
   // Truncate = round towards zero (integer part without fractional bits)
+  // TODO: Make context truncate!
   def truncate(a: FixedPoint): FixedPoint = {
-    Mux(isSignNegative(ShiftRegister(a, context.numAddPipes)),
+    Mux(isSignNegative(a),
       ceil(a),
-      floor(ShiftRegister(a, context.numAddPipes))
+      floor(a)
     )
   }
   // ceil, round moved to FixedPointReal to get access to ring
@@ -108,6 +110,30 @@ trait ConvertableFromFixedPoint extends ChiselConvertableFrom[FixedPoint] with h
   // asReal depends on shifting fractional bits up
   override def asFixed(a: FixedPoint): FixedPoint = a
   def asFixed(a: FixedPoint, proto: FixedPoint): FixedPoint = asFixed(a)
+
+  // Warning: Overflow possible if a width doesn't correspond to proto range
+  // -- Should only do this type of conversion at boundaries that have
+  // understood ranges
+  def toInterval(a: FixedPoint, proto: Interval): Interval = {
+    require(a.binaryPoint.known, "Fixed point binary point must be known!")
+    require(proto.range.binaryPoint.known, "Interval binary point must be known!")
+    require(a.binaryPoint.get == proto.range.binaryPoint.get, "Fixed point + Interval types must have the same bp.")
+    a.asInterval(proto.range)
+  }
+
+  override def toInterval(a: FixedPoint): Interval = {
+    require(a.binaryPoint.known, "Fixed point binary point must be known!")
+    require(a.widthKnown, "Fixed point width must be known!")
+    val n = a.binaryPoint.get
+    val m = a.getWidth - n
+    // Qm.n where m includes sign
+    // range: [-(2^(m-1), 2^(m-1) - 2^(-n)]
+    val lower = -BigDecimal(BigInt(1) << (m - 1))
+    val upper = BigDecimal(BigInt(1) << (m - 1)) - BigDecimal(1) / BigDecimal(BigInt(1) << n)
+    val range = IntervalRange(Closed(lower), Closed(upper), KnownBinaryPoint(n))
+    a.asInterval(range)
+  }
+
 }
 
 trait BinaryRepresentationFixedPoint extends BinaryRepresentation[FixedPoint] with hasContext {
@@ -167,7 +193,9 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     // Rounding after registering to make retiming easier to recognize
     val outTemp = ShiftRegister(f * g, context.numMulPipes)
     val newBP = (f.binaryPoint, g.binaryPoint) match {
-      case (KnownBinaryPoint(i), KnownBinaryPoint(j)) => Some(i.max(j) + context.binaryPointGrowth)
+      case (KnownBinaryPoint(i), KnownBinaryPoint(j)) => 
+        if (i == 0 && j == 0) Some(0)
+        else Some(i.max(j) + context.binaryPointGrowth)
       case (_, _) => None
     }
     trimBinary(outTemp, newBP)
@@ -183,17 +211,18 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
   }
 
   // Can potentially overflow
-  def ceil(a: FixedPoint): FixedPoint = {
+  def context_ceil(a: FixedPoint): FixedPoint = {
     Mux(
       isWhole(ShiftRegister(a, context.numAddPipes)),
       floor(ShiftRegister(a, context.numAddPipes)),
       plusContext(floor(a), one))
   }
-  def context_ceil(a: FixedPoint): FixedPoint = ceil(a)
+  def ceil(a: FixedPoint): FixedPoint = Mux(isWhole(a), floor(a), plus(floor(a), one))
 
   // Round half up: Can potentially overflow [round half towards positive infinity]
   // NOTE: Apparently different from Java for negatives
-  def round(a: FixedPoint): FixedPoint = floor(plusContext(a, 0.5.F(1.BP)))
+  // TODO: context_round
+  def round(a: FixedPoint): FixedPoint = floor(plus(a, 0.5.F(1.BP)))
 
   def signBit(a: FixedPoint): Bool = isSignNegative(a)
   // fromFixedPoint also included in Ring
@@ -217,7 +246,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     require(a.binaryPoint.known, "Binary point must be known for asReal")
     val n = a.binaryPoint.get
     val normalizedInt = a << n
-    DspReal(floor(normalizedInt).asSInt)/DspReal((1 << n).toDouble)
+    DspReal(floor(normalizedInt).asSInt)/DspReal((BigInt(1) << n).doubleValue)
   }
 }
 

@@ -66,6 +66,8 @@ libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.13.4"
 )
 
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+
 javacOptions ++= javacOptionsVersion(scalaVersion.value)
 
 publishMavenStyle := true

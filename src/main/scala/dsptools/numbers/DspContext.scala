@@ -20,7 +20,7 @@ case object Floor extends TrimType
 object DspContext {
   
   val defaultOverflowType = Grow
-  val defaultTrimType = Floor
+  val defaultTrimType = NoTrim // Floor
   val defaultBinaryPointGrowth = 1
   val defaultBinaryPoint = Some(14)
   val defaultNumBits = Some(16)

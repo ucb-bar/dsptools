@@ -7,7 +7,7 @@ import spire.macros.Ops
 
 import scala.language.experimental.macros
 
-import chisel3.experimental.FixedPoint
+import chisel3.experimental.{Interval, FixedPoint}
 
 /**
   * Much of this is drawn from non/spire, but using Chisel Bools instead of
@@ -109,6 +109,8 @@ class ChiselConvertableFromOps[A <: Data](lhs: A)(implicit ev: ChiselConvertable
   def intPart(): SInt = ev.intPart(lhs)
   def asFixed(): FixedPoint = ev.asFixed(lhs)
   def asFixed(proto: FixedPoint): FixedPoint = ev.asFixed(lhs, proto)
+  def toInterval(): Interval = ev.toInterval(lhs)
+  def toInterval(proto: Interval): Interval = ev.toInterval(lhs, proto)
   def asReal(): DspReal = ev.asReal(lhs)
 }
 
@@ -121,6 +123,7 @@ class BinaryRepresentationOps[A <: Data](lhs: A)(implicit ev: BinaryRepresentati
   def div2(n: Int): A = ev.div2(lhs, n)
   def mul2(n: Int): A = ev.mul2(lhs, n)
   def trimBinary(n: Int): A = ev.trimBinary(lhs, n)
+  def clip(b: A): A = ev.clip(lhs, b)
 }
 
 class ContextualRingOps[A <: Data](lhs: A)(implicit ev: Ring[A]) {
