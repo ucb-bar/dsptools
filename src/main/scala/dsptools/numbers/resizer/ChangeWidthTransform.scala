@@ -2,7 +2,8 @@
 
 package dsptools.numbers.resizer
 
-import firrtl.{CircuitForm, CircuitState, LowForm, Transform}
+import com.sun.tools.javac.resources.compiler
+import firrtl._
 import firrtl.annotations.{Annotation, Named}
 import firrtl.ir._
 import firrtl.Mappers._
@@ -124,6 +125,22 @@ class ChangeWidthTransform extends Transform with LazyLogging {
       case myAnnotations =>
         val changeRequests = makeChangeRequests(myAnnotations)
         state.copy(circuit = run(state.circuit, changeRequests))
+    }
+  }
+}
+
+object ChangeWidthTransform {
+  def main(args: Array[String]): Unit = {
+    args.toList match {
+      case firrtlFile :: annotationFile :: _ =>
+        val firrtl = io.Source.fromFile(firrtlFile).getLines().mkString("""\n""")
+        val annotationsText = io.Source.fromFile(annotationFile).getLines().mkString("""\n""")
+        val circuit = Parser.parse(firrtl)
+        val compiler = new LowFirrtlCompiler
+        val compileResult = compiler.compileAndEmit(CircuitState(circuit, ChirrtlForm))
+        compileResult
+      case _ =>
+        println(s"Usage: ChangeWidthTransform firrtl-file annotation-file")
     }
   }
 }
