@@ -2,6 +2,9 @@
 
 package dsptools.numbers.resizer
 
+import java.io.PrintWriter
+
+import firrtl.AnnotationMap
 import firrtl.annotations.{Annotation, CircuitName}
 import logger.{LazyLogging, LogLevel, Logger}
 
@@ -150,6 +153,19 @@ class BitReducer(lines: Seq[String]) extends LazyLogging {
       }
     }
     true
+  }
+
+  def getAnnotationMap: AnnotationMap = {
+    AnnotationMap(annotations)
+  }
+
+  //noinspection ScalaStyle
+  def writeAnnotations(fileName: String): Unit = {
+    val writer = new PrintWriter(new java.io.File(fileName))
+    annotations.foreach { annotation =>
+      writer.println(annotation.serialize)
+    }
+    writer.close()
   }
 
   def getReportString: String = {
