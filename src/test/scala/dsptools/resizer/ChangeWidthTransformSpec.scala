@@ -53,6 +53,7 @@ class ChangeWidthTransformSpec extends FreeSpec with Matchers {
     newFirrtlString should include ("input io_a1 : SInt<16>")
     newFirrtlString should include ("register1 : SInt<8>")
 
+    //noinspection ScalaStyle
     println(s"After ChangeWidthTransform\n$newFirrtlString")
   }
 }

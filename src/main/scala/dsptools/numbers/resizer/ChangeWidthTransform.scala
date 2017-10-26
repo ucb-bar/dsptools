@@ -42,11 +42,11 @@ class ChangeWidthTransform extends Transform with LazyLogging {
 
     def changeTpe(originalType: Type, newWidth: BigInt): Type = {
       originalType match {
-        case SIntType(IntWidth(n)) =>
+        case _: SIntType =>
           val newType = SIntType(IntWidth(newWidth))
           logger.info(s"Changing $originalType to $newType")
           newType
-        case UIntType(IntWidth(n)) =>
+        case _: UIntType =>
           val newType = UIntType(IntWidth(newWidth))
           logger.info(s"Changing $originalType to $newType")
           newType
@@ -62,10 +62,6 @@ class ChangeWidthTransform extends Transform with LazyLogging {
         else {
           pathString + "." + name
         }
-      }
-
-      def shouldChange(name: String): Boolean = {
-        changeRequests.contains(name)
       }
 
       def changeWidthsInExpression(expression: Expression): Expression = {
@@ -99,7 +95,7 @@ class ChangeWidthTransform extends Transform with LazyLogging {
               case _ => wire
             }
           case instance: DefInstance => findModule(instance.module) match {
-            case m: ExtModule => instance
+            case _: ExtModule => instance
             case m: Module =>
               changeWidthsInModule(m, s"$pathString.${module.name}.")
               instance
