@@ -68,11 +68,6 @@ class ChangeWidthTransform extends Transform with LazyLogging {
         changeRequests.contains(name)
       }
 
-      def annotationToWidth(annotation: Annotation): Width = {
-        //TODO (chick) complete this
-        IntWidth(32)
-      }
-
       def changeWidthsInExpression(expression: Expression): Expression = {
         expression
       }
