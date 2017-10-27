@@ -2,7 +2,6 @@
 
 package dsptools.numbers.resizer
 
-import com.sun.tools.javac.resources.compiler
 import firrtl._
 import firrtl.annotations.{Annotation, Named}
 import firrtl.ir._
