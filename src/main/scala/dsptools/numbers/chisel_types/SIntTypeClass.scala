@@ -5,7 +5,7 @@ package dsptools.numbers
 import chisel3._
 import chisel3.util.{Cat, ShiftRegister}
 import dsptools.{DspContext, DspException, Grow, NoTrim, Saturate, Wrap, hasContext}
-import chisel3.experimental.FixedPoint
+import chisel3.experimental.{Interval, FixedPoint}
 
 import scala.language.implicitConversions
 
@@ -77,6 +77,8 @@ trait SIntSigned extends Any with Signed[SInt] with hasContext {
 
 trait SIntIsReal extends Any with IsIntegral[SInt] with SIntOrder with SIntSigned with hasContext {
   // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself;
+
+  override def context_ceil(a: SInt): SInt = ShiftRegister(a, context.numAddPipes)
   // isWhole always true
   // -5, -3, -1, 1, 3, 5, etc.
   def isOdd(a: SInt): Bool = a(0)
@@ -115,6 +117,12 @@ trait ConvertableFromSInt extends ChiselConvertableFrom[SInt] with hasContext {
   def asFixed(a: SInt, proto: FixedPoint): FixedPoint = asFixed(a)
   // Converts to (signed) DspReal
   def asReal(a: SInt): DspReal = DspReal(a)
+  def toInterval(a: SInt, proto: Interval): Interval = {
+    implicitly[ChiselConvertableFrom[FixedPoint]].toInterval(asFixed(a), proto)
+  }
+  override def toInterval(a: SInt): Interval = {
+    implicitly[ChiselConvertableFrom[FixedPoint]].toInterval(asFixed(a))
+  }
 }
 
 trait BinaryRepresentationSInt extends BinaryRepresentation[SInt] with hasContext {

@@ -5,7 +5,7 @@ package dsptools.numbers
 import chisel3._
 import chisel3.util.{ShiftRegister, Cat}
 import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, DspException}
-import chisel3.experimental.FixedPoint
+import chisel3.experimental.{Interval, FixedPoint}
 
 import scala.language.implicitConversions
 
@@ -34,7 +34,7 @@ trait UIntRing extends Any with Ring[UInt] with hasContext {
     }
     ShiftRegister(diff.asUInt, context.numAddPipes)
   }
-  def negate(f: UInt): UInt = -f
+  def negate(f: UInt): UInt = throw DspException("Can't negate UInt and get UInt")
   def negateContext(f: UInt): UInt = throw DspException("Can't negate UInt and get UInt")
   def times(f: UInt, g: UInt): UInt = f * g
   def timesContext(f: UInt, g: UInt): UInt = {
@@ -61,7 +61,7 @@ trait UIntSigned extends Any with Signed[UInt] with hasContext {
     ComparisonHelper(a === 0.U, a < 0.U)
   }
   def abs(a: UInt): UInt = a // UInts are unsigned!
-  def context_abs(a: UInt): UInt = a // UInts are unsigned!
+  def context_abs(a: UInt): UInt = ShiftRegister(a, context.numAddPipes) // UInts are unsigned!
   override def isSignZero(a: UInt): Bool = a === 0.U
   override def isSignPositive(a: UInt): Bool = !isSignZero(a)
   override def isSignNegative(a: UInt): Bool = false.B
@@ -71,6 +71,8 @@ trait UIntSigned extends Any with Signed[UInt] with hasContext {
 trait UIntIsReal extends Any with IsIntegral[UInt] with UIntOrder with UIntSigned with hasContext {
   // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself; 
   // isWhole always true
+
+  override def context_ceil(a: UInt): UInt = ShiftRegister(a, context.numAddPipes)
   
   // Unsure what happens if you have a zero-width wire
   def isOdd(a: UInt): Bool = a(0)
@@ -117,6 +119,12 @@ trait ConvertableFromUInt extends ChiselConvertableFrom[UInt] with hasContext {
   def asFixed(a: UInt, proto: FixedPoint): FixedPoint = asFixed(a)
   // Converts to (signed) DspReal
   def asReal(a: UInt): DspReal = DspReal(intPart(a))
+  def toInterval(a: UInt, proto: Interval): Interval = {
+    implicitly[ChiselConvertableFrom[FixedPoint]].toInterval(asFixed(a), proto)
+  }
+  override def toInterval(a: UInt): Interval = {
+    implicitly[ChiselConvertableFrom[FixedPoint]].toInterval(asFixed(a))
+  }
 }
 
 trait BinaryRepresentationUInt extends BinaryRepresentation[UInt] with hasContext {
