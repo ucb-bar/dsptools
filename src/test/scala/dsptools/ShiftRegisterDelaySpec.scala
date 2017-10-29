@@ -39,7 +39,7 @@ class CeilTruncateCircuitWithDelays(val delays: Int) extends Module {
   })
 
   DspContext.withNumAddPipes(delays) {
-    io.outFixedCeil := io.inFixed.ceil()
+    io.outFixedCeil := io.inFixed.context_ceil()
     io.outRealCeil := io.inReal.context_ceil()
     io.outFixedTruncate := io.inFixed.truncate()
     io.outRealTruncate := io.inReal.truncate()

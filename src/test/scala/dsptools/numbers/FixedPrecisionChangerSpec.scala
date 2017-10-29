@@ -7,6 +7,18 @@ import chisel3.experimental.FixedPoint
 import dsptools.DspTester
 import org.scalatest.{FreeSpec, Matchers}
 
+import chisel3.iotesters.TesterOptions
+import dsptools.{DspTesterOptionsManager, DspTesterOptions}
+import logger.LogLevel
+
+class TestOptions {
+  def options(testName: String = "", verbose: Boolean = false) = new DspTesterOptionsManager {
+    dspTesterOptions = DspTesterOptions(fixTolLSBs = 0, isVerbose = verbose)
+    testerOptions = TesterOptions(isVerbose = true, backendName = "firrtl")
+    commonOptions = commonOptions.copy(targetDirName = "test_run_dir/FixedPrecisionChanger/" + testName, globalLogLevel = LogLevel.Trace)
+  }
+}
+
 //scalastyle:off magic.number
 
 class FixedPrecisionChanger(inWidth: Int, inBinaryPoint: Int, outWidth: Int, outBinaryPoint: Int) extends Module {
@@ -64,8 +76,8 @@ class FixedPrecisionChangerSpec extends FreeSpec with Matchers {
     }
     "let's try 1/3 just for fun with a big mantissa" - {
       "oops, this works because I built in a fudge factor for double comparison, how should this be done" in {
-        dsptools.Driver.execute(() => new FixedPrecisionChanger(64, 58, 64, 16)) { c =>
-          new FixedPointTruncatorTester(c, 1.0 / 3.0, 0.3333282470703125)
+        dsptools.Driver.execute(() => new FixedPrecisionChanger(64, 58, 64, 16), new TestOptions().options()) { c =>
+          new FixedPointTruncatorTester(c, 1.toDouble / 3, 0.3333282470703125)
         } should be(true)
       }
     }

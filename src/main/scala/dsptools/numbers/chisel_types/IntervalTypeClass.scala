@@ -235,7 +235,7 @@ trait IntervalReal extends IntervalRing with IntervalIsReal with ConvertableToIn
     require(a.binaryPoint.known, "Binary point must be known for asReal")
     val n = a.binaryPoint.get
     val normalizedInt = a << n
-    DspReal(floor(normalizedInt).asSInt)/DspReal((1 << n).toDouble)
+    DspReal(floor(normalizedInt).asSInt)/DspReal((BigInt(1) << n).doubleValue)
   }
 }
 

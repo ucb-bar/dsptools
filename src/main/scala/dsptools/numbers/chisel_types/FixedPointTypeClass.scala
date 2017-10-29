@@ -128,8 +128,8 @@ trait ConvertableFromFixedPoint extends ChiselConvertableFrom[FixedPoint] with h
     val m = a.getWidth - n
     // Qm.n where m includes sign
     // range: [-(2^(m-1), 2^(m-1) - 2^(-n)]
-    val lower = -BigDecimal(1 << (m - 1))
-    val upper = BigDecimal(1 << (m - 1)) - BigDecimal(1) / BigDecimal(1 << n)
+    val lower = -BigDecimal(BigInt(1) << (m - 1))
+    val upper = BigDecimal(BigInt(1) << (m - 1)) - BigDecimal(1) / BigDecimal(BigInt(1) << n)
     val range = IntervalRange(Closed(lower), Closed(upper), KnownBinaryPoint(n))
     a.asInterval(range)
   }
@@ -244,7 +244,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     require(a.binaryPoint.known, "Binary point must be known for asReal")
     val n = a.binaryPoint.get
     val normalizedInt = a << n
-    DspReal(floor(normalizedInt).asSInt)/DspReal((1 << n).toDouble)
+    DspReal(floor(normalizedInt).asSInt)/DspReal((BigInt(1) << n).doubleValue)
   }
 }
 

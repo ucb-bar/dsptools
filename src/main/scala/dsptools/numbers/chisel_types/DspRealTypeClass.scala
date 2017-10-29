@@ -104,8 +104,8 @@ trait BinaryRepresentationDspReal extends BinaryRepresentation[DspReal] with has
   def shl(a: DspReal, n: Int): DspReal = a * DspReal(math.pow(2, n))
   def shl(a: DspReal, n: UInt): DspReal = {
     require(n.widthKnown, "n Width must be known for shl with DspReal")
-    val max = (1 << n.getWidth) - 1
-    val lut = Vec((0 to max).map(x => DspReal(math.pow(2, x))))
+    val max = (BigInt(1) << n.getWidth) - 1
+    val lut = Vec((0 to max.intValue).map(x => DspReal(math.pow(2, x.doubleValue))))
     a * lut(n)
   }
   // mul2 consistent with shl
@@ -133,7 +133,7 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
     val out = Wire(proto.cloneType)
     out := DspContext.withTrimType(NoTrim) {
       // round is round half up
-      round(a * DspReal((1 << bp).toDouble)).toSInt().asFixed.div2(bp)
+      round(a * DspReal((BigInt(1) << bp).doubleValue)).toSInt().asFixed.div2(bp)
     }
     out
   }
