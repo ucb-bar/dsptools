@@ -79,6 +79,8 @@ class DspComplexBinaryRepresentation[T <: Data:Ring:BinaryRepresentation] extend
   def signBit(a: DspComplex[T]): Bool = throw DspException("Can't get sign bit on complex")
   def trimBinary(a: DspComplex[T], n: Option[Int]): DspComplex[T] = 
     DspComplex.wire(BinaryRepresentation[T].trimBinary(a.real, n), BinaryRepresentation[T].trimBinary(a.imag, n))
+  override def clip(a: DspComplex[T], b: DspComplex[T]): DspComplex[T] =
+    DspComplex.wire(BinaryRepresentation[T].clip(a.real, b.real), BinaryRepresentation[T].clip(a.imag, b.imag))
 }
 
 trait DspComplexImpl {

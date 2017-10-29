@@ -7,7 +7,7 @@ import chisel3.util.{ShiftRegister, Cat}
 import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floor, NoTrim, DspException}
 import chisel3.experimental.{Interval, FixedPoint}
 import chisel3.internal.firrtl.{IntervalRange, KnownBinaryPoint}
-import firrtl.ir.Closed
+import firrtl.ir.{Bound, Closed}
 import firrtl.passes.IsKnown
 
 import scala.language.implicitConversions
@@ -29,13 +29,13 @@ trait IntervalRing extends Any with Ring[Interval] with hasContext {
         val fRange = f.range
         val gRange = g.range
         val (min, max) = (fRange.lower, fRange.upper, gRange.lower, gRange.upper) match {
-          case (fl: IsKnown, fu: IsKnown, gl: IsKnown, gu: IsKnown) =>
+          case (fl: IsKnown with Bound, fu: IsKnown with Bound, gl: IsKnown with Bound, gu: IsKnown with Bound) =>
             (fl.min(gl), fu.max(gu))
           case _ =>
             throw new Exception("Wrap + requires known input ranges.")
         }
         val bp = fRange.binaryPoint.max(gRange.binaryPoint)
-        (f + g).conditionalReassignInterval(Interval(IntervalRange(min, max, bp)))
+        (f + g).conditionalReassignInterval(Interval(IntervalRange(min.asInstanceOf[Bound], max.asInstanceOf[Bound], bp)))
       case _ => throw DspException("Saturating add hasn't been implemented")
     }
     ShiftRegister(sum, context.numAddPipes)
@@ -48,13 +48,13 @@ trait IntervalRing extends Any with Ring[Interval] with hasContext {
         val fRange = f.range
         val gRange = g.range
         val (min, max) = (fRange.lower, fRange.upper, gRange.lower, gRange.upper) match {
-          case (fl: IsKnown, fu: IsKnown, gl: IsKnown, gu: IsKnown) =>
+          case (fl: IsKnown with Bound, fu: IsKnown with Bound, gl: IsKnown with Bound, gu: IsKnown with Bound) =>
             (fl.min(gl), fu.max(gu))
           case _ =>
             throw new Exception("Wrap + requires known input ranges.")
         }
         val bp = fRange.binaryPoint.max(gRange.binaryPoint)
-        (f - g).conditionalReassignInterval(Interval(IntervalRange(min, max, bp)))
+        (f - g).conditionalReassignInterval(Interval(IntervalRange(min.asInstanceOf[Bound], max.asInstanceOf[Bound], bp)))
       case _ => throw DspException("Saturating subtractor hasn't been implemented")
     }
     ShiftRegister(diff, context.numAddPipes)
@@ -136,6 +136,8 @@ trait ConvertableFromInterval extends ChiselConvertableFrom[Interval] with hasCo
 }
 
 trait BinaryRepresentationInterval extends BinaryRepresentation[Interval] with hasContext {
+
+  override def clip(a: Interval, b: Interval): Interval = a.clip(b)
   def shl(a: Interval, n: Int): Interval = a << n
   def shl(a: Interval, n: UInt): Interval = a << n
 
@@ -240,5 +242,3 @@ trait IntervalReal extends IntervalRing with IntervalIsReal with ConvertableToIn
 trait IntervalImpl {
   implicit object IntervalRealImpl extends IntervalReal
 }
-
-// ADD CLIP

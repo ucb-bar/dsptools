@@ -6,7 +6,7 @@ import chisel3._
 import chisel3.util.{ShiftRegister, Cat}
 import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floor, NoTrim, DspException}
 import chisel3.experimental.{Interval, FixedPoint}
-import chisel3.internal.firrtl.KnownBinaryPoint
+import chisel3.internal.firrtl.{KnownWidth, KnownBinaryPoint}
 import firrtl.ir.IntWidth
 import firrtl.passes.IsKnown
 
@@ -113,6 +113,7 @@ trait BinaryRepresentationDspReal extends BinaryRepresentation[DspReal] with has
   override def div2(a: DspReal, n: Int): DspReal = a / DspReal(math.pow(2, n))
   // Used purely for fixed point precision adjustment -- just passes DspReal through
   def trimBinary(a: DspReal, n: Option[Int]): DspReal = a
+  override def clip(a: DspReal, b: DspReal): DspReal = a
  }
 
 trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspReal with
@@ -141,7 +142,7 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
     val width = proto.range.width
     (width, proto.range.binaryPoint) match {
       case (IntWidth(w), KnownBinaryPoint(bp)) =>
-        val fix = asFixed(a, FixedPoint(width, proto.range.binaryPoint))
+        val fix = asFixed(a, FixedPoint(KnownWidth(w.toInt), proto.range.binaryPoint))
         implicitly[ChiselConvertableFrom[FixedPoint]].toInterval(fix, proto)
       case _ =>
         throw new Exception("Prototype Interval should have known range + bp.")

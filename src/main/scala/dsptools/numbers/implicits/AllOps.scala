@@ -123,6 +123,7 @@ class BinaryRepresentationOps[A <: Data](lhs: A)(implicit ev: BinaryRepresentati
   def div2(n: Int): A = ev.div2(lhs, n)
   def mul2(n: Int): A = ev.mul2(lhs, n)
   def trimBinary(n: Int): A = ev.trimBinary(lhs, n)
+  def clip(b: A): A = ev.clip(lhs, b)
 }
 
 class ContextualRingOps[A <: Data](lhs: A)(implicit ev: Ring[A]) {
