@@ -74,7 +74,7 @@ trait FixedPointIsReal extends Any with IsReal[FixedPoint] with FixedPointOrder 
   def truncate(a: FixedPoint): FixedPoint = {
     Mux(isSignNegative(a),
       ceil(a),
-      floor(a))
+      floor(a)
     )
   }
   // ceil, round moved to FixedPointReal to get access to ring

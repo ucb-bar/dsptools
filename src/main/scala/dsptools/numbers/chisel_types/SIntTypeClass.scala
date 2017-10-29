@@ -78,7 +78,7 @@ trait SIntSigned extends Any with Signed[SInt] with hasContext {
 trait SIntIsReal extends Any with IsIntegral[SInt] with SIntOrder with SIntSigned with hasContext {
   // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself;
 
-  override def context_ceil(a: SInt): SInt = ShiftRegister(a, context.numAddPipes)
+  def context_ceil(a: SInt): SInt = ShiftRegister(a, context.numAddPipes)
   // isWhole always true
   // -5, -3, -1, 1, 3, 5, etc.
   def isOdd(a: SInt): Bool = a(0)

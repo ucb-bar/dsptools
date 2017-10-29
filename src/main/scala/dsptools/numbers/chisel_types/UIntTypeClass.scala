@@ -34,7 +34,7 @@ trait UIntRing extends Any with Ring[UInt] with hasContext {
     }
     ShiftRegister(diff.asUInt, context.numAddPipes)
   }
-  def negate(f: UInt): UInt = throw DspException("Can't negate UInt and get UInt")
+  def negate(f: UInt): UInt = -f
   def negateContext(f: UInt): UInt = throw DspException("Can't negate UInt and get UInt")
   def times(f: UInt, g: UInt): UInt = f * g
   def timesContext(f: UInt, g: UInt): UInt = {
@@ -72,7 +72,7 @@ trait UIntIsReal extends Any with IsIntegral[UInt] with UIntOrder with UIntSigne
   // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself; 
   // isWhole always true
 
-  override def context_ceil(a: UInt): UInt = ShiftRegister(a, context.numAddPipes)
+  def context_ceil(a: UInt): UInt = ShiftRegister(a, context.numAddPipes)
   
   // Unsure what happens if you have a zero-width wire
   def isOdd(a: UInt): Bool = a(0)
