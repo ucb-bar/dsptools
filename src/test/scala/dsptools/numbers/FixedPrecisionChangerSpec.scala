@@ -14,8 +14,8 @@ import logger.LogLevel
 class TestOptions {
   def options(testName: String = "", verbose: Boolean = false) = new DspTesterOptionsManager {
     dspTesterOptions = DspTesterOptions(fixTolLSBs = 0, isVerbose = verbose)
-    testerOptions = TesterOptions(isVerbose = true, backendName = "firrtl")
-    commonOptions = commonOptions.copy(targetDirName = "test_run_dir/FixedPrecisionChanger/" + testName, globalLogLevel = LogLevel.Trace)
+    testerOptions = TesterOptions(isVerbose = false, backendName = "firrtl")
+    commonOptions = commonOptions.copy(targetDirName = "test_run_dir/FixedPrecisionChanger/" + testName)
   }
 }
 
@@ -63,7 +63,7 @@ class FixedPrecisionChangerSpec extends FreeSpec with Matchers {
       } should be (true)
     }
     "here we assign to a F8.1 from a F8.1" - {
-      "conversion to fixed point with less precision than poked value rounds up to 7,  IS THIS RIGHT?" in {
+      "conversion to fixed point with less precision than poked value rounds up to 7,  IS THIS RIGHT? Yes, because the input is first rounded!" in {
         dsptools.Driver.execute(() => new FixedPrecisionChanger(8, 1, 8, 1)) { c =>
           new FixedPointTruncatorTester(c, 6.875, 7.0)
         } should be(true)
@@ -75,8 +75,8 @@ class FixedPrecisionChangerSpec extends FreeSpec with Matchers {
       } should be (true)
     }
     "let's try 1/3 just for fun with a big mantissa" - {
-      "oops, this works because I built in a fudge factor for double comparison, how should this be done" in {
-        dsptools.Driver.execute(() => new FixedPrecisionChanger(64, 58, 64, 16), new TestOptions().options()) { c =>
+      "OK :)" in {
+        dsptools.Driver.execute(() => new FixedPrecisionChanger(64, 58, 64, 16)) { c =>
           new FixedPointTruncatorTester(c, 1.toDouble / 3, 0.3333282470703125)
         } should be(true)
       }
