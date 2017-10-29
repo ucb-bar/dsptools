@@ -60,7 +60,7 @@ trait IntervalRing extends Any with Ring[Interval] with hasContext {
     ShiftRegister(diff, context.numAddPipes)
   }
   def negate(f: Interval): Interval = -f
-  def negateContext(f: Interval): Interval = minus(zero, f)
+  def negateContext(f: Interval): Interval = minusContext(zero, f)
 
   def times(f: Interval, g: Interval): Interval = f * g
 
@@ -92,9 +92,9 @@ trait IntervalIsReal extends Any with IsReal[Interval] with IntervalOrder with I
   def isWhole(a: Interval): Bool = a === floor(a)
   // Truncate = round towards zero (integer part without fractional bits)
   def truncate(a: Interval): Interval = {
-    Mux(isSignNegative(ShiftRegister(a, context.numAddPipes)),
+    Mux(isSignNegative(a),
       ceil(a),
-      floor(ShiftRegister(a, context.numAddPipes))
+      floor(a)
     )
   }
   // ceil, round moved to IntervalReal to get access to ring
@@ -211,7 +211,7 @@ trait IntervalReal extends IntervalRing with IntervalIsReal with ConvertableToIn
 
   // Round half up: Can potentially overflow [round half towards positive infinity]
   // NOTE: Apparently different from Java for negatives
-  def round(a: Interval): Interval = floor(plusContext(a, 0.5.I(1.BP)))
+  def round(a: Interval): Interval = floor(plus(a, 0.5.I(1.BP)))
 
   def signBit(a: Interval): Bool = isSignNegative(a)
   // fromInterval also included in Ring
