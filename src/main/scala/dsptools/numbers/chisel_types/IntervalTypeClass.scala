@@ -117,11 +117,11 @@ trait ConvertableToInterval extends ConvertableTo[Interval] with hasContext {
     d.I(a.range.binaryPoint)
   }
   override def fromDoubleWithFixedWidth(d: Double, a: Interval): Interval = {
-    require(a.binaryPoint.known, "Binary point must be known!")
+    require(a.range.binaryPoint.known, "Binary point must be known!")
     require(a.widthKnown, "Interval width not known!")
     val sintBits = BigInt(d.toInt).bitLength + 1
     require(sintBits + a.range.binaryPoint.get <= a.getWidth, "Lit can't fit in prototype Interval bitwidth")
-    Interval.fromDouble(value = d, width = a.getWidth, binaryPoint = a.binaryPoint.get)
+    Interval.fromDouble(value = d, width = a.getWidth, binaryPoint = a.range.binaryPoint.get)
   }
 }
 
@@ -167,10 +167,10 @@ trait IntervalReal extends IntervalRing with IntervalIsReal with ConvertableToIn
         case NoTrim => a
         case Floor => a.setBinaryPoint(b)
         case RoundHalfUp => {
-          // Example: (2.3, 2.8)
-          // (2.3, 2.8) + .5
-          // -> (2.8, 3.3)
-          // floor -> (2, 3) [bp = 0]
+          // Example: (2.3, 2.8, -2.3, -2.8)
+          // (2.3, 2.8, -2.3, -2.8) + .5
+          // -> (2.8, 3.3, -1.8, -2.3)
+          // floor -> (2, 3, -2, -3) [bp = 0]
           val roundBp = b + 1
           val addAmt = math.pow(2, -roundBp).I(roundBp.BP)
           plus(a, addAmt).setBinaryPoint(b)
@@ -241,4 +241,4 @@ trait IntervalImpl {
   implicit object IntervalRealImpl extends IntervalReal
 }
 
-// ADD CLIP, ceil???
+// ADD CLIP
