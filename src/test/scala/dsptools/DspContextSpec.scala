@@ -46,7 +46,7 @@ class DspContextSpec extends FreeSpec with Matchers {
           n * n
         }
       }
-      points.zipWithIndex.foreach { case (p: Int, i: Int) => p should be (math.pow(i + 1, 2))}
+      points.zipWithIndex.foreach { case (p: Int, i: Int) => p should be (scala.math.pow(i + 1, 2))}
 
       DspContext.current.numBits should be (DspContext.defaultNumBits)
     }
