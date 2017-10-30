@@ -283,7 +283,7 @@ class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]]) exten
 }
 
 class MatrixOpSpec extends FlatSpec with Matchers {
-  val n = 4
+  val n = 8
   val len = n * n
   val in = (0 until len).map(_.toDouble)
   val inI = Interval(range"[0, ${len}).0")
@@ -293,7 +293,7 @@ class MatrixOpSpec extends FlatSpec with Matchers {
   val real = DspReal()
 
   behavior of "Matrix operations"
-
+/*
   it should "properly add - Interval" in {
     dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "add", in)), IATest.options("MatrixAdd")) {
       c => new MatrixOpTester(c)
@@ -311,13 +311,14 @@ class MatrixOpSpec extends FlatSpec with Matchers {
       c => new MatrixOpTester(c)
     } should be (true)
   }
+*/  
 
   it should "properly multiply - FixedPoint" in {
     dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul", in)), IATest.options("MatrixMul-F")) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
-
+/*
   it should "properly add with lit - Interval" in {
     dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "litAdd", in)), IATest.options("MatrixLitAdd")) {
       c => new MatrixOpTester(c)
@@ -341,7 +342,7 @@ class MatrixOpSpec extends FlatSpec with Matchers {
       c => new MatrixOpTester(c)
     } should be (true)
   }
-    
+*/    
 }
 
 // TODO: Pipeline matrix multiply, Why is DspReal just not connected at the input? (Does Complex work?)
