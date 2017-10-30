@@ -17,7 +17,7 @@ object Matrix {
   }
 }
 
-/** Recursive operations */
+/** Recursive operations https://arxiv.org/pdf/1410.1599.pdf */
 class Matrix(val el: Seq[Seq[Double]]) {
   el foreach { row => require(el.length == row.length, "Matrix must be square!") }
   val n = el.length
@@ -153,11 +153,7 @@ class MatrixSpec extends FlatSpec with Matchers {
   }
 }
 
-/*
-object Matrix2x2Impl {
-  implicit def Matrix2x2RingImpl[T <: Data:Ring] = new Matrix2x2Ring[T]()
-}
-*/
+
 
 /*
 object Matrix2x2 {
@@ -172,51 +168,5 @@ object Matrix2x2 {
   }
 }
 
-class Matrix2x2[T <: Data](val x11: T, val x12: T, val x21: T, val x22: T) extends Bundle {
-  def + (b: Matrix2x2[T]): Matrix2x2[T] = {
-    val c11 = this.x11 + b.x11
-    val c12 = this.x12 + b.x12
-    val c21 = this.x21 + b.x21
-    val c22 = this.x22 + b.x22
-    Matrix2x2.wire(c11, c12, c21, c22)
-  }
-}
-*/
 
-/*
-class Matrix2x2Ring[T <: Data:Ring] extends Ring[Matrix2x2[T]] {
-  def plus(f: Matrix2x2[T], g: Matrix2x2[T]): Matrix2x2[T] = {
-    val c11 = f.a11 + g.a11
-    val c12 = plus(f.a12, g.a12)
-    val c21 = plus(f.a21, g.a21)
-    val c22 = plus(f.a22, g.a22)
-    Matrix2x2.wire(c11, c12, c21, c22)
-  }
-
-  def plusContext(f: Matrix2x2[T], g: Matrix2x2[T]): Matrix2x2[T] = {
-    plus(f, g)
-  }
-
-  def times(f: Matrix2x2[T], g: Matrix2x2[T]): Matrix2x2[T] = {
-    plus(f, g)
-  }
-  def timesContext(f: Matrix2x2[T], g: Matrix2x2[T]): Matrix2x2[T] = {
-    plus(f, g)
-  }
-
-  def one: Matrix2x2[T] = Matrix2x2(Ring[T].one, Ring[T].one, Ring[T].one, Ring[T].one)
-
-  def zero: Matrix2x2[T] = Matrix2x2(Ring[T].zero, Ring[T].zero, Ring[T].zero, Ring[T].zero)
-
-  def negate(f: Matrix2x2[T]): Matrix2x2[T] = plus(f, f)
-  def negateContext(f: Matrix2x2[T]): Matrix2x2[T] = {
-    plus(f, f)
-  }
-  override def minus(f: Matrix2x2[T], g: Matrix2x2[T]): Matrix2x2[T] = {
-    plus(f, g)
-  }
-  def minusContext(f: Matrix2x2[T], g: Matrix2x2[T]): Matrix2x2[T] = {
-    plus(f, g)
-  }
-}
 */
