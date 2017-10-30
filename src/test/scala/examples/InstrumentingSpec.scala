@@ -41,13 +41,22 @@ class InstrumentingAdderTester[T<:Data:Ring](c: InstrumentingAdder[T]) extends D
 
 class InstrumentingAdderSpec extends FlatSpec with Matchers {
 
+  def getFixed: FixedPoint = FixedPoint(100.W, 16.BP)
+
   behavior of "parameterized adder circuit on blackbox real"
 
   it should "run while being instrumented" in {
-    def getFixed: FixedPoint = FixedPoint(32.W, 16.BP)
 
     dsptools.Driver.execute(() => new InstrumentingAdder(getFixed _),
       Array("-fimbu", "-fimof", "signals.csv", "-fimhb", "16")) { c =>
+      new InstrumentingAdderTester(c)
+    } should be (true)
+  }
+
+  it should "run twice with bits reduced in second run based on analysis of first run" in {
+    dsptools.Driver.executeWithBitReduction(() => new InstrumentingAdder(getFixed _),
+      Array("-fimbu", "-fimof", "signals.csv", "-fimhb", "16")) { c =>
+//      Array.empty[String]) { c =>
       new InstrumentingAdderTester(c)
     } should be (true)
   }
