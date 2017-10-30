@@ -14,11 +14,12 @@ import dsptools.intervals.tests._
 
 import org.scalatest.{Matchers, FlatSpec}
 
-// TODO: Remove extra wires
+// TODO: Ops need to work on 1x1 too!
 object Matrix {
-  def tpe[T <: Data:RealBits](el: CustomBundle[CustomBundle[T]]): Matrix[T] = new Matrix(el.cloneType)
+  def tpe[T <: Data:RealBits](el: CustomBundle[CustomBundle[T]], depth: Int): Matrix[T] =
+    new Matrix(el.cloneType, depth)
   def wire[T <: Data:RealBits](el: CustomBundle[CustomBundle[T]]): Matrix[T] = {
-    val result = Wire(Matrix.tpe(el))
+    val result = Wire(Matrix.tpe(el, depth = 0))
     result.elB := el
     result
   }
@@ -28,7 +29,7 @@ object Matrix {
     val n = math.sqrt(len).toInt
     val el2d = el.seq.grouped(n).toSeq
     val el2dBundle = CustomBundle(el2d.map { case row => CustomBundle(row) })
-    val result = Wire(Matrix.tpe(el2dBundle))
+    val result = Wire(Matrix.tpe(el2dBundle, depth = 0))
     result.elB.seq.map(_.seq).flatten.zip(el.seq) foreach { case (lhs, rhs) => lhs := rhs}
     result
   }
@@ -61,7 +62,7 @@ object Matrix {
     require((len & (len - 1)) == 0, "Length must be power of 2!")
     val n = math.sqrt(len).toInt
     require(n * n == len, "Matrix must be square")
-    Matrix(lits.grouped(n).toSeq)
+    Matrix(lits.grouped(n).toSeq, depth = 0)
   }
   def toDenseVector(s: Seq[Double]): DenseVector[Double] = DenseVector(s.toArray)
   def toDenseMatrixFrom1D(s: Seq[Double]): DenseMatrix[Double] = {
@@ -82,32 +83,37 @@ object Matrix {
     toSeq2D(bundle).flatten.zip(s.flatten) foreach { case (lhs, rhs) => lhs := rhs }
     bundle
   }
-  def apply[T <: Data:RealBits](s: Seq[Seq[T]]): Matrix[T] = {
+  def apply[T <: Data:RealBits](s: Seq[Seq[T]], depth: Int): Matrix[T] = {
     val bundle = CustomBundle(s.map { case row => CustomBundle(row) })
-    val result = Wire(Matrix.tpe(bundle))
+    val result = Wire(Matrix.tpe(bundle, depth))
     toSeq2D(result.elB).flatten.zip(s.flatten) foreach { case (lhs, rhs) => lhs := rhs }
     result
   }
 }
 
 /** Recursive operations https://arxiv.org/pdf/1410.1599.pdf */
-class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]]) extends Bundle {
+class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]], val depth: Int) extends Bundle {
   def el = Matrix.toSeq2D(elB)
   el foreach { row => require(el.length == row.length, "Matrix must be square!") }
   val n = el.length
   require((n & (n - 1)) == 0, "n must be power of 2!")
   override def cloneType: this.type = {
-    Matrix.tpe(elB).asInstanceOf[this.type]
+    Matrix.tpe(elB, depth).asInstanceOf[this.type]
   }
   def isUnit = el.flatten.length == 1
   def split(): Seq[Matrix[T]] = {
-    val el11 = Matrix(el.dropRight(n / 2).map(_.dropRight(n / 2)))
-    val el12 = Matrix(el.dropRight(n / 2).map(_.drop(n / 2)))
-    val el21 = Matrix(el.drop(n / 2).map(_.dropRight(n / 2)))
-    val el22 = Matrix(el.drop(n / 2).map(_.drop(n / 2)))
+    val el11 = Matrix(el.dropRight(n / 2).map(_.dropRight(n / 2)), depth)
+    el11.suggestName(s"split11_depth${el11.depth}")
+    val el12 = Matrix(el.dropRight(n / 2).map(_.drop(n / 2)), depth)
+    el12.suggestName(s"split12_depth${el12.depth}")
+    val el21 = Matrix(el.drop(n / 2).map(_.dropRight(n / 2)), depth)
+    el21.suggestName(s"split21_depth${el21.depth}")
+    val el22 = Matrix(el.drop(n / 2).map(_.drop(n / 2)), depth)
+    el22.suggestName(s"split22_depth${el22.depth}")
     Seq(el11, el12, el21, el22)
   }
-  def putTogether(xx11: Matrix[T], xx12: Matrix[T], xx21: Matrix[T], xx22: Matrix[T]): Matrix[T] = {
+
+  def putTogether(xx11: Matrix[T], xx12: Matrix[T], xx21: Matrix[T], xx22: Matrix[T], op: String): Matrix[T] = {
     val x11 = Matrix.toSeq2D(xx11.elB)
     val x12 = Matrix.toSeq2D(xx12.elB)
     val x21 = Matrix.toSeq2D(xx21.elB)
@@ -115,7 +121,9 @@ class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]]) extends
     val top = x11.zip(x12) map { case (left, right) => left ++ right }
     val bottom = x21.zip(x22) map { case (left, right) => left ++ right }
     val out = top ++ bottom
-    Matrix(out)
+    val result = Matrix(out, depth + 1)
+    result.suggestName(s"${op}_depth${result.depth}")
+    result
   }
   def + (b: Matrix[T]): Matrix[T] = {
     val as = this.split()
@@ -128,12 +136,14 @@ class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]]) extends
       // Base type
       val Seq(c11, c12, c21, c22) = a2x2.zip(b2x2).map { case (x, y) => x context_+ y }
       val out = Seq(Seq(c11, c12), Seq(c21, c22))
-      Matrix(out)
+      val result = Matrix(out, depth + 1)
+      result.suggestName(s"add_depth${result.depth}")
+      result
     }
     else {
       val Seq(a11, a12, a21, a22) = as
       val Seq(b11, b12, b21, b22) = bs
-      putTogether(a11 + b11, a12 + b12, a21 + b21, a22 + b22)
+      putTogether(a11 + b11, a12 + b12, a21 + b21, a22 + b22, "add")
     }
   }
   def - (b: Matrix[T]): Matrix[T] = {
@@ -147,12 +157,14 @@ class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]]) extends
       // Base type
       val Seq(c11, c12, c21, c22) = a2x2.zip(b2x2).map { case (x, y) => x context_- y }
       val out = Seq(Seq(c11, c12), Seq(c21, c22))
-      Matrix(out)
+      val result = Matrix(out, depth + 1)
+      result.suggestName(s"sub_depth${result.depth}")
+      result
     }
     else {
       val Seq(a11, a12, a21, a22) = as
       val Seq(b11, b12, b21, b22) = bs
-      putTogether(a11 - b11, a12 - b12, a21 - b21, a22 - b22)
+      putTogether(a11 - b11, a12 - b12, a21 - b21, a22 - b22, "sub")
     }
   }
   def * (b: Matrix[T]): Matrix[T] = {
@@ -185,7 +197,9 @@ class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]]) extends
       val c21 = t2 context_- m7
       val c22 = t2 context_+ m5
       val out = Seq(Seq(c11, c12), Seq(c21, c22))
-      Matrix(out)
+      val result = Matrix(out, depth + 1)
+      result.suggestName(s"mul_depth${result.depth}")
+      result
     }
     else {
       val Seq(a11, a12, a21, a22) = as
@@ -211,7 +225,7 @@ class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]]) extends
       val c12 = t1 + m5 + m6
       val c21 = t2 - m7
       val c22 = t2 + m5
-      putTogether(c11, c12, c21, c22)
+      putTogether(c11, c12, c21, c22, "mul")
     }
   }
 }
