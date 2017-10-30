@@ -82,6 +82,12 @@ class IAArithSpec extends FlatSpec with Matchers {
     } should be (true)
   }
 
+  it should "properly infer [_, _] ranges and compute, and bit reduce" in {
+    dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new IAArith(IATest.cc)), IATest.options("cc")) {
+      c => new IAArithTester(c)
+    } should be (true)
+  }
+
   it should "properly infer [_, _) ranges and compute" in {
     dsptools.Driver.execute(() => new TestModule(() => new IAArith(IATest.co)), IATest.options("co")) {
       c => new IAArithTester(c)
@@ -146,7 +152,6 @@ class IAArithTester(testMod: TestModule[IAArith]) extends DspTester(testMod) {
   }
 
   for (a <- as; b <- bs; c <- cs; d <- ds; sel <- sels) {
-
     val t1 = a * b
     val t2 = c * d
     val t3 = t1 - a

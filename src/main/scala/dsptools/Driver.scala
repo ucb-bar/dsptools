@@ -16,7 +16,7 @@ import scala.util.DynamicVariable
 object Driver {
 
   private val optionsManagerVar = new DynamicVariable[Option[DspTesterOptionsManager]](None)
-  def optionsManager = optionsManagerVar.value.getOrElse(new DspTesterOptionsManager)
+  def optionsManager: DspTesterOptionsManager = optionsManagerVar.value.getOrElse(new DspTesterOptionsManager)
 
   def execute[T <: Module](dutGenerator: () => T,
       optionsManager: TesterOptionsManager)(testerGen: T => PeekPokeTester[T]): Boolean = {
@@ -50,8 +50,12 @@ object Driver {
   }
 
   //scalastyle:off method.length
-  def executeWithBitReduction[T <: Module](dutGenerator: () => T,
-                                           optionsManager: TesterOptionsManager)(testerGen: T => PeekPokeTester[T]): Boolean = {
+  def executeWithBitReduction[T <: Module](
+    dutGenerator: () => T,
+    optionsManager: TesterOptionsManager
+  )(
+      testerGen: T => PeekPokeTester[T]
+  ): Boolean = {
 
     val om = optionsManager match {
       case d: DspTesterOptionsManager => Some(d)

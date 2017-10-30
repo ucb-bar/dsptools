@@ -125,7 +125,7 @@ class BitReducer(lines: Seq[String]) extends LazyLogging {
     }
   }
 
-  def createAnnotationIfAppropritate(bitHistory: BitHistory): Boolean = {
+  def createAnnotationIfAppropriate(bitHistory: BitHistory): Boolean = {
     val name   = bitHistory.name
     val width  = bitHistory.bitWidth
 
@@ -192,7 +192,7 @@ class BitReducer(lines: Seq[String]) extends LazyLogging {
       logger.debug(s"reading line $lineNumber : $s")
       BitHistory.get(fields) match {
         case Some(record) =>
-          createAnnotationIfAppropritate(record)
+          createAnnotationIfAppropriate(record)
         case _ =>
           if(s.nonEmpty) {
             logger.warn(s"Skipping bad input line: $s")
