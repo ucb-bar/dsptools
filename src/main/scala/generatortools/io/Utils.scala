@@ -14,8 +14,20 @@ object ConvertType {
     */
   def apply[T <: Data](tpe: T): Data = {
     val newTpe = tpe match {
+      // TODO: special case others
+      case s: SInt =>
+        s.widthOption match {
+          case None => SInt(64.W)
+          case Some(width) => SInt(width.W)
+        }
+      case f: FixedPoint =>
+        (f.widthOption, f.binaryPoint) match {
+          case (None, UnknownBinaryPoint) => FixedPoint(128.W, 64.BP)
+          case (None, KnownBinaryPoint(bp)) => FixedPoint((64 + bp).W, bp.BP)
+          case (Some(width), KnownBinaryPoint(bp)) => FixedPoint(width.W, bp.BP)
+        }
       // DspReal = Bundle; needs to have precedence
-      case  _: Bool | _: UInt | _: SInt | _: FixedPoint | _: DspReal => tpe
+      case  _: Bool | _: UInt | _: DspReal => tpe
       // TODO: Handle Reset once that becomes a thing
       case _: Clock => Bool()
       // Recursive aggregate handling

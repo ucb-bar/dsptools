@@ -45,4 +45,10 @@ object CustomBundle {
     */
   def apply[T <: Data](gen: Seq[T]) =
     new CustomBundle(gen.zipWithIndex.map{ case (elt, field) => field.toString -> elt }: _*)
+  /** Creates a wire and assigns to it */
+  def wire[T <: Data](gen: Seq[T]) = {
+    val result = Wire(CustomBundle(gen))
+    result.seq.zip(gen) foreach { case (lhs, rhs) => lhs := rhs }
+    result
+  }
 }

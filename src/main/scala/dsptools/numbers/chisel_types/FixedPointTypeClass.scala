@@ -193,7 +193,9 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     // Rounding after registering to make retiming easier to recognize
     val outTemp = ShiftRegister(f * g, context.numMulPipes)
     val newBP = (f.binaryPoint, g.binaryPoint) match {
-      case (KnownBinaryPoint(i), KnownBinaryPoint(j)) => Some(i.max(j) + context.binaryPointGrowth)
+      case (KnownBinaryPoint(i), KnownBinaryPoint(j)) => 
+        if (i == 0 && j == 0) Some(0)
+        else Some(i.max(j) + context.binaryPointGrowth)
       case (_, _) => None
     }
     trimBinary(outTemp, newBP)

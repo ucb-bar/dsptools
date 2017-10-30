@@ -12,10 +12,12 @@ import firrtl_interpreter.InterpreterOptions
 
 object IATest {
 
-  def options(testName: String = "", verbose: Boolean = false) = new DspTesterOptionsManager {
+  def options(testName: String = "", verbose: Boolean = false, trace: Boolean = false) = new DspTesterOptionsManager {
     dspTesterOptions = DspTesterOptions(fixTolLSBs = 1, isVerbose = verbose)
     testerOptions = TesterOptions(isVerbose = false, displayBase = 2, backendName = "firrtl")
-    commonOptions = commonOptions.copy(targetDirName = "test_run_dir/IATests/" + testName, globalLogLevel = LogLevel.Trace)
+    commonOptions = 
+      if(!trace) commonOptions.copy(targetDirName = "test_run_dir/IATests/" + testName)
+      else commonOptions.copy(targetDirName = "test_run_dir/IATests/" + testName, globalLogLevel = LogLevel.Trace)
     // DEBUG note: globalLogLevel = LogLevel.Trace to print intermediate forms of FIRRTL
     interpreterOptions = InterpreterOptions(
       monitorReportFileName = "signals.csv",
