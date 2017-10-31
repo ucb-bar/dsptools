@@ -8,6 +8,8 @@ import firrtl.ir._
 import firrtl.Mappers._
 import logger.{LazyLogging, LogLevel, Logger}
 
+import scala.collection.mutable
+
 object ChangeWidthAnnotation {
   def apply(target: Named, value: String): Annotation = Annotation(target, classOf[ChangeWidthTransform], value)
 
@@ -31,6 +33,8 @@ class ChangeWidthTransform extends Transform with LazyLogging {
 
   //scalastyle:off method.length cyclomatic.complexity
   private def run(c: Circuit, changeRequests: Map[String, ChangeRequest]): Circuit = {
+    val mappedModules = new mutable.HashMap[Module, Module] ++ c.modules.map { module => module -> module }
+
     def findModule(name: String): DefModule = {
       c.modules.find(module => module.name == name) match {
         case Some(m: Module) => m
@@ -40,15 +44,18 @@ class ChangeWidthTransform extends Transform with LazyLogging {
       }
     }
 
-    def changeTpe(originalType: Type, newWidth: BigInt): Type = {
+    def changeTpe(originalType: Type, changeRequest: ChangeRequest) = {
+      val newWidth = changeRequest.newWidth
       originalType match {
         case _: SIntType =>
           val newType = SIntType(IntWidth(newWidth))
+          changeRequest.mark()
           logger.info(s"Changing $originalType to $newType")
           newType
         case _: UIntType =>
           val newType = UIntType(IntWidth(newWidth))
-          logger.info(s"Changing $originalType to $newType")
+          changeRequest.mark()
+          logger.debug(s"Changing $originalType to $newType")
           newType
         case other => other
       }
@@ -60,7 +67,7 @@ class ChangeWidthTransform extends Transform with LazyLogging {
           name
         }
         else {
-          pathString + "." + name
+          pathString + name
         }
       }
 
@@ -72,7 +79,8 @@ class ChangeWidthTransform extends Transform with LazyLogging {
         ports.map { port =>
           changeRequests.get(expand(port.name)) match {
             case Some(changeRequest) =>
-              port.copy(tpe = changeTpe(port.tpe, changeRequest.newWidth))
+              logger.info(s"Changing:port ${expand(port.name)} to ${changeRequest.newWidth}")
+              port.copy(tpe = changeTpe(port.tpe, changeRequest))
             case _ =>
               port
           }
@@ -85,21 +93,25 @@ class ChangeWidthTransform extends Transform with LazyLogging {
           case register: DefRegister =>
             changeRequests.get(expand(register.name)) match {
               case Some(changeReqest) =>
-                register.copy(tpe = changeTpe(register.tpe, changeReqest.newWidth))
+                logger.info(s"Changing:DefReg ${register.name} new width ${changeReqest.newWidth}")
+                register.copy(tpe = changeTpe(register.tpe, changeReqest))
               case _ => register
             }
           case wire: DefWire =>
             changeRequests.get(expand(wire.name)) match {
               case Some(changeReqest) =>
-                wire.copy(tpe = changeTpe(wire.tpe, changeReqest.newWidth))
-              case _ => wire
+                logger.info(s"Changing:DefWire ${wire.name} new width ${changeReqest.newWidth}")
+                wire.copy(tpe = changeTpe(wire.tpe, changeReqest))
+              case _ =>
+                wire
             }
-          case instance: DefInstance => findModule(instance.module) match {
-            case _: ExtModule => instance
-            case m: Module =>
-              changeWidthsInModule(m, s"$pathString.${module.name}.")
-              instance
-          }
+          case instance: DefInstance =>
+            findModule(instance.module) match {
+              case _: ExtModule => instance
+              case m: Module =>
+                mappedModules(m) = changeWidthsInModule(m, s"$pathString${instance.name}.")
+                instance
+            }
           case otherStatement => otherStatement
         }
       }
@@ -110,15 +122,24 @@ class ChangeWidthTransform extends Transform with LazyLogging {
       )
     }
 
-    val modulesx = c.modules.map {
-      case m: ExtModule => m
-      case m: Module => changeWidthsInModule(m)
+    findModule(c.main) match {
+      case m: Module => mappedModules(m) = changeWidthsInModule(m)
+    }
+    val modulesx = c.modules.map { m => mappedModules(m) }
+
+    changeRequests.values.foreach { changeRequest =>
+      if(changeRequest.useCount < 1 ) {
+        logger.info(s"Warning: ChangeRequest for ${changeRequest.name} not used")
+      }
+      else if(changeRequest.useCount > 1 ) {
+        logger.info(s"Warning: ChangeRequest for ${changeRequest.name} used ${changeRequest.useCount} times")
+      }
     }
     Circuit(c.info, modulesx, c.main)
   }
 
   override def execute(state: CircuitState): CircuitState = {
-    Logger.setLevel(LogLevel.Debug)
+    Logger.setLevel(LogLevel.Info)
     getMyAnnotations(state) match {
       case Nil => state
       case myAnnotations =>
@@ -128,20 +149,34 @@ class ChangeWidthTransform extends Transform with LazyLogging {
   }
 }
 
+//scalastyle:off regex
 object ChangeWidthTransform {
   def main(args: Array[String]): Unit = {
     args.toList match {
-      case firrtlFile :: annotationFile :: _ =>
-        val firrtl = io.Source.fromFile(firrtlFile).getLines().mkString("""\n""")
-        val annotationsText = io.Source.fromFile(annotationFile).getLines().mkString("""\n""")
-        val circuit = Parser.parse(firrtl)
-        val compiler = new LowFirrtlCompiler
-        val compileResult = compiler.compileAndEmit(CircuitState(circuit, ChirrtlForm))
-        compileResult
+        //TODO (chick) WIP, need helper function from firrtl to instantiate annotations.
+//      case firrtlFile :: annotationFile :: _ =>
+//        val firrtl = io.Source.fromFile(firrtlFile).getLines().mkString("""\n""")
+//        val annotationsText = {
+//          val annotationsYaml = io.Source.fromFile(annotationFile).getLines().mkString("\n").parseYaml
+//          val annotationArray = annotationsYaml.convertTo[Array[Annotation]]
+//        }
+//        val circuit = Parser.parse(firrtl)
+//        val compiler = new LowFirrtlCompiler
+//
+//        val aa = Driver.loadAnnotations()
+//        val compileResult = compiler.compileAndEmit(CircuitState(circuit, ChirrtlForm,))
+//        compileResult
+//
+//        val changeWidthTransform = new ChangeWidthTransform
+//        val result = changeWidthTransform.execute(compileResult)
+//        println(s"Bit reduced Firrtl: \n${result.circuit.serialize}")
       case _ =>
         println(s"Usage: ChangeWidthTransform firrtl-file annotation-file")
     }
   }
 }
 
-case class ChangeRequest(name: String, newWidth: BigInt)
+case class ChangeRequest(name: String, newWidth: BigInt) {
+  var useCount: Int = 0
+  def mark(): Unit = { useCount += 1 }
+}
