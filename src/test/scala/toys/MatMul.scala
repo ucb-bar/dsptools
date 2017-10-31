@@ -415,7 +415,7 @@ class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]]) exten
 
 class MatrixOpSpec extends FlatSpec with Matchers {
 
-  val n = 2
+  val n = 8
 
   val len = n * n
   val in = (0 until len).map(_.toDouble)
@@ -441,7 +441,7 @@ class MatrixOpSpec extends FlatSpec with Matchers {
   }
 
   it should "properly multiply - Interval" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", in)), IATest.options("MatrixMul-I", trace = true)) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", in)), IATest.options("MatrixMul-I", trace = false)) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
@@ -465,7 +465,7 @@ class MatrixOpSpec extends FlatSpec with Matchers {
   }
 
   it should "properly multiply with lit - Interval" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "litMul", in)), IATest.options("MatrixLitMul-I", trace = true)) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "litMul", in)), IATest.options("MatrixLitMul-I", trace = false)) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
@@ -491,5 +491,4 @@ class MatrixOpSpec extends FlatSpec with Matchers {
 
 
 // TODO: Why is DspReal just not connected at the input? (Does Complex work?)
-// n =4, n = 8 have compilation problems
 // systolic array matrix mul
