@@ -15,8 +15,11 @@ import dsptools.intervals.tests._
 
 import org.scalatest.{Matchers, FlatSpec}
 
+import scala.collection.immutable.ListMap
+
 // TODO: Ops need to work on 1x1 too!
-// TODO: Make # of pipeline stages not fixed!
+// TODO: Make # of pipeline stages not fixed! (Search ShiftRegister)
+// WARNING: Breeze changes along columns first
 object Matrix {
   def tpe[T <: Data:RealBits](el: CustomBundle[CustomBundle[T]], depth: Int): Matrix[T] =
     new Matrix(el.cloneType, depth)
@@ -94,8 +97,11 @@ object Matrix {
 }
 
 /** Recursive operations https://arxiv.org/pdf/1410.1599.pdf */
-class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]], val depth: Int) extends Bundle {
-  val el = Matrix.toSeq2D(elB)
+class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]], val depth: Int) extends Record {
+
+  val elements: ListMap[String, CustomBundle[CustomBundle[T]]] = ListMap("elB" -> elB)
+
+  val el = Matrix.toSeq2D(elements("elB"))
   el foreach { row => require(el.length == row.length, "Matrix must be square!") }
   val n = el.length
   require((n & (n - 1)) == 0, "n must be power of 2!")
@@ -363,7 +369,7 @@ class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]]) exten
   val isLit = tDut.op.startsWith("lit")
   val in = tDut.litSeq
   val tvs = in.indices.map(x => rotateLeft(in, x))
-  val litMatrix = DenseVector(tvs(0).toArray).toDenseMatrix.reshape(n, n)
+  val litMatrix = DenseVector(tvs(0).toArray).toDenseMatrix.reshape(n, n).t
 
   var pipelineDepth = 0
 
@@ -382,13 +388,13 @@ class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]]) exten
         case "litSub" => breezeMatrix - litMatrix
         case "litMul" => breezeMatrix * litMatrix
       }
-      val firstCorrect = expected.toDenseVector.toArray.toSeq.zipWithIndex.map { case (value, idx) =>
+      val firstCorrect = expected.t.toDenseVector.toArray.toSeq.zipWithIndex.map { case (value, idx) =>
         peek(testMod.getIO("out").asInstanceOf[CustomBundle[T]](idx)) == value
       }.reduce(_ & _)
       if (firstCorrect) pipelineDepth = i
     }
     else {
-      val breezeMatrix = DenseVector(tvs((i - pipelineDepth) % tvs.length).toArray).toDenseMatrix.reshape(n, n)
+      val breezeMatrix = DenseVector(tvs((i - pipelineDepth) % tvs.length).toArray).toDenseMatrix.reshape(n, n).t
       val expected = tDut.op match {
         case "add" => breezeMatrix + breezeMatrix
         case "sub" => breezeMatrix - breezeMatrix
@@ -397,7 +403,7 @@ class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]]) exten
         case "litSub" => breezeMatrix - litMatrix
         case "litMul" => breezeMatrix * litMatrix
       }
-      expected.toDenseVector.toArray.toSeq.zipWithIndex foreach { case (value, idx) =>
+      expected.t.toDenseVector.toArray.toSeq.zipWithIndex foreach { case (value, idx) =>
         expect(testMod.getIO("out").asInstanceOf[CustomBundle[T]](idx), value)
       }
     }
@@ -409,7 +415,7 @@ class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]]) exten
 
 class MatrixOpSpec extends FlatSpec with Matchers {
 
-  val n = 8
+  val n = 2
 
   val len = n * n
   val in = (0 until len).map(_.toDouble)
@@ -421,7 +427,7 @@ class MatrixOpSpec extends FlatSpec with Matchers {
   val real = DspReal()
 
   behavior of "Matrix operations"
-/*
+
   it should "properly add - Interval" in {
     dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "add", in)), IATest.options("MatrixAdd")) {
       c => new MatrixOpTester(c)
@@ -439,13 +445,13 @@ class MatrixOpSpec extends FlatSpec with Matchers {
       c => new MatrixOpTester(c)
     } should be (true)
   }
-*/
+
   it should "properly multiply - FixedPoint" in {
     dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul", in)), IATest.options("MatrixMul-F")) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
-/*
+
   it should "properly add with lit - Interval" in {
     dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "litAdd", in)), IATest.options("MatrixLitAdd")) {
       c => new MatrixOpTester(c)
@@ -459,7 +465,7 @@ class MatrixOpSpec extends FlatSpec with Matchers {
   }
 
   it should "properly multiply with lit - Interval" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "litMul", in)), IATest.options("MatrixLitMul-I")) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "litMul", in)), IATest.options("MatrixLitMul-I", trace = true)) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
@@ -469,10 +475,21 @@ class MatrixOpSpec extends FlatSpec with Matchers {
       c => new MatrixOpTester(c)
     } should be (true)
   }
-*/    
+
+  it should "properly add - DspReal" in {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(real, real, n, "add", in)), IATest.options("MatrixLitAdd-R", verbose = true)) {
+      c => new MatrixOpTester(c)
+    } should be (true)
+  }
 }
+
+
+
+
+
+
+
 
 // TODO: Why is DspReal just not connected at the input? (Does Complex work?)
 // n =4, n = 8 have compilation problems
-// chiselTesters, dspTools
 // systolic array matrix mul
