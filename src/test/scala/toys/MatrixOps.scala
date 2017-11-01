@@ -477,18 +477,14 @@ class MatrixOpSpec extends FlatSpec with Matchers {
   }
 
   it should "properly add - DspReal" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(real, real, n, "add", in)), IATest.options("MatrixLitAdd-R", verbose = true)) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(real, real, n, "add", in)), IATest.options("MatrixAdd-R", verbose = true)) {
+      c => new MatrixOpTester(c)
+    } should be (true)
+  }
+
+  it should "properly add with lit - DspReal" in {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(real, real, n, "litAdd", in)), IATest.options("MatrixLitAdd-R", verbose = true)) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
 }
-
-
-
-
-
-
-
-
-// TODO: Why is DspReal just not connected at the input? (Does Complex work?)
-// systolic array matrix mul
