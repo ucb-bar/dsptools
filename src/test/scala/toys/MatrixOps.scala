@@ -310,7 +310,7 @@ class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]], val dep
   }
 }
 
-//@chiselName
+@chiselName
 class MatrixOp[T <: Data:RealBits](
     genIn : => T, 
     genOut : => T, 

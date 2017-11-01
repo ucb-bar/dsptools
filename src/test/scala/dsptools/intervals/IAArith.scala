@@ -10,7 +10,7 @@ import dsptools.DspTester
 
 import scala.io.Source
 
-//@chiselName
+@chiselName
 class IAArith(r: IATestParams) extends Module {
   val Seq(aRange, bRange, cRange, dRange, selRange) = r.ranges
   val Seq(zbp, bp, sbp, _, lbp) = r.bps
