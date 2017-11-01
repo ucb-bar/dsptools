@@ -488,3 +488,32 @@ class MatrixOpSpec extends FlatSpec with Matchers {
     } should be (true)
   }
 }
+
+class MatMulSpec extends FlatSpec with Matchers {
+
+  val n = 8
+
+  val len = n * n
+  val in = (0 until len).map(_.toDouble)
+
+  val inI = Interval(range"[0, ${len}).0")
+  val outI = Interval(range"[?, ?].0")
+  val inF = FixedPoint((BigInt(len - 1).bitLength + 1).W, 0.BP)
+  val outF = FixedPoint(UnknownWidth(), 0.BP)
+  val real = DspReal()
+
+  behavior of "Matrix operations"
+
+  it should "properly multiply - Interval" in {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", in)), IATest.options(s"MatrixMul-I-${n}x${n}", backend = "verilator")) {
+      c => new MatrixOpTester(c)
+    } should be (true)
+  }
+
+  it should "properly multiply - FixedPoint" in {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul", in)), IATest.options(s"MatrixMul-F-${n}x${n}", backend = "verilator")) {
+      c => new MatrixOpTester(c)
+    } should be (true)
+  }
+
+}
