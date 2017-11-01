@@ -5,7 +5,7 @@ import chisel3.core.DataMirror
 import chisel3.experimental._
 import chisel3.internal.firrtl._
 import chisel3.util.Cat
-import dsptools.numbers.DspReal
+import dsptools.numbers.{DspComplex, DspReal}
 import firrtl.passes.IsKnown
 
 object ConvertType {
@@ -27,7 +27,7 @@ object ConvertType {
           case (Some(width), KnownBinaryPoint(bp)) => FixedPoint(width.W, bp.BP)
         }
       // DspReal = Bundle; needs to have precedence
-      case  _: Bool | _: UInt | _: DspReal => tpe
+      case  _: Bool | _: UInt | _: DspReal | _: DspComplex[_] => tpe
       // TODO: Handle Reset once that becomes a thing
       case _: Clock => Bool()
       // Recursive aggregate handling
@@ -82,6 +82,17 @@ object CheckDirection {
         case core.Direction.Output => (false, true)
         case _ => (false, false)
       }
+    // Fake base type
+    case r: DspReal =>
+      r.node.dir match {
+        case core.Direction.Input => (true, false)
+        case core.Direction.Output => (false, true)
+        case _ => (false, false)
+      }
+    case c: DspComplex[_] =>
+      val (in1, out1) = matchDirection(c.real)
+      val (in2, out2) = matchDirection(c.imag)
+      (in1 & in2, out1 & out2)
     case _ => (false, false)
   }
 }

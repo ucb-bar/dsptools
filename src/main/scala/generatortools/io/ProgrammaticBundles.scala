@@ -3,7 +3,7 @@ package generatortools.io
 import chisel3._
 import scala.collection.immutable.ListMap
 
-class CustomBundle[T <: Data](elts: (String, T)*) extends Record {
+class CustomBundle[+T <: Data](elts: (String, T)*) extends Record {
   /** ListMap of key (as string), Data pairs */
   val elements: ListMap[String, T] = ListMap(elts map { case (field, elt) => field -> elt.chiselCloneType }: _*)
   /** Gets elements as sequence */

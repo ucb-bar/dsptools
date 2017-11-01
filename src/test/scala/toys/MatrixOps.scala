@@ -477,13 +477,13 @@ class MatrixOpSpec extends FlatSpec with Matchers {
   }
 
   it should "properly add - DspReal" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(real, real, n, "add", in)), IATest.options("MatrixAdd-R", verbose = true)) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(real, real, n, "add", in)), IATest.options("MatrixAdd-R", verbose = false)) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
 
   it should "properly add with lit - DspReal" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(real, real, n, "litAdd", in)), IATest.options("MatrixLitAdd-R", verbose = true)) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(real, real, n, "litAdd", in)), IATest.options("MatrixLitAdd-R", verbose = false)) {
       c => new MatrixOpTester(c)
     } should be (true)
   }

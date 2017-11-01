@@ -13,7 +13,7 @@ class TestModule[T <: Module](val dutFactory: () => T, useGlobalClk: Boolean = t
     extends Module {
 
   /** Generate standard Chisel top-level IO */
-  private def createTopIO[T <: Record](intIO: T): CustomBundle[Data] =
+  private def createTopIO[R <: Record](intIO: R) =
     // Internally clones type
     new CustomBundle(intIO.elements.toList.map { case (field, elt) => field -> ConvertType(elt) }: _*)
 
