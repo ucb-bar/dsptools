@@ -296,15 +296,21 @@ class DspTester[T <: Module](
 
   // Expect on DspReal goes straight to here
   def expect(data: Data, expected: Double): Boolean = expect(data, expected, msg = "")
-  def expect(data: Data, expected: Double, msg: String): Boolean = {
+  def expectWithoutFailure(data: Data, expected: Double, msg: String = ""): Boolean = {
     val expectedNew = roundData(data, expected)
     val path = getName(data)
     val (dblVal, bitVal) = updatableDspVerbose.withValue(dispSub) { dspPeek(data) }
     val (good, tolerance) = checkDecimal(data, expectedNew, dblVal, bitVal)
-    if (dispDsp || !good) logger info ( { if (!good) Console.RED else "" } +
+    if (dispDsp || !good) logger info
+      (
         s"$msg  EXPECT $path -> $dblVal == E " +
         s"$expectedNew ${if (good) "PASS" else "FAIL"}, tolerance = $tolerance, ${bitInfo(data)}" +
-        Console.RESET)
+        Console.RESET
+      )
+    good
+  }
+  def expect(data: Data, expected: Double, msg: String): Boolean = {
+    val good = expectWithoutFailure(data, expected, msg)
     if (!good) fail
     good
   }

@@ -5,12 +5,11 @@ import chisel3.util.ShiftRegister
 import dsptools.numbers._
 import breeze.linalg.{DenseVector, DenseMatrix}
 import generatortools.io.CustomBundle
-import dsptools.DspContext
+import dsptools.{NoTrim, DspContext, DspTester}
 
 import chisel3.experimental._
 import generatortools.testing.TestModule
 import chisel3.internal.firrtl.{IntervalRange, KnownBinaryPoint, UnknownWidth}
-import dsptools.DspTester
 import dsptools.intervals.tests._
 
 import org.scalatest.{Matchers, FlatSpec}
@@ -313,7 +312,8 @@ class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]], val dep
 @chiselName
 class MatrixOp[T <: Data:RealBits](
     genIn : => T, 
-    genOut : => T, 
+    genOut : => T,
+    litBP: Int,
     val n: Int, 
     val op: String, 
     val litSeq: Seq[Double] = Seq.empty) extends Module {
@@ -322,24 +322,11 @@ class MatrixOp[T <: Data:RealBits](
     val b = Input(CustomBundle(Seq.fill(if (op.startsWith("lit")) 1 else n * n)(genIn)))
     val out = Output(CustomBundle(Seq.fill(n * n)(genOut)))
   })
-  val bp = genIn match {
-    case i: Interval => 
-      i.range.binaryPoint match {
-        case KnownBinaryPoint(bp) => bp
-        case _ => 0
-      }
-    case f: FixedPoint =>
-      f.binaryPoint match {
-        case KnownBinaryPoint(bp) => bp
-        case _ => 0
-      }
-    case _ => 0
-  }
   val a = Matrix(io.a)
   val b = Matrix(io.b)
   val out = if (op.startsWith("lit")) {
     require(litSeq.length == n * n, "Lit sequence length doesn't match matrix size!")
-    val matrixLit = Matrix.matrixLit[T](DenseVector(litSeq.toArray), bp)
+    val matrixLit = Matrix.matrixLit[T](DenseVector(litSeq.toArray), litBP)
     op match {
       case "litAdd" => a + matrixLit
       case "litSub" => a - matrixLit
@@ -367,9 +354,12 @@ class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]]) exten
   val tDut = testMod.dut
   val n = tDut.n
   val isLit = tDut.op.startsWith("lit")
-  val in = tDut.litSeq
+  val in = (0 until n * n).map(_.toDouble)
   val tvs = in.indices.map(x => rotateLeft(in, x))
-  val litMatrix = DenseVector(tvs(0).toArray).toDenseMatrix.reshape(n, n).t
+  val initMatrix = DenseVector(tvs(0).toArray).toDenseMatrix.reshape(n, n).t
+  val litMatrix =  DenseVector(testMod.dut.litSeq.toArray).toDenseMatrix.reshape(n, n).t
+
+  if (isLit) println("Lit matrix: " + litMatrix)
 
   var pipelineDepth = 0
 
@@ -379,7 +369,7 @@ class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]]) exten
       if (!isLit) poke(testMod.getIO("b").asInstanceOf[CustomBundle[T]](idx), value)
     }
     if (pipelineDepth == 0) {
-      val breezeMatrix = litMatrix
+      val breezeMatrix = initMatrix
       val expected = tDut.op match {
         case "add" => breezeMatrix + breezeMatrix
         case "sub" => breezeMatrix - breezeMatrix
@@ -388,8 +378,9 @@ class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]]) exten
         case "litSub" => breezeMatrix - litMatrix
         case "litMul" => breezeMatrix * litMatrix
       }
+      println("Expected: " + expected)
       val firstCorrect = expected.t.toDenseVector.toArray.toSeq.zipWithIndex.map { case (value, idx) =>
-        peek(testMod.getIO("out").asInstanceOf[CustomBundle[T]](idx)) == value
+        expectWithoutFailure(testMod.getIO("out").asInstanceOf[CustomBundle[T]](idx), value)
       }.reduce(_ & _)
       if (firstCorrect) pipelineDepth = i
     }
@@ -429,61 +420,61 @@ class MatrixOpSpec extends FlatSpec with Matchers {
   behavior of "Matrix operations"
 
   it should "properly add - Interval" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "add", in)), IATest.options("MatrixAdd")) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, litBP = 0, n, "add", in)), IATest.options("MatrixAdd")) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
 
   it should "properly subtract - Interval" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "sub", in)), IATest.options("MatrixSub")) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, litBP = 0, n, "sub", in)), IATest.options("MatrixSub")) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
 
   it should "properly multiply - Interval" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", in)), IATest.options("MatrixMul-I", trace = false)) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, litBP = 0, n, "mul", in)), IATest.options("MatrixMul-I", trace = false)) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
 
   it should "properly multiply - FixedPoint" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul", in)), IATest.options("MatrixMul-F")) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, litBP = 0, n, "mul", in)), IATest.options("MatrixMul-F")) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
 
   it should "properly add with lit - Interval" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "litAdd", in)), IATest.options("MatrixLitAdd")) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, litBP = 0, n, "litAdd", in)), IATest.options("MatrixLitAdd")) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
 
   it should "properly subtract with lit - Interval" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "litSub", in)), IATest.options("MatrixLitSub")) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, litBP = 0, n, "litSub", in)), IATest.options("MatrixLitSub")) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
 
   it should "properly multiply with lit - Interval" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "litMul", in)), IATest.options("MatrixLitMul-I", trace = false)) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, litBP = 0, n, "litMul", in)), IATest.options("MatrixLitMul-I", trace = false)) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
 
   it should "properly multiply with lit - FixedPoint" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "litMul", in)), IATest.options("MatrixLitMul-F")) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, litBP = 0, n, "litMul", in)), IATest.options("MatrixLitMul-F")) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
 
   it should "properly add - DspReal" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(real, real, n, "add", in)), IATest.options("MatrixAdd-R", verbose = false)) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(real, real, litBP = 0, n, "add", in)), IATest.options("MatrixAdd-R", verbose = false)) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
 
   it should "properly add with lit - DspReal" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(real, real, n, "litAdd", in)), IATest.options("MatrixLitAdd-R", verbose = false)) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(real, real, litBP = 0, n, "litAdd", in)), IATest.options("MatrixLitAdd-R", verbose = false)) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
@@ -500,20 +491,63 @@ class MatMulSpec extends FlatSpec with Matchers {
   val outI = Interval(range"[?, ?].0")
   val inF = FixedPoint((BigInt(len - 1).bitLength + 1).W, 0.BP)
   val outF = FixedPoint(UnknownWidth(), 0.BP)
-  val real = DspReal()
 
-  behavior of "Matrix operations"
+  behavior of "Matrix Multiplication"
 
   it should "properly multiply - Interval" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", in)), IATest.options(s"MatrixMul-I-${n}x${n}", backend = "verilator")) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, litBP = 0, n, "mul", in)), IATest.options(s"MatrixMul-I-${n}x${n}", backend = "verilator")) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
 
   it should "properly multiply - FixedPoint" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul", in)), IATest.options(s"MatrixMul-F-${n}x${n}", backend = "verilator")) {
+    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, litBP = 0, n, "mul", in)), IATest.options(s"MatrixMul-F-${n}x${n}", backend = "verilator")) {
       c => new MatrixOpTester(c)
     } should be (true)
   }
+
+}
+
+class DCTMatMulSpec extends FlatSpec with Matchers {
+
+  val n = 8
+
+  val len = n * n
+
+  val inI = Interval(range"[0, ${len}).0")
+  val outI = Interval(range"[?, ?].8")
+  val inF = FixedPoint((BigInt(len - 1).bitLength + 1).W, 0.BP)
+  val outF = FixedPoint(UnknownWidth(), 8.BP)
+
+  def dct(n: Int): Seq[Double] = {
+    // https://www.mathworks.com/help/images/discrete-cosine-transform.html
+    for (p <- 0 until n; q <- 0 until n) yield {
+      if (p == 0) 1.toDouble / math.sqrt(n)
+      else math.sqrt(2.toDouble / n) * math.cos(math.Pi * p * (2 * q + 1) / 2 / n)
+    }
+  }
+
+  val litSeq = dct(n)
+
+  behavior of "DCT Matrix Multiplication"
+
+  it should "properly multiply - Interval - DCT Lit" in {
+    DspContext.withTrimType(NoTrim) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, litBP = 8, n, "litMul", litSeq)), IATest.options(s"DCTMatrixMul-I-${n}x${n}", backend = "verilator", fixTol = 7)) {
+        c => new MatrixOpTester(c)
+      } should be(true)
+    }
+  }
+
+  it should "properly multiply - FixedPoint - DCT Lit" in {
+    DspContext.withTrimType(NoTrim) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, litBP = 8, n, "litMul", litSeq)), IATest.options(s"DCTMatrixMul-F-${n}x${n}", backend = "verilator", fixTol = 7)) {
+        c => new MatrixOpTester(c)
+      } should be(true)
+    }
+  }
+
+
+  // check delta
 
 }
