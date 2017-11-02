@@ -65,13 +65,43 @@ class BitReducerSpec extends FreeSpec with Matchers {
 
     val data = angiesFirrtl.split("""\n""").toList.drop(1)
 
-    val im = new BitReducer(data)
-    im.run()
-    val report = im.getReportString
+    val bitReducer = new BitReducer(data)
+    bitReducer.run()
+    val report = bitReducer.getReportString
 
-    im.annotations.exists { a => a.value.contains("dut.t1=11")} should be (true)
+    bitReducer.annotations.exists { a => a.value.contains("dut.t1=11")} should be (true)
 
     //noinspection ScalaStyle
     println(report)
+  }
+
+  "bit reduction should be limited " in {
+    val instrumentedCsv  =
+      """key,                  ,                        type,       n,     min,             max,            mean,          stddev,    bin0,    bin1,    bin2,    bin3
+        |reduceMe              ,                      sint<16>,  227136,       -4,             65500,         4.00000,         8.00000,       0,       0,  227136,       0
+      """.stripMargin
+
+    val data = instrumentedCsv.split("\n").toList.drop(1)
+
+    for((sigma, expected) <- Seq((1.0, 5), (2.0, 6), (8.0, 8))) {
+
+      val bitReducer = new BitReducer(data, trimBySigma = sigma)
+      bitReducer.run()
+      val report = bitReducer.getReportString
+      //noinspection ScalaStyle
+      println(report)
+      println(bitReducer.annotations.mkString("\n"))
+
+      bitReducer.annotations.exists { a => a.value.contains(s"reduceMe=$expected") } should be(true)
+    }
+
+    val bitReducer2 = new BitReducer(data, trimBySigma = 0.0)
+    bitReducer2.run()
+    val report2 = bitReducer2.getReportString
+    //noinspection ScalaStyle
+    println(report2)
+    println(bitReducer2.annotations.mkString("\n"))
+
+    bitReducer2.annotations.length should be (0)
   }
 }

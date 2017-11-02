@@ -83,7 +83,7 @@ object Driver {
 
       val data = io.Source.fromFile(reportFileName).getLines().toList.drop(1)
 
-      val im = new BitReducer(data)
+      val im = new BitReducer(data, om.getOrElse(new DspTesterOptionsManager()).dspTesterOptions.bitReduceBySigma)
       im.run()
       val report = im.getReportString
       println(report)

@@ -41,6 +41,28 @@ case class BitHistory(
       //unknown width will be ignored
       0
   }
+
+  def bigInt(d: Double): BigInt = {
+    BigDecimal(d).setScale(0, BigDecimal.RoundingMode.HALF_UP).toBigInt
+  }
+
+  def minBySigma(sigmaNumber: Double): BigInt = {
+    if(sigmaNumber <= 0.0) {
+      this.min
+    }
+    else {
+      bigInt(mean - (stddev * sigmaNumber)).max(this.min)
+    }
+  }
+
+  def maxBySigma(sigmaNumber: Double): BigInt = {
+    if(sigmaNumber <= 0.0) {
+      this.max
+    }
+    else {
+      bigInt(mean + (stddev * sigmaNumber)).min(this.max)
+    }
+  }
 }
 
 object BitHistory extends LazyLogging {
@@ -65,7 +87,7 @@ object BitHistory extends LazyLogging {
   * and creates annotation to reduce bits where possible.
   * @param lines text lines of csv file
   */
-class BitReducer(lines: Seq[String]) extends LazyLogging {
+class BitReducer(lines: Seq[String], trimBySigma: Double = 0.0) extends LazyLogging {
   val annotations = new mutable.ArrayBuffer[Annotation]()
   var bitsRemoved:    Int = 0
   var bitsConsidered: Int = 0
@@ -132,7 +154,7 @@ class BitReducer(lines: Seq[String]) extends LazyLogging {
     bitsConsidered += width
 
     if(bitHistory.isUInt) {
-      val bitsNeeded = requiredBitsForUInt(bitHistory.max)
+      val bitsNeeded = requiredBitsForUInt(bitHistory.maxBySigma(trimBySigma))
 
       if (bitsNeeded < width) {
         bitsRemoved += (width - bitsNeeded)
@@ -142,7 +164,7 @@ class BitReducer(lines: Seq[String]) extends LazyLogging {
       }
     }
     else if(bitHistory.isSInt) {
-      val neededBits = requiredBitsForSInt(bitHistory.min, bitHistory.max)
+      val neededBits = requiredBitsForSInt(bitHistory.minBySigma(trimBySigma), bitHistory.maxBySigma(trimBySigma))
 
       if (neededBits < width) {
         bitsRemoved += (width - neededBits)
