@@ -55,8 +55,7 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "spire" % "0.14.1",
   "org.scalanlp" %% "breeze" % "0.13.2",
   "org.scalatest" %% "scalatest" % "3.0.1",
-  "org.scalacheck" %% "scalacheck" % "1.13.4",
-  "co.theasi" %% "plotly" % "0.1"
+  "org.scalacheck" %% "scalacheck" % "1.13.4"
 )
 
 javacOptions ++= javacOptionsVersion(scalaVersion.value)
