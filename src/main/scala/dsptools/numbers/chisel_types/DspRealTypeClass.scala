@@ -143,7 +143,7 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
     (width, proto.range.binaryPoint) match {
       case (IntWidth(w), KnownBinaryPoint(bp)) =>
         val fix = asFixed(a, FixedPoint(KnownWidth(w.toInt), proto.range.binaryPoint))
-        implicitly[ChiselConvertableFrom[FixedPoint]].toInterval(fix, proto)
+        ChiselConvertableFrom[FixedPoint].toInterval(fix, proto)
       case _ =>
         throw new Exception("Prototype Interval should have known range + bp.")
     }

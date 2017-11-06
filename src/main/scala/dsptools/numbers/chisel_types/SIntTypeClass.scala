@@ -118,10 +118,10 @@ trait ConvertableFromSInt extends ChiselConvertableFrom[SInt] with hasContext {
   // Converts to (signed) DspReal
   def asReal(a: SInt): DspReal = DspReal(a)
   def toInterval(a: SInt, proto: Interval): Interval = {
-    implicitly[ChiselConvertableFrom[FixedPoint]].toInterval(asFixed(a), proto)
+    ChiselConvertableFrom[FixedPoint].toInterval(asFixed(a), proto)
   }
   override def toInterval(a: SInt): Interval = {
-    implicitly[ChiselConvertableFrom[FixedPoint]].toInterval(asFixed(a))
+    ChiselConvertableFrom[FixedPoint].toInterval(asFixed(a))
   }
 }
 
