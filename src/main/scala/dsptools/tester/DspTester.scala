@@ -301,7 +301,7 @@ class DspTester[T <: Module](
     val path = getName(data)
     val (dblVal, bitVal) = updatableDspVerbose.withValue(dispSub) { dspPeek(data) }
     val (good, tolerance) = checkDecimal(data, expectedNew, dblVal, bitVal)
-    if (dispDsp || !good) logger info
+    if (dispDsp) logger info
       (
         s"$msg  EXPECT $path -> $dblVal == E " +
         s"$expectedNew ${if (good) "PASS" else "FAIL"}, tolerance = $tolerance, ${bitInfo(data)}" +

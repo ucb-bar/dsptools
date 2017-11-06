@@ -339,16 +339,16 @@ class MatrixOp[T <: Data:RealBits](
   io.out.seq.zip(Matrix.toSeq2D(out.elB).flatten) foreach { case (lhs, rhs) => lhs := rhs }
 }
 
-class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]]) extends DspTester(testMod) {
+class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]], ins: Option[Seq[Seq[Double]]] = None) extends DspTester(testMod) {
 
   val tDut = testMod.dut
   val n = tDut.n
   val isLit = tDut.litSeq.nonEmpty
-  val tvs = MatMulTests.generateSimpleInputs(n)
+  val tvs = if (ins.nonEmpty) ins.get else MatMulTests.generateSimpleInputs(n)
   val initMatrix = MatMulTests.convertToDenseMatrix(tvs.head)
   val litMatrix = MatMulTests.convertToDenseMatrix(tDut.litSeq)
 
-  if (isLit) println("Lit matrix: " + litMatrix)
+  // if (isLit) println("Lit matrix: " + litMatrix)
 
   var pipelineDepth = 0
 
@@ -365,7 +365,7 @@ class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]]) exten
         case "sub" => a - b
         case "mul" => a * b
       }
-      println("Expected: " + expected)
+      // println("Expected: " + expected)
       val firstCorrect = MatMulTests.convertToSeq(expected).zipWithIndex.map { case (value, idx) =>
         expectWithoutFailure(MatMulTests.getElement[T](testMod.getIO("out"), idx), value)
       }.reduce(_ & _)
@@ -472,7 +472,7 @@ class MatMulSpec extends FlatSpec with Matchers {
 
   val len = n * n
 
-  val inI = Interval(range"[0, ${len}).0")
+  val inI = Interval(range"[${-len}, ${len}).0")
   val outI = Interval(range"[?, ?].0")
   val inF = FixedPoint((BigInt(len - 1).bitLength + 1).W, 0.BP)
   val outF = FixedPoint(UnknownWidth(), 0.BP)
@@ -496,10 +496,10 @@ class MatMulSpec extends FlatSpec with Matchers {
 class DCTMatMulSpec extends FlatSpec with Matchers {
 
   val n = 8
-
+  val numTests = 200
   val len = n * n
 
-  val inI = Interval(range"[0, ${len}).0")
+  val inI = Interval(range"[${-len}, ${len}).0")
   val outI = Interval(range"[?, ?].8")
   val inF = FixedPoint((BigInt(len - 1).bitLength + 1).W, 0.BP)
   val outF = FixedPoint(UnknownWidth(), 8.BP)
@@ -507,7 +507,18 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
 
   val litSeq = MatMulTests.dct(n)
 
+  val randomTVs = Some(MatMulTests.generateRandomInputs(n, numTests, maxNotInclusive = len))
+  val filteredRandomTVs = Some(MatMulTests.filter(randomTVs.get, bw = 0.25, maxNotInclusive = len))
+
   behavior of "DCT Matrix Multiplication"
+/*
+  it should "properly multiply - FixedPoint - DCT Lit" in {
+    DspContext.withTrimType(NoTrim) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul", litSeq, litBP)), IATest.options(s"DCTMatrixMul-F-${n}x${n}", backend = "verilator", fixTol = 7)) {
+        c => new MatrixOpTester(c)
+      } should be(true)
+    }
+  }
 
   it should "properly multiply - Interval - DCT Lit" in {
     DspContext.withTrimType(NoTrim) {
@@ -516,11 +527,19 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
       } should be(true)
     }
   }
-
-  it should "properly multiply - FixedPoint - DCT Lit" in {
+*/
+  it should "properly multiply - Interval - DCT Lit - RANDOM" in {
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul", litSeq, litBP)), IATest.options(s"DCTMatrixMul-F-${n}x${n}", backend = "verilator", fixTol = 7)) {
-        c => new MatrixOpTester(c)
+      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", litSeq, litBP)), IATest.options(s"Random-DCTMatrixMul-I-${n}x${n}", backend = "firrtl", fixTol = 7)) {
+        c => new MatrixOpTester(c, randomTVs)
+      } should be(true)
+    }
+  }
+
+  it should "properly multiply - Interval - DCT Lit - RANDOM FILTERED" in {
+    DspContext.withTrimType(NoTrim) {
+      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", litSeq, litBP)), IATest.options(s"Filtered-Random-DCTMatrixMul-I-${n}x${n}", backend = "firrtl", fixTol = 7)) {
+        c => new MatrixOpTester(c, filteredRandomTVs)
       } should be(true)
     }
   }

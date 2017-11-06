@@ -1,10 +1,12 @@
 package dsptools.toys
 
+import breeze.signal
+import breeze.signal.OptOverhang
 import chisel3._
 import chisel3.util.ShiftRegister
 import dsptools.intervals.tests.IATest
 import dsptools.numbers._
-import breeze.linalg.{DenseMatrix, DenseVector}
+import breeze.linalg.{DenseVector, DenseMatrix}
 import generatortools.io.CustomBundle
 import dsptools.{NoTrim, DspContext, DspTester}
 
@@ -13,6 +15,8 @@ import generatortools.testing.TestModule
 import chisel3.internal.firrtl.{UnknownWidth, KnownWidth, IntervalRange, KnownBinaryPoint}
 
 import org.scalatest.{Matchers, FlatSpec}
+
+import scala.util.Random
 
 // TODO: Doesn't need to be power of 2
 // TODO: Get rid of lots of 0 until n's -- switch to for/yield?
@@ -219,11 +223,13 @@ object MatMulTests {
     val simple = (0 until n * n).map(_.toDouble)
     val out = simple.indices.map(x => rotateLeft(simple, x))
     val largest = Seq.fill(n * n)((n * n - 1).toDouble)
-    Seq(largest) ++ out
+    val smallest = Seq.fill(n * n)(-(n * n).toDouble)
+    Seq(largest, smallest) ++ out
   }
+  // TODO: Redundant with function in object Matrix
   def convertToDenseMatrix(in: Seq[Double]) = {
     val n = math.sqrt(in.length).toInt
-    DenseVector(in.toArray).toDenseMatrix.reshape(n, n).t
+    toDenseVector(in).toDenseMatrix.reshape(n, n).t
   }
   def getElement[T <: Data](in: Data, idx: Int) = in.asInstanceOf[CustomBundle[T]](idx)
   def convertToSeq(in: DenseMatrix[Double]) = {
@@ -236,13 +242,37 @@ object MatMulTests {
       else math.sqrt(2.toDouble / n) * math.cos(math.Pi * p * (2 * q + 1) / 2 / n)
     }
   }
+  def generateRandomInputs(n: Int, numTests: Int = 100, maxNotInclusive: Int = 2): Seq[Seq[Double]] = {
+    val lowerBound = -maxNotInclusive
+    val upperBoundRand = 2 * maxNotInclusive - 1
+    Seq.fill(n * n * numTests)(lowerBound + Random.nextInt(upperBoundRand).toDouble).grouped(n * n).toSeq
+  }
+  def toDenseVector(in: Seq[Double]) = DenseVector(in.toArray)
+  def toSeq(in: DenseVector[Double]) = in.toArray.toSeq
+
+  // TODO: Check
+  def filter(inTemp: Seq[Seq[Double]], maxNotInclusive: Int, bw: Double = 0.5): Seq[Seq[Double]] = {
+    // Should be transposed -- time domain column vecs
+    val in = inTemp.map(Matrix.toDenseMatrixFrom1D(_).t.toDenseVector.toArray.toSeq)
+    val tempResult = toSeq(signal.filterLP(toDenseVector(in.flatten), omega = bw, overhang = OptOverhang.PreserveLength))
+    val resultNotTransposed = tempResult.map { case x =>
+      val temp = math.round(x)
+      val out =
+        if (temp >= maxNotInclusive) maxNotInclusive - 1
+        else if (temp < -maxNotInclusive) -maxNotInclusive
+        else temp
+      out.toDouble
+    }.grouped(in.head.length).toSeq
+    // Get right row/col order
+    resultNotTransposed.map(Matrix.toDenseMatrixFrom1D(_).t.toDenseVector.toArray.toSeq)
+  }
 }
 
-class SystolicMatMulTester[T <: Data:RealBits](testMod: TestModule[SystolicMatMul[T]]) extends DspTester(testMod) {
+class SystolicMatMulTester[T <: Data:RealBits](testMod: TestModule[SystolicMatMul[T]], ins: Option[Seq[Seq[Double]]] = None) extends DspTester(testMod) {
   val tDut = testMod.dut
   val n = tDut.n
   val isLit = tDut.litSeq.nonEmpty
-  val tvs = MatMulTests.generateSimpleInputs(n)
+  val tvs = if (ins.nonEmpty) ins.get else MatMulTests.generateSimpleInputs(n)
   for (i <- 0 until n) {
     // Assumes inputs held externally (otherwise need additional register)
     tvs(i % tvs.length).zipWithIndex foreach { case (value, idx) =>
@@ -268,7 +298,7 @@ class SystolicMatMulTester[T <: Data:RealBits](testMod: TestModule[SystolicMatMu
 class SystolicMatMulSpec extends FlatSpec with Matchers {
   val n = 8
   val len = n * n
-  val inI = Interval(range"[0, ${len}).0")
+  val inI = Interval(range"[${-len}, ${len}).0")
   val outI = Interval(range"[?, ?].0")
   val inF = FixedPoint((BigInt(len - 1).bitLength + 1).W, 0.BP)
   val outF = FixedPoint(UnknownWidth(), 0.BP)
@@ -289,11 +319,29 @@ class SystolicMatMulSpec extends FlatSpec with Matchers {
 
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
   val n = 8
   val len = n * n
 
-  val inI = Interval(range"[0, ${len}).0")
+  val inI = Interval(range"[${-len}, ${len}).0")
   val outI = Interval(range"[?, ?].8")
   val inF = FixedPoint((BigInt(len - 1).bitLength + 1).W, 0.BP)
   val outF = FixedPoint(UnknownWidth(), 8.BP)
@@ -305,7 +353,7 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
 
   it should "properly multiply - Interval - DCT Lit" in {
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inI, outI, n, litSeq, litBP)), IATest.options(s"SDCTMatrixMul-I-${n}x${n}", backend = "verilator", fixTol = 7)) {
+      dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inI, outI, n, litSeq, litBP)), IATest.options(s"SDCTMatrixMul-I-${n}x${n}", backend = "verilator", fixTol = 7, trace = true)) {
         c => new SystolicMatMulTester(c)
       } should be(true)
     }
@@ -321,4 +369,60 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
 
 }
 
-// dct for systolic
+
+/*
+class SystolicFilterDCTMatMulSpec extends FlatSpec with Matchers {
+  val n = 8
+  val len = n * n
+
+  val inI = Interval(range"[${-len}, $len).0")
+  val outI = Interval(range"[?, ?].8")
+  val inF = FixedPoint((BigInt(len - 1).bitLength + 1).W, 0.BP)
+  val outF = FixedPoint(UnknownWidth(), 8.BP)
+  val litBP = Some(8)
+
+  val litSeq = MatMulTests.dct(n)
+  val tvsFull = MatMulTests.generateRandomInputs(n, 100, maxNotInclusive = len)
+  val test = MatMulTests.toSeq(breeze.signal.filterLP(MatMulTests.toDenseVector(tvsFull.flatten), omega = 0.5))
+  val testRound = test.map { case x =>
+    val temp = math.round(x)
+    if (temp > len - 1) len - 1
+    else if (temp < -len) len
+    else temp
+  }.grouped(n * n)
+
+
+
+
+
+
+
+
+  val tvs = Some(tvsFull)
+  behavior of "Systolic DCT Matrix Multiplication"
+
+    it should "properly multiply - Interval - DCT Lit" in {
+      DspContext.withTrimType(NoTrim) {
+        dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inI, outI, n, litSeq, litBP)), IATest.options(s"SBDCTMatrixMul-I-${n}x${n}", backend = "verilator", fixTol = 7, trace = true)) {
+          c => new SystolicMatMulTester(c, yvs)
+        } should be(true)
+      }
+    }
+
+  it should "properly multiply - FixedPoint - DCT Lit" in {
+    DspContext.withTrimType(NoTrim) {
+      dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inF, outF, n, litSeq, litBP)), IATest.options(s"SBDCTMatrixMul-F-${n}x${n}", backend = "verilator", fixTol = 7)) {
+        c => new SystolicMatMulTester(c, tvs)
+      } should be(true)
+    }
+  }
+
+}
+*/
+
+
+
+
+// dct for systolic -- 64x64 DCT: fft
+// trim from random binary
+// trim from random binary + dct
