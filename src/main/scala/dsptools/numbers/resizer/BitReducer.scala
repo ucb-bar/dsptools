@@ -87,7 +87,7 @@ object BitHistory extends LazyLogging {
   * and creates annotation to reduce bits where possible.
   * @param lines text lines of csv file
   */
-class BitReducer(lines: Seq[String], trimBySigma: Double = 0.0) extends LazyLogging {
+class BitReducer(lines: Seq[String], trimBySigma: Double = 0.0, fudgeConstant: Int = 0) extends LazyLogging {
   val annotations = new mutable.ArrayBuffer[Annotation]()
   var bitsRemoved:    Int = 0
   var bitsConsidered: Int = 0
@@ -154,7 +154,7 @@ class BitReducer(lines: Seq[String], trimBySigma: Double = 0.0) extends LazyLogg
     bitsConsidered += width
 
     if(bitHistory.isUInt) {
-      val bitsNeeded = requiredBitsForUInt(bitHistory.maxBySigma(trimBySigma))
+      val bitsNeeded = requiredBitsForUInt(bitHistory.maxBySigma(trimBySigma)) + fudgeConstant
 
       if (bitsNeeded < width) {
         bitsRemoved += (width - bitsNeeded)
@@ -164,7 +164,8 @@ class BitReducer(lines: Seq[String], trimBySigma: Double = 0.0) extends LazyLogg
       }
     }
     else if(bitHistory.isSInt) {
-      val neededBits = requiredBitsForSInt(bitHistory.minBySigma(trimBySigma), bitHistory.maxBySigma(trimBySigma))
+      val neededBits = requiredBitsForSInt(bitHistory.minBySigma(trimBySigma), bitHistory.maxBySigma(trimBySigma)) +
+                         fudgeConstant
 
       if (neededBits < width) {
         bitsRemoved += (width - neededBits)

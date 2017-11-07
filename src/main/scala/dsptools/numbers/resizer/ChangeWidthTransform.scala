@@ -6,6 +6,7 @@ import firrtl._
 import firrtl.annotations.{Annotation, Named}
 import firrtl.ir._
 import firrtl.Mappers._
+import firrtl.passes.InferTypes
 import logger.{LazyLogging, LogLevel, Logger}
 
 import scala.collection.mutable
@@ -105,6 +106,7 @@ class ChangeWidthTransform extends Transform with LazyLogging {
               case _ =>
                 wire
             }
+          case node:
           case instance: DefInstance =>
             findModule(instance.module) match {
               case _: ExtModule => instance
@@ -144,7 +146,8 @@ class ChangeWidthTransform extends Transform with LazyLogging {
       case Nil => state
       case myAnnotations =>
         val changeRequests = makeChangeRequests(myAnnotations)
-        state.copy(circuit = run(state.circuit, changeRequests))
+        val newState = state.copy(circuit = InferTypes.run(state.circuit))
+        newState.copy(circuit = run(newState.circuit, changeRequests))
     }
   }
 }

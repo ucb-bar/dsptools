@@ -53,10 +53,30 @@ class InstrumentingAdderSpec extends FlatSpec with Matchers {
     } should be (true)
   }
 
+  it should "run without bits reduced" in {
+    dsptools.Driver.execute(() => new InstrumentingAdder(getFixed _),
+      Array("-fimhb", "16")) { c =>
+      new InstrumentingAdderTester(c)
+    } should be (true)
+  }
+
+  it should "run without bits reduced with verilator" in {
+    dsptools.Driver.execute(() => new InstrumentingAdder(getFixed _),
+      Array("--backend-name", "verilator")) { c =>
+      new InstrumentingAdderTester(c)
+    } should be (true)
+  }
+
   it should "run twice with bits reduced in second run based on analysis of first run" in {
     dsptools.Driver.executeWithBitReduction(() => new InstrumentingAdder(getFixed _),
       Array("-fimhb", "16")) { c =>
-//      Array.empty[String]) { c =>
+      new InstrumentingAdderTester(c)
+    } should be (true)
+  }
+
+  it should "run with bit reduction but with guard bits should make nothing happen" in {
+    dsptools.Driver.executeWithBitReduction(() => new InstrumentingAdder(getFixed _),
+      Array("-fimhb", "16", "-brgb", "100")) { c =>
       new InstrumentingAdderTester(c)
     } should be (true)
   }
