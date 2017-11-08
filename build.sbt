@@ -12,6 +12,10 @@ organization := "edu.berkeley.cs"
 
 version := "1.1-SNAPSHOT"
 
+scalaVersion := "2.11.11"
+
+crossScalaVersions := Seq("2.11.11", "2.12.3")
+
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 // NOTE: These need to be "published" versions so Travis can find them.
 val defaultVersions = Map(
@@ -37,8 +41,7 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "spire" % "0.14.1",
   "org.scalanlp" %% "breeze" % "0.13.2",
   "org.scalatest" %% "scalatest" % "3.0.1",
-  "org.scalacheck" %% "scalacheck" % "1.13.4",
-  "co.theasi" %% "plotly" % "0.2.0"
+  "org.scalacheck" %% "scalacheck" % "1.13.4"
 ) ++ chiselDeps.libraries
 
 lazy val dsptools = (project in file("."))
