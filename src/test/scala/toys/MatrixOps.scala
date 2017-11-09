@@ -18,6 +18,7 @@ import scala.collection.immutable.ListMap
 
 // TODO: Ops need to work on 1x1 too!
 // TODO: Make # of pipeline stages not fixed! (Search ShiftRegister)
+// TODO: Check infer width time for N = 16
 // WARNING: Breeze changes along columns first
 object Matrix {
   def tpe[T <: Data:RealBits](el: CustomBundle[CustomBundle[T]], depth: Int): Matrix[T] =
@@ -331,9 +332,9 @@ class MatrixOp[T <: Data:RealBits](
     else Matrix(io.b)
 
   val out = op match {
-    case "add" => a + b
-    case "sub" => a - b
-    case "mul" => a * b
+    case "add" => b + a
+    case "sub" => b - a
+    case "mul" => b * a
   }
 
   io.out.seq.zip(Matrix.toSeq2D(out.elB).flatten) foreach { case (lhs, rhs) => lhs := rhs }
@@ -361,9 +362,9 @@ class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]], ins: 
       val a = initMatrix
       val b = if (isLit) litMatrix else initMatrix
       val expected = tDut.op match {
-        case "add" => a + b
-        case "sub" => a - b
-        case "mul" => a * b
+        case "add" => b + a
+        case "sub" => b - a
+        case "mul" => b * a
       }
       // println("Expected: " + expected)
       val firstCorrect = MatMulTests.convertToSeq(expected).zipWithIndex.map { case (value, idx) =>
@@ -375,9 +376,9 @@ class MatrixOpTester[T <: Data:RealBits](testMod: TestModule[MatrixOp[T]], ins: 
       val a = MatMulTests.convertToDenseMatrix(tvs((i - pipelineDepth) % tvs.length))
       val b = if (isLit) litMatrix else a
       val expected = tDut.op match {
-        case "add" => a + b
-        case "sub" => a - b
-        case "mul" => a * b
+        case "add" => b + a
+        case "sub" => b - a
+        case "mul" => b * a
       }
       MatMulTests.convertToSeq(expected).zipWithIndex foreach { case (value, idx) =>
         expect(MatMulTests.getElement[T](testMod.getIO("out"), idx), value)
@@ -396,7 +397,7 @@ class MatrixOpSpec extends FlatSpec with Matchers {
   val len = n * n
   val litSeq = (0 until len).map(_.toDouble)
 
-  val inI = Interval(range"[0, ${len}).0")
+  val inI = Interval(range"[${-len}, ${len}).0")
   val outI = Interval(range"[?, ?].0")
   val inF = FixedPoint((BigInt(len - 1).bitLength + 1).W, 0.BP)
   val outF = FixedPoint(UnknownWidth(), 0.BP)
@@ -511,10 +512,10 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
   val filteredRandomTVs = Some(MatMulTests.filter(randomTVs.get, bw = 0.25, maxNotInclusive = len))
 
   behavior of "DCT Matrix Multiplication"
-/*
+
   it should "properly multiply - FixedPoint - DCT Lit" in {
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul", litSeq, litBP)), IATest.options(s"DCTMatrixMul-F-${n}x${n}", backend = "verilator", fixTol = 7)) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul", litSeq, litBP)), IATest.options(s"DCTMatrixMul-F-${n}x${n}", backend = "verilator", fixTol = 8)) {
         c => new MatrixOpTester(c)
       } should be(true)
     }
@@ -522,15 +523,16 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
 
   it should "properly multiply - Interval - DCT Lit" in {
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", litSeq, litBP)), IATest.options(s"DCTMatrixMul-I-${n}x${n}", backend = "verilator", fixTol = 7)) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", litSeq, litBP)), IATest.options(s"DCTMatrixMul-I-${n}x${n}", backend = "verilator", fixTol = 8)) {
         c => new MatrixOpTester(c)
       } should be(true)
     }
   }
-*/
+
+/*
   it should "properly multiply - Interval - DCT Lit - RANDOM" in {
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", litSeq, litBP)), IATest.options(s"Random-DCTMatrixMul-I-${n}x${n}", backend = "firrtl", fixTol = 7)) {
+      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", litSeq, litBP)), IATest.options(s"Random-DCTMatrixMul-I-${n}x${n}", backend = "firrtl", fixTol = 8)) {
         c => new MatrixOpTester(c, randomTVs)
       } should be(true)
     }
@@ -538,10 +540,10 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
 
   it should "properly multiply - Interval - DCT Lit - RANDOM FILTERED" in {
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", litSeq, litBP)), IATest.options(s"Filtered-Random-DCTMatrixMul-I-${n}x${n}", backend = "firrtl", fixTol = 7)) {
+      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", litSeq, litBP)), IATest.options(s"Filtered-Random-DCTMatrixMul-I-${n}x${n}", backend = "firrtl", fixTol = 8)) {
         c => new MatrixOpTester(c, filteredRandomTVs)
       } should be(true)
     }
   }
-
+*/
 }
