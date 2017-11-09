@@ -30,9 +30,11 @@ name := "dsptools"
 
 organization := "edu.berkeley.cs"
 
-version := "1.0.0-RC1"
+version := "1.0.0-RC2"
 
 scalaVersion := "2.11.11"
+
+crossScalaVersions := Seq("2.11.11", "2.12.3")
 
 resolvers ++= Seq (
   Resolver.sonatypeRepo("snapshots"),
@@ -47,16 +49,15 @@ scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:refle
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel3" -> "3.0.0-RC1",
-  "chisel-iotesters" -> "1.1.0-RC1"
+  "chisel3" -> "3.0.0-RC2",
+  "chisel-iotesters" -> "1.1.0-RC2"
 )
 
 libraryDependencies ++= Seq(
   "org.typelevel" %% "spire" % "0.14.1",
   "org.scalanlp" %% "breeze" % "0.13.2",
   "org.scalatest" %% "scalatest" % "3.0.1",
-  "org.scalacheck" %% "scalacheck" % "1.13.4",
-  "co.theasi" %% "plotly" % "0.1"
+  "org.scalacheck" %% "scalacheck" % "1.13.4"
 )
 
 javacOptions ++= javacOptionsVersion(scalaVersion.value)
