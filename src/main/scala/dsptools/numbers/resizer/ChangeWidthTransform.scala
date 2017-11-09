@@ -6,7 +6,7 @@ import firrtl._
 import firrtl.annotations.{Annotation, Named}
 import firrtl.ir._
 import firrtl.Mappers._
-import firrtl.passes.InferTypes
+import firrtl.passes.{InferTypes, ToWorkingIR}
 import logger.{LazyLogging, LogLevel, Logger}
 
 import scala.collection.mutable
@@ -26,9 +26,14 @@ class ChangeWidthTransform extends Transform with LazyLogging {
 
 
   def makeChangeRequests(annotations: Seq[Annotation]): Map[String, ChangeRequest] = {
-    annotations.map { annotation =>
+    annotations.flatMap { annotation =>
       val componentName :: widthString :: _ = annotation.value.split("""=""", 2).toList
-      componentName -> ChangeRequest(componentName, BigInt(widthString, 10))
+      if(componentName.startsWith("io_")) {
+        None
+      }
+      else {
+        Some(componentName -> ChangeRequest(componentName, BigInt(widthString, 10)))
+      }
     }.toMap
   }
 
@@ -106,7 +111,6 @@ class ChangeWidthTransform extends Transform with LazyLogging {
               case _ =>
                 wire
             }
-          case node:
           case instance: DefInstance =>
             findModule(instance.module) match {
               case _: ExtModule => instance
@@ -146,8 +150,12 @@ class ChangeWidthTransform extends Transform with LazyLogging {
       case Nil => state
       case myAnnotations =>
         val changeRequests = makeChangeRequests(myAnnotations)
-        val newState = state.copy(circuit = InferTypes.run(state.circuit))
-        newState.copy(circuit = run(newState.circuit, changeRequests))
+        val nodesToWiresTransform = new NodesToWiresTransform
+        val state1 = state.copy(circuit = ToWorkingIR.run(state.circuit))
+        val state2 = state.copy(circuit = InferTypes.run(state1.circuit))
+        val state3 = nodesToWiresTransform.execute(state2)
+        println("After nodes2Wires\n" + state3.circuit.serialize)
+        state3.copy(circuit = run(state3.circuit, changeRequests))
     }
   }
 }
