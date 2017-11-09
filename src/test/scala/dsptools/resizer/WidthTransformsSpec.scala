@@ -39,7 +39,7 @@ class ToManyWiresTester(c: ToManyWires) extends DspTester(c) {
 }
 
 
-class ChangeWidthTransformSpec extends FreeSpec with Matchers {
+class WidthTransformSpec extends FreeSpec with Matchers {
   """reduce bits when bits or tail are involved""" in {
     dsptools.Driver.executeWithBitReduction(() => new ToManyWires, Array("-fimhb", "16")) { c =>
       new ToManyWiresTester(c)

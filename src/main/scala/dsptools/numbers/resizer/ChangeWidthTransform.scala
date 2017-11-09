@@ -154,7 +154,7 @@ class ChangeWidthTransform extends Transform with LazyLogging {
         val state1 = state.copy(circuit = ToWorkingIR.run(state.circuit))
         val state2 = state.copy(circuit = InferTypes.run(state1.circuit))
         val state3 = nodesToWiresTransform.execute(state2)
-        println("After nodes2Wires\n" + state3.circuit.serialize)
+        // println("After nodes2Wires\n" + state3.circuit.serialize)
         state3.copy(circuit = run(state3.circuit, changeRequests))
     }
   }
