@@ -533,7 +533,7 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
 
   val intBits = 8
   val n = 8
-  val numTests = 200
+  val numTests = 400
   val bp = 8
 
   val len = n * n
