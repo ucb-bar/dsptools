@@ -299,7 +299,7 @@ class SystolicMatMulTester[T <: Data:RealBits](testMod: TestModule[SystolicMatMu
 
 class SystolicMatMulSpec extends FlatSpec with Matchers {
 
-  val intBits = 8
+  val intBits = 4
   val n = 8
 
   val len = n * n
@@ -319,13 +319,17 @@ class SystolicMatMulSpec extends FlatSpec with Matchers {
   val inF = FixedPoint(intBits.W, 0.BP)
   val outF = FixedPoint(UnknownWidth(), 0.BP)
 
+  val randomTVsShortW = Some(MatMulTests.generateRandomInputs(n, len, maxNotInclusive = maxW))
+  val randomTVsShortT = Some(MatMulTests.generateRandomInputs(n, len, maxNotInclusive = maxT))
+  val randomTVsShortM = Some(MatMulTests.generateRandomInputs(n, len, maxNotInclusive = maxM))
+
   behavior of "Systolic Matrix Multiplication"
 
   it should "properly multiply - FixedPoint" in {
     val name = s"SMatMulF${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
       dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inF, outF, n), name = name), IATest.options(name, backend = "verilator", fixTol = 0)) {
-        c => new SystolicMatMulTester(c)
+        c => new SystolicMatMulTester(c, randomTVsShortW)
       } should be(true)
     }
   }
@@ -334,7 +338,7 @@ class SystolicMatMulSpec extends FlatSpec with Matchers {
     val name = s"SMatMulIWide${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
       dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inIWide, outI, n), name = name), IATest.options(name, backend = "verilator", fixTol = 0)) {
-        c => new SystolicMatMulTester(c)
+        c => new SystolicMatMulTester(c, randomTVsShortW)
       } should be(true)
     }
   }
@@ -343,7 +347,7 @@ class SystolicMatMulSpec extends FlatSpec with Matchers {
     val name = s"SMatMulIThin${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
       dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inIThin, outI, n), name = name), IATest.options(name, backend = "verilator", fixTol = 0)) {
-        c => new SystolicMatMulTester(c)
+        c => new SystolicMatMulTester(c, randomTVsShortT)
       } should be(true)
     }
   }
@@ -352,7 +356,7 @@ class SystolicMatMulSpec extends FlatSpec with Matchers {
     val name = s"SMatMulIMed${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
       dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inIMed, outI, n), name = name), IATest.options(name, backend = "verilator", fixTol = 0)) {
-        c => new SystolicMatMulTester(c)
+        c => new SystolicMatMulTester(c, randomTVsShortM)
       } should be(true)
     }
   }
@@ -360,7 +364,8 @@ class SystolicMatMulSpec extends FlatSpec with Matchers {
 
 class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
 
-  val intBits = 8
+  val intBits = 4
+  val correction = 9 - 4
   val n = 8
   val numTests = 400
   val bp = 8
@@ -386,6 +391,9 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
   val litSeq = MatMulTests.dct(n)
 
   val randomTVs = Some(MatMulTests.generateRandomInputs(n, numTests, maxNotInclusive = maxW))
+  val randomTVsShortW = Some(MatMulTests.generateRandomInputs(n, len, maxNotInclusive = maxW))
+  val randomTVsShortT = Some(MatMulTests.generateRandomInputs(n, len, maxNotInclusive = maxT))
+  val randomTVsShortM = Some(MatMulTests.generateRandomInputs(n, len, maxNotInclusive = maxM))
   val filteredRandomTVs = Some(MatMulTests.filter(randomTVs.get, bw = 0.25, maxNotInclusive = maxW))
 
   behavior of "Systolic DCT Matrix Multiplication"
@@ -393,8 +401,8 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
   it should "properly multiply - FixedPoint - DCT Lit" in {
     val name = s"SDCTF${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inF, outF, n, litSeq, litBP), name = name), IATest.options(name, backend = "verilator", fixTol = 8)) {
-        c => new SystolicMatMulTester(c)
+      dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inF, outF, n, litSeq, litBP), name = name), IATest.options(name, backend = "verilator", fixTol = correction)) {
+        c => new SystolicMatMulTester(c, randomTVsShortW)
       } should be(true)
     }
   }
@@ -402,8 +410,8 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
   it should "properly multiply - Interval Wide - DCT Lit" in {
     val name = s"SDCTIWide${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inIWide, outI, n, litSeq, litBP), name = name), IATest.options(name, backend = "verilator", fixTol = 8)) {
-        c => new SystolicMatMulTester(c)
+      dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inIWide, outI, n, litSeq, litBP), name = name), IATest.options(name, backend = "verilator", fixTol = correction)) {
+        c => new SystolicMatMulTester(c, randomTVsShortW)
       } should be(true)
     }
   }
@@ -411,8 +419,8 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
   it should "properly multiply - Interval Thin - DCT Lit" in {
     val name = s"SDCTIThin${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inIThin, outI, n, litSeq, litBP), name = name), IATest.options(name, backend = "verilator", fixTol = 8)) {
-        c => new SystolicMatMulTester(c)
+      dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inIThin, outI, n, litSeq, litBP), name = name), IATest.options(name, backend = "verilator", fixTol = correction)) {
+        c => new SystolicMatMulTester(c, randomTVsShortT)
       } should be(true)
     }
   }
@@ -420,8 +428,8 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
   it should "properly multiply - Interval Medium - DCT Lit" in {
     val name = s"SDCTIMed${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inIMed, outI, n, litSeq, litBP), name = name), IATest.options(name, backend = "verilator", fixTol = 8)) {
-        c => new SystolicMatMulTester(c)
+      dsptools.Driver.execute(() => new TestModule(() => new SystolicMatMul(inIMed, outI, n, litSeq, litBP), name = name), IATest.options(name, backend = "verilator", fixTol = correction)) {
+        c => new SystolicMatMulTester(c, randomTVsShortM)
       } should be(true)
     }
   }
@@ -429,7 +437,7 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
   it should "properly multiply - Interval Wide - DCT Lit - RANDOM" in {
     val name = s"RandomSDCTIWide${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new SystolicMatMul(inIWide, outI, n, litSeq, litBP), name = name), IATest.options(name, backend = "firrtl", fixTol = 9)) {
+      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new SystolicMatMul(inIWide, outI, n, litSeq, litBP), name = name), IATest.options(name, backend = "firrtl", fixTol = correction)) {
         c => new SystolicMatMulTester(c, randomTVs)
       } should be(true)
     }
@@ -438,7 +446,7 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
   it should "properly multiply - Interval Wide - DCT Lit - RANDOM FILTERED" in {
     val name = s"FRandomSDCTIWide${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new SystolicMatMul(inIWide, outI, n, litSeq, litBP), name = name), IATest.options(name, backend = "firrtl", fixTol = 9)) {
+      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new SystolicMatMul(inIWide, outI, n, litSeq, litBP), name = name), IATest.options(name, backend = "firrtl", fixTol = correction)) {
         c => new SystolicMatMulTester(c, filteredRandomTVs)
       } should be(true)
     }
