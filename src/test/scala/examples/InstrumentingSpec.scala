@@ -69,7 +69,7 @@ class InstrumentingAdderSpec extends FlatSpec with Matchers {
 
   it should "run twice with bits reduced in second run based on analysis of first run" in {
     dsptools.Driver.executeWithBitReduction(() => new InstrumentingAdder(getFixed _),
-      Array("-fimhb", "16")) { c =>
+      Array("-fimhb", "16", "-dtinv")) { c =>
       new InstrumentingAdderTester(c)
     } should be (true)
   }

@@ -159,7 +159,7 @@ class BitReducer(lines: Seq[String], trimBySigma: Double = 0.0, fudgeConstant: I
       if (bitsNeeded < width) {
         bitsRemoved += (width - bitsNeeded)
         val annotation = Annotation(CircuitName("c"), classOf[ChangeWidthTransform], s"""$name=$bitsNeeded""")
-        logger.info(s"Creating annotation ${annotation.value} for $bitHistory")
+        logger.debug(s"Creating annotation ${annotation.value} for $bitHistory")
         annotations += annotation
       }
     }
@@ -171,7 +171,7 @@ class BitReducer(lines: Seq[String], trimBySigma: Double = 0.0, fudgeConstant: I
         bitsRemoved += (width - neededBits)
 
         val annotation = Annotation(CircuitName("c"), classOf[ChangeWidthTransform], s"""$name=$neededBits""")
-        logger.info(s"Creating annotation ${annotation.value} for $bitHistory")
+        // logger.debug(s"Creating annotation ${annotation.value} for $bitHistory")
         annotations += annotation
       }
     }
