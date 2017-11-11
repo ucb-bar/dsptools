@@ -469,80 +469,154 @@ class MatrixOpSpec extends FlatSpec with Matchers {
 
 class MatMulSpec extends FlatSpec with Matchers {
 
+  val intBits = 8
   val n = 8
 
   val len = n * n
+  val maxW = (1 << (intBits - 1))
+  val minW = -(1 << (intBits - 1))
 
-  val inI = Interval(range"[${-len}, ${len}).0")
+  val maxT = (1 << (intBits - 2)) + 1
+  val minT = -(1 << (intBits - 2)) - 1
+
+  val maxM = (maxW + maxT) / 2
+  val minM = (minW + minT) / 2
+
+  val inIWide = Interval(range"[${minW}, ${maxW}).0")
+  val inIThin = Interval(range"[${minT}, ${maxT}).0")
+  val inIMed = Interval(range"[${minM}, ${maxM}).0")
   val outI = Interval(range"[?, ?].0")
-  val inF = FixedPoint((BigInt(len - 1).bitLength + 1).W, 0.BP)
+  val inF = FixedPoint(intBits.W, 0.BP)
   val outF = FixedPoint(UnknownWidth(), 0.BP)
 
   behavior of "Matrix Multiplication"
 
-  it should "properly multiply - Interval" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul")), IATest.options(s"MatrixMul-I-${n}x${n}", backend = "verilator")) {
-      c => new MatrixOpTester(c)
-    } should be (true)
+  it should "properly multiply - FixedPoint" in {
+    val name = s"MatMulF${n}x${n}x${intBits}"
+    DspContext.withTrimType(NoTrim) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul"), name = name), IATest.options(name, backend = "verilator", fixTol = 0)) {
+        c => new MatrixOpTester(c)
+      } should be(true)
+    }
   }
 
-  it should "properly multiply - FixedPoint" in {
-    dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul")), IATest.options(s"MatrixMul-F-${n}x${n}", backend = "verilator")) {
-      c => new MatrixOpTester(c)
-    } should be (true)
+  it should "properly multiply - Interval Wide" in {
+    val name = s"MatMulIWide${n}x${n}x${intBits}"
+    DspContext.withTrimType(NoTrim) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inIWide, outI, n, "mul"), name = name), IATest.options(name, backend = "verilator", fixTol = 0)) {
+        c => new MatrixOpTester(c)
+      } should be(true)
+    }
+  }
+
+  it should "properly multiply - Interval Thin" in {
+    val name = s"MatMulIThin${n}x${n}x${intBits}"
+    DspContext.withTrimType(NoTrim) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inIThin, outI, n, "mul"), name = name), IATest.options(name, backend = "verilator", fixTol = 0)) {
+        c => new MatrixOpTester(c)
+      } should be(true)
+    }
+  }
+
+  it should "properly multiply - Interval Medium" in {
+    val name = s"MatMulIMed${n}x${n}x${intBits}"
+    DspContext.withTrimType(NoTrim) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inIMed, outI, n, "mul"), name = name), IATest.options(name, backend = "verilator", fixTol = 0)) {
+        c => new MatrixOpTester(c)
+      } should be(true)
+    }
   }
 
 }
 
 class DCTMatMulSpec extends FlatSpec with Matchers {
 
+  val intBits = 8
   val n = 8
   val numTests = 200
-  val len = n * n
+  val bp = 8
 
-  val inI = Interval(range"[${-len}, ${len}).0")
-  val outI = Interval(range"[?, ?].8")
-  val inF = FixedPoint((BigInt(len - 1).bitLength + 1).W, 0.BP)
-  val outF = FixedPoint(UnknownWidth(), 8.BP)
-  val litBP = Some(8)
+  val len = n * n
+  val maxW = (1 << (intBits - 1))
+  val minW = -(1 << (intBits - 1))
+
+  val maxT = (1 << (intBits - 2)) + 1
+  val minT = -(1 << (intBits - 2)) - 1
+
+  val maxM = (maxW + maxT) / 2
+  val minM = (minW + minT) / 2
+
+  val inIWide = Interval(range"[${minW}, ${maxW}).0")
+  val inIThin = Interval(range"[${minT}, ${maxT}).0")
+  val inIMed = Interval(range"[${minM}, ${maxM}).0")
+  val outI = Interval(range"[?, ?].${bp}")
+  val inF = FixedPoint(intBits.W, 0.BP)
+  val outF = FixedPoint(UnknownWidth(), bp.BP)
+  val litBP = Some(bp)
 
   val litSeq = MatMulTests.dct(n)
 
-  val randomTVs = Some(MatMulTests.generateRandomInputs(n, numTests, maxNotInclusive = len))
-  val filteredRandomTVs = Some(MatMulTests.filter(randomTVs.get, bw = 0.25, maxNotInclusive = len))
+  val randomTVs = Some(MatMulTests.generateRandomInputs(n, numTests, maxNotInclusive = maxW))
+  val filteredRandomTVs = Some(MatMulTests.filter(randomTVs.get, bw = 0.25, maxNotInclusive = maxW))
 
   behavior of "DCT Matrix Multiplication"
 
   it should "properly multiply - FixedPoint - DCT Lit" in {
+    val name = s"DCTF${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul", litSeq, litBP)), IATest.options(s"DCTMatrixMul-F-${n}x${n}", backend = "verilator", fixTol = 8)) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inF, outF, n, "mul", litSeq, litBP), name = name), IATest.options(name, backend = "verilator", fixTol = 8)) {
         c => new MatrixOpTester(c)
       } should be(true)
     }
   }
 
-  it should "properly multiply - Interval - DCT Lit" in {
+  it should "properly multiply - Interval Wide - DCT Lit" in {
+    val name = s"DCTIWide${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", litSeq, litBP)), IATest.options(s"DCTMatrixMul-I-${n}x${n}", backend = "verilator", fixTol = 8)) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inIWide, outI, n, "mul", litSeq, litBP), name = name), IATest.options(name, backend = "verilator", fixTol = 8)) {
         c => new MatrixOpTester(c)
       } should be(true)
     }
   }
 
-  it should "properly multiply - Interval - DCT Lit - RANDOM" in {
+  it should "properly multiply - Interval Thin - DCT Lit" in {
+    val name = s"DCTIThin${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", litSeq, litBP)), IATest.options(s"Random-DCTMatrixMul-I-${n}x${n}", backend = "firrtl", fixTol = 8)) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inIThin, outI, n, "mul", litSeq, litBP), name = name), IATest.options(name, backend = "verilator", fixTol = 8)) {
+        c => new MatrixOpTester(c)
+      } should be(true)
+    }
+  }
+
+  it should "properly multiply - Interval Medium - DCT Lit" in {
+    val name = s"DCTIMed${n}x${n}x${intBits}"
+    DspContext.withTrimType(NoTrim) {
+      dsptools.Driver.execute(() => new TestModule(() => new MatrixOp(inIMed, outI, n, "mul", litSeq, litBP), name = name), IATest.options(name, backend = "verilator", fixTol = 8)) {
+        c => new MatrixOpTester(c)
+      } should be(true)
+    }
+  }
+
+  it should "properly multiply - Interval Wide - DCT Lit - RANDOM" in {
+    val name = s"RandomDCTIWide${n}x${n}x${intBits}"
+    DspContext.withTrimType(NoTrim) {
+      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inIWide, outI, n, "mul", litSeq, litBP), name = name), IATest.options(name, backend = "firrtl", fixTol = 8)) {
         c => new MatrixOpTester(c, randomTVs)
       } should be(true)
     }
   }
 
-  it should "properly multiply - Interval - DCT Lit - RANDOM FILTERED" in {
+  it should "properly multiply - Interval Wide - DCT Lit - RANDOM FILTERED" in {
+    val name = s"FRandomDCTIWide${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", litSeq, litBP)), IATest.options(s"Filtered-Random-DCTMatrixMul-I-${n}x${n}", backend = "firrtl", fixTol = 8)) {
+      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inIWide, outI, n, "mul", litSeq, litBP), name = name), IATest.options(name, backend = "firrtl", fixTol = 8)) {
         c => new MatrixOpTester(c, filteredRandomTVs)
       } should be(true)
     }
   }
+
+  println(s"MinW: $minW MaxW: $maxW")
+  println(s"MinT: $minT MaxT: $maxT")
+  println(s"MinM: $minM MaxM: $maxM")
 
 }

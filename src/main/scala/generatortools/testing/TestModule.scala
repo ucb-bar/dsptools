@@ -9,7 +9,7 @@ import org.scalatest.{Matchers, FlatSpec}
   * dutFactory = DUT module
   * useGlobalClk/useGlobalRst = use implicit clock and reset
   */
-class TestModule[T <: Module](val dutFactory: () => T, useGlobalClk: Boolean = true, useGlobalRst: Boolean = true)
+class TestModule[T <: Module](val dutFactory: () => T, useGlobalClk: Boolean = true, useGlobalRst: Boolean = true, name: String = "")
     extends Module {
 
   /** Generate standard Chisel top-level IO */
@@ -20,6 +20,8 @@ class TestModule[T <: Module](val dutFactory: () => T, useGlobalClk: Boolean = t
   // Wrap + connect DUT
   val dut = Module(dutFactory())
   val io = IO(createTopIO(dut.io))
+
+  if (name.nonEmpty) dut.suggestName(name)
 
   // Make sure global clock/reset functionality doesn't accidentally get mixed in
   if (useGlobalClk) dut.clock := clock
