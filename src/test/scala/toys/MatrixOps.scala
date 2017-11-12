@@ -529,7 +529,7 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
     }
   }
 
-  it should "properly multiply - Interval - DCT Lit - RANDOM" in {
+  it should "properly multiply - Interval - DCT Lit - RANDOM UNFILTERED" in {
     DspContext.withTrimType(NoTrim) {
       dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inI, outI, n, "mul", litSeq, litBP)), IATest.options(s"Random-DCTMatrixMul-I-${n}x${n}", backend = "firrtl", fixTol = 8)) {
         c => new MatrixOpTester(c, randomTVs)
