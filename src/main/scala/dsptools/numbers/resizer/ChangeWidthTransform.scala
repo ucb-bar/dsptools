@@ -6,8 +6,6 @@ import firrtl._
 import firrtl.annotations.{Annotation, Named}
 import firrtl.ir._
 import firrtl.Mappers._
-import firrtl.PrimOps._
-import firrtl.Utils.{getUIntWidth, get_info, throwInternalError}
 import firrtl.passes._
 import _root_.logger.{LazyLogging, LogLevel, Logger}
 
@@ -179,108 +177,6 @@ class ChangeWidthTransform extends Transform with LazyLogging {
       }
     }
     Circuit(c.info, modulesx, c.main)
-  }
-
-  class FixBits extends Pass {
-    var changesMade: Int = 0
-
-    /** The maximum allowed width for any circuit element */
-    val MaxWidth = 1000000
-    val DshlMaxWidth = getUIntWidth(MaxWidth + 1)
-    class UninferredWidth (info: Info, mname: String, name: String, t: Type) extends PassException(
-      s"$info : [module $mname]  Component $name has an Uninferred width: ${t.serialize}")
-    class UninferredBound (info: Info, mname: String, name: String, t: Type, bound: String) extends PassException(
-      s"$info : [module $mname]  Component $name has an uninferred $bound bound: ${t.serialize}.")
-    class InvalidRange (info: Info, mname: String, name: String, t: Type) extends PassException(
-      s"$info : [module $mname]  Component $name has an invalid range: ${t.serialize}.")
-    class WidthTooSmall(info: Info, mname: String, b: BigInt) extends PassException(
-      s"$info : [module $mname]  Width too small for constant $b.")
-    class WidthTooBig(info: Info, mname: String, b: BigInt) extends PassException(
-      s"$info : [module $mname]  Width $b greater than max allowed width of $MaxWidth bits")
-    class DshlTooBig(info: Info, mname: String) extends PassException(
-      s"$info : [module $mname]  Width of dshl shift amount cannot be larger than $DshlMaxWidth bits.")
-    class NegWidthException(info:Info, mname: String) extends PassException(
-      s"$info: [module $mname] Width cannot be negative or zero.")
-    class BitsWidthException(info: Info, mname: String, hi: BigInt, width: BigInt, exp: String) extends PassException(
-      s"$info: [module $mname] High bit $hi in bits operator is larger than input width $width in $exp.")
-    class HeadWidthException(info: Info, mname: String, n: BigInt, width: BigInt) extends PassException(
-      s"$info: [module $mname] Parameter $n in head operator is larger than input width $width.")
-    class TailWidthException(info: Info, mname: String, n: BigInt, width: BigInt) extends PassException(
-      s"$info: [module $mname] Parameter $n in tail operator is larger than input width $width.")
-    class AttachWidthsNotEqual(info: Info, mname: String, eName: String, source: String) extends PassException(
-      s"$info: [module $mname] Attach source $source and expression $eName must have identical widths.")
-
-    def run(c: Circuit): Circuit = {
-      val errors = new Errors()
-
-      def check_width_w(info: Info, mname: String, name: String, t: Type)(w: Width): Width = {
-        (w, t) match {
-          case (IntWidth(width), _) if width >= MaxWidth =>
-            errors.append(new WidthTooBig(info, mname, width))
-          case (w: IntWidth, f: FixedType) if (w.width < 0 && w.width == f.width) =>
-            errors append new NegWidthException(info, mname)
-          case (w: IntWidth, f: IntervalType) if (w.width < 0) =>
-            errors append new NegWidthException(info, mname)
-          case (_: IntWidth, _) =>
-          case _ => errors append new UninferredWidth(info, mname, name, t)
-        }
-        w
-      }
-
-      def hasWidth(tpe: Type): Boolean = tpe match {
-        case GroundType(IntWidth(w)) => true
-        case GroundType(_) => false
-        case _ => println(tpe); throwInternalError
-      }
-
-      def check_width_t(info: Info, mname: String, name: String)(t: Type): Type =
-        t map check_width_t(info, mname, name) map check_width_w(info, mname, name, t) match {
-          case other => other
-        }
-
-      def fixWidthInExpression(info: Info, mname: String)(e: Expression): Expression = {
-        val newE = e map fixWidthInExpression(info, mname)
-        newE match {
-          case DoPrim(Bits, Seq(a), Seq(hi, lo), tpe) if (hasWidth(a.tpe) && bitWidth(a.tpe) <= hi) =>
-            changesMade += 1
-            val newHi = typeToWidth(a.tpe) - 1
-            val adjustedBits = DoPrim(Bits, Seq(a), Seq(newHi, lo), tpe)
-            println(s"Adjusting bits for ${a} was ($hi, $lo) now ($newHi, $lo)")
-            adjustedBits
-          case DoPrim(Head, Seq(a), Seq(n), _) if (hasWidth(a.tpe) && bitWidth(a.tpe) < n) =>
-            errors append new HeadWidthException(info, mname, n, bitWidth(a.tpe))
-            newE
-          case DoPrim(Tail, Seq(a), Seq(n), _) if (hasWidth(a.tpe) && bitWidth(a.tpe) <= n) =>
-            errors append new TailWidthException(info, mname, n, bitWidth(a.tpe))
-            newE
-          case DoPrim(Dshl, Seq(a, b), _, _) if (hasWidth(a.tpe) && bitWidth(b.tpe) >= DshlMaxWidth) =>
-            errors append new DshlTooBig(info, mname)
-            newE
-          case _ =>
-            newE
-        }
-      }
-
-
-      def fixWidthInStatements(minfo: Info, mname: String)(s: Statement): Statement = {
-        val info = get_info(s) match { case NoInfo => minfo case x => x }
-        val name = s match { case i: IsDeclaration => i.name case _ => "" }
-        s map fixWidthInExpression(info, mname) map fixWidthInStatements(info, mname) map check_width_t(info, mname, name)
-      }
-
-      def check_width_p(minfo: Info, mname: String)(p: Port): Port = p.copy(tpe =  check_width_t(p.info, mname, p.name)(p.tpe))
-
-      def fixWidthInModules(m: DefModule): DefModule = {
-        m map check_width_p(m.info, m.name) map fixWidthInStatements(m.info, m.name)
-      }
-
-      val fixedModules = c.modules map fixWidthInModules
-
-      println(s"FixBits: changes made $changesMade modules differ ${fixedModules == c.modules}")
-
-      c.copy(modules = fixedModules)
-    }
-
   }
 
   override def execute(state: CircuitState): CircuitState = {

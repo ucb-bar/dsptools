@@ -25,8 +25,8 @@ object FixPrimOps extends Pass {
   // Returns an expression with the correct integer width
   private def fixup(i: Int)(e: Expression) = {
     def tx = e.tpe match {
-      case t: UIntType => UIntType(IntWidth(i))
-      case t: SIntType => SIntType(IntWidth(i))
+      case _: UIntType => UIntType(IntWidth(i))
+      case _: SIntType => SIntType(IntWidth(i))
       // default case should never be reached
     }
     width(e) match {
@@ -44,11 +44,12 @@ object FixPrimOps extends Pass {
 
   // Recursive, updates expression so children exp's have correct widths
   private def onExp(e: Expression): Expression = e map onExp match {
-    case DoPrim(Bits, Seq(a), Seq(hi, lo), tpe) if (hasWidth(a.tpe) && bitWidth(a.tpe) <= hi) =>
+    case DoPrim(Bits, Seq(a), Seq(hi, lo), tpe) if hasWidth(a.tpe) && bitWidth(a.tpe) <= hi =>
       changesMade += 1
       val newHi = bitWidth(a.tpe) - 1
       val adjustedBits = DoPrim(Bits, Seq(a), Seq(newHi, lo), tpe)
-      println(s"Adjusting bits for ${a} was ($hi, $lo) now ($newHi, $lo)")
+      //scalastyle:off regex
+      // println(s"Adjusting bits for ${a} was ($hi, $lo) now ($newHi, $lo)")
       adjustedBits
     case ex => ex
   }
@@ -56,14 +57,15 @@ object FixPrimOps extends Pass {
   // Recursive. Fixes assignments and register initialization widths
   private def onStmt(s: Statement): Statement = s map onExp match {
     case sx: Connect =>
-      sx copy (expr = fixup(width(sx.loc))(sx.expr))
+      sx.copy(expr = fixup(width(sx.loc))(sx.expr))
     case sx: DefRegister =>
-      sx copy (init = fixup(width(sx.tpe))(sx.init))
+      sx.copy(init = fixup(width(sx.tpe))(sx.init))
     case sx => sx map onStmt
   }
 
   def run(c: Circuit): Circuit = {
     val newCircuit = c copy (modules = c.modules map (_ map onStmt))
+    //scalastyle:off regex
     println(s"FixBits: changes made $changesMade")
     newCircuit
   }
