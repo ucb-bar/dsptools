@@ -7,6 +7,7 @@ import generatortools.testing.TestModule
 import org.scalatest.{Matchers, FlatSpec}
 import chisel3.internal.firrtl.IntervalRange
 import dsptools.DspTester
+import dsptools.numbers._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -27,7 +28,15 @@ class IALoops(r: IATestParams) extends Module {
     val reg = IATest.outputs(inputNames, bp)
     val reg2 = IATest.outputs(inputNames, bp)
     val lit = Output(Interval(range"[?, ?].5"))
+
+    val interval = Input(Interval(aRange))
+    val intervalAsReal = Output(DspReal())
+    val real = Input(DspReal())
+    val realAsInterval = Output(Interval(aRange))
   })
+
+  io.intervalAsReal := io.interval.asReal
+  io.realAsInterval := io.real.toInterval(io.realAsInterval)
 
   val lit = Interval.fromDouble(value = 3.25, width = 16, binaryPoint = 5)
   io.lit := lit
@@ -57,25 +66,25 @@ class IALoopsSpec extends FlatSpec with Matchers {
   behavior of "IA Loop"
 
   it should "properly infer [_, _] ranges and compute" in {
-    dsptools.Driver.execute(() => new TestModule(() => new IALoops(IATest.cc)), IATest.options("cc")) {
+    dsptools.Driver.execute(() => new TestModule(() => new IALoops(IATest.cc)), IATest.options("cc", backend = "verilator")) {
       c => new IALoopsTester(c)
     } should be (true)
   }
 
   it should "properly infer [_, _) ranges and compute" in {
-    dsptools.Driver.execute(() => new TestModule(() => new IALoops(IATest.co)), IATest.options("co")) {
+    dsptools.Driver.execute(() => new TestModule(() => new IALoops(IATest.co)), IATest.options("co", backend = "verilator")) {
       c => new IALoopsTester(c)
     } should be (true)
   }
 
   it should "properly infer (_, _] ranges and compute" in {
-    dsptools.Driver.execute(() => new TestModule(() => new IALoops(IATest.oc)), IATest.options("oc")) {
+    dsptools.Driver.execute(() => new TestModule(() => new IALoops(IATest.oc)), IATest.options("oc", backend = "verilator")) {
       c => new IALoopsTester(c)
     } should be (true)
   }
 
   it should "properly infer (_, _) ranges and compute" in {
-    dsptools.Driver.execute(() => new TestModule(() => new IALoops(IATest.oo)), IATest.options("oo")) {
+    dsptools.Driver.execute(() => new TestModule(() => new IALoops(IATest.oo)), IATest.options("oo", backend = "verilator")) {
       c => new IALoopsTester(c)
     } should be (true)
   }
@@ -107,6 +116,14 @@ class IALoopsTester(testMod: TestModule[IALoops]) extends DspTester(testMod) {
     for (loop <- 0 until tDut.loops) {
       inputNames.zip(inVals) foreach { case (name, value) =>
         poke(testMod.getIO(name), value)
+        if (name == "a") {
+          poke(testMod.getIO("interval"), value)
+          poke(testMod.getIO("real"), value)
+          updatableDspVerbose.withValue(true) {
+            expect(testMod.getIO("intervalAsReal"), value)
+            expect(testMod.getIO("realAsInterval"), value)
+          }
+        }
       }
 
       tDut.ins.zipWithIndex foreach { case (i, idx) =>
