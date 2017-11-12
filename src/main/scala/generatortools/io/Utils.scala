@@ -5,7 +5,7 @@ import chisel3.core.DataMirror
 import chisel3.experimental._
 import chisel3.internal.firrtl._
 import chisel3.util.Cat
-import dsptools.numbers.{DspComplex, DspReal}
+import dsptools.numbers._
 import firrtl.passes.IsKnown
 
 object ConvertType {
@@ -27,11 +27,19 @@ object ConvertType {
           case (Some(width), KnownBinaryPoint(bp)) => FixedPoint(width.W, bp.BP)
         }
       // DspReal = Bundle; needs to have precedence
-      case  _: Bool | _: UInt | _: DspReal | _: DspComplex[_] => tpe
+      case  _: Bool | _: UInt | _: DspReal => tpe
       // TODO: Handle Reset once that becomes a thing
       case _: Clock => Bool()
       // Recursive aggregate handling
       case v: Vec[_] => Vec(v.getElements.map(apply(_)))
+      case c: DspComplex[_] =>
+        (c.real, c.imag) match {
+          case (r: UInt, i: UInt) => DspComplex(apply(r).asInstanceOf[UInt], apply(i).asInstanceOf[UInt])
+          case (r: SInt, i: SInt) => DspComplex(apply(r).asInstanceOf[SInt], apply(i).asInstanceOf[SInt])
+          case (r: FixedPoint, i: FixedPoint) => DspComplex(apply(r).asInstanceOf[FixedPoint], apply(i).asInstanceOf[FixedPoint])
+          case (r: DspReal, i: DspReal) => DspComplex(apply(r).asInstanceOf[DspReal], apply(i).asInstanceOf[DspReal])
+          case (r: Interval, i: Interval) => DspComplex(apply(r).asInstanceOf[FixedPoint], apply(i).asInstanceOf[FixedPoint])
+        }
       case r: Record => new CustomBundle(r.elements.toList.map { case (field, elt) => field -> apply(elt) }: _*)
       // Get equivalent base type from Interval type
       case i: Interval =>

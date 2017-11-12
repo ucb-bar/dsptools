@@ -3,6 +3,7 @@
 package dsptools.numbers
 
 import chisel3._
+import chisel3.experimental._
 import dsptools.hasContext
 import implicits._
 import chisel3.util.ShiftRegister
@@ -83,7 +84,35 @@ class DspComplexBinaryRepresentation[T <: Data:Ring:BinaryRepresentation] extend
     DspComplex.wire(BinaryRepresentation[T].clip(a.real, b.real), BinaryRepresentation[T].clip(a.imag, b.imag))
 }
 
+// TODO: Fill in ???
+// TODO: Deal with lit (shouldn't need wire!)
+class DspComplexConvertableTo[T <: Data:ConvertableTo:Ring] extends ConvertableTo[DspComplex[T]] with hasContext {
+  def fromShort(n: Short): DspComplex[T] = ???
+  def fromByte(n: Byte): DspComplex[T] = ???
+  def fromInt(n: Int): DspComplex[T] = ???
+  def fromFloat(n: Float): DspComplex[T] = ???
+  def fromBigDecimal(n: BigDecimal): DspComplex[T] = ???
+  def fromLong(n: Long): DspComplex[T] = ???
+  def fromType[B](n: B)(implicit c: ConvertableFrom[B]): DspComplex[T] = ???
+  def fromBigInt(n: BigInt): DspComplex[T] = ???
+  def fromDouble(n: Double): DspComplex[T] = {
+    val realLit = ConvertableTo[T].fromDouble(n)
+    val imagLit = ConvertableTo[T].fromDouble(0.0)
+    DspComplex.wire(realLit, imagLit)
+  }
+  override def fromDouble(d: Double, a: DspComplex[T]): DspComplex[T] = {
+    val realLit = ConvertableTo[T].fromDouble(d, a.real)
+    val imagLit = ConvertableTo[T].fromDouble(0.0, a.imag)
+    DspComplex.wire(realLit, imagLit)
+  }
+  override def fromDoubleWithFixedWidth(d: Double, a: DspComplex[T]): DspComplex[T] = ???
+  def fromAlgebraic(n: spire.math.Algebraic): DspComplex[T] = ???
+  def fromRational(n: spire.math.Rational): DspComplex[T] = ???
+  def fromReal(n: spire.math.Real): DspComplex[T] = ???
+}
+
 trait DspComplexImpl {
+  implicit def DspComplexConvertableTo[T <: Data:ConvertableTo:Ring] = new DspComplexConvertableTo[T]()
   implicit def DspComplexRingImpl[T<: Data:Ring] = new DspComplexRing[T]()
   implicit def DspComplexEq[T <: Data:Eq] = new DspComplexEq[T]()
   implicit def DspComplexBinaryRepresentation[T <: Data:Ring:BinaryRepresentation] = 

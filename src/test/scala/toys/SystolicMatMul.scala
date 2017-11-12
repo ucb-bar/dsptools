@@ -299,7 +299,7 @@ class SystolicMatMulTester[T <: Data:RealBits](testMod: TestModule[SystolicMatMu
 
 class SystolicMatMulSpec extends FlatSpec with Matchers {
 
-  val intBits = 4
+  val intBits = 12
   val n = 8
 
   val len = n * n
@@ -364,8 +364,8 @@ class SystolicMatMulSpec extends FlatSpec with Matchers {
 
 class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
 
-  val intBits = 4
-  val correction = 9 - 4
+  val intBits = 12
+  val correction = 17 - 4 // 9 - 4
   val n = 8
   val numTests = 400
   val bp = 8
