@@ -44,10 +44,11 @@ class DspComplexRing[T <: Data:Ring] extends Ring[DspComplex[T]] with hasContext
       DspComplex.wire(ac_p_ad context_- ad_p_bd, ac_p_ad context_+ bc_m_ac)
     }
   }
-  def one: DspComplex[T] = DspComplex(Ring[T].one, Ring[T].zero)
+  // TODO: zero, one remove wire! (once lit bundles work)
+  def one: DspComplex[T] = DspComplex.wire(Ring[T].one, Ring[T].zero)
   // Only assigns real part as x
   override def fromInt(x: Int): DspComplex[T] = DspComplex(Ring[T].fromInt(x), Ring[T].zero)
-  def zero: DspComplex[T] = DspComplex(Ring[T].zero, Ring[T].zero)
+  def zero: DspComplex[T] = DspComplex.wire(Ring[T].zero, Ring[T].zero)
   def negate(f: DspComplex[T]): DspComplex[T] = DspComplex.wire(-f.real, -f.imag)
   def negateContext(f: DspComplex[T]): DspComplex[T] = {
     DspComplex.wire(f.real.context_unary_-, f.imag.context_unary_-)
