@@ -2,7 +2,7 @@
 
 package dsptools
 
-import java.io.PrintWriter
+import java.io.{File, PrintWriter}
 
 import chisel3._
 import chisel3.iotesters._
@@ -111,6 +111,11 @@ object Driver {
           bitReducer.run()
           val report = bitReducer.getReportString
           println(report)
+
+          val writer = new PrintWriter(new File(optionsManager.getBuildFileName(s"bitreport$passNumber.txt")))
+          writer.println(report)
+          writer.close()
+
           bitReducer
         }
 
@@ -120,9 +125,15 @@ object Driver {
         //
         def runBitReduction(bitReducer: BitReducer, firrtlString: String): String = {
           val annotationMap = bitReducer.getAnnotationMap
+//          annotationMap.annotations.foreach { anno =>
+//            println(anno.serialize)
+//          }
+
+          val annoWriter = new PrintWriter(new File(optionsManager.getBuildFileName("anno.width")))
           annotationMap.annotations.foreach { anno =>
-            println(anno.serialize)
+            annoWriter.println(anno.serialize)
           }
+          annoWriter.close()
 
           val circuitState = firrtl.CircuitState(Parser.parse(firrtlString), LowForm, Some(annotationMap))
 

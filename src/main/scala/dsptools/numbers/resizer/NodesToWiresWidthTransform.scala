@@ -78,6 +78,13 @@ class NodesToWiresTransform extends Transform with LazyLogging {
                 mappedModules(m) = changeWidthsInModule(m, s"$pathString${instance.name}.")
                 instance
             }
+          case instance: WDefInstance =>
+            findModule(instance.module) match {
+              case _: ExtModule => instance
+              case m: Module =>
+                mappedModules(m) = changeWidthsInModule(m, s"$pathString${instance.name}.")
+                instance
+            }
           case otherStatement => otherStatement
         }
       }
