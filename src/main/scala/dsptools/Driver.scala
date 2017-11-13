@@ -76,6 +76,7 @@ object Driver {
         println(s"Warning: ignoring monitorReportFileName=$requestedName")
       }
 
+      //TODO (chick) no improvement over earlier passes should also terminate the loop
       def bitReductionPass(firrtlSourceOption: Option[String] = None, passNumber: Int = 0): Option[String] = {
 
         println(s"Running bit reduction pass $passNumber")

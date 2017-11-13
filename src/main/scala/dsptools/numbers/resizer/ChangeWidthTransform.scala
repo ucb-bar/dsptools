@@ -8,9 +8,13 @@ import firrtl.ir._
 import firrtl.Mappers._
 import firrtl.passes._
 import _root_.logger.{LazyLogging, LogLevel, Logger}
+import firrtl.PrimOps.Clip
 
 import scala.collection.mutable
 
+/**
+  * Create annotation methods for reducing widths of wires
+  */
 object ChangeWidthAnnotation {
   def apply(target: Named, value: String): Annotation = Annotation(target, classOf[ChangeWidthTransform], value)
 
@@ -20,6 +24,11 @@ object ChangeWidthAnnotation {
   }
 }
 
+/**
+  * Change the widths of wires based on usage statistics
+  * Sets widths of primops to be Unknown so that they can be re-inferred
+  *
+  */
 class ChangeWidthTransform extends Transform with LazyLogging {
   override def inputForm: CircuitForm = LowForm
   override def outputForm: CircuitForm = LowForm
@@ -124,6 +133,15 @@ class ChangeWidthTransform extends Transform with LazyLogging {
       def changeWidthsInStatement(statement: Statement): Statement = {
         val resultStatement = statement map changeWidthsInStatement map changeWidthsInExpression
         resultStatement match {
+          case connect: Connect =>
+            changeRequests.get(expand(connect.loc.serialize)) match {
+              case Some(changeReqest) =>
+                // logger.info(s"Changing:Connect ${register.name} new width ${changeReqest.newWidth}")
+                //TODO (chick) Make the folloing line work
+                // connect.copy(expr = Clip(connect.info, Seq(connect.expr), Seq(changeReqest.)))
+                connect
+              case _ => connect
+            }
           case register: DefRegister =>
             changeRequests.get(expand(register.name)) match {
               case Some(changeReqest) =>
