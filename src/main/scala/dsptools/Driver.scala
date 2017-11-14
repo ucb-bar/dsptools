@@ -102,12 +102,14 @@ object Driver {
         def runBitReducer(): BitReducer = {
           val reportFileName = optionsManager.interpreterOptions.getMonitorReportFile(optionsManager)
           val data = io.Source.fromFile(reportFileName).getLines().toList.drop(1)
+          val htmlOutput = optionsManager.getBuildFileName(s".bit-usage-$passNumber.html")
 
           //
           // Construct a bitReducer and use it to create annotations to change appropriate signal sizes
           //
           val bitReducer = new BitReducer(
-            data, om.getOrElse(new DspTesterOptionsManager()).dspTesterOptions.bitReduceBySigma, fudgeConstant
+            data, om.getOrElse(new DspTesterOptionsManager()).dspTesterOptions.bitReduceBySigma, fudgeConstant,
+            htmlOutput
           )
           bitReducer.run()
           val report = bitReducer.getReportString

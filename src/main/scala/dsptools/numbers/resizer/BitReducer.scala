@@ -2,6 +2,8 @@
 
 package dsptools.numbers.resizer
 
+import dsptools.misc.BitWidth._
+
 import java.io.PrintWriter
 
 import firrtl.AnnotationMap
@@ -87,71 +89,184 @@ object BitHistory extends LazyLogging {
   * and creates annotation to reduce bits where possible.
   * @param lines text lines of csv file
   */
-class BitReducer(lines: Seq[String], trimBySigma: Double = 0.0, fudgeConstant: Int = 0) extends LazyLogging {
+class BitReducer(
+                  lines: Seq[String],
+                  trimBySigma: Double = 0.0,
+                  fudgeConstant: Int = 0,
+                  htmlReportFileName: String = ""
+                ) extends LazyLogging {
   val annotations = new mutable.ArrayBuffer[Annotation]()
   var bitsRemoved:    Int = 0
   var bitsConsidered: Int = 0
 
-  /**
-    * Utility function that computes bits required for a number
-    *
-    * @param n number of interest
-    * @return
-    */
-  def computeBits(n: BigInt): Int = {
-    n.bitLength + (if(n < 0) 1 else 0)
+  val htmlBuffer = new mutable.StringBuilder()
+  var htmlLines = 0
+
+  def td(s: String): String = s"<td>$s</td>\n"
+  def th(s: String): String = s"<th>$s</th>\n"
+  def tr(s: String): String = s"<tr>\n$s</tr>\n"
+
+  //scalastyle:off method.length
+  def startHtml(): Unit = {
+    htmlBuffer ++=
+      """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        |        "http://www.w3.org/TR/html4/strict.dtd">
+        |<head>
+        |
+        |    <!-- script type="text/javascript" src="jquery-3.2.1.js"></script -->
+        |    <!-- script type="text/javascript" src="jquery.sparkline.js"></script -->
+        |
+        |    <script
+        |      src="https://code.jquery.com/jquery-3.2.1.min.js"
+        |      integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+        |      crossorigin="anonymous">
+        |    </script>
+        |
+        |    <script
+        |     src="https://cdnjs.cloudflare.com/ajax/libs/jquery-sparklines/2.1.2/jquery.sparkline.js">
+        |     </script>
+        |
+        |    <script
+        |      src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.29.0/js/jquery.tablesorter.min.js">
+        |    </script>
+        |
+        |    <script type="text/javascript">
+        |        $(function() {
+        |            /** This code runs when everything has been loaded on the page */
+        |            /* Inline sparklines take their values from the contents of the tag */
+        |            $('.inlinesparkline').sparkline();
+        |
+        |            /* Sparklines can also take their values from the first argument
+        |            passed to the sparkline() function */
+        |            var myvalues = [10,8,5,7,4,4,1];
+        |            $('.dynamicsparkline').sparkline(myvalues);
+        |
+        |            /* The second argument gives options such as chart type */
+        |            $('.dynamicbar').sparkline(myvalues, {type: 'bar', barColor: 'green'} );
+        |
+        |            /* Use 'html' instead of an array of values to pass options
+        |            to a sparkline with data in the tag */
+        |            $('.inlinebar').sparkline('html', {type: 'bar', barColor: 'red'} );
+        |        });
+        |    </script>
+        |
+        |    <script type="text/javascript"
+        |     src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.29.0/js/jquery.tablesorter.min.js">
+        |    </script>
+        |
+        |    <script>
+        |    $(document).ready(function()
+        |        {
+        |            $("#myTable").tablesorter();
+        |        }
+        |    );
+        |    </script>
+        |
+        |    <style>
+        |    table {
+        |    font-family: arial, sans-serif;
+        |    border-collapse: collapse;
+        |    width: 100%;
+        |    }
+        |    td,th {
+        |        border: 1px solid #dddddd;
+        |        text-align: left;
+        |        padding: 8px;
+        |    }
+        |    tr:nth-child(even) {
+        |        background-color: #dddddd;
+        |    }
+        |
+        |</style>
+        |</head>
+        |<body>
+        |<table id="myTable" class="tablesorter" style="width:100%">
+        |<thead>
+      """.stripMargin
+  }
+//  <link rel="stylesheet" type="text/css" href="bitreduce.css">
+
+  def finishHtml(): Unit = {
+    htmlBuffer ++=
+      """
+        |</tbody>
+        |</table>
+        |</body>
+        |</html>
+        |
+      """.stripMargin
+
+    val writer = new PrintWriter(new java.io.File(htmlReportFileName))
+    writer.println(htmlBuffer.toString)
+    writer.close()
+    println(s"Writing html as $htmlReportFileName")
   }
 
-  /**
-    * return the smallest number of bits required to hold the given number in
-    * an SInt
-    * Note: positive numbers will get one minimum width one higher than would be
-    * required for a UInt
-    *
-    * @param num number to find width for
-    * @return minimum required bits for an SInt
-    */
-  def requiredBitsForSInt(num: BigInt): Int = {
-    if(num == BigInt(0) || num == -BigInt(1)) {
-      1
-    }
-    else {
-      if (num < 0) {
-        computeBits(num)
+  def buildHeader(): Unit = {
+    val headerCells =
+      th("#") +
+      th(s"Name") +
+      th("Type") +
+      th("Reduce by max") +
+      th("Reduce σ = 2") +
+      th("Reduce σ = 3") +
+      th("Reduce σ = 4") +
+      th("Samples") +
+      th("Min") +
+      th("Max") +
+      th("Mean") +
+      th("σ") +
+      th("Distribution")
+
+    htmlBuffer ++= tr(headerCells)
+    htmlBuffer ++= "</thead>\n<tbody>\n"
+  }
+
+  def buildHtml(bitHistory: BitHistory): Unit = {
+    def showReduce(trimBySigma: Double): String = {
+      val bitsToCut = if(bitHistory.isUInt) {
+        bitHistory.bitWidth - requiredBitsForUInt(bitHistory.maxBySigma(trimBySigma))
       }
       else {
-        computeBits(num) + 1
+        bitHistory.bitWidth - requiredBitsForUInt(bitHistory.maxBySigma(trimBySigma))
       }
+      if(bitsToCut <= 0) "-" else bitsToCut.toString
     }
+
+    if(bitHistory.bitWidth < 2) return
+    if(bitHistory.name.contains("._T")) return
+
+    htmlLines += 1
+
+//    if(htmlReportFileName.nonEmpty) {
+      val cells =
+        td(htmlLines.toString) +
+        td(bitHistory.name) +
+        td(bitHistory.firrtlType.take(1).toUpperCase() + s"Int<${bitHistory.bitWidth}>") +
+        td(showReduce(0.0)) +
+        td(showReduce(2.0)) +
+        td(showReduce(3.0)) +
+        td(showReduce(4.0)) +
+        td(bitHistory.valuesSeen.toString) +
+        td(bitHistory.min.toString()) +
+        td(bitHistory.max.toString()) +
+        td(f"${bitHistory.mean}%.4f") +
+        td(f"${bitHistory.stddev}%.4f") +
+        td(s"""<span class="inlinebar">${bitHistory.bins.mkString(",")}</span>""")
+      val row = tr(cells)
+      htmlBuffer ++= row
+//    }
   }
 
-  def requiredBitsForSInt(low: BigInt, high: BigInt): Int = {
-    requiredBitsForSInt(low).max(requiredBitsForSInt(high))
-  }
 
-  /**
-    * return the smallest number of bits required to hold the given number in
-    * an UInt
-    * Note: positive numbers will get one minimum width one higher than would be
-    * required for a UInt
-    *
-    * @param num number to find width for
-    * @return minimum required bits for an SInt
-    */
-  def requiredBitsForUInt(num: BigInt): Int = {
-    if(num == BigInt(0)) {
-      1
-    }
-    else {
-      computeBits(num)
-    }
-  }
 
   def createAnnotationIfAppropriate(bitHistory: BitHistory): Boolean = {
     val name   = bitHistory.name
     val width  = bitHistory.bitWidth
 
     bitsConsidered += width
+
+    buildHtml(bitHistory)
 
     if(bitHistory.isUInt) {
       val bitsNeeded = requiredBitsForUInt(bitHistory.maxBySigma(trimBySigma)) + fudgeConstant
@@ -160,6 +275,7 @@ class BitReducer(lines: Seq[String], trimBySigma: Double = 0.0, fudgeConstant: I
         bitsRemoved += (width - bitsNeeded)
         val annotation = Annotation(CircuitName("c"), classOf[ChangeWidthTransform], s"""$name=$bitsNeeded""")
         logger.debug(s"Creating annotation ${annotation.value} for $bitHistory")
+
         annotations += annotation
       }
     }
@@ -210,6 +326,8 @@ class BitReducer(lines: Seq[String], trimBySigma: Double = 0.0, fudgeConstant: I
   }
 
   def run() {
+    startHtml()
+    buildHeader()
     lines.zipWithIndex.foreach { case (s, lineNumber) =>
       val fields = s.split(",").map(_.trim)
       logger.debug(s"reading line $lineNumber : $s")
@@ -221,8 +339,8 @@ class BitReducer(lines: Seq[String], trimBySigma: Double = 0.0, fudgeConstant: I
             logger.warn(s"Skipping bad input line: $s")
           }
       }
-
     }
+    finishHtml()
   }
 }
 
@@ -236,13 +354,16 @@ object BitReducer extends LazyLogging {
       logger.debug(s"args ${args.mkString(", ")}")
       val file = new java.io.File(args.head)
       if(file.exists()) {
+        val root = if(file.getName.endsWith(".csv")) file.getName.dropRight(4) else file.getName
+        val htmlFileName = file.getParent + "/" + root + ".html"
+
         // drop is just hack to get rid of header line
         val data = io.Source.fromFile(file).getLines().toList.drop(2)
 
-        val im = new BitReducer(data)
-        im.run()
+        val bitReducer = new BitReducer(data, htmlReportFileName = htmlFileName)
+        bitReducer.run()
         //noinspection ScalaStyle
-        println(im.getReportString)
+        println(bitReducer.getReportString)
       }
     }
   }

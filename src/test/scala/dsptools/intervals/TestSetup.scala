@@ -24,7 +24,7 @@ object IATest {
       interpreterOptions = InterpreterOptions(
         monitorReportFileName = "signals.csv",
         monitorBitUsage = true,
-        monitorHistogramBins = 4,
+        monitorHistogramBins = 16,
         monitorTrackTempNodes = false,
         prettyPrintReport = true
       )

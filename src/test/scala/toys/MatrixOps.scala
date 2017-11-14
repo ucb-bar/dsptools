@@ -605,10 +605,14 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
     }
   }
 
-  it should "properly multiply - Interval Wide - DCT Lit - RANDOM" in {
+  it should "properly multiply - Interval Wide - DCT Lit - RANDOM UNFILTERED" in {
     val name = s"RandomDCTIWide${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inIWide, outI, n, "mul", litSeq, litBP), name = name), IATest.options(name, backend = "firrtl", fixTol = correction)) {
+      dsptools.Driver.executeWithBitReduction(
+        () => new TestModule(
+          () => new MatrixOp(inIWide, outI, n, "mul", litSeq, litBP), name = name),
+        IATest.options(name, backend = "firrtl", fixTol = correction)
+      ) {
         c => new MatrixOpTester(c, randomTVs)
       } should be(true)
     }
