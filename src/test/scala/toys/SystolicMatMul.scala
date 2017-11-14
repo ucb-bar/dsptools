@@ -367,7 +367,7 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
   val intBits = 12
   val correction = 17 - 4 // 9 - 4
   val n = 8
-  val numTests = 400
+  val numTests = 500
   val bp = 8
 
   val len = n * n
@@ -397,7 +397,7 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
   val filteredRandomTVs = Some(MatMulTests.filter(randomTVs.get, bw = 0.25, maxNotInclusive = maxW))
 
   behavior of "Systolic DCT Matrix Multiplication"
-
+/*
   it should "properly multiply - FixedPoint - DCT Lit" in {
     val name = s"SDCTF${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
@@ -433,7 +433,7 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
       } should be(true)
     }
   }
-
+*/
   it should "properly multiply - Interval Wide - DCT Lit - RANDOM" in {
     val name = s"RandomSDCTIWide${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
