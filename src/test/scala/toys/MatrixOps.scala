@@ -538,7 +538,7 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
   val intBits = 12
   val correction = 17 - 4 // 9 - 4
   val n = 8
-  val numTests = 400
+  val numTests = 500
   val bp = 8
 
   val len = n * n
@@ -568,7 +568,7 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
   val filteredRandomTVs = Some(MatMulTests.filter(randomTVs.get, bw = 0.25, maxNotInclusive = maxW))
 
   behavior of "DCT Matrix Multiplication"
-
+/*
   it should "properly multiply - FixedPoint - DCT Lit" in {
     val name = s"DCTF${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
@@ -604,15 +604,11 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
       } should be(true)
     }
   }
-
-  it should "properly multiply - Interval Wide - DCT Lit - RANDOM UNFILTERED" in {
+*/
+  it should "properly multiply - Interval Wide - DCT Lit - RANDOM" in {
     val name = s"RandomDCTIWide${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.executeWithBitReduction(
-        () => new TestModule(
-          () => new MatrixOp(inIWide, outI, n, "mul", litSeq, litBP), name = name),
-        IATest.options(name, backend = "firrtl", fixTol = correction)
-      ) {
+      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inIWide, outI, n, "mul", litSeq, litBP), name = name), IATest.options(name, backend = "firrtl", fixTol = correction)) {
         c => new MatrixOpTester(c, randomTVs)
       } should be(true)
     }
