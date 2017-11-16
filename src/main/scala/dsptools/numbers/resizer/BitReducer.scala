@@ -275,7 +275,7 @@ class BitReducer(
     }
 
     if(bitHistory.isUInt) {
-      val bitsNeeded = requiredBitsForUInt(bitHistory.maxBySigma(trimBySigma)) + fudgeConstant
+      val bitsNeeded = (requiredBitsForUInt(bitHistory.maxBySigma(trimBySigma)) + fudgeConstant).max(2)
 
       if (bitsNeeded < width) {
         bitsRemoved += (width - bitsNeeded)
@@ -286,8 +286,8 @@ class BitReducer(
       }
     }
     else if(bitHistory.isSInt) {
-      val neededBits = requiredBitsForSInt(bitHistory.minBySigma(trimBySigma), bitHistory.maxBySigma(trimBySigma)) +
-                         fudgeConstant
+      val neededBits = (requiredBitsForSInt(bitHistory.minBySigma(trimBySigma), bitHistory.maxBySigma(trimBySigma)) +
+                         fudgeConstant).max(4)
 
       if (neededBits < width) {
         bitsRemoved += (width - neededBits)
