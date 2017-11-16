@@ -372,8 +372,8 @@ class SystolicMatMulSpec extends FlatSpec with Matchers {
 
 class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
 
-  val intBits = 12
-  val correction = 17 - 4 // 9 - 4
+  val intBits = 4 // 8 // 12 // 16
+  val correction = 5 // 9 // 13 // 17
   val n = 8
   val numTests = 500
   val bp = 8
@@ -445,7 +445,7 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
   it should "properly multiply - Interval Wide - DCT Lit - RANDOM UNFILTERED" in {
     val name = s"RandomSDCTIWide${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new SystolicMatMul(inIWide, outI, n, litSeq, litBP), name = name), IATest.options(name, verbose = true, backend = "firrtl", fixTol = correction)) {
+      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new SystolicMatMul(inIWide, outI, n, litSeq, litBP), name = name), IATest.options(name, backend = "firrtl", fixTol = correction)) {
         c => new SystolicMatMulTester(c, randomTVs)
       } should be(true)
     }

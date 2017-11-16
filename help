@@ -1,0 +1,782 @@
+17164,17292c17164,17292
+<   wire  DCTIWide8x8x8_clock;
+<   wire [7:0] DCTIWide8x8x8_io_a_63;
+<   wire [7:0] DCTIWide8x8x8_io_a_62;
+<   wire [7:0] DCTIWide8x8x8_io_a_61;
+<   wire [7:0] DCTIWide8x8x8_io_a_60;
+<   wire [7:0] DCTIWide8x8x8_io_a_59;
+<   wire [7:0] DCTIWide8x8x8_io_a_58;
+<   wire [7:0] DCTIWide8x8x8_io_a_57;
+<   wire [7:0] DCTIWide8x8x8_io_a_56;
+<   wire [7:0] DCTIWide8x8x8_io_a_55;
+<   wire [7:0] DCTIWide8x8x8_io_a_54;
+<   wire [7:0] DCTIWide8x8x8_io_a_53;
+<   wire [7:0] DCTIWide8x8x8_io_a_52;
+<   wire [7:0] DCTIWide8x8x8_io_a_51;
+<   wire [7:0] DCTIWide8x8x8_io_a_50;
+<   wire [7:0] DCTIWide8x8x8_io_a_49;
+<   wire [7:0] DCTIWide8x8x8_io_a_48;
+<   wire [7:0] DCTIWide8x8x8_io_a_47;
+<   wire [7:0] DCTIWide8x8x8_io_a_46;
+<   wire [7:0] DCTIWide8x8x8_io_a_45;
+<   wire [7:0] DCTIWide8x8x8_io_a_44;
+<   wire [7:0] DCTIWide8x8x8_io_a_43;
+<   wire [7:0] DCTIWide8x8x8_io_a_42;
+<   wire [7:0] DCTIWide8x8x8_io_a_41;
+<   wire [7:0] DCTIWide8x8x8_io_a_40;
+<   wire [7:0] DCTIWide8x8x8_io_a_39;
+<   wire [7:0] DCTIWide8x8x8_io_a_38;
+<   wire [7:0] DCTIWide8x8x8_io_a_37;
+<   wire [7:0] DCTIWide8x8x8_io_a_36;
+<   wire [7:0] DCTIWide8x8x8_io_a_35;
+<   wire [7:0] DCTIWide8x8x8_io_a_34;
+<   wire [7:0] DCTIWide8x8x8_io_a_33;
+<   wire [7:0] DCTIWide8x8x8_io_a_32;
+<   wire [7:0] DCTIWide8x8x8_io_a_31;
+<   wire [7:0] DCTIWide8x8x8_io_a_30;
+<   wire [7:0] DCTIWide8x8x8_io_a_29;
+<   wire [7:0] DCTIWide8x8x8_io_a_28;
+<   wire [7:0] DCTIWide8x8x8_io_a_27;
+<   wire [7:0] DCTIWide8x8x8_io_a_26;
+<   wire [7:0] DCTIWide8x8x8_io_a_25;
+<   wire [7:0] DCTIWide8x8x8_io_a_24;
+<   wire [7:0] DCTIWide8x8x8_io_a_23;
+<   wire [7:0] DCTIWide8x8x8_io_a_22;
+<   wire [7:0] DCTIWide8x8x8_io_a_21;
+<   wire [7:0] DCTIWide8x8x8_io_a_20;
+<   wire [7:0] DCTIWide8x8x8_io_a_19;
+<   wire [7:0] DCTIWide8x8x8_io_a_18;
+<   wire [7:0] DCTIWide8x8x8_io_a_17;
+<   wire [7:0] DCTIWide8x8x8_io_a_16;
+<   wire [7:0] DCTIWide8x8x8_io_a_15;
+<   wire [7:0] DCTIWide8x8x8_io_a_14;
+<   wire [7:0] DCTIWide8x8x8_io_a_13;
+<   wire [7:0] DCTIWide8x8x8_io_a_12;
+<   wire [7:0] DCTIWide8x8x8_io_a_11;
+<   wire [7:0] DCTIWide8x8x8_io_a_10;
+<   wire [7:0] DCTIWide8x8x8_io_a_9;
+<   wire [7:0] DCTIWide8x8x8_io_a_8;
+<   wire [7:0] DCTIWide8x8x8_io_a_7;
+<   wire [7:0] DCTIWide8x8x8_io_a_6;
+<   wire [7:0] DCTIWide8x8x8_io_a_5;
+<   wire [7:0] DCTIWide8x8x8_io_a_4;
+<   wire [7:0] DCTIWide8x8x8_io_a_3;
+<   wire [7:0] DCTIWide8x8x8_io_a_2;
+<   wire [7:0] DCTIWide8x8x8_io_a_1;
+<   wire [7:0] DCTIWide8x8x8_io_a_0;
+<   wire [23:0] DCTIWide8x8x8_io_out_63;
+<   wire [22:0] DCTIWide8x8x8_io_out_62;
+<   wire [22:0] DCTIWide8x8x8_io_out_61;
+<   wire [20:0] DCTIWide8x8x8_io_out_60;
+<   wire [22:0] DCTIWide8x8x8_io_out_59;
+<   wire [20:0] DCTIWide8x8x8_io_out_58;
+<   wire [21:0] DCTIWide8x8x8_io_out_57;
+<   wire [19:0] DCTIWide8x8x8_io_out_56;
+<   wire [21:0] DCTIWide8x8x8_io_out_55;
+<   wire [23:0] DCTIWide8x8x8_io_out_54;
+<   wire [20:0] DCTIWide8x8x8_io_out_53;
+<   wire [22:0] DCTIWide8x8x8_io_out_52;
+<   wire [20:0] DCTIWide8x8x8_io_out_51;
+<   wire [22:0] DCTIWide8x8x8_io_out_50;
+<   wire [18:0] DCTIWide8x8x8_io_out_49;
+<   wire [21:0] DCTIWide8x8x8_io_out_48;
+<   wire [22:0] DCTIWide8x8x8_io_out_47;
+<   wire [21:0] DCTIWide8x8x8_io_out_46;
+<   wire [23:0] DCTIWide8x8x8_io_out_45;
+<   wire [22:0] DCTIWide8x8x8_io_out_44;
+<   wire [20:0] DCTIWide8x8x8_io_out_43;
+<   wire [19:0] DCTIWide8x8x8_io_out_42;
+<   wire [21:0] DCTIWide8x8x8_io_out_41;
+<   wire [20:0] DCTIWide8x8x8_io_out_40;
+<   wire [21:0] DCTIWide8x8x8_io_out_39;
+<   wire [22:0] DCTIWide8x8x8_io_out_38;
+<   wire [22:0] DCTIWide8x8x8_io_out_37;
+<   wire [23:0] DCTIWide8x8x8_io_out_36;
+<   wire [18:0] DCTIWide8x8x8_io_out_35;
+<   wire [19:0] DCTIWide8x8x8_io_out_34;
+<   wire [19:0] DCTIWide8x8x8_io_out_33;
+<   wire [21:0] DCTIWide8x8x8_io_out_32;
+<   wire [21:0] DCTIWide8x8x8_io_out_31;
+<   wire [20:0] DCTIWide8x8x8_io_out_30;
+<   wire [20:0] DCTIWide8x8x8_io_out_29;
+<   wire [19:0] DCTIWide8x8x8_io_out_28;
+<   wire [23:0] DCTIWide8x8x8_io_out_27;
+<   wire [21:0] DCTIWide8x8x8_io_out_26;
+<   wire [22:0] DCTIWide8x8x8_io_out_25;
+<   wire [20:0] DCTIWide8x8x8_io_out_24;
+<   wire [20:0] DCTIWide8x8x8_io_out_23;
+<   wire [21:0] DCTIWide8x8x8_io_out_22;
+<   wire [18:0] DCTIWide8x8x8_io_out_21;
+<   wire [20:0] DCTIWide8x8x8_io_out_20;
+<   wire [22:0] DCTIWide8x8x8_io_out_19;
+<   wire [23:0] DCTIWide8x8x8_io_out_18;
+<   wire [20:0] DCTIWide8x8x8_io_out_17;
+<   wire [22:0] DCTIWide8x8x8_io_out_16;
+<   wire [21:0] DCTIWide8x8x8_io_out_15;
+<   wire [19:0] DCTIWide8x8x8_io_out_14;
+<   wire [22:0] DCTIWide8x8x8_io_out_13;
+<   wire [20:0] DCTIWide8x8x8_io_out_12;
+<   wire [22:0] DCTIWide8x8x8_io_out_11;
+<   wire [20:0] DCTIWide8x8x8_io_out_10;
+<   wire [23:0] DCTIWide8x8x8_io_out_9;
+<   wire [21:0] DCTIWide8x8x8_io_out_8;
+<   wire [20:0] DCTIWide8x8x8_io_out_7;
+<   wire [21:0] DCTIWide8x8x8_io_out_6;
+<   wire [21:0] DCTIWide8x8x8_io_out_5;
+<   wire [22:0] DCTIWide8x8x8_io_out_4;
+<   wire [21:0] DCTIWide8x8x8_io_out_3;
+<   wire [22:0] DCTIWide8x8x8_io_out_2;
+<   wire [22:0] DCTIWide8x8x8_io_out_1;
+<   wire [23:0] DCTIWide8x8x8_io_out_0;
+---
+>   wire  RandomDCTIWide8x8x8_clock;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_63;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_62;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_61;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_60;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_59;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_58;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_57;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_56;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_55;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_54;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_53;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_52;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_51;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_50;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_49;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_48;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_47;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_46;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_45;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_44;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_43;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_42;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_41;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_40;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_39;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_38;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_37;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_36;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_35;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_34;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_33;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_32;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_31;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_30;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_29;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_28;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_27;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_26;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_25;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_24;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_23;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_22;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_21;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_20;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_19;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_18;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_17;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_16;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_15;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_14;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_13;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_12;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_11;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_10;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_9;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_8;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_7;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_6;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_5;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_4;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_3;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_2;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_1;
+>   wire [7:0] RandomDCTIWide8x8x8_io_a_0;
+>   wire [23:0] RandomDCTIWide8x8x8_io_out_63;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_62;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_61;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_60;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_59;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_58;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_57;
+>   wire [19:0] RandomDCTIWide8x8x8_io_out_56;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_55;
+>   wire [23:0] RandomDCTIWide8x8x8_io_out_54;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_53;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_52;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_51;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_50;
+>   wire [18:0] RandomDCTIWide8x8x8_io_out_49;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_48;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_47;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_46;
+>   wire [23:0] RandomDCTIWide8x8x8_io_out_45;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_44;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_43;
+>   wire [19:0] RandomDCTIWide8x8x8_io_out_42;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_41;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_40;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_39;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_38;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_37;
+>   wire [23:0] RandomDCTIWide8x8x8_io_out_36;
+>   wire [18:0] RandomDCTIWide8x8x8_io_out_35;
+>   wire [19:0] RandomDCTIWide8x8x8_io_out_34;
+>   wire [19:0] RandomDCTIWide8x8x8_io_out_33;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_32;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_31;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_30;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_29;
+>   wire [19:0] RandomDCTIWide8x8x8_io_out_28;
+>   wire [23:0] RandomDCTIWide8x8x8_io_out_27;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_26;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_25;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_24;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_23;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_22;
+>   wire [18:0] RandomDCTIWide8x8x8_io_out_21;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_20;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_19;
+>   wire [23:0] RandomDCTIWide8x8x8_io_out_18;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_17;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_16;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_15;
+>   wire [19:0] RandomDCTIWide8x8x8_io_out_14;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_13;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_12;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_11;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_10;
+>   wire [23:0] RandomDCTIWide8x8x8_io_out_9;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_8;
+>   wire [20:0] RandomDCTIWide8x8x8_io_out_7;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_6;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_5;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_4;
+>   wire [21:0] RandomDCTIWide8x8x8_io_out_3;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_2;
+>   wire [22:0] RandomDCTIWide8x8x8_io_out_1;
+>   wire [23:0] RandomDCTIWide8x8x8_io_out_0;
+17421,17550c17421,17550
+<   MatrixOp DCTIWide8x8x8 (
+<     .clock(DCTIWide8x8x8_clock),
+<     .io_a_63(DCTIWide8x8x8_io_a_63),
+<     .io_a_62(DCTIWide8x8x8_io_a_62),
+<     .io_a_61(DCTIWide8x8x8_io_a_61),
+<     .io_a_60(DCTIWide8x8x8_io_a_60),
+<     .io_a_59(DCTIWide8x8x8_io_a_59),
+<     .io_a_58(DCTIWide8x8x8_io_a_58),
+<     .io_a_57(DCTIWide8x8x8_io_a_57),
+<     .io_a_56(DCTIWide8x8x8_io_a_56),
+<     .io_a_55(DCTIWide8x8x8_io_a_55),
+<     .io_a_54(DCTIWide8x8x8_io_a_54),
+<     .io_a_53(DCTIWide8x8x8_io_a_53),
+<     .io_a_52(DCTIWide8x8x8_io_a_52),
+<     .io_a_51(DCTIWide8x8x8_io_a_51),
+<     .io_a_50(DCTIWide8x8x8_io_a_50),
+<     .io_a_49(DCTIWide8x8x8_io_a_49),
+<     .io_a_48(DCTIWide8x8x8_io_a_48),
+<     .io_a_47(DCTIWide8x8x8_io_a_47),
+<     .io_a_46(DCTIWide8x8x8_io_a_46),
+<     .io_a_45(DCTIWide8x8x8_io_a_45),
+<     .io_a_44(DCTIWide8x8x8_io_a_44),
+<     .io_a_43(DCTIWide8x8x8_io_a_43),
+<     .io_a_42(DCTIWide8x8x8_io_a_42),
+<     .io_a_41(DCTIWide8x8x8_io_a_41),
+<     .io_a_40(DCTIWide8x8x8_io_a_40),
+<     .io_a_39(DCTIWide8x8x8_io_a_39),
+<     .io_a_38(DCTIWide8x8x8_io_a_38),
+<     .io_a_37(DCTIWide8x8x8_io_a_37),
+<     .io_a_36(DCTIWide8x8x8_io_a_36),
+<     .io_a_35(DCTIWide8x8x8_io_a_35),
+<     .io_a_34(DCTIWide8x8x8_io_a_34),
+<     .io_a_33(DCTIWide8x8x8_io_a_33),
+<     .io_a_32(DCTIWide8x8x8_io_a_32),
+<     .io_a_31(DCTIWide8x8x8_io_a_31),
+<     .io_a_30(DCTIWide8x8x8_io_a_30),
+<     .io_a_29(DCTIWide8x8x8_io_a_29),
+<     .io_a_28(DCTIWide8x8x8_io_a_28),
+<     .io_a_27(DCTIWide8x8x8_io_a_27),
+<     .io_a_26(DCTIWide8x8x8_io_a_26),
+<     .io_a_25(DCTIWide8x8x8_io_a_25),
+<     .io_a_24(DCTIWide8x8x8_io_a_24),
+<     .io_a_23(DCTIWide8x8x8_io_a_23),
+<     .io_a_22(DCTIWide8x8x8_io_a_22),
+<     .io_a_21(DCTIWide8x8x8_io_a_21),
+<     .io_a_20(DCTIWide8x8x8_io_a_20),
+<     .io_a_19(DCTIWide8x8x8_io_a_19),
+<     .io_a_18(DCTIWide8x8x8_io_a_18),
+<     .io_a_17(DCTIWide8x8x8_io_a_17),
+<     .io_a_16(DCTIWide8x8x8_io_a_16),
+<     .io_a_15(DCTIWide8x8x8_io_a_15),
+<     .io_a_14(DCTIWide8x8x8_io_a_14),
+<     .io_a_13(DCTIWide8x8x8_io_a_13),
+<     .io_a_12(DCTIWide8x8x8_io_a_12),
+<     .io_a_11(DCTIWide8x8x8_io_a_11),
+<     .io_a_10(DCTIWide8x8x8_io_a_10),
+<     .io_a_9(DCTIWide8x8x8_io_a_9),
+<     .io_a_8(DCTIWide8x8x8_io_a_8),
+<     .io_a_7(DCTIWide8x8x8_io_a_7),
+<     .io_a_6(DCTIWide8x8x8_io_a_6),
+<     .io_a_5(DCTIWide8x8x8_io_a_5),
+<     .io_a_4(DCTIWide8x8x8_io_a_4),
+<     .io_a_3(DCTIWide8x8x8_io_a_3),
+<     .io_a_2(DCTIWide8x8x8_io_a_2),
+<     .io_a_1(DCTIWide8x8x8_io_a_1),
+<     .io_a_0(DCTIWide8x8x8_io_a_0),
+<     .io_out_63(DCTIWide8x8x8_io_out_63),
+<     .io_out_62(DCTIWide8x8x8_io_out_62),
+<     .io_out_61(DCTIWide8x8x8_io_out_61),
+<     .io_out_60(DCTIWide8x8x8_io_out_60),
+<     .io_out_59(DCTIWide8x8x8_io_out_59),
+<     .io_out_58(DCTIWide8x8x8_io_out_58),
+<     .io_out_57(DCTIWide8x8x8_io_out_57),
+<     .io_out_56(DCTIWide8x8x8_io_out_56),
+<     .io_out_55(DCTIWide8x8x8_io_out_55),
+<     .io_out_54(DCTIWide8x8x8_io_out_54),
+<     .io_out_53(DCTIWide8x8x8_io_out_53),
+<     .io_out_52(DCTIWide8x8x8_io_out_52),
+<     .io_out_51(DCTIWide8x8x8_io_out_51),
+<     .io_out_50(DCTIWide8x8x8_io_out_50),
+<     .io_out_49(DCTIWide8x8x8_io_out_49),
+<     .io_out_48(DCTIWide8x8x8_io_out_48),
+<     .io_out_47(DCTIWide8x8x8_io_out_47),
+<     .io_out_46(DCTIWide8x8x8_io_out_46),
+<     .io_out_45(DCTIWide8x8x8_io_out_45),
+<     .io_out_44(DCTIWide8x8x8_io_out_44),
+<     .io_out_43(DCTIWide8x8x8_io_out_43),
+<     .io_out_42(DCTIWide8x8x8_io_out_42),
+<     .io_out_41(DCTIWide8x8x8_io_out_41),
+<     .io_out_40(DCTIWide8x8x8_io_out_40),
+<     .io_out_39(DCTIWide8x8x8_io_out_39),
+<     .io_out_38(DCTIWide8x8x8_io_out_38),
+<     .io_out_37(DCTIWide8x8x8_io_out_37),
+<     .io_out_36(DCTIWide8x8x8_io_out_36),
+<     .io_out_35(DCTIWide8x8x8_io_out_35),
+<     .io_out_34(DCTIWide8x8x8_io_out_34),
+<     .io_out_33(DCTIWide8x8x8_io_out_33),
+<     .io_out_32(DCTIWide8x8x8_io_out_32),
+<     .io_out_31(DCTIWide8x8x8_io_out_31),
+<     .io_out_30(DCTIWide8x8x8_io_out_30),
+<     .io_out_29(DCTIWide8x8x8_io_out_29),
+<     .io_out_28(DCTIWide8x8x8_io_out_28),
+<     .io_out_27(DCTIWide8x8x8_io_out_27),
+<     .io_out_26(DCTIWide8x8x8_io_out_26),
+<     .io_out_25(DCTIWide8x8x8_io_out_25),
+<     .io_out_24(DCTIWide8x8x8_io_out_24),
+<     .io_out_23(DCTIWide8x8x8_io_out_23),
+<     .io_out_22(DCTIWide8x8x8_io_out_22),
+<     .io_out_21(DCTIWide8x8x8_io_out_21),
+<     .io_out_20(DCTIWide8x8x8_io_out_20),
+<     .io_out_19(DCTIWide8x8x8_io_out_19),
+<     .io_out_18(DCTIWide8x8x8_io_out_18),
+<     .io_out_17(DCTIWide8x8x8_io_out_17),
+<     .io_out_16(DCTIWide8x8x8_io_out_16),
+<     .io_out_15(DCTIWide8x8x8_io_out_15),
+<     .io_out_14(DCTIWide8x8x8_io_out_14),
+<     .io_out_13(DCTIWide8x8x8_io_out_13),
+<     .io_out_12(DCTIWide8x8x8_io_out_12),
+<     .io_out_11(DCTIWide8x8x8_io_out_11),
+<     .io_out_10(DCTIWide8x8x8_io_out_10),
+<     .io_out_9(DCTIWide8x8x8_io_out_9),
+<     .io_out_8(DCTIWide8x8x8_io_out_8),
+<     .io_out_7(DCTIWide8x8x8_io_out_7),
+<     .io_out_6(DCTIWide8x8x8_io_out_6),
+<     .io_out_5(DCTIWide8x8x8_io_out_5),
+<     .io_out_4(DCTIWide8x8x8_io_out_4),
+<     .io_out_3(DCTIWide8x8x8_io_out_3),
+<     .io_out_2(DCTIWide8x8x8_io_out_2),
+<     .io_out_1(DCTIWide8x8x8_io_out_1),
+<     .io_out_0(DCTIWide8x8x8_io_out_0)
+---
+>   MatrixOp RandomDCTIWide8x8x8 (
+>     .clock(RandomDCTIWide8x8x8_clock),
+>     .io_a_63(RandomDCTIWide8x8x8_io_a_63),
+>     .io_a_62(RandomDCTIWide8x8x8_io_a_62),
+>     .io_a_61(RandomDCTIWide8x8x8_io_a_61),
+>     .io_a_60(RandomDCTIWide8x8x8_io_a_60),
+>     .io_a_59(RandomDCTIWide8x8x8_io_a_59),
+>     .io_a_58(RandomDCTIWide8x8x8_io_a_58),
+>     .io_a_57(RandomDCTIWide8x8x8_io_a_57),
+>     .io_a_56(RandomDCTIWide8x8x8_io_a_56),
+>     .io_a_55(RandomDCTIWide8x8x8_io_a_55),
+>     .io_a_54(RandomDCTIWide8x8x8_io_a_54),
+>     .io_a_53(RandomDCTIWide8x8x8_io_a_53),
+>     .io_a_52(RandomDCTIWide8x8x8_io_a_52),
+>     .io_a_51(RandomDCTIWide8x8x8_io_a_51),
+>     .io_a_50(RandomDCTIWide8x8x8_io_a_50),
+>     .io_a_49(RandomDCTIWide8x8x8_io_a_49),
+>     .io_a_48(RandomDCTIWide8x8x8_io_a_48),
+>     .io_a_47(RandomDCTIWide8x8x8_io_a_47),
+>     .io_a_46(RandomDCTIWide8x8x8_io_a_46),
+>     .io_a_45(RandomDCTIWide8x8x8_io_a_45),
+>     .io_a_44(RandomDCTIWide8x8x8_io_a_44),
+>     .io_a_43(RandomDCTIWide8x8x8_io_a_43),
+>     .io_a_42(RandomDCTIWide8x8x8_io_a_42),
+>     .io_a_41(RandomDCTIWide8x8x8_io_a_41),
+>     .io_a_40(RandomDCTIWide8x8x8_io_a_40),
+>     .io_a_39(RandomDCTIWide8x8x8_io_a_39),
+>     .io_a_38(RandomDCTIWide8x8x8_io_a_38),
+>     .io_a_37(RandomDCTIWide8x8x8_io_a_37),
+>     .io_a_36(RandomDCTIWide8x8x8_io_a_36),
+>     .io_a_35(RandomDCTIWide8x8x8_io_a_35),
+>     .io_a_34(RandomDCTIWide8x8x8_io_a_34),
+>     .io_a_33(RandomDCTIWide8x8x8_io_a_33),
+>     .io_a_32(RandomDCTIWide8x8x8_io_a_32),
+>     .io_a_31(RandomDCTIWide8x8x8_io_a_31),
+>     .io_a_30(RandomDCTIWide8x8x8_io_a_30),
+>     .io_a_29(RandomDCTIWide8x8x8_io_a_29),
+>     .io_a_28(RandomDCTIWide8x8x8_io_a_28),
+>     .io_a_27(RandomDCTIWide8x8x8_io_a_27),
+>     .io_a_26(RandomDCTIWide8x8x8_io_a_26),
+>     .io_a_25(RandomDCTIWide8x8x8_io_a_25),
+>     .io_a_24(RandomDCTIWide8x8x8_io_a_24),
+>     .io_a_23(RandomDCTIWide8x8x8_io_a_23),
+>     .io_a_22(RandomDCTIWide8x8x8_io_a_22),
+>     .io_a_21(RandomDCTIWide8x8x8_io_a_21),
+>     .io_a_20(RandomDCTIWide8x8x8_io_a_20),
+>     .io_a_19(RandomDCTIWide8x8x8_io_a_19),
+>     .io_a_18(RandomDCTIWide8x8x8_io_a_18),
+>     .io_a_17(RandomDCTIWide8x8x8_io_a_17),
+>     .io_a_16(RandomDCTIWide8x8x8_io_a_16),
+>     .io_a_15(RandomDCTIWide8x8x8_io_a_15),
+>     .io_a_14(RandomDCTIWide8x8x8_io_a_14),
+>     .io_a_13(RandomDCTIWide8x8x8_io_a_13),
+>     .io_a_12(RandomDCTIWide8x8x8_io_a_12),
+>     .io_a_11(RandomDCTIWide8x8x8_io_a_11),
+>     .io_a_10(RandomDCTIWide8x8x8_io_a_10),
+>     .io_a_9(RandomDCTIWide8x8x8_io_a_9),
+>     .io_a_8(RandomDCTIWide8x8x8_io_a_8),
+>     .io_a_7(RandomDCTIWide8x8x8_io_a_7),
+>     .io_a_6(RandomDCTIWide8x8x8_io_a_6),
+>     .io_a_5(RandomDCTIWide8x8x8_io_a_5),
+>     .io_a_4(RandomDCTIWide8x8x8_io_a_4),
+>     .io_a_3(RandomDCTIWide8x8x8_io_a_3),
+>     .io_a_2(RandomDCTIWide8x8x8_io_a_2),
+>     .io_a_1(RandomDCTIWide8x8x8_io_a_1),
+>     .io_a_0(RandomDCTIWide8x8x8_io_a_0),
+>     .io_out_63(RandomDCTIWide8x8x8_io_out_63),
+>     .io_out_62(RandomDCTIWide8x8x8_io_out_62),
+>     .io_out_61(RandomDCTIWide8x8x8_io_out_61),
+>     .io_out_60(RandomDCTIWide8x8x8_io_out_60),
+>     .io_out_59(RandomDCTIWide8x8x8_io_out_59),
+>     .io_out_58(RandomDCTIWide8x8x8_io_out_58),
+>     .io_out_57(RandomDCTIWide8x8x8_io_out_57),
+>     .io_out_56(RandomDCTIWide8x8x8_io_out_56),
+>     .io_out_55(RandomDCTIWide8x8x8_io_out_55),
+>     .io_out_54(RandomDCTIWide8x8x8_io_out_54),
+>     .io_out_53(RandomDCTIWide8x8x8_io_out_53),
+>     .io_out_52(RandomDCTIWide8x8x8_io_out_52),
+>     .io_out_51(RandomDCTIWide8x8x8_io_out_51),
+>     .io_out_50(RandomDCTIWide8x8x8_io_out_50),
+>     .io_out_49(RandomDCTIWide8x8x8_io_out_49),
+>     .io_out_48(RandomDCTIWide8x8x8_io_out_48),
+>     .io_out_47(RandomDCTIWide8x8x8_io_out_47),
+>     .io_out_46(RandomDCTIWide8x8x8_io_out_46),
+>     .io_out_45(RandomDCTIWide8x8x8_io_out_45),
+>     .io_out_44(RandomDCTIWide8x8x8_io_out_44),
+>     .io_out_43(RandomDCTIWide8x8x8_io_out_43),
+>     .io_out_42(RandomDCTIWide8x8x8_io_out_42),
+>     .io_out_41(RandomDCTIWide8x8x8_io_out_41),
+>     .io_out_40(RandomDCTIWide8x8x8_io_out_40),
+>     .io_out_39(RandomDCTIWide8x8x8_io_out_39),
+>     .io_out_38(RandomDCTIWide8x8x8_io_out_38),
+>     .io_out_37(RandomDCTIWide8x8x8_io_out_37),
+>     .io_out_36(RandomDCTIWide8x8x8_io_out_36),
+>     .io_out_35(RandomDCTIWide8x8x8_io_out_35),
+>     .io_out_34(RandomDCTIWide8x8x8_io_out_34),
+>     .io_out_33(RandomDCTIWide8x8x8_io_out_33),
+>     .io_out_32(RandomDCTIWide8x8x8_io_out_32),
+>     .io_out_31(RandomDCTIWide8x8x8_io_out_31),
+>     .io_out_30(RandomDCTIWide8x8x8_io_out_30),
+>     .io_out_29(RandomDCTIWide8x8x8_io_out_29),
+>     .io_out_28(RandomDCTIWide8x8x8_io_out_28),
+>     .io_out_27(RandomDCTIWide8x8x8_io_out_27),
+>     .io_out_26(RandomDCTIWide8x8x8_io_out_26),
+>     .io_out_25(RandomDCTIWide8x8x8_io_out_25),
+>     .io_out_24(RandomDCTIWide8x8x8_io_out_24),
+>     .io_out_23(RandomDCTIWide8x8x8_io_out_23),
+>     .io_out_22(RandomDCTIWide8x8x8_io_out_22),
+>     .io_out_21(RandomDCTIWide8x8x8_io_out_21),
+>     .io_out_20(RandomDCTIWide8x8x8_io_out_20),
+>     .io_out_19(RandomDCTIWide8x8x8_io_out_19),
+>     .io_out_18(RandomDCTIWide8x8x8_io_out_18),
+>     .io_out_17(RandomDCTIWide8x8x8_io_out_17),
+>     .io_out_16(RandomDCTIWide8x8x8_io_out_16),
+>     .io_out_15(RandomDCTIWide8x8x8_io_out_15),
+>     .io_out_14(RandomDCTIWide8x8x8_io_out_14),
+>     .io_out_13(RandomDCTIWide8x8x8_io_out_13),
+>     .io_out_12(RandomDCTIWide8x8x8_io_out_12),
+>     .io_out_11(RandomDCTIWide8x8x8_io_out_11),
+>     .io_out_10(RandomDCTIWide8x8x8_io_out_10),
+>     .io_out_9(RandomDCTIWide8x8x8_io_out_9),
+>     .io_out_8(RandomDCTIWide8x8x8_io_out_8),
+>     .io_out_7(RandomDCTIWide8x8x8_io_out_7),
+>     .io_out_6(RandomDCTIWide8x8x8_io_out_6),
+>     .io_out_5(RandomDCTIWide8x8x8_io_out_5),
+>     .io_out_4(RandomDCTIWide8x8x8_io_out_4),
+>     .io_out_3(RandomDCTIWide8x8x8_io_out_3),
+>     .io_out_2(RandomDCTIWide8x8x8_io_out_2),
+>     .io_out_1(RandomDCTIWide8x8x8_io_out_1),
+>     .io_out_0(RandomDCTIWide8x8x8_io_out_0)
+17616,17744c17616,17744
+<   assign DCTIWide8x8x8_clock = clock;
+<   assign DCTIWide8x8x8_io_a_63 = _T_391;
+<   assign DCTIWide8x8x8_io_a_62 = _T_390;
+<   assign DCTIWide8x8x8_io_a_61 = _T_389;
+<   assign DCTIWide8x8x8_io_a_60 = _T_388;
+<   assign DCTIWide8x8x8_io_a_59 = _T_387;
+<   assign DCTIWide8x8x8_io_a_58 = _T_386;
+<   assign DCTIWide8x8x8_io_a_57 = _T_385;
+<   assign DCTIWide8x8x8_io_a_56 = _T_384;
+<   assign DCTIWide8x8x8_io_a_55 = _T_383;
+<   assign DCTIWide8x8x8_io_a_54 = _T_382;
+<   assign DCTIWide8x8x8_io_a_53 = _T_381;
+<   assign DCTIWide8x8x8_io_a_52 = _T_380;
+<   assign DCTIWide8x8x8_io_a_51 = _T_379;
+<   assign DCTIWide8x8x8_io_a_50 = _T_378;
+<   assign DCTIWide8x8x8_io_a_49 = _T_377;
+<   assign DCTIWide8x8x8_io_a_48 = _T_376;
+<   assign DCTIWide8x8x8_io_a_47 = _T_375;
+<   assign DCTIWide8x8x8_io_a_46 = _T_374;
+<   assign DCTIWide8x8x8_io_a_45 = _T_373;
+<   assign DCTIWide8x8x8_io_a_44 = _T_372;
+<   assign DCTIWide8x8x8_io_a_43 = _T_371;
+<   assign DCTIWide8x8x8_io_a_42 = _T_370;
+<   assign DCTIWide8x8x8_io_a_41 = _T_369;
+<   assign DCTIWide8x8x8_io_a_40 = _T_368;
+<   assign DCTIWide8x8x8_io_a_39 = _T_367;
+<   assign DCTIWide8x8x8_io_a_38 = _T_366;
+<   assign DCTIWide8x8x8_io_a_37 = _T_365;
+<   assign DCTIWide8x8x8_io_a_36 = _T_364;
+<   assign DCTIWide8x8x8_io_a_35 = _T_363;
+<   assign DCTIWide8x8x8_io_a_34 = _T_362;
+<   assign DCTIWide8x8x8_io_a_33 = _T_361;
+<   assign DCTIWide8x8x8_io_a_32 = _T_360;
+<   assign DCTIWide8x8x8_io_a_31 = _T_359;
+<   assign DCTIWide8x8x8_io_a_30 = _T_358;
+<   assign DCTIWide8x8x8_io_a_29 = _T_357;
+<   assign DCTIWide8x8x8_io_a_28 = _T_356;
+<   assign DCTIWide8x8x8_io_a_27 = _T_355;
+<   assign DCTIWide8x8x8_io_a_26 = _T_354;
+<   assign DCTIWide8x8x8_io_a_25 = _T_353;
+<   assign DCTIWide8x8x8_io_a_24 = _T_352;
+<   assign DCTIWide8x8x8_io_a_23 = _T_351;
+<   assign DCTIWide8x8x8_io_a_22 = _T_350;
+<   assign DCTIWide8x8x8_io_a_21 = _T_349;
+<   assign DCTIWide8x8x8_io_a_20 = _T_348;
+<   assign DCTIWide8x8x8_io_a_19 = _T_347;
+<   assign DCTIWide8x8x8_io_a_18 = _T_346;
+<   assign DCTIWide8x8x8_io_a_17 = _T_345;
+<   assign DCTIWide8x8x8_io_a_16 = _T_344;
+<   assign DCTIWide8x8x8_io_a_15 = _T_343;
+<   assign DCTIWide8x8x8_io_a_14 = _T_342;
+<   assign DCTIWide8x8x8_io_a_13 = _T_341;
+<   assign DCTIWide8x8x8_io_a_12 = _T_340;
+<   assign DCTIWide8x8x8_io_a_11 = _T_339;
+<   assign DCTIWide8x8x8_io_a_10 = _T_338;
+<   assign DCTIWide8x8x8_io_a_9 = _T_337;
+<   assign DCTIWide8x8x8_io_a_8 = _T_336;
+<   assign DCTIWide8x8x8_io_a_7 = _T_335;
+<   assign DCTIWide8x8x8_io_a_6 = _T_334;
+<   assign DCTIWide8x8x8_io_a_5 = _T_333;
+<   assign DCTIWide8x8x8_io_a_4 = _T_332;
+<   assign DCTIWide8x8x8_io_a_3 = _T_331;
+<   assign DCTIWide8x8x8_io_a_2 = _T_330;
+<   assign DCTIWide8x8x8_io_a_1 = _T_329;
+<   assign DCTIWide8x8x8_io_a_0 = _T_328;
+<   assign _T_263 = $signed(DCTIWide8x8x8_io_out_0);
+<   assign _T_264 = $signed(DCTIWide8x8x8_io_out_1);
+<   assign _T_265 = $signed(DCTIWide8x8x8_io_out_2);
+<   assign _T_266 = $signed(DCTIWide8x8x8_io_out_3);
+<   assign _T_267 = $signed(DCTIWide8x8x8_io_out_4);
+<   assign _T_268 = $signed(DCTIWide8x8x8_io_out_5);
+<   assign _T_269 = $signed(DCTIWide8x8x8_io_out_6);
+<   assign _T_270 = $signed(DCTIWide8x8x8_io_out_7);
+<   assign _T_271 = $signed(DCTIWide8x8x8_io_out_8);
+<   assign _T_272 = $signed(DCTIWide8x8x8_io_out_9);
+<   assign _T_273 = $signed(DCTIWide8x8x8_io_out_10);
+<   assign _T_274 = $signed(DCTIWide8x8x8_io_out_11);
+<   assign _T_275 = $signed(DCTIWide8x8x8_io_out_12);
+<   assign _T_276 = $signed(DCTIWide8x8x8_io_out_13);
+<   assign _T_277 = $signed(DCTIWide8x8x8_io_out_14);
+<   assign _T_278 = $signed(DCTIWide8x8x8_io_out_15);
+<   assign _T_279 = $signed(DCTIWide8x8x8_io_out_16);
+<   assign _T_280 = $signed(DCTIWide8x8x8_io_out_17);
+<   assign _T_281 = $signed(DCTIWide8x8x8_io_out_18);
+<   assign _T_282 = $signed(DCTIWide8x8x8_io_out_19);
+<   assign _T_283 = $signed(DCTIWide8x8x8_io_out_20);
+<   assign _T_284 = $signed(DCTIWide8x8x8_io_out_21);
+<   assign _T_285 = $signed(DCTIWide8x8x8_io_out_22);
+<   assign _T_286 = $signed(DCTIWide8x8x8_io_out_23);
+<   assign _T_287 = $signed(DCTIWide8x8x8_io_out_24);
+<   assign _T_288 = $signed(DCTIWide8x8x8_io_out_25);
+<   assign _T_289 = $signed(DCTIWide8x8x8_io_out_26);
+<   assign _T_290 = $signed(DCTIWide8x8x8_io_out_27);
+<   assign _T_291 = $signed(DCTIWide8x8x8_io_out_28);
+<   assign _T_292 = $signed(DCTIWide8x8x8_io_out_29);
+<   assign _T_293 = $signed(DCTIWide8x8x8_io_out_30);
+<   assign _T_294 = $signed(DCTIWide8x8x8_io_out_31);
+<   assign _T_295 = $signed(DCTIWide8x8x8_io_out_32);
+<   assign _T_296 = $signed(DCTIWide8x8x8_io_out_33);
+<   assign _T_297 = $signed(DCTIWide8x8x8_io_out_34);
+<   assign _T_298 = $signed(DCTIWide8x8x8_io_out_35);
+<   assign _T_299 = $signed(DCTIWide8x8x8_io_out_36);
+<   assign _T_300 = $signed(DCTIWide8x8x8_io_out_37);
+<   assign _T_301 = $signed(DCTIWide8x8x8_io_out_38);
+<   assign _T_302 = $signed(DCTIWide8x8x8_io_out_39);
+<   assign _T_303 = $signed(DCTIWide8x8x8_io_out_40);
+<   assign _T_304 = $signed(DCTIWide8x8x8_io_out_41);
+<   assign _T_305 = $signed(DCTIWide8x8x8_io_out_42);
+<   assign _T_306 = $signed(DCTIWide8x8x8_io_out_43);
+<   assign _T_307 = $signed(DCTIWide8x8x8_io_out_44);
+<   assign _T_308 = $signed(DCTIWide8x8x8_io_out_45);
+<   assign _T_309 = $signed(DCTIWide8x8x8_io_out_46);
+<   assign _T_310 = $signed(DCTIWide8x8x8_io_out_47);
+<   assign _T_311 = $signed(DCTIWide8x8x8_io_out_48);
+<   assign _T_312 = $signed(DCTIWide8x8x8_io_out_49);
+<   assign _T_313 = $signed(DCTIWide8x8x8_io_out_50);
+<   assign _T_314 = $signed(DCTIWide8x8x8_io_out_51);
+<   assign _T_315 = $signed(DCTIWide8x8x8_io_out_52);
+<   assign _T_316 = $signed(DCTIWide8x8x8_io_out_53);
+<   assign _T_317 = $signed(DCTIWide8x8x8_io_out_54);
+<   assign _T_318 = $signed(DCTIWide8x8x8_io_out_55);
+<   assign _T_319 = $signed(DCTIWide8x8x8_io_out_56);
+<   assign _T_320 = $signed(DCTIWide8x8x8_io_out_57);
+<   assign _T_321 = $signed(DCTIWide8x8x8_io_out_58);
+<   assign _T_322 = $signed(DCTIWide8x8x8_io_out_59);
+<   assign _T_323 = $signed(DCTIWide8x8x8_io_out_60);
+<   assign _T_324 = $signed(DCTIWide8x8x8_io_out_61);
+<   assign _T_325 = $signed(DCTIWide8x8x8_io_out_62);
+<   assign _T_326 = $signed(DCTIWide8x8x8_io_out_63);
+---
+>   assign RandomDCTIWide8x8x8_clock = clock;
+>   assign RandomDCTIWide8x8x8_io_a_63 = _T_391;
+>   assign RandomDCTIWide8x8x8_io_a_62 = _T_390;
+>   assign RandomDCTIWide8x8x8_io_a_61 = _T_389;
+>   assign RandomDCTIWide8x8x8_io_a_60 = _T_388;
+>   assign RandomDCTIWide8x8x8_io_a_59 = _T_387;
+>   assign RandomDCTIWide8x8x8_io_a_58 = _T_386;
+>   assign RandomDCTIWide8x8x8_io_a_57 = _T_385;
+>   assign RandomDCTIWide8x8x8_io_a_56 = _T_384;
+>   assign RandomDCTIWide8x8x8_io_a_55 = _T_383;
+>   assign RandomDCTIWide8x8x8_io_a_54 = _T_382;
+>   assign RandomDCTIWide8x8x8_io_a_53 = _T_381;
+>   assign RandomDCTIWide8x8x8_io_a_52 = _T_380;
+>   assign RandomDCTIWide8x8x8_io_a_51 = _T_379;
+>   assign RandomDCTIWide8x8x8_io_a_50 = _T_378;
+>   assign RandomDCTIWide8x8x8_io_a_49 = _T_377;
+>   assign RandomDCTIWide8x8x8_io_a_48 = _T_376;
+>   assign RandomDCTIWide8x8x8_io_a_47 = _T_375;
+>   assign RandomDCTIWide8x8x8_io_a_46 = _T_374;
+>   assign RandomDCTIWide8x8x8_io_a_45 = _T_373;
+>   assign RandomDCTIWide8x8x8_io_a_44 = _T_372;
+>   assign RandomDCTIWide8x8x8_io_a_43 = _T_371;
+>   assign RandomDCTIWide8x8x8_io_a_42 = _T_370;
+>   assign RandomDCTIWide8x8x8_io_a_41 = _T_369;
+>   assign RandomDCTIWide8x8x8_io_a_40 = _T_368;
+>   assign RandomDCTIWide8x8x8_io_a_39 = _T_367;
+>   assign RandomDCTIWide8x8x8_io_a_38 = _T_366;
+>   assign RandomDCTIWide8x8x8_io_a_37 = _T_365;
+>   assign RandomDCTIWide8x8x8_io_a_36 = _T_364;
+>   assign RandomDCTIWide8x8x8_io_a_35 = _T_363;
+>   assign RandomDCTIWide8x8x8_io_a_34 = _T_362;
+>   assign RandomDCTIWide8x8x8_io_a_33 = _T_361;
+>   assign RandomDCTIWide8x8x8_io_a_32 = _T_360;
+>   assign RandomDCTIWide8x8x8_io_a_31 = _T_359;
+>   assign RandomDCTIWide8x8x8_io_a_30 = _T_358;
+>   assign RandomDCTIWide8x8x8_io_a_29 = _T_357;
+>   assign RandomDCTIWide8x8x8_io_a_28 = _T_356;
+>   assign RandomDCTIWide8x8x8_io_a_27 = _T_355;
+>   assign RandomDCTIWide8x8x8_io_a_26 = _T_354;
+>   assign RandomDCTIWide8x8x8_io_a_25 = _T_353;
+>   assign RandomDCTIWide8x8x8_io_a_24 = _T_352;
+>   assign RandomDCTIWide8x8x8_io_a_23 = _T_351;
+>   assign RandomDCTIWide8x8x8_io_a_22 = _T_350;
+>   assign RandomDCTIWide8x8x8_io_a_21 = _T_349;
+>   assign RandomDCTIWide8x8x8_io_a_20 = _T_348;
+>   assign RandomDCTIWide8x8x8_io_a_19 = _T_347;
+>   assign RandomDCTIWide8x8x8_io_a_18 = _T_346;
+>   assign RandomDCTIWide8x8x8_io_a_17 = _T_345;
+>   assign RandomDCTIWide8x8x8_io_a_16 = _T_344;
+>   assign RandomDCTIWide8x8x8_io_a_15 = _T_343;
+>   assign RandomDCTIWide8x8x8_io_a_14 = _T_342;
+>   assign RandomDCTIWide8x8x8_io_a_13 = _T_341;
+>   assign RandomDCTIWide8x8x8_io_a_12 = _T_340;
+>   assign RandomDCTIWide8x8x8_io_a_11 = _T_339;
+>   assign RandomDCTIWide8x8x8_io_a_10 = _T_338;
+>   assign RandomDCTIWide8x8x8_io_a_9 = _T_337;
+>   assign RandomDCTIWide8x8x8_io_a_8 = _T_336;
+>   assign RandomDCTIWide8x8x8_io_a_7 = _T_335;
+>   assign RandomDCTIWide8x8x8_io_a_6 = _T_334;
+>   assign RandomDCTIWide8x8x8_io_a_5 = _T_333;
+>   assign RandomDCTIWide8x8x8_io_a_4 = _T_332;
+>   assign RandomDCTIWide8x8x8_io_a_3 = _T_331;
+>   assign RandomDCTIWide8x8x8_io_a_2 = _T_330;
+>   assign RandomDCTIWide8x8x8_io_a_1 = _T_329;
+>   assign RandomDCTIWide8x8x8_io_a_0 = _T_328;
+>   assign _T_263 = $signed(RandomDCTIWide8x8x8_io_out_0);
+>   assign _T_264 = $signed(RandomDCTIWide8x8x8_io_out_1);
+>   assign _T_265 = $signed(RandomDCTIWide8x8x8_io_out_2);
+>   assign _T_266 = $signed(RandomDCTIWide8x8x8_io_out_3);
+>   assign _T_267 = $signed(RandomDCTIWide8x8x8_io_out_4);
+>   assign _T_268 = $signed(RandomDCTIWide8x8x8_io_out_5);
+>   assign _T_269 = $signed(RandomDCTIWide8x8x8_io_out_6);
+>   assign _T_270 = $signed(RandomDCTIWide8x8x8_io_out_7);
+>   assign _T_271 = $signed(RandomDCTIWide8x8x8_io_out_8);
+>   assign _T_272 = $signed(RandomDCTIWide8x8x8_io_out_9);
+>   assign _T_273 = $signed(RandomDCTIWide8x8x8_io_out_10);
+>   assign _T_274 = $signed(RandomDCTIWide8x8x8_io_out_11);
+>   assign _T_275 = $signed(RandomDCTIWide8x8x8_io_out_12);
+>   assign _T_276 = $signed(RandomDCTIWide8x8x8_io_out_13);
+>   assign _T_277 = $signed(RandomDCTIWide8x8x8_io_out_14);
+>   assign _T_278 = $signed(RandomDCTIWide8x8x8_io_out_15);
+>   assign _T_279 = $signed(RandomDCTIWide8x8x8_io_out_16);
+>   assign _T_280 = $signed(RandomDCTIWide8x8x8_io_out_17);
+>   assign _T_281 = $signed(RandomDCTIWide8x8x8_io_out_18);
+>   assign _T_282 = $signed(RandomDCTIWide8x8x8_io_out_19);
+>   assign _T_283 = $signed(RandomDCTIWide8x8x8_io_out_20);
+>   assign _T_284 = $signed(RandomDCTIWide8x8x8_io_out_21);
+>   assign _T_285 = $signed(RandomDCTIWide8x8x8_io_out_22);
+>   assign _T_286 = $signed(RandomDCTIWide8x8x8_io_out_23);
+>   assign _T_287 = $signed(RandomDCTIWide8x8x8_io_out_24);
+>   assign _T_288 = $signed(RandomDCTIWide8x8x8_io_out_25);
+>   assign _T_289 = $signed(RandomDCTIWide8x8x8_io_out_26);
+>   assign _T_290 = $signed(RandomDCTIWide8x8x8_io_out_27);
+>   assign _T_291 = $signed(RandomDCTIWide8x8x8_io_out_28);
+>   assign _T_292 = $signed(RandomDCTIWide8x8x8_io_out_29);
+>   assign _T_293 = $signed(RandomDCTIWide8x8x8_io_out_30);
+>   assign _T_294 = $signed(RandomDCTIWide8x8x8_io_out_31);
+>   assign _T_295 = $signed(RandomDCTIWide8x8x8_io_out_32);
+>   assign _T_296 = $signed(RandomDCTIWide8x8x8_io_out_33);
+>   assign _T_297 = $signed(RandomDCTIWide8x8x8_io_out_34);
+>   assign _T_298 = $signed(RandomDCTIWide8x8x8_io_out_35);
+>   assign _T_299 = $signed(RandomDCTIWide8x8x8_io_out_36);
+>   assign _T_300 = $signed(RandomDCTIWide8x8x8_io_out_37);
+>   assign _T_301 = $signed(RandomDCTIWide8x8x8_io_out_38);
+>   assign _T_302 = $signed(RandomDCTIWide8x8x8_io_out_39);
+>   assign _T_303 = $signed(RandomDCTIWide8x8x8_io_out_40);
+>   assign _T_304 = $signed(RandomDCTIWide8x8x8_io_out_41);
+>   assign _T_305 = $signed(RandomDCTIWide8x8x8_io_out_42);
+>   assign _T_306 = $signed(RandomDCTIWide8x8x8_io_out_43);
+>   assign _T_307 = $signed(RandomDCTIWide8x8x8_io_out_44);
+>   assign _T_308 = $signed(RandomDCTIWide8x8x8_io_out_45);
+>   assign _T_309 = $signed(RandomDCTIWide8x8x8_io_out_46);
+>   assign _T_310 = $signed(RandomDCTIWide8x8x8_io_out_47);
+>   assign _T_311 = $signed(RandomDCTIWide8x8x8_io_out_48);
+>   assign _T_312 = $signed(RandomDCTIWide8x8x8_io_out_49);
+>   assign _T_313 = $signed(RandomDCTIWide8x8x8_io_out_50);
+>   assign _T_314 = $signed(RandomDCTIWide8x8x8_io_out_51);
+>   assign _T_315 = $signed(RandomDCTIWide8x8x8_io_out_52);
+>   assign _T_316 = $signed(RandomDCTIWide8x8x8_io_out_53);
+>   assign _T_317 = $signed(RandomDCTIWide8x8x8_io_out_54);
+>   assign _T_318 = $signed(RandomDCTIWide8x8x8_io_out_55);
+>   assign _T_319 = $signed(RandomDCTIWide8x8x8_io_out_56);
+>   assign _T_320 = $signed(RandomDCTIWide8x8x8_io_out_57);
+>   assign _T_321 = $signed(RandomDCTIWide8x8x8_io_out_58);
+>   assign _T_322 = $signed(RandomDCTIWide8x8x8_io_out_59);
+>   assign _T_323 = $signed(RandomDCTIWide8x8x8_io_out_60);
+>   assign _T_324 = $signed(RandomDCTIWide8x8x8_io_out_61);
+>   assign _T_325 = $signed(RandomDCTIWide8x8x8_io_out_62);
+>   assign _T_326 = $signed(RandomDCTIWide8x8x8_io_out_63);
