@@ -197,6 +197,7 @@ class BitReducer(
       """.stripMargin
 
     val writer = new PrintWriter(new java.io.File(htmlReportFileName))
+    //scalastyle:off regex
     writer.println(htmlBuffer.toString)
     writer.close()
     println(s"Writing html as $htmlReportFileName")
@@ -267,6 +268,11 @@ class BitReducer(
     bitsConsidered += width
 
     buildHtml(bitHistory)
+
+    //TODO (chick), it would be nice to remove this but currently adding the io.X_reduced breaks things
+    if(bitHistory.name.contains(".io_")) {
+      return true
+    }
 
     if(bitHistory.isUInt) {
       val bitsNeeded = requiredBitsForUInt(bitHistory.maxBySigma(trimBySigma)) + fudgeConstant
@@ -344,6 +350,7 @@ class BitReducer(
   }
 }
 
+//scalastyle:off magic.number
 object BitReducer extends LazyLogging {
   val TpeWidthRegex: Regex  = """^[us]int<([-\d]+)>$""".r
 

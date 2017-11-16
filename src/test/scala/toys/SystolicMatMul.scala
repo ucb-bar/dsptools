@@ -6,17 +6,24 @@ import chisel3._
 import chisel3.util.ShiftRegister
 import dsptools.intervals.tests.IATest
 import dsptools.numbers._
-import breeze.linalg.{DenseVector, DenseMatrix}
+import breeze.linalg.{DenseMatrix, DenseVector}
 import generatortools.io.CustomBundle
-import dsptools.{NoTrim, DspContext, DspTester}
-
+import dsptools.{DspContext, DspTester, NoTrim}
 import chisel3.experimental._
 import generatortools.testing.TestModule
-import chisel3.internal.firrtl.{UnknownWidth, KnownWidth, IntervalRange, KnownBinaryPoint}
-
-import org.scalatest.{Matchers, FlatSpec}
+import chisel3.internal.firrtl.{IntervalRange, KnownBinaryPoint, KnownWidth, UnknownWidth}
+import firrtl.transforms.DedupModules
+import org.scalatest.{FlatSpec, Matchers}
 
 import scala.util.Random
+
+trait NoDedupAnnotator {
+  self: Module =>
+
+  def doNotDedup(module: Module): Unit = {
+    annotate(ChiselAnnotation(module, classOf[DedupModules], "nodedup!"))
+  }
+}
 
 // TODO: Doesn't need to be power of 2
 // TODO: Get rid of lots of 0 until n's -- switch to for/yield?
@@ -28,7 +35,7 @@ class SystolicMatMul[T <: Data:RealBits](
     genOut : => T,
     val n: Int,
     val litSeq: Seq[Double] = Seq.empty,
-    litBP: Option[Int] = None) extends Module {
+    litBP: Option[Int] = None) extends Module with NoDedupAnnotator {
   val io = IO(new Bundle {
     val a = Input(CustomBundle(Seq.fill(n * n)(genIn)))
     val b = Input(CustomBundle(Seq.fill(if (litSeq.nonEmpty) 1 else n * n)(genIn)))
@@ -114,6 +121,7 @@ class SystolicMatMul[T <: Data:RealBits](
           litBP
         )
       )
+      doNotDedup(pe)
       pe.suggestName(s"pe_${rowIdx}_${colIdx}")
       pe.io.reset := io.start
       io.out(rowIdx * n + colIdx) := pe.io.c
@@ -434,10 +442,10 @@ class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
     }
   }
 */
-  it should "properly multiply - Interval Wide - DCT Lit - RANDOM" in {
+  it should "properly multiply - Interval Wide - DCT Lit - RANDOM UNFILTERED" in {
     val name = s"RandomSDCTIWide${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
-      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new SystolicMatMul(inIWide, outI, n, litSeq, litBP), name = name), IATest.options(name, backend = "firrtl", fixTol = correction)) {
+      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new SystolicMatMul(inIWide, outI, n, litSeq, litBP), name = name), IATest.options(name, verbose = true, backend = "firrtl", fixTol = correction)) {
         c => new SystolicMatMulTester(c, randomTVs)
       } should be(true)
     }

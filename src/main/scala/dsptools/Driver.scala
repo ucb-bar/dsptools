@@ -166,7 +166,7 @@ object Driver {
           None
         }
         else {
-          val bitReducer = runBitReducer
+          val bitReducer = runBitReducer()
           val firrtlFilename = optionsManager.firrtlOptions.getTargetFile(optionsManager)
           val firrtlString = io.Source.fromFile(firrtlFilename).getLines().mkString("\n")
 
@@ -237,7 +237,7 @@ object Driver {
           FirrtlRepl.execute(optionsManager)
           true
         case ChiselExecutionFailure(message) =>
-          println("Failed to compile circuit")
+          println(s"Failed to compile circuit: $message")
           false
       }
     }

@@ -31,14 +31,9 @@ class ChangeWidthTransformSpec extends FreeSpec with Matchers {
 
     val annotations = AnnotationMap(Seq(
       Annotation(
-        ComponentName("io_a1", ModuleName("InstrumentingAdder", CircuitName("InstrumentingAdder"))),
-        classOf[ChangeWidthTransform],
-        "io_a1=16"
-      ),
-      Annotation(
         ComponentName("io_a1", ModuleName("register1", CircuitName("InstrumentingAdder"))),
         classOf[ChangeWidthTransform],
-        "register1=8"
+        "register1=31"
       )
     ))
 
@@ -50,8 +45,7 @@ class ChangeWidthTransformSpec extends FreeSpec with Matchers {
 
     val newFirrtlString = newCircuitState.circuit.serialize
 
-    newFirrtlString should include ("input io_a1 : SInt<16>")
-    newFirrtlString should include ("register1 : SInt<8>")
+    newFirrtlString should include ("register1 : SInt<31>")
 
     //noinspection ScalaStyle
     println(s"After ChangeWidthTransform\n$newFirrtlString")

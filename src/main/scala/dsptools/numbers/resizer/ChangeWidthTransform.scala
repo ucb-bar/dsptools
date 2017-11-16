@@ -8,7 +8,7 @@ import firrtl.ir._
 import firrtl.Mappers._
 import firrtl.passes._
 import _root_.logger.{LazyLogging, LogLevel, Logger}
-import firrtl.PrimOps.Clip
+import firrtl.PrimOps._
 
 import scala.collection.mutable
 
@@ -67,7 +67,7 @@ class ChangeWidthTransform extends Transform with LazyLogging {
         case Some(m: Module) => m
         case Some(m: ExtModule) => m
         case _ =>
-          throw new Exception(s"Error: could not fine $name in $c")
+          throw new Exception(s"Error: could not find $name in $c")
       }
     }
 
@@ -76,6 +76,14 @@ class ChangeWidthTransform extends Transform with LazyLogging {
         case SIntType(IntWidth(_)) => SIntType(UnknownWidth)
         case UIntType(IntWidth(_)) => UIntType(UnknownWidth)
         case _                     => tpe
+      }
+    }
+
+    def decreaseTypeWidth(originalType: Type, delta: Int): Type = {
+      originalType match {
+        case SIntType(IntWidth(oldWidth)) => SIntType(IntWidth(oldWidth - delta))
+        case UIntType(IntWidth(oldWidth)) => UIntType(IntWidth(oldWidth - delta))
+        case other                        => other
       }
     }
 
@@ -130,32 +138,90 @@ class ChangeWidthTransform extends Transform with LazyLogging {
         }
       }
 
+      def signExtend(numberToDo: Int, firstArg: Expression, lastArg: Expression, tpe: Type): Expression = {
+        if(numberToDo <= 1) {
+          DoPrim(Cat, Seq(firstArg, lastArg), Seq(), tpe)
+        }
+        else {
+          DoPrim(
+            Cat,
+            Seq(firstArg, signExtend(numberToDo - 1, firstArg, lastArg, tpe)),
+            Seq(),
+            decreaseTypeWidth(tpe, delta = numberToDo - 1)
+          )
+        }
+      }
+
+      def constructSmallerIntermediates(
+                                         wire: Statement with IsDeclaration,
+                                         tpe: Type,
+                                         changeRequest: ChangeRequest
+                                       ): Block = {
+        val reduced = DefWire(wire.info, wire.name + "__reduced", changeTpe(tpe, changeRequest))
+        val msb     = DefWire(wire.info, wire.name + "__msb",  UIntType(IntWidth(1)))
+
+        val extendedSign = signExtend(
+          (typeToWidth(tpe) - changeRequest.newWidth).toInt,
+          WRef(msb),
+          DoPrim(AsUInt, Seq(WRef(reduced)), Seq(), UIntType(IntWidth(changeRequest.newWidth))),
+          tpe
+        )
+
+        Block(Seq(
+          wire,
+          reduced,
+          msb,
+          Connect(
+            wire.info, WRef(msb),
+            tpe match {
+              case _: UIntType => UIntLiteral(BigInt(0), IntWidth(1))
+              case _: SIntType => DoPrim(Head, Seq(WRef(reduced)), Seq(BigInt(1)), UIntType(IntWidth(1)))
+            }
+          ),
+          Connect(
+            wire.info, WRef(wire.name, tpe, WireKind),
+            tpe match {
+              case _: UIntType =>
+                extendedSign
+              case _: SIntType =>
+                DoPrim(AsSInt, Seq(
+                  extendedSign
+                ), Seq(), tpe)
+            }
+          )
+        ))
+      }
+
       def changeWidthsInStatement(statement: Statement): Statement = {
         val resultStatement = statement map changeWidthsInStatement map changeWidthsInExpression
         resultStatement match {
           case connect: Connect =>
             changeRequests.get(expand(connect.loc.serialize)) match {
-              case Some(changeReqest) =>
-                // logger.info(s"Changing:Connect ${register.name} new width ${changeReqest.newWidth}")
-                //TODO (chick) Make the folloing line work
-                // connect.copy(expr = Clip(connect.info, Seq(connect.expr), Seq(changeReqest.)))
-                connect
+              case Some(changeRequest) =>
+                val newLoc = connect.loc match {
+                  case w: WRef => w.copy(name = w.name + "__reduced")
+                  case s       => s
+                }
+                // logger.info(s"Changing:Connect ${register.name} new width ${changeRequest.newWidth}")
+                Block(Seq(
+                  connect.copy(loc = newLoc)
+                ))
               case _ => connect
             }
           case register: DefRegister =>
             changeRequests.get(expand(register.name)) match {
-              case Some(changeReqest) =>
-                // logger.info(s"Changing:DefReg ${register.name} new width ${changeReqest.newWidth}")
-                register.copy(tpe = changeTpe(register.tpe, changeReqest))
+              case Some(changeRequest) =>
+                constructSmallerIntermediates(register, register.tpe, changeRequest)
+
+                // logger.info(s"Changing:DefReg ${register.name} new width ${changeRequest.newWidth}")
               case _ => register
             }
           case wire: DefWire =>
             changeRequests.get(expand(wire.name)) match {
-              case Some(changeReqest) =>
-                // logger.info(s"Changing:DefWire ${wire.name} new width ${changeReqest.newWidth}")
-                wire.copy(tpe = changeTpe(wire.tpe, changeReqest))
-              case _ =>
-                wire
+              case Some(changeRequest) =>
+                constructSmallerIntermediates(wire, wire.tpe, changeRequest)
+              // logger.info(s"Changing:DefReg ${wire.name} new width ${changeRequest.newWidth}")
+              case _ => wire
             }
           case instance: DefInstance =>
             findModule(instance.module) match {
