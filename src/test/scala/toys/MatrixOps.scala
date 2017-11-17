@@ -535,8 +535,8 @@ class MatMulSpec extends FlatSpec with Matchers {
 
 class DCTMatMulSpec extends FlatSpec with Matchers {
 
-  val intBits =  4
-  val correction = 5
+  val intBits = 16
+  val correction = 17
   val n = 8
   val numTests = 500
   val bp = 8

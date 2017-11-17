@@ -372,8 +372,8 @@ class SystolicMatMulSpec extends FlatSpec with Matchers {
 
 class SystolicDCTMatMulSpec extends FlatSpec with Matchers {
 
-  val intBits = 4 // 8 // 12 // 16
-  val correction = 5 // 9 // 13 // 17
+  val intBits = 16 // 4 // 8 // 12 // 16
+  val correction = 17 // 5 // 9 // 13 // 17
   val n = 8
   val numTests = 500
   val bp = 8
