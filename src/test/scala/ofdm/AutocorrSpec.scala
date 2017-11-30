@@ -119,7 +119,7 @@ class AutocorrSpec extends FlatSpec with Matchers {
 
     println(s"Unpacked output is $unpackedOut")
 
-    val xs = (0 to unpackedOut.length)
+    val xs = 0 to unpackedOut.length
     val ys = unpackedOut.map(_.abs)
     println(s"Absolute values are $ys")
 
@@ -159,7 +159,7 @@ class AutocorrSpec extends FlatSpec with Matchers {
 
     println(s"Unpacked output is $unpackedOut")
 
-    val xs = (0 to unpackedOut.length)
+    val xs = 0 to unpackedOut.length
     val ys = unpackedOut.map(x => 10*log10(x.abs))
     println(s"Absolute values are $ys")
  }

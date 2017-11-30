@@ -23,7 +23,7 @@ class NCOTableSpec extends FlatSpec with Matchers {
       c => new FixedNCOTester(c) { arr = this.sweepPhase() }
     }
 
-    val xs = (0 until arr.length)
+    val xs = 0 until arr.length
     val reals = arr.map(_.real)
     val imags = arr.map(_.imag)
 

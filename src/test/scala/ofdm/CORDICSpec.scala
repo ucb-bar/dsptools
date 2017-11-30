@@ -31,8 +31,8 @@ class CORDICSpec extends FlatSpec with Matchers {
             val magThresh = pow(2.0, -5)
             val angleThresh = pow(2.0, -5)
 
-            (magErr) should be < magThresh
-            (angleErr) should be < angleThresh
+            magErr should be < magThresh
+            angleErr should be < angleThresh
           }
         }
       }
@@ -74,8 +74,8 @@ class CORDICSpec extends FlatSpec with Matchers {
           //println(s"The result was $result")
 
           for {
-            j <- (1 to 4)
-            i <- (1 to 6)
+            j <- 1 to 4
+            i <- 1 to 6
           } {
             val div = trial(i.toDouble, j.toDouble, 0.0)//rect2PolarTrial(i.toDouble, j.toDouble)._2
             println(s"$j / $i = $div")
@@ -96,8 +96,8 @@ class CORDICSpec extends FlatSpec with Matchers {
         //println(s"The result was $result")
 
         for {
-          i <- (1 to 4)
-          j <- (1 to 6)
+          i <- 1 to 4
+          j <- 1 to 6
         } {
           val div = trial((i * 1).toDouble, j.toDouble, 0.0)//rect2PolarTrial(i.toDouble, j.toDouble)._2
           println(s"$j / $i = $div")

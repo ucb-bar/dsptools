@@ -33,10 +33,9 @@ object PeekPokePackers {
   def pack[T <: Data, V : ConvertableFrom](value: V, gen: T): BigInt = gen match {
     case _:DspReal => DspTesterUtilities.doubleToBigIntBits(value.toDouble())
     case f:FixedPoint => f.binaryPoint match {
-      case KnownBinaryPoint(bp) => {
+      case KnownBinaryPoint(bp) =>
         val bigIntValue = FixedPoint.toBigInt(value.toDouble(), bp)
         signedToUnsigned(bigIntValue, gen.getWidth)
-      }
       case _ => throw DspException("Must poke FixedPoint with known binary point")
     }
     case _: UInt => value.toBigInt

@@ -1,18 +1,16 @@
 package ipxact
 
-// import util.GeneratorApp
 import org.accellera.spirit.v1685_2009.{File => SpiritFile, Parameters => SpiritParameters, _}
-import javax.xml.bind.{JAXBContext, Marshaller}
-import java.io.{File, FileOutputStream}
 
 import scala.collection.{JavaConverters, mutable}
-import java.util.Collection
 import java.math.BigInteger
 import java.util
-// import junctions._
-// import rocketchip._
-import scala.collection.mutable.HashMap
-import freechips.rocketchip.config._
+
+import chisel3.core.{ActualDirection, Aggregate, DataMirror}
+import chisel3.{Data, Element, Module, Record, Vec}
+import dspblocks.{AXI4DspBlock, AXI4HasCSR, CSR, CSRModule}
+import freechips.rocketchip.amba.axi4.AXI4Bundle
+import freechips.rocketchip.amba.axi4stream.AXI4StreamBundle
 
 trait HasIPXact {
 
@@ -52,71 +50,82 @@ trait HasIPXact {
     portmaps
   }
 
-  // Assumes you use ValidWithSync Chisel bundle for AXI4-Stream
-  def makeAXI4StreamPortMaps(prefix: String): BusInterfaceType.PortMaps = {
-    makePortMaps(Seq(
-      "ACLK"     -> "clock",
-      "ARESETn"  -> "reset",
-      "TVALID"   -> s"${prefix}_valid",
-      "TLAST"    -> s"${prefix}_sync",
-      "TDATA"    -> s"${prefix}_bits"))
+  // Assumes you use Paul's AXI4-Stream bundle
+  def makeAXI4StreamPortMaps(prefix: String, port: AXI4StreamBundle): BusInterfaceType.PortMaps = {
+    // TODO add other signals
+    val signalMap = Seq(
+      "ACLK"     -> "clock"                 -> 1,
+      "ARESETn"  -> "reset"                 -> 1,
+      "TVALID"   -> s"${prefix}_valid"      -> 1,
+      "TLAST"    -> s"${prefix}_sync"       -> 1,
+      "TDATA"    -> s"${prefix}_bits_data"  -> (if (port.params.hasData) 8 * port.params.n else 0),
+      "TSTRB"    -> s"${prefix}_bits_strb"  -> (if (port.params.hasStrb) port.params.n else 0),
+      "TKEEP"    -> s"${prefix}_bits_keep"  -> (if (port.params.hasKeep) port.params.n else 0),
+      "TID"      -> s"${prefix}_bits_id"    -> port.params.i,
+      "TDEST"    -> s"${prefix}_bits_dest"  -> port.params.d,
+      "TUSER"    -> s"${prefix}_bits_user"  -> port.params.u
+    ).collect({ case (pair, width) if width > 0 => pair })
+    makePortMaps(signalMap)
   }
 
-  // Assumes you use NastiIO Chisel bundle for AXI4
-  def makeAXI4PortMaps(prefix: String): BusInterfaceType.PortMaps = {
-    makePortMaps(Seq(
-      "ACLK"     -> "clock",
-      "ARESETn"  -> "reset",
-      "ARVALID"  -> s"${prefix}_ar_valid",
-      "ARREADY"  -> s"${prefix}_ar_ready",
-      "ARID"     -> s"${prefix}_ar_bits_id",
-      "ARADDR"   -> s"${prefix}_ar_bits_addr",
-      "ARSIZE"   -> s"${prefix}_ar_bits_size",
-      "ARLEN"    -> s"${prefix}_ar_bits_len",
-      "ARBURST"  -> s"${prefix}_ar_bits_burst",
-      "ARPROT"   -> s"${prefix}_ar_bits_prot",
-      "ARLOCK"   -> s"${prefix}_ar_bits_lock",
-      "ARQOS"    -> s"${prefix}_ar_bits_qos",
-      "ARREGION" -> s"${prefix}_ar_bits_region",
-      "ARCACHE"  -> s"${prefix}_ar_bits_cache",
-      "ARUSER"   -> s"${prefix}_ar_bits_user",
-      "AWVALID"  -> s"${prefix}_aw_valid",
-      "AWREADY"  -> s"${prefix}_aw_ready",
-      "AWID"     -> s"${prefix}_aw_bits_id",
-      "AWADDR"   -> s"${prefix}_aw_bits_addr",
-      "AWSIZE"   -> s"${prefix}_aw_bits_size",
-      "AWLEN"    -> s"${prefix}_aw_bits_len",
-      "AWBURST"  -> s"${prefix}_aw_bits_burst",
-      "AWPROT"   -> s"${prefix}_aw_bits_prot",
-      "AWLOCK"   -> s"${prefix}_aw_bits_lock",
-      "AWQOS"    -> s"${prefix}_aw_bits_qos",
-      "AWREGION" -> s"${prefix}_aw_bits_region",
-      "AWCACHE"  -> s"${prefix}_aw_bits_cache",
-      "AWUSER"   -> s"${prefix}_aw_bits_user",
-      "WVALID"   -> s"${prefix}_w_valid",
-      "WREADY"   -> s"${prefix}_w_ready",
-      "WDATA"    -> s"${prefix}_w_bits_data",
-      "WSTRB"    -> s"${prefix}_w_bits_strb",
-      "WLAST"    -> s"${prefix}_w_bits_last",
-      "WUSER"    -> s"${prefix}_w_bits_user",
-      "RVALID"   -> s"${prefix}_r_valid",
-      "RREADY"   -> s"${prefix}_r_ready",
-      "RID"      -> s"${prefix}_r_bits_id",
-      "RRESP"    -> s"${prefix}_r_bits_resp",
-      "RDATA"    -> s"${prefix}_r_bits_data",
-      "RLAST"    -> s"${prefix}_r_bits_last",
-      "RUSER"    -> s"${prefix}_r_bits_user",
-      "BVALID"   -> s"${prefix}_b_valid",
-      "BREADY"   -> s"${prefix}_b_ready",
-      "BID"      -> s"${prefix}_b_bits_id",
-      "BRESP"    -> s"${prefix}_b_bits_resp",
-      "BUSER"    -> s"${prefix}_b_bits_user"))
+  // Assumes you use Rocket's AXI4 bundle
+  def makeAXI4PortMaps(prefix: String, port: AXI4Bundle): BusInterfaceType.PortMaps = {
+    val p = port.params
+    val signalMap = Seq(
+      "ACLK"     -> "clock"                     -> 1,
+      "ARESETn"  -> "reset"                     -> 1,
+      "ARVALID"  -> s"${prefix}_ar_valid"       -> 1,
+      "ARREADY"  -> s"${prefix}_ar_ready"       -> 1,
+      "ARID"     -> s"${prefix}_ar_bits_id"     -> p.idBits,
+      "ARADDR"   -> s"${prefix}_ar_bits_addr"   -> p.addrBits,
+      "ARSIZE"   -> s"${prefix}_ar_bits_size"   -> p.sizeBits,
+      "ARLEN"    -> s"${prefix}_ar_bits_len"    -> p.lenBits,
+      "ARBURST"  -> s"${prefix}_ar_bits_burst"  -> p.burstBits,
+      "ARPROT"   -> s"${prefix}_ar_bits_prot"   -> p.protBits,
+      "ARLOCK"   -> s"${prefix}_ar_bits_lock"   -> p.lockBits,
+      "ARQOS"    -> s"${prefix}_ar_bits_qos"    -> p.qosBits,
+      // "ARREGION" -> s"${prefix}_ar_bits_region" -> p.???,
+      "ARCACHE"  -> s"${prefix}_ar_bits_cache"  -> p.cacheBits,
+      "ARUSER"   -> s"${prefix}_ar_bits_user"   -> p.userBits,
+      "AWVALID"  -> s"${prefix}_aw_valid"       -> 1,
+      "AWREADY"  -> s"${prefix}_aw_ready"       -> 1,
+      "AWID"     -> s"${prefix}_aw_bits_id"     -> p.idBits,
+      "AWADDR"   -> s"${prefix}_aw_bits_addr"   -> p.addrBits,
+      "AWSIZE"   -> s"${prefix}_aw_bits_size"   -> p.sizeBits,
+      "AWLEN"    -> s"${prefix}_aw_bits_len"    -> p.lenBits,
+      "AWBURST"  -> s"${prefix}_aw_bits_burst"  -> p.burstBits,
+      "AWPROT"   -> s"${prefix}_aw_bits_prot"   -> p.protBits,
+      "AWLOCK"   -> s"${prefix}_aw_bits_lock"   -> p.lockBits,
+      "AWQOS"    -> s"${prefix}_aw_bits_qos"    -> p.qosBits,
+      // "AWREGION" -> s"${prefix}_aw_bits_region" -> p.???,
+      "AWCACHE"  -> s"${prefix}_aw_bits_cache"  -> p.cacheBits,
+      "AWUSER"   -> s"${prefix}_aw_bits_user"   -> p.userBits,
+      "WVALID"   -> s"${prefix}_w_valid"        -> 1,
+      "WREADY"   -> s"${prefix}_w_ready"        -> 1,
+      "WDATA"    -> s"${prefix}_w_bits_data"    -> p.dataBits,
+      "WSTRB"    -> s"${prefix}_w_bits_strb"    -> p.dataBits / 8,
+      "WLAST"    -> s"${prefix}_w_bits_last"    -> 1,
+      "WUSER"    -> s"${prefix}_w_bits_user"    -> p.userBits,
+      "RVALID"   -> s"${prefix}_r_valid"        -> 1,
+      "RREADY"   -> s"${prefix}_r_ready"        -> 1,
+      "RID"      -> s"${prefix}_r_bits_id"      -> p.idBits,
+      "RRESP"    -> s"${prefix}_r_bits_resp"    -> p.respBits,
+      "RDATA"    -> s"${prefix}_r_bits_data"    -> p.dataBits,
+      "RLAST"    -> s"${prefix}_r_bits_last"    -> 1,
+      "RUSER"    -> s"${prefix}_r_bits_user"    -> p.userBits,
+      "BVALID"   -> s"${prefix}_b_valid"        -> 1,
+      "BREADY"   -> s"${prefix}_b_ready"        -> 1,
+      "BID"      -> s"${prefix}_b_bits_id"      -> p.idBits,
+      "BRESP"    -> s"${prefix}_b_bits_resp"    -> p.respBits,
+      "BUSER"    -> s"${prefix}_b_bits_user"    -> p.userBits
+    ).collect({ case (pair, width) if width > 0 => pair })
+    makePortMaps(signalMap)
   }
 
   // prefix is the beginning of the wire, e.g. io_in
   // ifname (interface name) can be whatever you want, e.g. data_in
   // direction is output = true, input = false
-  def makeAXI4StreamInterface(prefix: String, ifname: String, direction: Boolean): BusInterfaceType = {
+  def makeAXI4StreamInterface(prefix: String, port: AXI4StreamBundle, ifname: String, direction: Boolean): BusInterfaceType = {
     val busType = new LibraryRefType
     busType.setVendor("amba.com")
     busType.setLibrary("AMBA4")
@@ -129,7 +138,7 @@ trait HasIPXact {
     abstractionType.setName("AXI4Stream_rtl")
     abstractionType.setVersion("r0p0_1")
 
-    val portMaps = makeAXI4StreamPortMaps(prefix)
+    val portMaps = makeAXI4StreamPortMaps(prefix, port)
 
     val busif = new BusInterfaceType
     busif.setName(ifname)
@@ -152,7 +161,7 @@ trait HasIPXact {
   // ifname (interface name) can be whatever you want, e.g. data_in
   // direction is output = true, input = false
   // noutputs = if this is an input interface, creates an output bridge for this many outputs
-  def makeAXI4Interface(ref: String, prefix: String, ifname: String, direction: Boolean, noutputs: Int = 0, output_prefix: String = ""): BusInterfaceType = {
+  def makeAXI4Interface(ref: String, prefix: String, port: AXI4Bundle, ifname: String, direction: Boolean, noutputs: Int = 0, output_prefix: String = ""): BusInterfaceType = {
     val busType = new LibraryRefType
     busType.setVendor("amba.com")
     busType.setLibrary("AMBA4")
@@ -165,7 +174,7 @@ trait HasIPXact {
     abstractionType.setName("AXI4_rtl")
     abstractionType.setVersion("r0p0_0")
 
-    val portMaps = makeAXI4PortMaps(prefix)
+    val portMaps = makeAXI4PortMaps(prefix, port)
 
     val busif = new BusInterfaceType
     busif.setName(ifname)
@@ -200,7 +209,10 @@ trait HasIPXact {
   // name = name of the address block
   // base address = base address of the address block
   // registers = list of register names, each assumed to each be widthValue wide
-  def makeAddressBlock(name: String, baseAddr: BigInt, registers: mutable.HashMap[String, BigInt], widthValue: Int): AddressBlockType = {
+  def makeAddressBlock(name: String, baseAddr: BigInt, module: AXI4HasCSR): AddressBlockType = { //registers: scala.collection.Map[String, CSR.RegInfo]): AddressBlockType = {
+    val registers = module.csrMap
+    val widthValue: Int = registers.map { case (_, (_, w, _)) => w.get }.max
+    assert(widthValue == 64, "Currently width is required to be 64")
     val addrBlockMap = new AddressBlockType
     addrBlockMap.setName(name)
     val baseAddress = new BaseAddress
@@ -221,7 +233,8 @@ trait HasIPXact {
     if (widthValue == 64) {
       addrBlockMap.setUsage(UsageType.REGISTER)
       val registerBlock = addrBlockMap.getRegister
-      registers.foreach { case(mname: String, addr: BigInt) => 
+      registers.foreach { case(mname: String, _) =>
+        val addr = module.csrs.module.addrmap(mname)
         val register = new RegisterFile.Register
         register.setName(mname)
         val offset = addr-baseAddr
@@ -311,23 +324,47 @@ trait HasIPXact {
     port
   }
 
+  // Taken from iotesters
+  private object getDataNames {
+    def apply(data: Data): Seq[(Element, String)] = data match {
+      case e: Element => Seq( (e, e.name) )
+      case r: Record => r.elements.flatMap {
+        case (name, elem) => elem match {
+          case e: Element => Seq( (e, name) )
+          case _ => getDataNames(elem).map { case (e, n) => (e, name + "_" + n)}
+        }
+      }.toSeq
+    }
+    /*def apply(name: String, data: Data): Seq[(Element, String)] = data match {
+      case e: Element => Seq(e -> name)
+      case b: Record => b.elements.toSeq flatMap {case (n, e) => apply(s"${name}_$n", e)}
+      case v: Vec[_] => v.zipWithIndex flatMap {case (e, i) => apply(s"${name}_$i", e)}
+    }
+    def apply(dut: Module, separator: String = "."): Seq[(Element, String)] =
+      apply(dut.io.pathName replace (".", separator), dut.io)*/
+  }
+
+
+
   // direction: output = true, input = false
-  def makeAXI4StreamPorts(prefix: String, direction: Boolean, bits: Int): Seq[PortType] = {
-    val ports = Seq(
-      ("valid", direction, 1),
-      ("sync", direction, 1),
-      ("bits", direction, bits)
-    )
+  def makeAXI4StreamPorts(prefix: String, bundle: AXI4StreamBundle): Seq[PortType] = {
+    val ports = getDataNames(bundle).map { case(elem, name) =>
+      (name, DataMirror.directionOf(elem) != ActualDirection.Output, elem.getWidth)
+    }.filter { case (name, output, width) => width > 0 }
 
     ports.sorted.map { case (name, portdir, width) =>
       makePort(s"${prefix}_$name", portdir, width)
     }
   }
 
-  def makeAXI4Ports(prefix: String, direction: Boolean, config: Any): Seq[PortType] = {
-    val ports = Seq(
-      ("ar_valid", direction, 1),
-      ("ar_ready", !direction, 1)// ,
+  def makeAXI4Ports(prefix: String, bundle: AXI4Bundle): Seq[PortType] = {
+    val ports = getDataNames(bundle).map { case (elem, name) =>
+      (name, DataMirror.directionOf(elem) != ActualDirection.Output, elem.getWidth)
+    }.filter { case (name, output, width) => width > 0 }
+
+    //val ports = Seq(
+      //("ar_valid", direction, 1),
+      //("ar_ready", !direction, 1)// ,
       // ("ar_bits_id", direction, config.nastiXIdBits),
       // ("ar_bits_addr", direction, config.nastiXAddrBits),
       // ("ar_bits_size", direction, config.nastiXSizeBits),
@@ -370,7 +407,7 @@ trait HasIPXact {
       // ("b_bits_id", !direction, config.nastiXIdBits),
       // ("b_bits_resp", !direction, config.nastiXRespBits),
       // ("b_bits_user", !direction, config.nastiXUserBits)
-    )
+    //)
 
     ports.sorted.map { case (name, portdir, width) =>
       makePort(s"${prefix}_$name", portdir, width)
@@ -442,7 +479,7 @@ trait HasIPXact {
   //////////// Parameters //////////////////////
   //////////////////////////////////////////////
 
-  def makeParameters(parameterMap: mutable.HashMap[String, String]): SpiritParameters = {
+  def makeParameters(parameterMap: scala.collection.Map[String, String]): SpiritParameters = {
     val parameters = new SpiritParameters()
     for ( (name, value) <- parameterMap ) {
       val nameValuePairType = new NameValuePairType

@@ -6,6 +6,7 @@ import chisel3._
 import chisel3.internal.firrtl.Width
 import chisel3.util.{HasBlackBoxResource, log2Ceil}
 import freechips.rocketchip.amba.apb._
+import freechips.rocketchip.amba.ahb._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config._
@@ -72,9 +73,9 @@ trait DspBlock[D, U, EO, EI, B <: Data] extends LazyModule {
 
 case class DspBlockBlindNodes[D, U, EO, EI, B <: Data]
 (
-  val streamIn:  () => AXI4StreamMasterNode,
-  val streamOut: () => AXI4StreamSlaveNode,
-  val mem:       () => MixedNode[D, U, EI, B, D, U, EO, B]
+  streamIn:  () => AXI4StreamMasterNode,
+  streamOut: () => AXI4StreamSlaveNode,
+  mem:       () => MixedNode[D, U, EI, B, D, U, EO, B]
 )
 
 object DspBlockBlindNodes {
@@ -136,19 +137,19 @@ class BlindWrapperModule[D, U, EO, EI, B <: Data, T <: DspBlock[D, U, EO, EI, B]
   val (streamOut, _) = outer.streamOut.in.unzip
   val (memNode, _) = outer.memNode.out.unzip
 
-  val in = streamIn.map { case i =>
+  val in = streamIn.map { i =>
     val in = IO(Flipped(i.chiselCloneType))
     i <> in
     in
   }
 
-  val out = streamOut.map { case o =>
+  val out = streamOut.map { o =>
     val out = IO(o.chiselCloneType)
     out <> o
     out
   }
 
-  val mem = memNode.map { case m =>
+  val mem = memNode.map { m =>
     val mem = IO(Flipped(m.chiselCloneType))
     m <> mem
     mem
@@ -260,6 +261,31 @@ trait TLHasCSR extends HasCSR { this: TLDspBlock =>
   override def getCSRByName(name: String): UInt = csrs.module.io.csrs(name)
 }
 
+trait AHBHasCSR extends HasCSR { this: AHBDspBlock =>
+  val csrBase: Int
+  val csrSize: Int
+  val beatBytes: Int
+
+  protected def getCSRByName(name: String): UInt = {
+    csrs.module.io.csrs(name)
+  }
+
+  lazy val csrs = {
+    val myMapping = csrMap
+    LazyModule(
+      new AHBRegisterRouter(csrBase, size = csrSize, beatBytes = beatBytes)(
+        new AHBRegBundle((), _) with CSRIO { lazy val csrMap = myMapping })(
+        new AHBRegModule((), _, _) with CSRModule { lazy val csrMap = myMapping }))
+  }
+
+  def makeCSRs(dummy: Int = 0) = {
+    require(mem.isDefined, "Need memory interface for CSR")
+
+    csrs.node := mem.get
+    csrs
+  }
+}
+
 trait APBHasCSR extends HasCSR { this: APBDspBlock =>
   val csrBase: Int
   val csrSize: Int
@@ -329,6 +355,59 @@ trait APBDspBlock extends DspBlock[APBMasterPortParameters, APBSlavePortParamete
   val mem = Some(bus.node)
 }
 
+object AXI4DspBlock {
+  type AXI4Node = MixedNode[
+    AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4Bundle,
+    AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4Bundle
+    ]
+}
+
 trait AXI4DspBlock extends DspBlock[AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters, AXI4Bundle] {
   // don't define mem b/c we don't have a bus for axi4 yet
 }
+
+trait AHBDspBlock extends DspBlock[AHBMasterPortParameters, AHBSlavePortParameters, AHBEdgeParameters, AHBEdgeParameters, AHBBundle] {
+  val bus = LazyModule(new AHBFanout)
+  val mem = Some(bus.node)
+}
+
+
+trait HierarchicalDspBlock[ID, D, U, EO, EI, B <: Data] extends DspBlock[D, U, EO, EI, B] {
+  type Block = DspBlock[D, U, EO, EI, B]
+  def blocks: Map[ID, () => Block]
+  def connections: Seq[(Block, Block)]
+  def connect(lhs: Block, rhs: Block): Unit = {
+    lhs.streamNode := rhs.streamNode
+  }
+}
+
+case class PGLAHierarchicalDspBlockParameters[ID, D, U, EO, EI, B <: Data]
+(
+  logicAnalyzerSamples: Int = 128,
+  logicAnalyzerUseCombinationalTrigger: Boolean = true,
+  patternGeneratorSamples: Int = 128,
+  patternGeneratorUseCombinationalTrigger: Boolean = true
+)
+
+abstract class PGLAHierarchicalDspBlock[ID, D, U, EO, EI, B <: Data]()(implicit p: Parameters) extends HierarchicalDspBlock[ID, D, U, EO, EI, B] {
+
+  override def connect(lhs: Block, rhs: Block): Unit = {
+
+  }
+}
+
+
+case class DspChainParameters[D, U, EO, EI, B <: Data]
+(
+  blocks: Seq[() => DspBlock[D, U, EO, EI, B]],
+  //blocks: Seq[(Parameters => DspBlock, String, BlockConnectionParameters, Option[SAMConfig])],
+
+  biggestWidth: Int = 128,
+  writeHeader: Boolean = false
+)
+
+/*
+class DspChain[D, U, EO, EI, B <: Data](val params: DspChainParameters[D, U, EO, EI, B])(implicit p: Parameters) extends HierarchicalDspBlock[Int, D, U, EO, EI, B] {
+  val blocks = params.blocks
+}
+*/

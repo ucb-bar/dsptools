@@ -60,10 +60,10 @@ class NCOTable[T <: Data : Ring : BinaryRepresentation : ConvertableTo](params: 
   val io = IO(new NCOTableIO(params))
 
   // quarter wave
-  val sinTable = (0 until params.tableSize).map { case i =>
-      val sinValue = sin(0.5*Pi*(i.toDouble) / params.tableSize)
-      val asT = ConvertableTo[T].fromDouble(sinValue, params.protoTable)
-      asT.litValue()
+  val sinTable = (0 until params.tableSize).map { i =>
+    val sinValue = sin(0.5 * Pi * (i.toDouble) / params.tableSize)
+    val asT = ConvertableTo[T].fromDouble(sinValue, params.protoTable)
+    asT.litValue()
   }
 
   val table0 = Module(new SyncROM(params.tableName, sinTable))
@@ -161,7 +161,7 @@ class NCOTable[T <: Data : Ring : BinaryRepresentation : ConvertableTo](params: 
 
   def fact(i: Int): Double = {
     if (i <= 0) 1.0
-    else (1 to i).map(BigInt(_)).reduce(_*_).toDouble
+    else (1 to i).map(BigInt(_)).product.toDouble
   }
 
 
@@ -171,15 +171,17 @@ class NCOTable[T <: Data : Ring : BinaryRepresentation : ConvertableTo](params: 
   }
 
   // compute terms of the taylor approximation
-  val (sinTerms, cosTerms) = (Seq((sinOut, cosOut)) ++  (1 to params.nInterpolationTerms).map { case i =>
+  val (sinTerms, cosTerms) = (Seq((sinOut, cosOut)) ++  (1 to params.nInterpolationTerms).map { i =>
 
-    val coeff = ConvertableTo[T].fromDouble(math.pow(2.0 * Pi, i) / fact(i) /* / math.pow(Pi, i) */, params.protoOut)
+    val coeff = ConvertableTo[T].fromDouble(math.pow(2.0 * Pi, i) / fact(i) /* / math.pow(Pi, i) */ , params.protoOut)
     // coeff * x^i
-    val coeff_x_xi = (coeff * TreeReduce(Seq.fill(i){x}, (x:T, y:T) => (x * y).trimBinary(n))).trimBinary(n)
+    val coeff_x_xi = (coeff * TreeReduce(Seq.fill(i) {
+      x
+    }, (x: T, y: T) => (x * y).trimBinary(n))).trimBinary(n)
 
 
-    val sinTerm = (coeff_x_xi * sinDerivs((i-1) % 4)).trimBinary(n)
-    val cosTerm = (coeff_x_xi * cosDerivs((i-1) % 4)).trimBinary(n)
+    val sinTerm = (coeff_x_xi * sinDerivs((i - 1) % 4)).trimBinary(n)
+    val cosTerm = (coeff_x_xi * cosDerivs((i - 1) % 4)).trimBinary(n)
 
     (sinTerm, cosTerm)
   }).unzip

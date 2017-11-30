@@ -50,7 +50,7 @@ extends BlackBox with HasBlackBoxInline {
   override def desiredName: String = blackboxName
 
   def tableEntry2CaseStr(value: BigInt, addr: BigInt): String = {
-    s"${addrWidth}'b${addr.toString(2)}: data <= ${dataWidth}'h${value.toString(16)};"
+    s"$addrWidth'b${addr.toString(2)}: data <= $dataWidth'h${value.toString(16)};"
   }
   val tableStrings = table.zipWithIndex.map { case (t, i) => tableEntry2CaseStr(t, BigInt(i))}
   val tableString  = tableStrings.foldLeft("\n") { case (str, entry) => str + "      " + entry + "\n"}
@@ -63,14 +63,14 @@ extends BlackBox with HasBlackBoxInline {
        |  output reg [${(dataWidth - 1).max(0)}:0] data
        |);
        |  always @(posedge clock) begin
-       |    case (addr)${tableString}
-       |      default: data <= ${dataWidth}'h0;
+       |    case (addr)$tableString
+       |      default: data <= $dataWidth'h0;
        |    endcase
        |  end
        |endmodule
      """.stripMargin
 
-  setInline(s"${name}.v", verilog)
+  setInline(s"$name.v", verilog)
 
   SyncROMBlackBox.interpreterMap.update(name, (table, dataWidth))
 }

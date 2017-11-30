@@ -10,7 +10,8 @@ case class PeakDetectParams[T]
   protoEnergyFF: T,
   protoEnergyMult: T,
   windowSize: Int,
-  protoRaw:  Option[T] = None
+  protoRaw:  Option[T] = None,
+  maxIdlePeriod: Int = 64
 ) {
   val getProtoRaw = protoRaw.getOrElse(protoCorr)
 }
@@ -32,7 +33,9 @@ class PeakDetectIO[T <: Data : Real](p: PeakDetectParams[T]) extends Bundle {
 class PeakDetectConfigIO[T <: Data](p: PeakDetectParams[T]) extends Bundle {
   val energyFF     = Input(p.protoEnergyFF.cloneType)
   val energyMult   = Input(p.protoEnergyMult.cloneType)
+  val accumMult    = Input(p.protoEnergyMult.cloneType)
   val energyOffset = Input(p.protoEnergyMult.cloneType)
+  val idlePeriod   = Input(UInt(log2Ceil(p.maxIdlePeriod+1).W))
 }
 
 class PeakDetect[T <: Data : Real](p: PeakDetectParams[T]) extends Module {
@@ -43,6 +46,7 @@ class PeakDetect[T <: Data : Real](p: PeakDetectParams[T]) extends Module {
   val hasMaxInShr      = RegInit(false.B)
   val currentMax       = RegInit(0.U.asTypeOf(instEnergy.cloneType))
   val consecutiveMaxes = RegInit(0.U(log2Ceil(p.windowSize + 1).W))
+  val idleCounter      = RegInit(0.U(log2Ceil(p.maxIdlePeriod+1).W))
 
   val shr = ShiftRegister(io.in.bits, p.windowSize + 1, 0.U.asTypeOf(io.in.bits.cloneType), io.in.fire())
 
@@ -50,7 +54,7 @@ class PeakDetect[T <: Data : Real](p: PeakDetectParams[T]) extends Module {
   io.out.valid := io.in.fire()
   io.outLast := false.B
 
-  val hasBigEnergy = instEnergy * io.config.energyMult > accumEnergy + io.config.energyOffset
+  val hasBigEnergy = instEnergy * io.config.energyMult > io.config.accumMult * accumEnergy + io.config.energyOffset
   val hasNewMax    = (!hasMaxInShr) || (instEnergy > currentMax)
 
 
@@ -58,13 +62,24 @@ class PeakDetect[T <: Data : Real](p: PeakDetectParams[T]) extends Module {
   when (io.in.fire()) {
     accumEnergy := instEnergy + (accumEnergy * io.config.energyFF)
 
-    when (hasMaxInShr) {
+    when (idleCounter =/= 0.U) {
+      idleCounter := idleCounter + 1.U
+      consecutiveMaxes := 0.U
+      hasMaxInShr := false.B
+    }
+    when (idleCounter === io.config.idlePeriod) {
+      idleCounter := 0.U
+    }
+
+
+    when (idleCounter === 0.U && hasMaxInShr) {
       when (hasNewMax) {
         consecutiveMaxes := 0.U
       }   .otherwise {
         consecutiveMaxes := consecutiveMaxes + 1.U
       }
       when (consecutiveMaxes === p.windowSize.U) {
+        idleCounter := 1.U
         io.outLast := true.B
         hasMaxInShr := false.B
         consecutiveMaxes := 0.U

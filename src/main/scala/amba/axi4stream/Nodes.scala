@@ -31,11 +31,10 @@ case class AXI4StreamAdapterNode(
 object AXI4StreamAdapterNode {
   def widthAdapter(in: AXI4StreamMasterPortParameters, dataWidthConversion: Int => Int): AXI4StreamMasterPortParameters = {
     val masters = in.masters
-    val newMasters = masters.map { case m =>
-        val n = m.n
-        m.copy(n = dataWidthConversion(n))
+    val newMasters = masters.map { m =>
+      val n = m.n
+      m.copy(n = dataWidthConversion(n))
     }
     AXI4StreamMasterPortParameters(newMasters)
   }
 }
-

@@ -136,16 +136,15 @@ object CORDICStageSelConfig {
 
 object CORDICConstantGeneration {
   def arctan(n: Int): Seq[Double] = linear(n).map { atan(_) }
-  def linear(n: Int): Seq[Double] = (0 until n) map { case i =>
-      pow(2.0, -i)
-  }
+  def linear(n: Int): Seq[Double] = (0 until n) map (i =>
+    pow(2.0, -i))
   def arctanh(n: Int): Seq[Double] = linear(n).map { atanh(_) }
   def conv[T <: Data : ConvertableTo](in: Double, proto: T): BigInt = {
     ConvertableTo[T].fromDouble(in, proto).litValue()
   }
   def makeCircularROM[T <: Data : ConvertableTo](n: Int, proto: T): (UInt, CORDICConfigRecord) => T = (addr, config) => {
     val table = arctan(n).map(conv(_, proto)) // map(ConvertableTo[T].fromDouble(_, proto).toBigInt())
-    val rom = Module(new SyncROM(s"circularTable${n}", table))
+    val rom = Module(new SyncROM(s"circularTable$n", table))
     rom.io.addr := addr
     Cat(0.U(1.W), rom.io.data).asTypeOf(proto)
   }
@@ -160,7 +159,7 @@ object CORDICConstantGeneration {
   }
   def makeHyperbolicROM[T <: Data : ConvertableTo](n: Int, proto: T): (UInt, CORDICConfigRecord) => T = (addr, config) => {
     val table = arctanh(n).map(conv(_, proto)) // map(ConvertableTo[T].fromDouble(_, proto).toBigInt())
-    val rom = new SyncROM(s"circularTable${n}", table)
+    val rom = new SyncROM(s"circularTable$n", table)
     rom.io.addr := addr
     rom.io.data.asTypeOf(proto)
   }
@@ -234,9 +233,9 @@ class CORDICStage[T <: Data : Ring : Signed : BinaryRepresentation](params: CORD
 
 case class CORDICParams[T <: Data]
 (
-  val protoX: T,
-  val protoY: T,
-  val protoZ: T,
+  protoX: T,
+  protoY: T,
+  protoZ: T,
   nStages: Int,
   stagesPerCycle: Int,
   stageConfig: CORDICStageSelConfig[T],

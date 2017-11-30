@@ -29,7 +29,7 @@ class FIRSpec extends FlatSpec with Matchers {
       poke(c.io.in.valid, 1)
       for (i <- in) {
         poke(c.io.in.bits, i)
-        if (peek(c.io.out.valid) != BigInt(0)) {
+        if (peek(c.io.out.valid)) {
           out += peek(c.io.out.bits)
         }
         step(1)
@@ -44,7 +44,7 @@ class FIRSpec extends FlatSpec with Matchers {
 
     println(out)
 
-    val xs = (0 to out.length)
+    val xs = 0 to out.length
     val ys = out.map(x => 10*log10(x.abs))
     println(s"Absolute values are $ys")
 

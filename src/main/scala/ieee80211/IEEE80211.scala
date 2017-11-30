@@ -55,7 +55,7 @@ object IEEE80211 {
     val coeff = 2 * math.Pi * cfo / sampleRate
     in.zipWithIndex.map { case (samp, idx) =>
       val rotation = Complex(cos(coeff * idx), sin(coeff * idx))
-        rotation * samp
+      rotation * samp
     }
   }
 

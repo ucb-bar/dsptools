@@ -17,10 +17,10 @@ class AXI4StreamBundlePayload(params: AXI4StreamBundleParameters) extends AXI4St
   val user = Output(UInt(params.u.W))
 }
 
-class AXI4StreamBundle(params: AXI4StreamBundleParameters) extends IrrevocableIO(new AXI4StreamBundlePayload(params)) {
+class AXI4StreamBundle(val params: AXI4StreamBundleParameters) extends IrrevocableIO(new AXI4StreamBundlePayload(params)) {
   override def cloneType= new AXI4StreamBundle(params).asInstanceOf[this.type]
 }
-class AXI4StreamValidBundle(params: AXI4StreamBundleParameters) extends ValidIO(new AXI4StreamBundlePayload(params)) {
+class AXI4StreamValidBundle(val params: AXI4StreamBundleParameters) extends ValidIO(new AXI4StreamBundlePayload(params)) {
   override def cloneType = new AXI4StreamValidBundle(params).asInstanceOf[this.type]
 }
 
