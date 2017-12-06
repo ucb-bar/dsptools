@@ -49,7 +49,6 @@ trait HasIPXact {
       mappings.sorted.map { case (log, phys) => makePortMap(log, phys) }))
     portmaps
   }
-
   // Assumes you use Paul's AXI4-Stream bundle
   def makeAXI4StreamPortMaps(prefix: String, port: AXI4StreamBundle): BusInterfaceType.PortMaps = {
     // TODO add other signals
@@ -57,7 +56,8 @@ trait HasIPXact {
       "ACLK"     -> "clock"                 -> 1,
       "ARESETn"  -> "reset"                 -> 1,
       "TVALID"   -> s"${prefix}_valid"      -> 1,
-      "TLAST"    -> s"${prefix}_sync"       -> 1,
+      "TREADY"   -> s"${prefix}_ready"      -> 1,
+      "TLAST"    -> s"${prefix}_bits_last"  -> 1,
       "TDATA"    -> s"${prefix}_bits_data"  -> (if (port.params.hasData) 8 * port.params.n else 0),
       "TSTRB"    -> s"${prefix}_bits_strb"  -> (if (port.params.hasStrb) port.params.n else 0),
       "TKEEP"    -> s"${prefix}_bits_keep"  -> (if (port.params.hasKeep) port.params.n else 0),

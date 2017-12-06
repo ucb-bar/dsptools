@@ -5,7 +5,7 @@ import java.nio.{ByteBuffer, ByteOrder}
 
 import breeze.math.Complex
 import breeze.numerics.atan2
-import vegas.{Field, Legend, Line, Nominal, Quant, Vegas}
+// import vegas.{Field, Legend, Line, Nominal, Quant, Vegas}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -97,16 +97,16 @@ object ADITraceMain {
 
     val cfoSignalMap = signalToMap(output.take(4096 * 2), "Loopback Cable") ++ signalToMap(input.take(4096*2), "Input")
 
-    Vegas("Sample Multi Series Line Chart", width=1024, height=960)
-      .withData(cfoSignalMap)
-      .mark(Line)
-      .encodeX("time", Quant)
-      .encodeY("signal", Quant)
-      .encodeColor(
-        field="name",
-        dataType=Nominal,
-        legend=Legend(orient="left", title="Signal Name"))
-      .encodeDetailFields(Field(field="name", dataType=Nominal))
-      .show
+    // Vegas("Sample Multi Series Line Chart", width=1024, height=960)
+    //   .withData(cfoSignalMap)
+    //   .mark(Line)
+    //   .encodeX("time", Quant)
+    //   .encodeY("signal", Quant)
+    //   .encodeColor(
+    //     field="name",
+    //     dataType=Nominal,
+    //     legend=Legend(orient="left", title="Signal Name"))
+    //   .encodeDetailFields(Field(field="name", dataType=Nominal))
+    //   .show
   }
 }

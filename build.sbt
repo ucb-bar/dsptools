@@ -38,7 +38,4 @@ val defaultVersions = Map(
   "vegas" -> "0.3.11"
 )
 
-libraryDependencies += "com.gilt" %% "handlebars-scala" % "2.1.1"
-
-// libraryDependencies += "co.theasi" %% "plotly" % "0.2.1-SNAPSHOT" % "test"
-
+libraryDependencies += ("com.gilt" %% "handlebars-scala" % "2.1.1").exclude("org.slf4j", "slf4j-simple")

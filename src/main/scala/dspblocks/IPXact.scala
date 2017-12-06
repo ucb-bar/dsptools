@@ -27,20 +27,14 @@ trait HasDspIPXact extends HasIPXact {
   def makeDspBlockInterfaces(block: AXI4DspBlock): BusInterfaces = {
     val mmref = s"${block.name}_mm"
     def getStreamInPrefix(idx: Int): String = {
-      /*if (block.streamNode.in.length > 1) {
-        s"auto_stream_in${idx}"
-      } else {
-        "auto_stream_in"
-      }*/
-      block.streamNode.in(idx)._1.instanceName
+      //s"in_${idx}"
+      "auto_stream_in"
+      //block.streamNode.in(idx)._1.instanceName
     }
     def getStreamOutPrefix(idx: Int): String = {
-      /*if (block.streamNode.out.length > 1) {
-        s"auto_stream_out${idx}"
-      } else {
-        "auto_stream_out"
-      }*/
-      block.streamNode.out(idx)._1.instanceName
+      //s"out_${idx}"
+      "auto_stream_out"
+      //block.streamNode.out(idx)._1.instanceName
     }
 
     val streamInInterfaces = block.streamNode.in.zipWithIndex.map { case ((bundle , _), idx) =>
@@ -68,12 +62,9 @@ trait HasDspIPXact extends HasIPXact {
 
   def makeMemInputInterfaces(mmref: String, asref: String, mem: AXI4DspBlock.AXI4Node): Seq[BusInterfaceType] = {
     def getMemInPrefix(idx: Int): String = {
-      /*if (mem.in.length > 1) {
-        s"auto_mem_in${idx}"
-      } else {
-        "auto_mem_in"
-      }*/
-      mem.in(idx)._1.instanceName
+      //s"mem_${idx}"
+      "auto_mem_in"
+      // mem.in(idx)._1.instanceName
     }
     mem.in.zipWithIndex.map { case ((bundle, _), idx) =>
       makeAXI4Interface(mmref, getMemInPrefix(idx), bundle, asref, direction = false)
@@ -81,12 +72,9 @@ trait HasDspIPXact extends HasIPXact {
   }
   def makeMemOutputInterfaces(mmref: String, asref: String, mem: AXI4DspBlock.AXI4Node): Seq[BusInterfaceType] = {
     def getMemOutPrefix(idx: Int): String = {
-      /*if (mem.out.length > 1) {
-        s"auto_mem_out${idx}"
-      } else {
-        "auto_mem_out"
-      }*/
-      mem.out(idx)._1.instanceName
+      //s"mem_${idx}"
+      "auto_mem_out"
+      //mem.out(idx)._1.instanceName
     }
 
     mem.out.zipWithIndex.map { case ((bundle, _), idx) =>
@@ -188,13 +176,13 @@ trait HasDspIPXact extends HasIPXact {
   // assumes DSP block, stream in and out and AXI4 control
   def makeDspBlockPorts(module: AXI4DspBlock): ModelType.Ports = {
     val streamInPorts = module.streamNode.in.zipWithIndex.flatMap { case ((in, _), idx) =>
-      makeAXI4StreamPorts(in.instanceName, in)
+      makeAXI4StreamPorts(/*in.instanceName*/ "auto_stream_in", in)
     }
     val streamOutPorts = module.streamNode.out.zipWithIndex.flatMap { case ((out, _), idx) =>
-      makeAXI4StreamPorts(out.instanceName, out)
+      makeAXI4StreamPorts(/*out.instanceName*/ "auto_stream_out", out)
     }
     val axiPorts = module.mem.map( axi => axi.in.zipWithIndex.flatMap { case ((in, _), idx) =>
-        makeAXI4Ports(in.instanceName, in)
+        makeAXI4Ports(/*in.instanceName*/ "auto_mem_in", in)
     }).getOrElse(Seq())
     val globalPorts = makeClockAndResetPorts
 
@@ -243,7 +231,7 @@ trait HasDspIPXact extends HasIPXact {
   //////////////////////////////////////////////
 
   def makeDspBlockComponent(module: AXI4DspBlock)(implicit p: Parameters): ComponentType = {
-    val name = "BlindModule"//module.name
+    val name = module.name
     val mmref = s"${name}_mm"
     // val id = p(DspBlockId)
     /*val gk = try {

@@ -53,7 +53,7 @@ trait IPXactGeneratorApp {
 }
 
 object TestGenerator extends IPXactGeneratorApp with App {
-  override val verilogFilename: String = "Passthrough.v"
+  override val verilogFilename: String = "BlindModule.v"
   override val ipxactDir: String = "./"
 
   implicit val p: Parameters = Parameters.root((new BaseCoreplexConfig).toInstance)
@@ -78,7 +78,6 @@ object TestGenerator extends IPXactGeneratorApp with App {
     IPXactComponents._ipxactComponents += DspIPXact.makeDspBlockComponent(lazyMod.internal)
     m
   }
-
 
   chisel3.Driver.dumpFirrtl(chisel3.Driver.elaborate(dut), None)
   generateIPXact(IPXactComponents.ipxactComponents())
