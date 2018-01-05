@@ -245,7 +245,16 @@ class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]], val dep
       val c21 = m2 context_+ m4
       val c11 = c11a context_+ c11b
       val c22 = c22a context_+ c22b
-      val out = Seq(Seq(c11, c12), Seq(c21, c22))
+    /* 
+      val Seq(c11, c12, c21, c22) = DspContext.withNumMulPipes(1) {
+        val c11 = (a11 context_* b11) context_+ (a12 context_* b21)
+        val c12 = (a11 context_* b12) context_+ (a12 context_* b22)
+        val c21 = (a21 context_* b11) context_+ (a22 context_* b21)
+        val c22 = (a21 context_* b12) context_+ (a22 context_* b22)
+        Seq(c11, c12, c21, c22)
+      }
+    */
+      val out = Seq(Seq(c11, c12), Seq(c21, c22))  
       val result = ShiftRegister(Matrix(out, depth + 1), 1)
       result.suggestName(s"mul_depth${result.depth}")
       result
@@ -305,7 +314,13 @@ class Matrix[T <: Data:RealBits](val elB: CustomBundle[CustomBundle[T]], val dep
       val c21 = m2 + m4
       val c11 = c11a + c11b
       val c22 = c22a + c22b
-      ShiftRegister(putTogether(c11, c12, c21, c22, "mul"), 1)
+    /*
+      val c11 = (a11 * b11) + (a12 * b21)
+      val c12 = (a11 * b12) + (a12 * b22)
+      val c21 = (a21 * b11) + (a22 * b21)
+      val c22 = (a21 * b12) + (a22 * b22)
+    */
+      ShiftRegister(putTogether(c11, c12, c21, c22, "mul"), 1)  
     }
   }
 }
@@ -535,8 +550,8 @@ class MatMulSpec extends FlatSpec with Matchers {
 
 class DCTMatMulSpec extends FlatSpec with Matchers {
 
-  val intBits = 16
-  val correction = 17
+  val intBits = 8
+  val correction = 9
   val n = 8
   val numTests = 500
   val bp = 8
@@ -568,7 +583,7 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
   val filteredRandomTVs = Some(MatMulTests.filter(randomTVs.get, bw = 0.25, maxNotInclusive = maxW))
 
   behavior of "DCT Matrix Multiplication"
-/*
+
   it should "properly multiply - FixedPoint - DCT Lit" in {
     val name = s"DCTF${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
@@ -604,7 +619,7 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
       } should be(true)
     }
   }
-*/
+
   it should "properly multiply - Interval Wide - DCT Lit - RANDOM UNFILTERED" in {
     val name = s"RandomDCTIWide${n}x${n}x${intBits}"
     DspContext.withTrimType(NoTrim) {
@@ -628,3 +643,32 @@ class DCTMatMulSpec extends FlatSpec with Matchers {
   println(s"MinM: $minM MaxM: $maxM")
 
 }
+
+class MatMulRandomSpec extends FlatSpec with Matchers {
+
+  val intBits = 8
+  val n = 8
+  val numTests = 500
+
+  val len = n * n
+  val maxW = (1 << (intBits - 1))
+  val minW = -(1 << (intBits - 1))
+
+  val inIWide = Interval(range"[${minW}, ${maxW}).0")
+  val outI = Interval(range"[?, ?].0")
+
+  val randomTVs = Some(MatMulTests.generateRandomInputs(n, numTests, maxNotInclusive = maxW))
+
+  behavior of "Matrix Multiplication w/ Random Inputs"
+
+  it should "properly multiply - Interval Wide (Random)" in {
+    val name = s"RandomMatMulIWide${n}x${n}x${intBits}"
+    DspContext.withTrimType(NoTrim) {
+      dsptools.Driver.executeWithBitReduction(() => new TestModule(() => new MatrixOp(inIWide, outI, n, "mul"), name = name), IATest.options(name, backend = "firrtl", fixTol = 0)) {
+        c => new MatrixOpTester(c, randomTVs)
+      } should be(true)
+    }
+  }
+}
+        
+     
