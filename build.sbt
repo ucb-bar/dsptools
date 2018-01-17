@@ -12,9 +12,9 @@ organization := "edu.berkeley.cs"
 
 version := "1.1-SNAPSHOT"
 
-scalaVersion := "2.11.11"
+scalaVersion := "2.11.12"
 
-crossScalaVersions := Seq("2.11.11", "2.12.3")
+crossScalaVersions := Seq("2.11.12", "2.12.4")
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 // NOTE: These need to be "published" versions so Travis can find them.
