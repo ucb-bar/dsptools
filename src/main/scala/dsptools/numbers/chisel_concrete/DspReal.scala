@@ -6,7 +6,7 @@ import chisel3._
 import chisel3.util.Mux1H
 
 //scalastyle:off number.of.methods
-class DspReal(lit: Option[BigInt] = None) extends Bundle {
+class DspReal(val lit: Option[BigInt] = None) extends Bundle {
   
   val node: UInt = lit match {
     case Some(x) => x.U(DspReal.underlyingWidth.W)
