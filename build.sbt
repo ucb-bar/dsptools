@@ -30,7 +30,7 @@ name := "dsptools"
 
 organization := "edu.berkeley.cs"
 
-version := "1.0.1"
+version := "1.0.x"
 
 scalaVersion := "2.11.11"
 
