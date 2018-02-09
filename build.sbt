@@ -6,6 +6,12 @@ ChiselProjectDependenciesPlugin.chiselBuildInfoSettings
 
 ChiselProjectDependenciesPlugin.chiselProjectSettings
 
+enablePlugins(SiteScaladocPlugin)
+
+enablePlugins(GhpagesPlugin)
+
+git.remoteRepo := "git@github.com:ucb-bar/dsptools.git"
+
 name := "dsptools"
 
 organization := "edu.berkeley.cs"
@@ -19,8 +25,8 @@ crossScalaVersions := Seq("2.11.12", "2.12.4")
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 // NOTE: These need to be "published" versions so Travis can find them.
 val defaultVersions = Map(
-  "chisel3" -> "3.0-SNAPSHOT",
-  "chisel-iotesters" -> "1.1-SNAPSHOT"
+  "chisel3" -> "3.1-SNAPSHOT",
+  "chisel-iotesters" -> "1.2-SNAPSHOT"
 )
 
 def chiselVersion(proj: String): String = {
@@ -47,11 +53,8 @@ libraryDependencies ++= Seq(
 lazy val dsptools = (project in file("."))
   .dependsOn(dependentProjects.map(classpathDependency(_)):_*)
 
-pomExtra := pomExtra.value ++ (
-<scm>
-  <url>https://github.com/ucb-bar/dsptools.git</url>
-  <connection>scm:git:github.com/ucb-bar/dsptools.git</connection>
-</scm>
+// Don't add 'scm' elements if we have a git.remoteRepo definition.
+pomExtra := pomExtra.value ++
 <developers>
   <developer>
     <id>grebe</id>
@@ -69,4 +72,3 @@ pomExtra := pomExtra.value ++ (
     <url>https://aspire.eecs.berkeley.edu/author/chick/</url>
   </developer>
  </developers>
-)
