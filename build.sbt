@@ -2,13 +2,13 @@
 
 enablePlugins(BuildInfoPlugin)
 
-ChiselProjectDependenciesPlugin.chiselBuildInfoSettings
-
-ChiselProjectDependenciesPlugin.chiselProjectSettings
-
 enablePlugins(SiteScaladocPlugin)
 
 enablePlugins(GhpagesPlugin)
+
+ChiselProjectDependenciesPlugin.chiselProjectSettings
+
+ChiselProjectDependenciesPlugin.chiselBuildInfoSettings
 
 git.remoteRepo := "git@github.com:ucb-bar/dsptools.git"
 
