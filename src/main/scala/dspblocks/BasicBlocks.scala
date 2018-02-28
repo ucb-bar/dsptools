@@ -46,7 +46,7 @@ class PassthroughModule(val outer: Passthrough[_, _, _, _, _ <: Data]) extends L
 
   val (in, _) = outer.streamNode.in.unzip
   val (out, _) = outer.streamNode.out.unzip
-  val mem = outer.mem.map(_.in.map(_._1))
+  //val mem = outer.mem.map(_.in.map(_._1))
 
   status(PassthroughDepth.name) := outer.params.depth.U
 

@@ -4,7 +4,7 @@ import amba.apb.APBMasterModel
 import amba.axi4.AXI4MasterModel
 import amba.axi4stream.{AXI4StreamModel, AXI4StreamTransaction, AXI4StreamTransactionExpect}
 import chisel3._
-import chisel3.core.BaseModule
+import chisel3.experimental.MultiIOModule
 import chisel3.iotesters.PeekPokeTester
 import dspblocks.BlindWrapperModule._
 import freechips.rocketchip.amba.axi4._
@@ -122,7 +122,7 @@ trait MemTester {
   def writeAddr(addr: Int, value: Int): Unit = writeAddr(BigInt(addr), BigInt(value))
 }
 
-trait TLMemTester[T <: BaseModule] extends TLMasterModel[T] { this: PeekPokeTester[T] =>
+trait TLMemTester[T <: MultiIOModule] extends TLMasterModel[T] { this: PeekPokeTester[T] =>
   def resetMem(): Unit = {
     tlReset()
   }
@@ -136,7 +136,7 @@ trait TLMemTester[T <: BaseModule] extends TLMasterModel[T] { this: PeekPokeTest
   }
 }
 
-trait APBMemTester[T <: BaseModule] extends APBMasterModel[T] { this: PeekPokeTester[T] =>
+trait APBMemTester[T <: MultiIOModule] extends APBMasterModel[T] { this: PeekPokeTester[T] =>
   def resetMem(): Unit = {
     apbReset()
   }
@@ -150,7 +150,7 @@ trait APBMemTester[T <: BaseModule] extends APBMasterModel[T] { this: PeekPokeTe
   }
 }
 
-trait AXI4MemTester[T <: BaseModule] extends AXI4MasterModel[T] { this: PeekPokeTester[T] =>
+trait AXI4MemTester[T <: MultiIOModule] extends AXI4MasterModel[T] { this: PeekPokeTester[T] =>
   def resetMem(): Unit = {
     axiReset()
   }

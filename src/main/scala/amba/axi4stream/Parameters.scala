@@ -1,6 +1,5 @@
 package freechips.rocketchip.amba.axi4stream
 
-import chisel3._
 import chisel3.internal.sourceinfo.SourceInfo
 import chisel3.util.log2Ceil
 import freechips.rocketchip.config.Parameters
@@ -8,6 +7,17 @@ import freechips.rocketchip.diplomacy._
 
 import scala.math.max
 
+/**
+  * Parameters case class for AXI4 Stream bundles (slave side)
+  * @param numEndpoints number of endpoints for the purposes of the dest field
+  * @param hasData bundle includes the data field
+  * @param hasStrb bundle includes the strobe field
+  * @param hasKeep bundle includes the keep field
+  * @param nodePath
+  * @param alwaysReady this interface is always ready when reset is not asserted
+  * @param interleavedIdDest maximum number of transactions with unique
+  *                          id/dest pairs that can be in flight at once
+  */
 case class AXI4StreamSlaveParameters(
   numEndpoints: Int = 1,
   hasData: Boolean = true,
@@ -20,6 +30,12 @@ case class AXI4StreamSlaveParameters(
   require(numEndpoints >= 1)
   interleavedIdDest.foreach { x => require(x >= 0) }
 
+  /**
+    * Combine two parameters objects. If a field is present in either, it is present
+    * in the output. The number of endpoints is the sum. For interleavedIdDest, find the min.
+    * @param in
+    * @return
+    */
   def union(in: AXI4StreamSlaveParameters):AXI4StreamSlaveParameters =
     AXI4StreamSlaveParameters(
       numEndpoints + in.numEndpoints,
@@ -45,6 +61,20 @@ case class AXI4StreamSlavePortParameters(
   val slaveParams: AXI4StreamSlaveParameters = slaves.reduce((x, y) => x.union(y))
 }
 
+object AXI4StreamSlavePortParameters {
+  def apply(p: AXI4StreamSlaveParameters): AXI4StreamSlavePortParameters = {
+    AXI4StreamSlavePortParameters(Seq(p))
+  }
+}
+
+/**
+  * Parameters case class for AXI4 Stream bundles (master side)
+  * @param name
+  * @param n sets width of data, strb, keep, etc.
+  * @param u sets width of user
+  * @param numMasters number of entry points for purposes of id
+  * @param nodePath
+  */
 case class AXI4StreamMasterParameters(
   name: String = "",
   n: Int = 8,
@@ -56,6 +86,11 @@ case class AXI4StreamMasterParameters(
   require(u >= 0)
   require(numMasters >= 1)
 
+  /**
+    * Combine two parameters objects. Choose the max widths and add the number of masters.
+    * @param in
+    * @return
+    */
   def union(in: AXI4StreamMasterParameters): AXI4StreamMasterParameters = {
     AXI4StreamMasterParameters(
       name + "|" + in.name,
@@ -73,6 +108,22 @@ case class AXI4StreamMasterPortParameters(
   val masterParams: AXI4StreamMasterParameters = masters.reduce((x, y) => x.union(y))
 }
 
+object AXI4StreamMasterPortParameters {
+  def apply(p: AXI4StreamMasterParameters): AXI4StreamMasterPortParameters = {
+    AXI4StreamMasterPortParameters(Seq(p))
+  }
+}
+
+/**
+  * Parameters case class for AXI4 Stream bundles
+  * @param n sets width of data, strb, keep, etc.
+  * @param i sets width of id field
+  * @param d sets width of dest field
+  * @param u sets width of user field
+  * @param hasData bundle includes the data field
+  * @param hasStrb bundle includes the strobe field
+  * @param hasKeep bundle includes the keep field
+  */
 case class AXI4StreamBundleParameters(
   n: Int,
   i: Int = 0,
@@ -91,6 +142,12 @@ case class AXI4StreamBundleParameters(
   val strbBits: Int = if (hasStrb) n     else 0
   val keepBits: Int = if (hasKeep) n     else 0
 
+  /**
+    * Combine two parameters objects. Choose max of widths. If a field is present in
+    * either object, include it in the combined object.
+    * @param x
+    * @return
+    */
   def union(x: AXI4StreamBundleParameters) =
     AXI4StreamBundleParameters(
       max(n, x.n),
@@ -102,20 +159,22 @@ case class AXI4StreamBundleParameters(
       hasKeep || x.hasKeep)
 }
 
-//noinspection RedundantDefaultArgument
 object AXI4StreamBundleParameters
 {
-  /*val emptyBundleParameters = AXI4StreamBundleParameters(
-    0,
-    0,
-    0,
-    0,
-    hasData = false,
-    hasStrb = false,
-    hasKeep = false)*/
+  /**
+    * Parameters for bundle with no fields
+    */
+  val emptyBundleParameters = AXI4StreamBundleParameters(
+    n = 0, i = 0, d = 0, u =0,
+    hasData = false, hasStrb = false, hasKeep = false)
 
-  // def union(x: Seq[AXI4StreamBundleParameters]): AXI4StreamBundleParameters = x.foldLeft(emptyBundleParameters)((x, y) => x.union(y))
-
+  /**
+    * Combine master and slave port parameters.
+    * Set id width to number of bits needed for numMasters and dest width to number of bits needed for numEndpoints
+    * @param master
+    * @param slave
+    * @return
+    */
   def joinEdge(master: AXI4StreamMasterPortParameters, slave: AXI4StreamSlavePortParameters): AXI4StreamBundleParameters = {
     val m = master.masterParams
     val s = slave.slaveParams
@@ -129,7 +188,6 @@ object AXI4StreamBundleParameters
       s.hasStrb,
       s.hasKeep)
   }
-
 }
 
 case class AXI4StreamEdgeParameters(

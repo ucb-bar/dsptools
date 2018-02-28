@@ -14,7 +14,6 @@ import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.coreplex.BaseCoreplexConfig
 import freechips.rocketchip.diplomacy.{AddressSet, LazyModule}
 import freechips.rocketchip.util.{GeneratorApp, ParsedInputNames}
-import ofdm.{Autocorr, AutocorrParams}
 
 import scala.collection.Seq
 
@@ -56,7 +55,7 @@ object TestGenerator extends IPXactGeneratorApp with App {
   override val verilogFilename: String = "BlindModule.v"
   override val ipxactDir: String = "./"
 
-  implicit val p: Parameters = Parameters.root((new BaseCoreplexConfig).toInstance)
+  implicit val p: Parameters = (new BaseCoreplexConfig).toInstance
 
   val passthroughparams = PassthroughParams(depth = 5)
   val blindNodes = DspBlockBlindNodes.apply(

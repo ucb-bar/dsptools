@@ -3,6 +3,7 @@
 package craft
 
 import chisel3._
+import chisel3.core.requireIsHardware
 import chisel3.util._
 
 object ShiftRegisterMem {
@@ -10,6 +11,7 @@ object ShiftRegisterMem {
   // use_sp_mem = use single port SRAMs? if false, use dual-port SRAMs
   def apply[T <: Data](in: T, n: Int, en: Bool = true.B, use_sp_mem: Boolean = false, name: String = null): T =
   {
+    requireIsHardware(in)
     //require(n%2 == 0, "Odd ShiftRegsiterMem not supported yet")
 
     if (n == 0) {
@@ -48,13 +50,15 @@ object ShiftRegisterMem {
       if (name != null) {
         mem.suggestName(name)
       }
-      val index_counter = Counter(en, n)._1
-      val raddr = index_counter
+      val raddr = Counter(en, n)._1
+      val out = mem.read(raddr)
+
       val waddr = RegEnable(raddr, (n-1).U, en) //next, init, enable
       when (en) {
         mem.write(waddr, in)
       }
-      mem.read(raddr, en)
+
+      out
     }
   }
 }

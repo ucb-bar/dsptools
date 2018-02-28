@@ -1,10 +1,18 @@
 package amba.axi4stream
 
-import chisel3.experimental.BaseModule
+import chisel3.experimental.MultiIOModule
 import chisel3.iotesters.PeekPokeTester
-import chisel3.util.IrrevocableIO
 import freechips.rocketchip.amba.axi4stream.AXI4StreamBundle
 
+import breeze.stats.distributions._
+
+import scala.language.implicitConversions
+
+object DoubleToBigIntRand {
+  implicit def apply(r: Rand[Double]): Rand[BigInt] = new Rand[BigInt] {
+    def draw(): BigInt = { BigDecimal(r.draw()).toBigInt() }
+  }
+}
 
 case class AXI4StreamTransaction
 (
@@ -15,7 +23,75 @@ case class AXI4StreamTransaction
   user: BigInt = 0,
   id:   BigInt = 0,
   dest: BigInt = 0
-)
+) {
+  def randData(dataDist: Rand[BigInt] = Rand.always(0)): AXI4StreamTransaction = {
+    copy(data = dataDist.draw())
+  }
+  def randLast(lastDist: Rand[Boolean] = Rand.always(false)): AXI4StreamTransaction = {
+    copy(last = lastDist.draw())
+  }
+  def randStrb(strbDist: Rand[BigInt] = Rand.always(-1)): AXI4StreamTransaction = {
+    copy(strb = strbDist.draw())
+  }
+  def randKeep(keepDist: Rand[BigInt] = Rand.always(-1)): AXI4StreamTransaction = {
+    copy(keep = keepDist.draw())
+  }
+  def randUser(userDist: Rand[BigInt] = Rand.always(0)): AXI4StreamTransaction = {
+    copy(user = userDist.draw())
+  }
+  def randId(idDist: Rand[BigInt] = Rand.always(0)): AXI4StreamTransaction = {
+    copy(id = idDist.draw())
+  }
+  def randDest(destDist: Rand[BigInt] = Rand.always(0)): AXI4StreamTransaction = {
+    copy(dest = destDist.draw())
+  }
+
+}
+
+object AXI4StreamTransaction {
+  def rand(
+           dataDist : Rand[BigInt]  = Rand.always(0),
+           lastDist:  Rand[Boolean] = Rand.always(false),
+           strbDist:  Rand[BigInt]  = Rand.always(-1),
+           keepDist:  Rand[BigInt]  = Rand.always(-1),
+           userDist:  Rand[BigInt]  = Rand.always(0),
+           idDist:    Rand[BigInt]  = Rand.always(0),
+           destDist:  Rand[BigInt]  = Rand.always(0)
+           ): AXI4StreamTransaction = {
+    AXI4StreamTransaction(
+      data = dataDist.draw(),
+      last = lastDist.draw(),
+      strb = strbDist.draw(),
+      keep = keepDist.draw(),
+      user = userDist.draw(),
+      id   = idDist.draw(),
+      dest = destDist.draw()
+    )
+  }
+
+  def randSeq(
+             n: Int,
+             dataDist : Rand[BigInt]  = Rand.always(0),
+             lastDist:  Rand[Boolean] = Rand.always(false),
+             strbDist:  Rand[BigInt]  = Rand.always(-1),
+             keepDist:  Rand[BigInt]  = Rand.always(-1),
+             userDist:  Rand[BigInt]  = Rand.always(0),
+             idDist:    Rand[BigInt]  = Rand.always(0),
+             destDist:  Rand[BigInt]  = Rand.always(0)
+             ): Seq[AXI4StreamTransaction] = {
+    Seq.fill(n) { AXI4StreamTransaction.rand(
+      dataDist = dataDist,
+      lastDist = lastDist,
+      strbDist = strbDist,
+      keepDist = keepDist,
+      userDist = userDist,
+      idDist = idDist,
+      destDist = destDist
+    )}
+  }
+
+  def defaultSeq(n: Int): Seq[AXI4StreamTransaction] = Seq.fill(n)(AXI4StreamTransaction())
+}
 
 case class AXI4StreamTransactionExpect
 (
@@ -108,14 +184,46 @@ class AXI4StreamPeekPokeSlave(port: AXI4StreamBundle, tester: PeekPokeTester[_])
         expect(port, expects.head)
         expects = expects.tail
 
+        val data = if (port.params.hasData && port.params.n > 0) {
+          peek(port.bits.data)
+        } else {
+          BigInt(0)
+        }
+        val last = peek(port.bits.last) != BigInt(0)
+        val strb = if (port.params.hasStrb && port.params.n > 0) {
+          peek(port.bits.strb)
+        } else {
+          BigInt(-1)
+        }
+        val keep = if (port.params.hasKeep && port.params.n > 0) {
+          peek(port.bits.keep)
+        } else {
+          BigInt(-1)
+        }
+        val user = if (port.params.u > 0) {
+          peek(port.bits.user)
+        } else {
+          BigInt(0)
+        }
+        val id = if (port.params.i > 0) {
+          peek(port.bits.id)
+        } else {
+          BigInt(0)
+        }
+        val dest = if (port.params.d > 0) {
+          peek(port.bits.dest)
+        } else {
+          BigInt(0)
+        }
+
         output +:= AXI4StreamTransaction(
-          data = peek(port.bits.data),
-          last = peek(port.bits.last) != BigInt(0),
-          strb = peek(port.bits.strb),
-          keep = peek(port.bits.keep),
-          user = peek(port.bits.user),
-          id   = peek(port.bits.id),
-          dest = peek(port.bits.dest)
+          data = data,
+          last = last,
+          strb = strb,
+          keep = keep,
+          user = user,
+          id   = id,
+          dest = dest
         )
       }
     }
@@ -126,7 +234,7 @@ class AXI4StreamPeekPokeSlave(port: AXI4StreamBundle, tester: PeekPokeTester[_])
   }
 }
 
-trait AXI4StreamMasterModel[T <: BaseModule] extends PeekPokeTester[T] {
+trait AXI4StreamMasterModel[T <: MultiIOModule] extends PeekPokeTester[T] {
   protected var masters: Seq[AXI4StreamPeekPokeMaster] = Seq()
 
   def resetMaster(port: AXI4StreamBundle): Unit = {
@@ -167,7 +275,7 @@ trait AXI4StreamMasterModel[T <: BaseModule] extends PeekPokeTester[T] {
   }
 }
 
-trait AXI4StreamSlaveModel[T <: BaseModule] extends PeekPokeTester[T] {
+trait AXI4StreamSlaveModel[T <: MultiIOModule] extends PeekPokeTester[T] {
   protected var slaves: Seq[AXI4StreamPeekPokeSlave] = Seq()
 
   def resetSlave(port: AXI4StreamBundle): Unit = {
@@ -208,7 +316,7 @@ trait AXI4StreamSlaveModel[T <: BaseModule] extends PeekPokeTester[T] {
   }
 }
 
-trait AXI4StreamModel[T <: BaseModule] extends
+trait AXI4StreamModel[T <: MultiIOModule] extends
   AXI4StreamSlaveModel[T] with AXI4StreamMasterModel[T] {
 
   override def step(n: Int): Unit = {

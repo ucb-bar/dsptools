@@ -2,9 +2,9 @@
 
 package freechips.rocketchip.tilelink
 
-import chisel3.experimental.BaseModule
+import chisel3.experimental.MultiIOModule
 
-object TLMasterModle {
+object TLMasterModel {
   case class AChannel(
     opcode:  BigInt = 0, // PutFullData
     param:   BigInt = 0, // toT
@@ -46,8 +46,8 @@ object TLMasterModle {
 }
 
 //noinspection RedundantDefaultArgument
-trait TLMasterModel[T <: BaseModule] { this: chisel3.iotesters.PeekPokeTester[T] =>
-  import TLMasterModle._
+trait TLMasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTester[T] =>
+  import TLMasterModel._
 
   def memTL: TLBundle
 

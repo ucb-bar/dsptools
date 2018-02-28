@@ -13,29 +13,25 @@ resolvers ++= Seq (
   Resolver.sonatypeRepo("releases")
 )
 
-libraryDependencies ++= Seq("chisel3", "chisel-iotesters", "dsptools").map {
-  dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
-}
-
-libraryDependencies ++= Seq("rocketchip").map {
-  dep: String => "berkeley" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
-}
-
-libraryDependencies += "org.vegas-viz" %% "vegas" % sys.props.getOrElse("vegasVersion", defaultVersions("vegas"))
-
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls")
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel3" -> "3.1-SNAPSHOT",
-  "chisel-iotesters" -> "1.2-SNAPSHOT",
-  "dsptools" -> "1.1-SNAPSHOT",
-  "rocketchip" -> "1.2",
-  "builtin-debugger" -> "0",
-  "testchipip" -> "1.0",
-  "tapeout" -> "0.1-SNAPSHOT",
-  "chisel-jtag" -> "0",
-  "vegas" -> "0.3.11"
+  "chisel3" -> "3.0.2",
+  "chisel-iotesters" -> "1.1.3-SNAPSHOT",
+  "dsptools" -> "1.0.3-SNAPSHOT",
+  "rocketchip" -> "1.2-SNAPSHOT",
+  "vegas" -> "0.3.11",
+  "handlebars-scala" -> "2.1.1"
 )
 
-libraryDependencies += ("com.gilt" %% "handlebars-scala" % "2.1.1").exclude("org.slf4j", "slf4j-simple")
+libraryDependencies ++= Seq("rocketchip", "chisel-iotesters", "dsptools", "chisel3").map {
+  dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
+}
+
+libraryDependencies += "org.vegas-viz" %% "vegas" % sys.props.getOrElse("vegasVersion", defaultVersions("vegas"))
+
+libraryDependencies += ("com.gilt" %% "handlebars-scala" %
+  sys.props.getOrElse("handlebarsVersion", defaultVersions("handlebars-scala"))).exclude("org.slf4j", "slf4j-simple")
+
+parallelExecution in Test := false

@@ -2,7 +2,10 @@
 
 package dspblocks
 
+import Chisel.Bool
 import chisel3._
+import chisel3.core.ImplicitModule
+import chisel3.experimental.{RawModule, withClockAndReset}
 import chisel3.internal.firrtl.Width
 import chisel3.util.{HasBlackBoxResource, log2Ceil}
 import freechips.rocketchip.amba.apb._
@@ -138,19 +141,19 @@ class BlindWrapperModule[D, U, EO, EI, B <: Data, T <: DspBlock[D, U, EO, EI, B]
   val (memNode, _) = outer.memNode.out.unzip
 
   val in = streamIn.map { i =>
-    val in = IO(Flipped(i.chiselCloneType))
+    val in = IO(Flipped(chiselTypeOf(i)))
     i <> in
     in
   }
 
   val out = streamOut.map { o =>
-    val out = IO(o.chiselCloneType)
+    val out = IO(chiselTypeOf(o))
     out <> o
     out
   }
 
   val mem = memNode.map { m =>
-    val mem = IO(Flipped(m.chiselCloneType))
+    val mem = IO(Flipped(chiselTypeOf(m)))
     m <> mem
     mem
   }

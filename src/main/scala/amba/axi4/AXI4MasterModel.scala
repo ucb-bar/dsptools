@@ -1,6 +1,7 @@
 package amba.axi4
 
-import chisel3.experimental.BaseModule
+import chisel3.Module
+import chisel3.experimental.MultiIOModule
 import chisel3.util.IrrevocableIO
 import freechips.rocketchip.amba.axi4._
 
@@ -60,7 +61,7 @@ object AXI4MasterModel {
   val RRESP_DECERR = BigInt(3)
 }
 
-trait AXI4MasterModel[T <: BaseModule] { this: chisel3.iotesters.PeekPokeTester[T] =>
+trait AXI4MasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTester[T] =>
   import AXI4MasterModel._
 
   def memAXI: AXI4Bundle
