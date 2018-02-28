@@ -9,9 +9,9 @@ if [ ! -d $TRAVIS_BUILD_DIR/lib ]; then
     mkdir -p $TRAVIS_BUILD_DIR/lib
 fi
 
-orgs=(     grebe                  grebe            )
-repos=(    chisel-testers         rocket-chip      )
-branches=( implicitModuleRefactor packageAsLibrary )
+orgs=(     freechipsproject   freechipsproject freechipsproject grebe                  grebe            )
+repos=(    firrtl-interpreter firrtl           chisel3          chisel-testers         rocket-chip      )
+branches=( master             master           master           implicitModuleRefactor packageAsLibrary )
 
 for idx in "${!repos[@]}"; do
     org=${orgs[$idx]}
