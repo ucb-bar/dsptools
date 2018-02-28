@@ -9,9 +9,9 @@ if [ ! -d $TRAVIS_BUILD_DIR/lib ]; then
     mkdir -p $TRAVIS_BUILD_DIR/lib
 fi
 
-orgs=(     ucb-bar ucb-bar ucb-bar            ucb-bar        ucb-bar    ucb-art     ucb-bar    ucb-art          ucb-bar   ucb-art )
-repos=(    firrtl  chisel3 firrtl-interpreter chisel-testers dsptools   rocket-chip testchipip builtin-debugger barstools chisel-jtag )
-branches=( master  master  master             master         master     master      master     master           master    master )
+orgs=(     grebe                  grebe            )
+repos=(    chisel-testers         rocket-chip      )
+branches=( implicitModuleRefactor packageAsLibrary )
 
 for idx in "${!repos[@]}"; do
     org=${orgs[$idx]}
@@ -34,5 +34,5 @@ for idx in "${!repos[@]}"; do
         sbt pack
         cp target/pack/lib/*.jar $TRAVIS_BUILD_DIR/lib
     fi
-    sbt publish-local
+    sbt publishLocal
 done
