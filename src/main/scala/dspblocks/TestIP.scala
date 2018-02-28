@@ -49,7 +49,7 @@ object PeekPokePackers {
   def pack[T <: Data](value: Complex, gen: DspComplex[T]): BigInt = {
     val real = packDouble(value.real, gen.real)
     val imag = packDouble(value.imag, gen.imag)
-    (real << (gen.imag.getWidth)) | imag
+    (real << gen.imag.getWidth) | imag
   }
 
   def pack[T <: Data](value: Seq[Complex], gen: Seq[DspComplex[T]]): BigInt = {

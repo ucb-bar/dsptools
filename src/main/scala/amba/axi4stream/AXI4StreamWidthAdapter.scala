@@ -21,8 +21,8 @@ class AXI4StreamWidthAdapter
   val node = AXI4StreamAdapterNode(masterFn, slaveFn)
 
   lazy val module = new LazyModuleImp(this) {
-    val (in, inEdge) = node.in(0)
-    val (out, outEdge) = node.out(0)
+    val (in, inEdge) = node.in.head
+    val (out, outEdge) = node.out.head
 
     in.ready := out.ready
     out.valid := in.valid

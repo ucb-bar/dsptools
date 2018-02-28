@@ -44,8 +44,8 @@ class APBInStreamOutFIFO(val csrBase: Int, val memAddress: AddressSet, val beatB
 class APBInStreamOutFIFOModule(outer: APBInStreamOutFIFO) extends LazyRawModuleImp(outer) {
   // val (auto, dangles) = instantiate()
 
-  val (mem, _) = outer.outerAPB.in(0)
-  val (stream, _) = outer.streamNode.out(0)
+  val (mem, _) = outer.outerAPB.in.head
+  val (stream, _) = outer.streamNode.out.head
 
   outer.internal.module.io.csrs := outer.csrs.module.io.csrs
 }
@@ -115,23 +115,23 @@ class APBInStreamOutFIFOInternalModule(outer: APBInStreamOutFIFOInternal) extend
   def bigBits(x: BigInt, tail: List[Boolean] = List.empty[Boolean]): List[Boolean] =
     if (x == 0) tail.reverse else bigBits(x >> 1, ((x & 1) == 1) :: tail)
 
-  val read : Bool = mem(0).psel && !mem(0).penable && !mem(0).pwrite
-  val write: Bool = mem(0).psel && !mem(0).penable && mem(0).pwrite
+  val read : Bool = mem.head.psel && !mem.head.penable && !mem.head.pwrite
+  val write: Bool = mem.head.psel && !mem.head.penable && mem.head.pwrite
   val mask : List[Boolean]      = bigBits(memAddress.mask >> log2Ceil(beatBytes))
-  val inPaddr                         = Cat((mask zip (mem(0).paddr >> log2Ceil(beatBytes)).toBools).filter(_._1).map(_._2).reverse)
+  val inPaddr                         = Cat((mask zip (mem.head.paddr >> log2Ceil(beatBytes)).toBools).filter(_._1).map(_._2).reverse)
 
   val paddr                           = Mux(read || write, inPaddr, count)
-  val legal: Bool = memAddress.contains(mem(0).paddr)
+  val legal: Bool = memAddress.contains(mem.head.paddr)
 
   val sram = SyncReadMem(1 << mask.count(b => b), Vec(beatBytes, Bits(width = 8.W)))
 
   when (write && legal) {
-    sram.write(paddr, Vec.tabulate(beatBytes) { i => mem(0).pwdata(8 * (i + 1) - 1, 8 * i) }, mem(0).pstrb.toBools)
+    sram.write(paddr, VecInit.tabulate(beatBytes) { i => mem.head.pwdata(8 * (i + 1) - 1, 8 * i) }, mem.head.pstrb.toBools)
   }
 
-  mem(0).pready  := true.B
-  mem(0).pslverr := RegNext(!legal)
-  mem(0).prdata  := sram.readAndHold(paddr, read).asUInt
+  mem.head.pready  := true.B
+  mem.head.pslverr := RegNext(!legal)
+  mem.head.prdata  := sram.readAndHold(paddr, read).asUInt
 
   val streamData = Wire(UInt())
   val streamDataReg = Reg(UInt())
@@ -145,25 +145,25 @@ class APBInStreamOutFIFOInternalModule(outer: APBInStreamOutFIFOInternal) extend
     streamDataRegValid := true.B
   }
 
-  stream(0).valid := RegNext(!read && !write)
-  stream(0).bits.data := streamData
+  stream.head.valid := RegNext(!read && !write)
+  stream.head.bits.data := streamData
 
   when (streamDataRegValid) {
-    stream(0).valid := true.B
-    stream(0).bits.data := streamDataReg
+    stream.head.valid := true.B
+    stream.head.bits.data := streamDataReg
   }
 
-  when (stream(0).fire()) {
+  when (stream.head.fire()) {
     streamDataRegValid := false.B
     advanceCount := true.B
   }
 
   // TODO: valid should not go high->low until it sees a ready
   when (!csrEn) {
-    stream(0).valid := false.B
+    stream.head.valid := false.B
   }
 
-  stream(0).bits.last := RegNext(count === csrEnd)
+  stream.head.bits.last := RegNext(count === csrEnd)
 }
 
 /*

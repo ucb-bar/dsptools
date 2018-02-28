@@ -50,7 +50,7 @@ class PassthroughModule(val outer: Passthrough[_, _, _, _, _ <: Data]) extends L
 
   status(PassthroughDepth.name) := outer.params.depth.U
 
-  out(0) <> Queue(in(0), outer.params.depth)
+  out.head <> Queue(in.head, outer.params.depth)
 }
 
 class AXI4Passthrough(params: PassthroughParams)(implicit p: Parameters)
@@ -118,19 +118,19 @@ class ByteRotateModule(val outer: ByteRotate[_, _, _, _, _ <: Data]) extends Laz
 
   val (in, _)  = outer.streamNode.in.unzip
   val (out, _) = outer.streamNode.out.unzip
-  val n = in(0).bits.params.n
+  val n = in.head.bits.params.n
 
   def rotateBytes(u: UInt, n: Int, rot: Int): UInt = {
     Cat(u(8*rot-1, 0), u(8*n-1, 8*rot))
   }
 
-  out(0).valid := in(0).valid
-  in(0).ready  := out(0).ready
-  out(0).bits  := in(0).bits
+  out.head.valid := in.head.valid
+  in.head.ready  := out.head.ready
+  out.head.bits  := in.head.bits
 
   for (i <- 1 until n) {
     when (control(ByteRotateAmount.name) === i.U) {
-      out(0).bits.data := rotateBytes(in(0).bits.data, n, i)
+      out.head.bits.data := rotateBytes(in.head.bits.data, n, i)
     }
   }
 }

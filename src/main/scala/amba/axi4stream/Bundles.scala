@@ -6,13 +6,13 @@ import freechips.rocketchip.util.GenericParameterizedBundle
 
 /**
   * Base class for all AXI4Stream bundles
-  * @param params
+  * @param params Bundle parameters
   */
 abstract class AXI4StreamBundleBase(params: AXI4StreamBundleParameters) extends GenericParameterizedBundle(params)
 
 /**
   * All fields of the AXI4 Stream interface except ready and valid
-  * @param params
+  * @param params Bundle parameters
   */
 class AXI4StreamBundlePayload(params: AXI4StreamBundleParameters) extends AXI4StreamBundleBase(params)
 {
@@ -27,7 +27,7 @@ class AXI4StreamBundlePayload(params: AXI4StreamBundleParameters) extends AXI4St
 
 /**
   * AXI4 Stream bundle with ready and valid
-  * @param params
+  * @param params Bundle parameters
   */
 class AXI4StreamBundle(val params: AXI4StreamBundleParameters) extends IrrevocableIO(new AXI4StreamBundlePayload(params)) {
   override def cloneType= new AXI4StreamBundle(params).asInstanceOf[this.type]
@@ -35,7 +35,7 @@ class AXI4StreamBundle(val params: AXI4StreamBundleParameters) extends Irrevocab
 
 /**
   * AXI4 Stream bundle with valid only (no ready)
-  * @param params
+  * @param params Bundle parameters
   */
 class AXI4StreamValidBundle(val params: AXI4StreamBundleParameters) extends ValidIO(new AXI4StreamBundlePayload(params)) {
   override def cloneType = new AXI4StreamValidBundle(params).asInstanceOf[this.type]
@@ -45,7 +45,7 @@ object AXI4StreamBundle
 {
   /**
     * Factory for making AXI4StreamBundle
-    * @param params
+    * @param params Bundle parameters
     * @return
     */
   def apply(params: AXI4StreamBundleParameters) = new AXI4StreamBundle(params)
@@ -55,7 +55,7 @@ object AXI4StreamValidBundle
 {
   /**
     * Factory for Making AXI4StreamValidBundle
-    * @param params
+    * @param params Bundle parameters
     * @return
     */
   def apply(params: AXI4StreamBundleParameters) = new AXI4StreamValidBundle(params)

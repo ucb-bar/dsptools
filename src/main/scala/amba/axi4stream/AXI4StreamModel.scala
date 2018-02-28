@@ -165,13 +165,13 @@ class AXI4StreamPeekPokeSlave(port: AXI4StreamBundle, tester: PeekPokeTester[_])
 
   def expect(port: AXI4StreamBundle, value: AXI4StreamTransactionExpect): Boolean = {
     import tester.{expect => texpect}
-    value.data.map   { texpect(port.bits.data, _) }.getOrElse(true) &&
-      value.last.map { x => texpect(port.bits.last, if (x) 1 else 0) }.getOrElse(true) &&
-      value.strb.map { texpect(port.bits.strb, _) }.getOrElse(true) &&
-      value.keep.map { texpect(port.bits.keep, _) }.getOrElse(true) &&
-      value.user.map { texpect(port.bits.user, _) }.getOrElse(true) &&
-      value.id.map   { texpect(port.bits.id,   _) }.getOrElse(true) &&
-      value.dest.map { texpect(port.bits.dest, _) }.getOrElse(true)
+    value.data.forall(texpect(port.bits.data, _)) &&
+      value.last.forall { x => texpect(port.bits.last, if (x) 1 else 0) } &&
+      value.strb.forall(texpect(port.bits.strb, _)) &&
+      value.keep.forall(texpect(port.bits.keep, _)) &&
+      value.user.forall(texpect(port.bits.user, _)) &&
+      value.id.forall(texpect(port.bits.id, _)) &&
+      value.dest.forall(texpect(port.bits.dest, _))
   }
 
   def step(): Unit = {
@@ -253,7 +253,7 @@ trait AXI4StreamMasterModel[T <: MultiIOModule] extends PeekPokeTester[T] {
   }
 
   override def step(n: Int): Unit = {
-    for (i <- 0 until n) {
+    for (_ <- 0 until n) {
       stepMasters()
       super.step(1)
     }
@@ -264,7 +264,7 @@ trait AXI4StreamMasterModel[T <: MultiIOModule] extends PeekPokeTester[T] {
   }
 
   def stepToCompletion(maxCycles: Int = 1000): Unit = {
-    for (i <- 0 until maxCycles) {
+    for (_ <- 0 until maxCycles) {
       if (masters.isEmpty) {
         step(1)
         return
@@ -294,14 +294,14 @@ trait AXI4StreamSlaveModel[T <: MultiIOModule] extends PeekPokeTester[T] {
   }
 
   override def step(n: Int): Unit = {
-    for (i <- 0 until n) {
+    for (_ <- 0 until n) {
       stepSlaves()
       super.step(1)
     }
   }
 
   def stepToCompletion(maxCycles: Int = 1000): Unit = {
-    for (i <- 0 until maxCycles) {
+    for (_ <- 0 until maxCycles) {
       if (slaves.isEmpty) {
         step(1)
         return
@@ -320,14 +320,14 @@ trait AXI4StreamModel[T <: MultiIOModule] extends
   AXI4StreamSlaveModel[T] with AXI4StreamMasterModel[T] {
 
   override def step(n: Int): Unit = {
-    for (i <- 0 until n) {
+    for (_ <- 0 until n) {
       stepMasters()
       super[AXI4StreamSlaveModel].step(1)
     }
   }
 
   override def stepToCompletion(maxCycles: Int = 1000): Unit = {
-    for (i <- 0 until maxCycles) {
+    for (_ <- 0 until maxCycles) {
       if (slavesComplete() && mastersComplete()) {
         step(1)
         return

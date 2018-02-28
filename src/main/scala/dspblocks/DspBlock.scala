@@ -2,7 +2,6 @@
 
 package dspblocks
 
-import Chisel.Bool
 import chisel3._
 import chisel3.core.ImplicitModule
 import chisel3.experimental.{RawModule, withClockAndReset}

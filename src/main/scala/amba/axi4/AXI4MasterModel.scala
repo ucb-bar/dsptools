@@ -69,7 +69,7 @@ trait AXI4MasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTest
   def maxWait = 500
 
   def fire(io: IrrevocableIO[_]): Boolean = {
-    return (peek(io.valid) != BigInt(0)) && (peek(io.ready) != BigInt(0))
+    (peek(io.valid) != BigInt(0)) && (peek(io.ready) != BigInt(0))
   }
 
   def pokeAW(aw: AXI4BundleAW, value: AWChannel): Unit = {
@@ -122,7 +122,7 @@ trait AXI4MasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTest
       data = peek(r.data),
       resp = peek(r.resp),
       last = peek(r.last),
-      user = r.user.map { peek(_) } getOrElse(0)
+      user = r.user.map { peek(_) } getOrElse 0
     )
   }
 
@@ -130,7 +130,7 @@ trait AXI4MasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTest
     BChannel(
       id = peek(b.id),
       resp = peek(b.resp),
-      user = b.user.map { peek(_) } getOrElse(0)
+      user = b.user.map { peek(_) } getOrElse 0
     )
   }
 

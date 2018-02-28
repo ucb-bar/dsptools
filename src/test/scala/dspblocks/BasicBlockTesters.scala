@@ -13,8 +13,8 @@ import freechips.rocketchip.tilelink.TLMasterModel
 abstract class PassthroughTester[D, U, EO, EI, B <: Data, T <: Passthrough[D, U, EO, EI, B]]
 (c: BlindWrapperModule[D, U, EO, EI, B, T]) extends PeekPokeTester(c) with MemTester
 with AXI4StreamModel[BlindWrapperModule[D, U, EO, EI, B, T]] {
-  val out = c.out(0)
-  val in  = c.in(0)
+  val out = c.out.head
+  val in  = c.in.head
 
   resetMem()
   val master = bindMaster(in)
@@ -47,17 +47,17 @@ with AXI4StreamModel[BlindWrapperModule[D, U, EO, EI, B, T]] {
 
 class AXI4PassthroughTester(c: AXI4BlindWrapperModule[AXI4Passthrough])
   extends PassthroughTester(c) with AXI4MemTester[AXI4BlindWrapperModule[AXI4Passthrough]] {
-  def memAXI = c.mem(0)
+  def memAXI = c.mem.head
 }
 
 class APBPassthroughTester(c: APBBlindWrapperModule[APBPassthrough])
   extends PassthroughTester(c) with APBMemTester[APBBlindWrapperModule[APBPassthrough]] {
-  def memAPB = c.mem(0)
+  def memAPB = c.mem.head
 }
 
 class TLPassthroughTester(c: TLBlindWrapperModule[TLPassthrough])
   extends PassthroughTester(c) with TLMemTester[TLBlindWrapperModule[TLPassthrough]] {
-  def memTL = c.mem(0)
+  def memTL = c.mem.head
 }
 
 abstract class ByteRotateTester[D, U, EO, EI, B <: Data, T <: ByteRotate[D, U, EO, EI, B]]
@@ -68,8 +68,8 @@ with AXI4StreamModel[BlindWrapperModule[D, U, EO, EI, B, T]] {
   def writeAddr(addr: BigInt, value: BigInt): Unit
   def writeAddr(addr: Int, value: Int): Unit = writeAddr(BigInt(addr), BigInt(value))
 
-  val out = c.out(0)
-  val in  = c.in(0)
+  val out = c.out.head
+  val in  = c.in.head
   val n = in.bits.params.n
 
   resetMem()
@@ -102,17 +102,17 @@ with AXI4StreamModel[BlindWrapperModule[D, U, EO, EI, B, T]] {
 
 class AXI4ByteRotateTester(c: AXI4BlindWrapperModule[AXI4ByteRotate])
   extends ByteRotateTester(c) with AXI4MemTester[AXI4BlindWrapperModule[AXI4ByteRotate]] {
-  def memAXI = c.mem(0)
+  def memAXI = c.mem.head
 }
 
 class APBByteRotateTester(c: APBBlindWrapperModule[APBByteRotate])
   extends ByteRotateTester(c) with APBMemTester[APBBlindWrapperModule[APBByteRotate]] {
-  def memAPB = c.mem(0)
+  def memAPB = c.mem.head
 }
 
 class TLByteRotateTester(c: TLBlindWrapperModule[TLByteRotate])
   extends ByteRotateTester(c) with TLMemTester[TLBlindWrapperModule[TLByteRotate]] {
-  def memTL = c.mem(0)
+  def memTL = c.mem.head
 }
 
 trait MemTester {

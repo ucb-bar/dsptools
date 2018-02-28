@@ -21,7 +21,7 @@ class TestModule(val inP: AXI4StreamBundleParameters,
     outNode := func(fuzzer, p)
 
     lazy val module = new LazyModuleImp(this) {
-      val (sinkBundle, edge) = outNode.in(0)
+      val (sinkBundle, edge) = outNode.in.head
 
       val out = IO(AXI4StreamBundle(sinkBundle.params))
 

@@ -38,7 +38,7 @@ class AXI4StreamFuzzer(
       val finished = Output(Bool())
     })
 
-    val (out, edge) = node.out(0)
+    val (out, edge) = node.out.head
 
     val (data, last, user) =
       transactions.map(t => (t.data.U, t.last.B, t.user.U)).unzip3

@@ -13,7 +13,7 @@ import scala.math.max
   * @param hasData bundle includes the data field
   * @param hasStrb bundle includes the strobe field
   * @param hasKeep bundle includes the keep field
-  * @param nodePath
+  * @param nodePath path of nodes that got us here
   * @param alwaysReady this interface is always ready when reset is not asserted
   * @param interleavedIdDest maximum number of transactions with unique
   *                          id/dest pairs that can be in flight at once
@@ -33,7 +33,7 @@ case class AXI4StreamSlaveParameters(
   /**
     * Combine two parameters objects. If a field is present in either, it is present
     * in the output. The number of endpoints is the sum. For interleavedIdDest, find the min.
-    * @param in
+    * @param in parameters for another slave
     * @return
     */
   def union(in: AXI4StreamSlaveParameters):AXI4StreamSlaveParameters =
@@ -42,6 +42,7 @@ case class AXI4StreamSlaveParameters(
       hasData || in.hasData,
       hasStrb || in.hasStrb,
       hasKeep || in.hasKeep,
+      // TODO this is bad
       nodePath ++ in.nodePath,
       alwaysReady && in.alwaysReady,
       (interleavedIdDest, in.interleavedIdDest) match {
@@ -69,11 +70,11 @@ object AXI4StreamSlavePortParameters {
 
 /**
   * Parameters case class for AXI4 Stream bundles (master side)
-  * @param name
+  * @param name Name of master
   * @param n sets width of data, strb, keep, etc.
   * @param u sets width of user
   * @param numMasters number of entry points for purposes of id
-  * @param nodePath
+  * @param nodePath path of nodes that got us here
   */
 case class AXI4StreamMasterParameters(
   name: String = "",
@@ -88,7 +89,7 @@ case class AXI4StreamMasterParameters(
 
   /**
     * Combine two parameters objects. Choose the max widths and add the number of masters.
-    * @param in
+    * @param in parameters to be merged with
     * @return
     */
   def union(in: AXI4StreamMasterParameters): AXI4StreamMasterParameters = {
@@ -97,6 +98,7 @@ case class AXI4StreamMasterParameters(
       n max in.n,
       u max in.u,
       numMasters + in.numMasters,
+      // TODO this is bad
       nodePath ++ in.nodePath
     )
   }
@@ -145,7 +147,7 @@ case class AXI4StreamBundleParameters(
   /**
     * Combine two parameters objects. Choose max of widths. If a field is present in
     * either object, include it in the combined object.
-    * @param x
+    * @param x parameters to be merged with
     * @return
     */
   def union(x: AXI4StreamBundleParameters) =
@@ -171,8 +173,8 @@ object AXI4StreamBundleParameters
   /**
     * Combine master and slave port parameters.
     * Set id width to number of bits needed for numMasters and dest width to number of bits needed for numEndpoints
-    * @param master
-    * @param slave
+    * @param master master port parameters
+    * @param slave slave port parameters
     * @return
     */
   def joinEdge(master: AXI4StreamMasterPortParameters, slave: AXI4StreamSlavePortParameters): AXI4StreamBundleParameters = {

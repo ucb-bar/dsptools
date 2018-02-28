@@ -285,10 +285,10 @@ trait HasIPXact {
   def makeAddressSpace(asref: String, size: BigInt): AddressSpaces.AddressSpace = {
     val addressSpace = new AddressSpaces.AddressSpace
     addressSpace.setName(asref)
-    var range = new BankedBlockType.Range
+    val range = new BankedBlockType.Range
     range.setValue("0x" + size.toString(16))
     addressSpace.setRange(range)
-    var width = new BankedBlockType.Width
+    val width = new BankedBlockType.Width
     width.setValue(BigInteger.valueOf(64))
     addressSpace.setWidth(width)
     addressSpace.setAddressUnitBits(BigInteger.valueOf(8))
@@ -350,7 +350,7 @@ trait HasIPXact {
   def makeAXI4StreamPorts(prefix: String, bundle: AXI4StreamBundle): Seq[PortType] = {
     val ports = getDataNames(bundle).map { case(elem, name) =>
       (name, DataMirror.directionOf(elem) != ActualDirection.Output, elem.getWidth)
-    }.filter { case (name, output, width) => width > 0 }
+    }.filter { case (_, _, width) => width > 0 }
 
     ports.sorted.map { case (name, portdir, width) =>
       makePort(s"${prefix}_$name", portdir, width)
@@ -360,7 +360,7 @@ trait HasIPXact {
   def makeAXI4Ports(prefix: String, bundle: AXI4Bundle): Seq[PortType] = {
     val ports = getDataNames(bundle).map { case (elem, name) =>
       (name, DataMirror.directionOf(elem) != ActualDirection.Output, elem.getWidth)
-    }.filter { case (name, output, width) => width > 0 }
+    }.filter { case (_, _, width) => width > 0 }
 
     //val ports = Seq(
       //("ar_valid", direction, 1),
@@ -428,13 +428,13 @@ trait HasIPXact {
   // TODO: what goes in here?
   def makeViews: ModelType.Views = { 
     val views = new ModelType.Views
-    var view = new ViewType
-    var envIds = view.getEnvIdentifier
+    val view = new ViewType
+    val envIds = view.getEnvIdentifier
     view.setName("RTL")
     envIds.add("::")
-    var verilogSource = new FileSetRef
+    val verilogSource = new FileSetRef
     verilogSource.setLocalName("hdlSource")
-    var fileSetRefs = view.getFileSetRef
+    val fileSetRefs = view.getFileSetRef
     fileSetRefs.add(verilogSource)
     views.getView.add(view)
     views
