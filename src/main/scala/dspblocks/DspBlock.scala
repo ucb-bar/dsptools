@@ -2,6 +2,7 @@
 
 package dspblocks
 
+import amba.axi4stream.AXI4StreamNode
 import chisel3._
 import chisel3.core.ImplicitModule
 import chisel3.experimental.{RawModule, withClockAndReset}
@@ -59,7 +60,9 @@ trait HasCSR {
 }
 
 trait DspBlock[D, U, EO, EI, B <: Data] extends LazyModule {
-  val streamNode: MixedNode[
+  val streamNode: AXI4StreamNode
+
+    /*MixedNode[
     AXI4StreamMasterPortParameters,
     AXI4StreamSlavePortParameters,
     AXI4StreamEdgeParameters,
@@ -67,9 +70,10 @@ trait DspBlock[D, U, EO, EI, B <: Data] extends LazyModule {
     AXI4StreamMasterPortParameters,
     AXI4StreamSlavePortParameters,
     AXI4StreamEdgeParameters,
-    AXI4StreamBundle]
+    AXI4StreamBundle]*/
 
   val mem: Option[MixedNode[D, U, EI, B, D, U, EO, B]]
+  //val mem: Option[NodeHandle[D, U, EI, B, D, U, EO, B]]
 }
 
 
@@ -238,6 +242,8 @@ trait CSRModule extends HasRegMap {
 }
 
 trait TLHasCSR extends HasCSR { this: TLDspBlock =>
+  val mem = Some(TLIdentityNode())
+
   val csrBase: BigInt
   val csrSize: BigInt
   val csrDevname = "tlsram:reg"
@@ -347,8 +353,8 @@ trait AXI4HasCSR extends HasCSR { this: AXI4DspBlock =>
 }
 
 trait TLDspBlock extends DspBlock[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle] {
-  val bus = LazyModule(new TLXbar)
-  val mem = Some(bus.node)
+  // val bus = LazyModule(new TLXbar)
+  //val mem: Option[MixedNode[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLBundle, TLClientPortParameters, TLManagerPortParameters, TLEdgeIn, TLBundle]] = Some(bus.node)
 
 }
 

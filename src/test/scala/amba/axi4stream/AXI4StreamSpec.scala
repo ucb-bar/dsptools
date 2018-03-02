@@ -1,17 +1,17 @@
 package freechips.rocketchip.amba.axi4stream
 
-import amba.axi4stream.{AXI4StreamNode, AXI4StreamSlaveModel, AXI4StreamTransaction, AXI4StreamTransactionExpect}
+import amba.axi4stream._
 import breeze.stats.distributions.Uniform
 import chisel3._
 import freechips.rocketchip.diplomacy._
 import org.scalatest.{FlatSpec, Matchers}
-import amba.axi4stream.DoubleToBigIntRand._
 import chisel3.iotesters.PeekPokeTester
 import freechips.rocketchip.config.Parameters
+import DoubleToBigIntRand._
 
 class TestModule(val inP: AXI4StreamBundleParameters,
                  outP: AXI4StreamSlaveParameters,
-                 func: (AXI4StreamMasterNode, Parameters) => AXI4StreamNode) extends Module {
+                 func: (AXI4StreamMasterNode, Parameters) => AXI4StreamNodeHandle) extends Module {
   implicit val p: Parameters = Parameters.empty
   val transactions = AXI4StreamTransaction.defaultSeq(100).map(_.randData(Uniform(0.0, 65535.0)))
 
@@ -58,6 +58,7 @@ class AXI4StreamSpec extends FlatSpec with Matchers {
       implicit val pp = p
       val identity = AXI4StreamIdentityNode()
       identity := in
+
     }
 
     chisel3.iotesters.Driver.execute(Array("-fiwv"), () => new TestModule(inP, outP, func)) {

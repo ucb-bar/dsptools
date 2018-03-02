@@ -1,7 +1,5 @@
 package freechips.rocketchip.amba.axi4stream
 
-import amba.axi4stream.AXI4StreamTransaction
-import breeze.linalg.max
 import chisel3._
 import chisel3.util.{Counter, log2Ceil}
 import freechips.rocketchip.config.Parameters

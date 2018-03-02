@@ -1,8 +1,7 @@
-package amba.axi4stream
+package freechips.rocketchip.amba.axi4stream
 
 import chisel3.experimental.MultiIOModule
 import chisel3.iotesters.PeekPokeTester
-import freechips.rocketchip.amba.axi4stream.AXI4StreamBundle
 
 import breeze.stats.distributions._
 
@@ -45,7 +44,6 @@ case class AXI4StreamTransaction
   def randDest(destDist: Rand[BigInt] = Rand.always(0)): AXI4StreamTransaction = {
     copy(dest = destDist.draw())
   }
-
 }
 
 object AXI4StreamTransaction {

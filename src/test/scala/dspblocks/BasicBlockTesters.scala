@@ -2,12 +2,11 @@ package dspblocks
 
 import amba.apb.APBMasterModel
 import amba.axi4.AXI4MasterModel
-import amba.axi4stream.{AXI4StreamModel, AXI4StreamTransaction, AXI4StreamTransactionExpect}
 import chisel3._
 import chisel3.experimental.MultiIOModule
 import chisel3.iotesters.PeekPokeTester
 import dspblocks.BlindWrapperModule._
-import freechips.rocketchip.amba.axi4._
+import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.tilelink.TLMasterModel
 
 abstract class PassthroughTester[D, U, EO, EI, B <: Data, T <: Passthrough[D, U, EO, EI, B]]
