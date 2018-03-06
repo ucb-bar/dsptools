@@ -10,7 +10,14 @@ import freechips.rocketchip.regmapper._
 import freechips.rocketchip.tilelink._
 
 trait DspRegister[D, U, EO, EI, B <: Data] extends DspBlock[D, U, EO, EI, B] {
+  /**
+    * Maximum length of the vector register
+    */
   val len: Int
+  /**
+    * Condition to include the contents of the register in the memory map
+    */
+  val mapMem: Boolean
 
   require(len > 0)
 
@@ -20,6 +27,7 @@ trait DspRegister[D, U, EO, EI, B <: Data] extends DspBlock[D, U, EO, EI, B] {
 trait DspRegisterImp[D, U, EO, EI, B <: Data] extends LazyModuleImp with HasRegMap {
   def outer: DspRegister[D, U, EO, EI, B] = wrapper.asInstanceOf[DspRegister[D, U, EO, EI, B]]
   val maxlen     = outer.len
+  val mapMem     = outer.mapMem
   val streamNode = outer.streamNode
 
   val (streamIn, streamEdgeIn)   = streamNode.in.head
@@ -135,12 +143,12 @@ trait DspRegisterImp[D, U, EO, EI, B <: Data] extends LazyModuleImp with HasRegM
     ),
     16 -> Seq(
       RegField(64, user, RegFieldDesc("user", "TUSER"))
-    )) ++ memMap):_*
+    )) ++ (if (mapMem) memMap else Seq())):_*
   )
 
 }
 
-class TLDspRegister(val len: Int, val baseAddr: BigInt = 0, devname: String = "vreg", concurrency: Int = 1)(implicit p: Parameters)
+class TLDspRegister(val len: Int, val mapMem: Boolean = true, val baseAddr: BigInt = 0, devname: String = "vreg", concurrency: Int = 1)(implicit p: Parameters)
   extends TLRegisterRouter(baseAddr, devname, Seq("ucb-bar,vreg"), beatBytes = 8, concurrency = concurrency)(
     new TLRegBundle(len, _))(
     new TLRegModule(len, _, _)
@@ -149,7 +157,7 @@ class TLDspRegister(val len: Int, val baseAddr: BigInt = 0, devname: String = "v
   override val mem = Some(node)
 }
 
-class AXI4DspRegister(val len: Int, val baseAddr: BigInt = 0, concurrency: Int = 4)(implicit p: Parameters)
+class AXI4DspRegister(val len: Int, val mapMem: Boolean = true, val baseAddr: BigInt = 0, concurrency: Int = 4)(implicit p: Parameters)
   extends AXI4RegisterRouter(baseAddr, beatBytes = 8, concurrency = concurrency)(
     new AXI4RegBundle(len, _))(
     new AXI4RegModule(len, _, _)
