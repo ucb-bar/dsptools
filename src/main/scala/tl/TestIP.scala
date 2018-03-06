@@ -8,8 +8,8 @@ object TLMasterModel {
   case class AChannel(
     opcode:  BigInt = 0, // PutFullData
     param:   BigInt = 0, // toT
-    size:    BigInt = 8,
-    source:  BigInt = 0,
+    size:    BigInt = 2,
+    source:  BigInt = 1,
     address: BigInt = 0,
     mask:    BigInt = 0xff,
     data:    BigInt = 0)
@@ -188,8 +188,19 @@ trait TLMasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTester
   }
 
   def tlWriteWord(addr: BigInt, data: BigInt): Unit = {
-    tlWriteA(AChannel(opcode = 0 /* PUT */, address=addr, data=data, mask = BigInt("1"*64, 2)))
+    tlWriteA(AChannel(opcode = 0 /* PUT */, address=addr, data=data, mask = BigInt("1"*8, 2)))
     tlReadD()
+  }
+
+  def tlWriteByte(addr: BigInt, data: Int): Unit = {
+    tlWriteA(AChannel(opcode = 0 /* PUT */, address = addr, data=data, mask = BigInt("1"*8, 2)))
+    tlReadD()
+  }
+
+  def tlWriteBytes(addr: BigInt, data: Seq[Int]): Unit = {
+    data.zipWithIndex.foreach { case (d, i) =>
+      tlWriteByte(addr + i, d)
+    }
   }
 
   def tlReadWord(addr: BigInt): BigInt = {

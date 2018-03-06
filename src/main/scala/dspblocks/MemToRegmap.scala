@@ -1,6 +1,6 @@
 package dspblocks
 
-import chisel3.core.requireIsHardware
+import chisel3.core.requireIsChiselType
 import chisel3.util.log2Ceil
 import chisel3._
 import freechips.rocketchip.regmapper._
@@ -19,18 +19,18 @@ object MemToRegmap {
     * @return
     */
   def apply[T <: Data](proto: T, mem: SyncReadMem[T], memReadReady: Bool = true.B, memWriteReady: Bool = true.B, baseAddress: Int = 0): (Seq[RegField.Map], Bool, Bool) = {
-    requireIsHardware(proto)
+    requireIsChiselType(proto)
     val protoWidth = proto.getWidth
     val memWidth   = nextPowerOfTwo(protoWidth)
-    val bytesPerMemEntry = log2Ceil(memWidth) - 3
+    val bytesPerMemEntry = log2Ceil(memWidth) - 2
 
     val readIdx = WireInit(UInt(), 0.U)
     val readEn  = WireInit(false.B)
-    val readData = mem.read(readIdx, memReadReady)
+    val readData = mem.read(readIdx) //, memReadReady)
 
     val writeIdx = WireInit(UInt(), 0.U)
     val writeEn  = WireInit(false.B)
-    val writeData: T = WireInit(chiselTypeOf(proto), 0.U.asTypeOf(proto))
+    val writeData: T = WireInit(proto, 0.U.asTypeOf(proto))
 
     when (writeEn && memWriteReady) {
       mem.write(writeIdx, writeData)

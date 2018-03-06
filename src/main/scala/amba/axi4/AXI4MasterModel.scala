@@ -1,6 +1,5 @@
 package amba.axi4
 
-import chisel3.Module
 import chisel3.experimental.MultiIOModule
 import chisel3.util.IrrevocableIO
 import freechips.rocketchip.amba.axi4._
@@ -159,7 +158,11 @@ trait AXI4MasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTest
     while (!awFinished || !wFinished) {
       if (!awFinished) { awFinished = fire(memAXI.aw) }
       if (! wFinished) {  wFinished = fire(memAXI.w)  }
-      require(cyclesWaited < maxWait, s"Timeout waiting for AW or W to be ready ($maxWait cycles)")
+      require(cyclesWaited < maxWait || awFinished, s"Timeout waiting for AW to be ready ($maxWait cycles)")
+      require(cyclesWaited < maxWait || wFinished,  s"Timeout waiting for W to be ready ($maxWait cycles)")
+      // if (cyclesWaited >= maxWait) {
+      //   return
+      // }
       cyclesWaited += 1
       step(1)
       if (awFinished) { poke(memAXI.aw.valid, 0) }
@@ -201,10 +204,10 @@ trait AXI4MasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTest
     while (!arFinished) {
       arFinished = peek(memAXI.ar.ready) != BigInt(0)
       require(cyclesWaited < maxWait, s"Timeout waiting for AR to be ready ($maxWait cycles)")
-      /*if (cyclesWaited >= maxWait) {
+      /* if (cyclesWaited >= maxWait) {
         println(s"Timeout waiting for AR to be ready ($maxWait cycles)")
         arFinished = true
-      }*/
+      } */
       step(1)
       cyclesWaited += 1
     }
@@ -218,16 +221,17 @@ trait AXI4MasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTest
     var rChannel = peekR(memAXI.r.bits)
 
     while (!rFinished) {
+      poke(memAXI.ar.valid, 0)
       rFinished = peek(memAXI.r.valid) != BigInt(0)
       if (rFinished) {
         rChannel = peekR(memAXI.r.bits)
       }
       step(1)
       require(cyclesWaited < maxWait, s"Timeout waiting for R to be ready ($maxWait cycles)")
-      /*if (cyclesWaited >= maxWait) {
+      /* if (cyclesWaited >= maxWait) {
         println(s"Timeout waiting for R to be ready ($maxWait cycles)")
         rFinished = true // hack hack hack
-      }*/
+      } */
 
       cyclesWaited += 1
     }

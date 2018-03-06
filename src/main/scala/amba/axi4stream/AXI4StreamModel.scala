@@ -258,18 +258,19 @@ trait AXI4StreamMasterModel[T <: MultiIOModule] extends PeekPokeTester[T] {
   }
 
   def mastersComplete(): Boolean = {
-    masters.map(_.complete()).reduce(_ && _)
+    masters.map(_.complete()).foldLeft(true)(_ && _)
   }
 
   def stepToCompletion(maxCycles: Int = 1000): Unit = {
     for (_ <- 0 until maxCycles) {
-      if (masters.isEmpty) {
+      if (mastersComplete) {
         step(1)
         return
       } else {
         step(1)
       }
     }
+    require(false, s"slavesComplete: ${mastersComplete()}")
   }
 }
 
@@ -300,17 +301,18 @@ trait AXI4StreamSlaveModel[T <: MultiIOModule] extends PeekPokeTester[T] {
 
   def stepToCompletion(maxCycles: Int = 1000): Unit = {
     for (_ <- 0 until maxCycles) {
-      if (slaves.isEmpty) {
+      if (slavesComplete) {
         step(1)
         return
       } else {
         step(1)
       }
     }
+    require(false, s"slavesComplete: ${slavesComplete()}")
   }
 
   def slavesComplete(): Boolean = {
-    slaves.map(_.complete()).reduce(_ && _)
+    slaves.map(_.complete()).foldLeft(true)(_ && _)
   }
 }
 
@@ -333,5 +335,6 @@ trait AXI4StreamModel[T <: MultiIOModule] extends
         step(1)
       }
     }
+    require(false, s"stepToCompletion failed at $maxCycles cycles")
   }
 }
