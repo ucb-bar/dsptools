@@ -50,7 +50,7 @@ trait DspRegisterImp[D, U, EO, EI, B <: Data] extends LazyModuleImp with HasRegM
   when (!loading) { loadIdx  := 0.U }
   when (!storing) { storeIdx := 0.U }
 
-  val (memMap, memReadEn, memWriteEn) = MemToRegmap(streamIn.bits.data.cloneType, mem, true.B, true.B, 24)
+  val (memMap, memReadEn, memWriteEn) = MemToRegmap(streamIn.bits.data.cloneType, mem, true.B, true.B, 24, wordSizeBytes = Some(8))
 
   val loadOK  = (!storing || storeAfterLoad || (loadIdx < storeIdx)) && !memReadEn
   val storeOK = (!loading || loadAfterStore || (storeIdx < loadIdx)) && !memWriteEn
@@ -116,7 +116,7 @@ trait DspRegisterImp[D, U, EO, EI, B <: Data] extends LazyModuleImp with HasRegM
   }
 
   regmap(
-    0 -> Seq(
+    (Seq(0 -> Seq(
       RegField(
         64,
         RegReadFn(veclen),
@@ -135,9 +135,8 @@ trait DspRegisterImp[D, U, EO, EI, B <: Data] extends LazyModuleImp with HasRegM
     ),
     16 -> Seq(
       RegField(64, user, RegFieldDesc("user", "TUSER"))
-    )// , memMap: _*
+    )) ++ memMap):_*
   )
-  // regmap(memMap: _*)
 
 }
 

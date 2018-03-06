@@ -92,7 +92,7 @@ class DspRegisterSpec extends FlatSpec with Matchers {
   behavior of "AXI4DspRegister"
 
   it should "be able to read and write" in {
-    val inP  = AXI4StreamBundleParameters(n = 2)
+    val inP  = AXI4StreamBundleParameters(n = 128)
     val outP = AXI4StreamSlaveParameters()
     val transactions = AXI4StreamTransaction.defaultSeq(64).zipWithIndex.map({case (t, i) => t.copy(data = i) })
 
@@ -104,6 +104,10 @@ class DspRegisterSpec extends FlatSpec with Matchers {
         step(64)
         axiWriteWord(0x8, 0x00FF)
         stepToCompletion()
+
+        for (i <- 0 until 64) {
+          require(axiReadWord(24 + i * 8) == BigInt(i), s"Addr $i is wrong")
+        }
       }
     } should be (true)
   }

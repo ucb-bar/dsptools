@@ -18,11 +18,15 @@ object MemToRegmap {
     * @tparam T
     * @return
     */
-  def apply[T <: Data](proto: T, mem: SyncReadMem[T], memReadReady: Bool = true.B, memWriteReady: Bool = true.B, baseAddress: Int = 0): (Seq[RegField.Map], Bool, Bool) = {
+  def apply[T <: Data](
+                        proto: T, mem: SyncReadMem[T],
+                        memReadReady: Bool = true.B, memWriteReady: Bool = true.B,
+                        baseAddress: Int = 0, wordSizeBytes: Option[Int] = None
+                      ): (Seq[RegField.Map], Bool, Bool) = {
     requireIsChiselType(proto)
     val protoWidth = proto.getWidth
     val memWidth   = nextPowerOfTwo(protoWidth)
-    val bytesPerMemEntry = log2Ceil(memWidth) - 2
+    val bytesPerMemEntry = wordSizeBytes.getOrElse(log2Ceil(memWidth) - 2)
 
     val readIdx = WireInit(UInt(), 0.U)
     val readEn  = WireInit(false.B)
@@ -39,7 +43,7 @@ object MemToRegmap {
     val map: Seq[RegField.Map] = (0 until mem.length).map (i => {
       (baseAddress + bytesPerMemEntry * i) ->
         Seq(RegField(
-          memWidth,
+          /*memWidth*/ bytesPerMemEntry * 8,
           RegReadFn((ivalid, oready) => {
             readEn := ivalid
             when (ivalid) {
