@@ -70,7 +70,7 @@ class AXI4Passthrough(params: PassthroughParams)(implicit p: Parameters)
 
 class APBPassthrough(params: PassthroughParams)(implicit p: Parameters)
   extends Passthrough[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle](params)
-    with APBDspBlock with APBHasCSR {
+    with APBDspBlockWithBus with APBHasCSR {
   override val csrBase   = 0
   override val csrSize   = 32
   override val beatBytes = 8
@@ -137,7 +137,7 @@ class ByteRotateModule(val outer: ByteRotate[_, _, _, _, _ <: Data]) extends Laz
 
 class APBByteRotate()(implicit  p: Parameters) extends
   ByteRotate[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle]()(p)
-  with APBHasCSR with APBDspBlock {
+  with APBHasCSR with APBDspBlockWithBus {
   override val csrBase   = 0
   override val csrSize   = 32
   override val beatBytes = 8
@@ -147,7 +147,7 @@ class APBByteRotate()(implicit  p: Parameters) extends
 
 class AHBByteRotate()(implicit  p: Parameters) extends
   ByteRotate[AHBMasterPortParameters, AHBSlavePortParameters, AHBEdgeParameters, AHBEdgeParameters, AHBBundle]()(p)
-  with AHBHasCSR with AHBDspBlock {
+  with AHBHasCSR with AHBDspBlockWithBus {
   override val csrBase   = 0
   override val csrSize   = 32
   override val beatBytes = 8

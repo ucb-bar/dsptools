@@ -352,13 +352,20 @@ trait AXI4HasCSR extends HasCSR { this: AXI4DspBlock =>
   }
 }
 
-trait TLDspBlock extends DspBlock[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle] {
-  // val bus = LazyModule(new TLXbar)
-  //val mem: Option[MixedNode[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLBundle, TLClientPortParameters, TLManagerPortParameters, TLEdgeIn, TLBundle]] = Some(bus.node)
-
+trait HasBus[T <: LazyModule] {
+  val bus: T
 }
 
-trait APBDspBlock extends DspBlock[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle] {
+trait TLDspBlock extends DspBlock[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle]
+
+trait TLDspBlockWithBus extends TLDspBlock with HasBus[TLXbar] {
+  val bus = LazyModule(new TLXbar)
+  val mem = Some(bus.node)
+}
+
+trait APBDspBlock extends DspBlock[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle]
+
+trait APBDspBlockWithBus extends APBDspBlock with HasBus[APBFanout] {
   val bus = LazyModule(new APBFanout)
   val mem = Some(bus.node)
 }
@@ -370,11 +377,16 @@ object AXI4DspBlock {
     ]
 }
 
-trait AXI4DspBlock extends DspBlock[AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters, AXI4Bundle] {
-  // don't define mem b/c we don't have a bus for axi4 yet
+trait AXI4DspBlock extends DspBlock[AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters, AXI4Bundle]
+
+trait AXI4DspBlockWithBus extends AXI4DspBlock with HasBus[AXI4Xbar] {
+  val bus = LazyModule(new AXI4Xbar)
+  val mem = Some(bus.node)
 }
 
-trait AHBDspBlock extends DspBlock[AHBMasterPortParameters, AHBSlavePortParameters, AHBEdgeParameters, AHBEdgeParameters, AHBBundle] {
+trait AHBDspBlock extends DspBlock[AHBMasterPortParameters, AHBSlavePortParameters, AHBEdgeParameters, AHBEdgeParameters, AHBBundle]
+
+trait AHBDspBlockWithBus extends AHBDspBlock with HasBus[AHBFanout] {
   val bus = LazyModule(new AHBFanout)
   val mem = Some(bus.node)
 }

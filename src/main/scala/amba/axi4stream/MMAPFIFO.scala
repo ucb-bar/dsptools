@@ -14,7 +14,7 @@ import freechips.rocketchip.regmapper._
 import scala.collection.mutable
 
 
-class APBInStreamOutFIFO(val csrBase: Int, val memAddress: AddressSet, val beatBytes: Int = 4)(implicit p: Parameters) extends LazyModule with APBHasCSR with APBDspBlock
+class APBInStreamOutFIFO(val csrBase: Int, val memAddress: AddressSet, val beatBytes: Int = 4)(implicit p: Parameters) extends LazyModule with APBHasCSR with APBDspBlockWithBus
 {
   require(mem.isDefined, "Requires a memory interface")
 

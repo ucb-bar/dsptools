@@ -110,7 +110,7 @@ object AXI4StreamFuzzer {
     n: Int = 8,
     u: Int = 0,
     numMasters: Int = 1,
-    intraPacketGap: Int = 0,
+    intraPacketGap: Int = 1,
     interPacketGap: Int = 5,
     noiseMaker: (Int, Bool) => UInt = {
      (wide: Int, increment: Bool) =>

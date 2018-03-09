@@ -89,6 +89,7 @@ object AXI4StreamTransaction {
   }
 
   def defaultSeq(n: Int): Seq[AXI4StreamTransaction] = Seq.fill(n)(AXI4StreamTransaction())
+  def linearSeq(n: Int): Seq[AXI4StreamTransaction]  = Seq.tabulate(n)(AXI4StreamTransaction(_))
 }
 
 case class AXI4StreamTransactionExpect

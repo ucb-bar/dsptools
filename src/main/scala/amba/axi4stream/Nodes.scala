@@ -40,6 +40,12 @@ object AXI4StreamSlaveNode {
     AXI4StreamSlaveNode(AXI4StreamSlavePortParameters(p))
   }
 }
+
+case class AXI4StreamNexusNode(
+  masterFn: Seq[AXI4StreamMasterPortParameters] => AXI4StreamMasterPortParameters,
+  slaveFn:  Seq[AXI4StreamSlavePortParameters]  => AXI4StreamSlavePortParameters
+)(implicit valName: ValName) extends NexusNode(AXI4StreamImp)(masterFn, slaveFn)
+
 case class AXI4StreamAdapterNode(
   masterFn: AXI4StreamMasterPortParameters => AXI4StreamMasterPortParameters,
   slaveFn:  AXI4StreamSlavePortParameters  => AXI4StreamSlavePortParameters)(implicit valName: ValName)

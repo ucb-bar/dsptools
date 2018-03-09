@@ -4,7 +4,7 @@ name := "rocket-dsp-utils"
 
 organization := "edu.berkeley.cs"
 
-version := "1.0"
+version := "1.0-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 

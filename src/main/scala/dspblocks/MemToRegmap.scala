@@ -1,8 +1,8 @@
 package dspblocks
 
+import chisel3._
 import chisel3.core.requireIsChiselType
 import chisel3.util.log2Ceil
-import chisel3._
 import freechips.rocketchip.regmapper._
 
 object MemToRegmap {
