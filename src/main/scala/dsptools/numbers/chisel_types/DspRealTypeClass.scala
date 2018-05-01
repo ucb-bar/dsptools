@@ -102,7 +102,7 @@ trait BinaryRepresentationDspReal extends BinaryRepresentation[DspReal] with has
   def shl(a: DspReal, n: UInt): DspReal = {
     require(n.widthKnown, "n Width must be known for shl with DspReal")
     val max = (1 << n.getWidth) - 1
-    val lut = Vec((0 to max).map(x => DspReal(math.pow(2, x))))
+    val lut = VecInit((0 to max).map(x => DspReal(math.pow(2, x))))
     a * lut(n)
   }
   // mul2 consistent with shl
