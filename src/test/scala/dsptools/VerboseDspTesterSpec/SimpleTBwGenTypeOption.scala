@@ -338,7 +338,7 @@ object TestSetup {
       dspTesterOptions = DspTesterOptions(
           fixTolLSBs = 1,
           genVerilogTb = false,
-          isVerbose = true)
+          isVerbose = false)
       testerOptions = testerOptionsGlobal
     }
 
