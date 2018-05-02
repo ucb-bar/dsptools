@@ -79,7 +79,7 @@ case class TestParams(
 }
 
 class DataTypeBundle[R <: Data:Real](genType: R, dataWidth: Width, binaryPoint: BinaryPoint) extends Bundle {
-  val gen = chiselTypeOf(genType)
+  val gen = genType.cloneType
   val s = SInt(dataWidth)
   val f = FixedPoint(dataWidth, binaryPoint)
   val u = UInt(dataWidth)
