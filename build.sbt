@@ -67,7 +67,7 @@ libraryDependencies ++= Seq(
 )
 
 javacOptions ++= javacOptionsVersion(scalaVersion.value)
-    
+
 publishMavenStyle := true
 
 publishArtifact in Test := false
