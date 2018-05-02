@@ -23,6 +23,5 @@ install:
   - verilator --version
 
 script:
-  - sbt -Dchisel3Version=$CHISEL3 -Dchisel-iotestersVersion=$CHISEL_TESTERS test
-#| sed '/info/,+1 d'
+  - sbt -Dchisel3Version=$CHISEL3 -Dchisel-iotestersVersion=$CHISEL_TESTERS test | sed '/info/,+1 d'
 
