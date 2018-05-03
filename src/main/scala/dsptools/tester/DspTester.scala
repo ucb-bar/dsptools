@@ -197,7 +197,7 @@ class DspTester[T <: Module](
       }
       // UInt + SInt = Bits
       case _: Bits => (bi.doubleValue, bi)
-      case _ => throw DspException("Peeked node ${getName(node)} has incorrect type ${node.getClass.getName}")
+      case _ => throw DspException(s"Peeked node ${getName(node)} has incorrect type ${node.getClass.getName}")
     }
     if (dispDsp) logger info s"  PEEK ${getName(node)} -> $dblOut, ${bitInfo(node)}"
     (dblOut, bigIntOut)
