@@ -21,7 +21,8 @@ install:
   # Install dependencies
   - bash .install_verilator.sh
   - verilator --version
+  - bash .install_rocketchip.sh
 
 script:
-  - set -o pipefail && sbt -Dchisel3Version=$CHISEL3 -Dchisel-iotestersVersion=$CHISEL_TESTERS test | sed '/info/,+1 d'
+  - make test rocket-test
 
