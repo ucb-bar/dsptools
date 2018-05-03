@@ -3,6 +3,8 @@ import mill._
 import mill.scalalib._
 import mill.scalalib.publish._
 
+import $file.CommonBuild
+
 val defaultVersions = Map(
   "chisel3" -> "3.1.0",
   "chisel-iotesters" -> "1.2.0",
@@ -10,7 +12,7 @@ val defaultVersions = Map(
 )
 
 def getVersion(dep: String, org: String = "edu.berkeley.cs") = {
-  val version = sys.props.getOrElse(dep + "Version", defaultVersions(dep))
+  val version = sys.env.getOrElse(dep + "Version", defaultVersions(dep))
   ivy"$org::$dep:$version"
 }
 
@@ -37,10 +39,10 @@ trait CommonModule extends CrossSbtModule with PublishModule {
     "-unchecked",
     "-Xcheckinit",
     "-Xlint:infer-any",
-    "-Xlint:missing-interpolator"//,
-    //"-Ywarn-unused:imports",
-    //"-Ywarn-unused:locals"
-  )
+    "-Xlint:missing-interpolator"
+  ) ++ CommonBuild.scalacOptionsVersion(crossScalaVersion)
+
+  def javacOptions = CommonBuild.javacOptionsVersion(crossScalaVersion)
 }
 
 val crossVersions = Seq("2.11.12", "2.12.4")
