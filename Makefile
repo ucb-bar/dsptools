@@ -28,3 +28,31 @@ test: test-$(SCALA_VERSION_DEFAULT)
 
 test-all: test-$(SCALA_VERSION_2_11) test-$(SCALA_VERSION_2_12)
 .PHONY: test-all
+
+rocket-compile-%: $(MILL)
+	$(MILL) rocket[$(patsubst rocket-compile-%,%,$@)].compile
+.PHONY: rocket-compile-%
+
+rocket-compile: rocket-compile-$(SCALA_VERSION_DEFAULT)
+.PHONY: rocket-compile
+
+rocket-compile-all: rocket-compile-$(SCALA_VERSION_2_11) rocket-compile-$(SCALA_VERSION_2_12)
+.PHONY: rocket-compile-all
+
+rocket-test-%: $(MILL)
+	$(MILL) rocket[$(patsubst rocket-test-%,%,$@)].test
+.PHONY: rocket-test-%
+
+rocket-test: rocket-test-$(SCALA_VERSION_DEFAULT)
+.PHONY: rocket-test
+
+rocket-test-all: rocket-test-$(SCALA_VERSION_2_11) rocket-test-$(SCALA_VERSION_2_12)
+.PHONY: rocket-test-all
+
+clean:
+	rm -rf ./out/dsptools ./out/rocket ./test_run_dir
+.PHONY: clean
+
+distclean: clean
+	rm -rf ./bin ./out
+.PHONY: disclean

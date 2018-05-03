@@ -86,7 +86,6 @@ class RocketDsptoolsModule(val crossScalaVersion: String) extends CommonModule {
     )
   )
 
-
   object test extends Tests {
     def ivyDeps = Agg(ivy"org.scalatest::scalatest:3.0.5")
     def testFrameworks = Seq("org.scalatest.tools.Framework")
