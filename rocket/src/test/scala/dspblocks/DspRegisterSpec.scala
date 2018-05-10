@@ -22,7 +22,6 @@ class DspRegisterTestModule(
   implicit val p: Parameters = Parameters.empty
 
   val lazyMod = LazyModule(new LazyModule() {
-    override def moduleName: String = "OhHaiMark"
     val fuzzer = AXI4StreamFuzzer.bundleParams(transactions, inP)
     val reg    = LazyModule(new AXI4DspRegister(len))
     val outNode = AXI4StreamSlaveNode(outP)
