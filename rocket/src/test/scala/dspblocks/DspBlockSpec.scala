@@ -9,7 +9,7 @@ import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
-import freechips.rocketchip.coreplex.BaseCoreplexConfig
+import freechips.rocketchip.system.DefaultConfig
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.tilelink._
 import org.scalatest.{FlatSpec, Matchers}
@@ -17,7 +17,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import scala.collection.Seq
 
 class DspBlockSpec extends FlatSpec with Matchers {
-  implicit val p: Parameters = (new BaseCoreplexConfig).toInstance
+  implicit val p: Parameters = (new DefaultConfig).toInstance
 
   behavior of "Passthrough"
 
