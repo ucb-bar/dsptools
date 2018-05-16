@@ -50,13 +50,15 @@ class ParameterizedOpTester[T<:Data:Ring](c: ParameterizedNumberOperation[T]) ex
       case "*" => i * j
       case _ => i + j
     }
-    poke(c.io.a1, i)
-    poke(c.io.a2, j)
-    step(1)
+    updatableDspVerbose.withValue(false) {
+      poke(c.io.a1, i)
+      poke(c.io.a2, j)
+      step(1)
 
-    val result = peek(c.io.c)
+      val result = peek(c.io.c)
 
-    expect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
+      expect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
+    }
   }
 }
 
@@ -110,13 +112,15 @@ class ComplexOpTester[T<:DspComplex[_]](c: ParameterizedNumberOperation[T]) exte
       case "*" => c1 * c2
       case _ => c1 + c2
     }
-    poke(c.io.a1, c1)
-    poke(c.io.a2, c2)
-    step(1)
+    updatableDspVerbose.withValue(false) {
+      poke(c.io.a1, c1)
+      poke(c.io.a2, c2)
+      step(1)
 
-    val result = peek(c.io.c)
+      val result = peek(c.io.c)
 
-    expect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
+      expect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
+    }
   }
 }
 

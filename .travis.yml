@@ -23,5 +23,5 @@ install:
   - verilator --version
 
 script:
-  - set -o pipefail && sbt -Dchisel3Version=$CHISEL3 -Dchisel-iotestersVersion=$CHISEL_TESTERS test | sed '/info/,+1 d'
+  - set -o pipefail && sbt -Dchisel3Version=$CHISEL3 -Dchisel-iotestersVersion=$CHISEL_TESTERS test
 
