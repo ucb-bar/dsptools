@@ -180,6 +180,6 @@ Some useful typeclasses:
 
 ----------
 
-This code is maintained by [Chick](https://github.com/chick) [Angie](https://github.com/shunshou) and [Paul](https://github.com/grebe). Let us know if you have any questions/feedback!
+This code is maintained by [Chick](https://github.com/chick), [Angie](https://github.com/shunshou) and [Paul](https://github.com/grebe). Let us know if you have any questions/feedback!
 
 Copyright (c) 2015 - 2016 The Regents of the University of California. Released under the Modified (3-clause) BSD license.

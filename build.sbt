@@ -36,7 +36,7 @@ name := "dsptools"
 
 organization := "edu.berkeley.cs"
 
-version := "1.1.0"
+version := "1.1.1"
 
 scalaVersion := "2.11.12"
 
@@ -55,8 +55,8 @@ scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:refle
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel3" -> "3.1.0",
-  "chisel-iotesters" -> "1.2.0"
+  "chisel3" -> "3.1.1",
+  "chisel-iotesters" -> "1.2.1"
 )
 
 libraryDependencies ++= Seq(
@@ -67,7 +67,7 @@ libraryDependencies ++= Seq(
 )
 
 javacOptions ++= javacOptionsVersion(scalaVersion.value)
-    
+
 publishMavenStyle := true
 
 publishArtifact in Test := false
