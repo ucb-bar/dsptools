@@ -251,12 +251,7 @@ class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends 
 
 class BlackBoxFloatSpec extends ChiselFlatSpec {
   "A BlackBoxed FP block" should "work" in {
-    assertTesterPasses({ new BlackBoxFloatTester },
-        Seq(
-          "/BBFAdd.v",
-          "/BBFMultiply.v",
-          "/BBFEquals.v"
-          ))
+    assertTesterPasses({ new BlackBoxFloatTester })
   }
 
   "basic addition" should "work with reals through black boxes" in {
