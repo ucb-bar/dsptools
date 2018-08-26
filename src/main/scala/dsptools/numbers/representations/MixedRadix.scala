@@ -50,12 +50,20 @@ object MixedRadix {
     // Should return non-empty list
     if (temp.isEmpty) Seq(0) else temp
   }
+
+  /** Zero pads Seq[Int] base-r_i representation */
+  def toPaddedDigitSeqMSDFirst(n: Int, radicesHighFirst: Seq[Int]): Seq[Int] = {
+    val len = radicesHighFirst.length
+    val digitSeq = toDigitSeqMSDFirst(n, radicesHighFirst)
+    Seq.fill(len - digitSeq.length)(0) ++ digitSeq
+  }
+
   /** Zero pads Seq[Int] base-r_i representation */
   def toDigitSeqMSDFirst(n: Int, radicesHighFirst: Seq[Int], maxn: Int): Seq[Int] = {
     val digitSeq = toDigitSeqMSDFirst(n, radicesHighFirst)
     val maxNumDigits = toDigitSeqMSDFirst(maxn, radicesHighFirst).length
     val fillDigits = maxNumDigits - digitSeq.length
-    val padding = List.fill(fillDigits)(0)
+    val padding = Seq.fill(fillDigits)(0)
     padding ++ digitSeq
   }
 
