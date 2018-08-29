@@ -17,16 +17,16 @@ import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.regmapper._
 import freechips.rocketchip.tilelink._
 
-import scala.collection.Seq
+import scala.collection.immutable
 import scala.language.implicitConversions // for csrField conversion
 
 sealed trait CSRType
 case object CSRControl extends CSRType
 case object CSRStatus extends CSRType
 
+case class RegInfo(tpe: CSRType, width: Width, init: BigInt)
+
 object CSR {
-  //              type     width  init
-  type RegInfo = (CSRType, Width, BigInt)
   type Map     = scala.collection.Map[String, RegInfo]
 }
 
@@ -36,24 +36,24 @@ trait CSRField {
 
 trait HasCSR {
   implicit def csrFieldToString(in: CSRField): String = in.name
-  val csrMap = scala.collection.mutable.Map[String, CSR.RegInfo]()
+  val csrMap = scala.collection.mutable.Map[String, RegInfo]()
 
 
   def addStatus(name: String, init: BigInt = 0, width: Width = 64.W): Unit = {
-    csrMap += (name -> (CSRStatus, width, init))
+    csrMap += (name -> RegInfo(CSRStatus, width, init))
   }
 
   def addControl(name: String, init: BigInt = 0, width: Width = 64.W): Unit = {
-    csrMap += (name -> (CSRControl, width, init))
+    csrMap += (name -> RegInfo(CSRControl, width, init))
   }
 
   def status(name: String): UInt = {
-    require(csrMap(name)._1 == CSRStatus, s"Register $name is not a status")
+    require(csrMap(name).tpe == CSRStatus, s"Register $name is not a status")
     getCSRByName(name)
   }
 
   def control(name: String): UInt = {
-    require(csrMap(name)._1 == CSRControl, s"Register $name is not a status")
+    require(csrMap(name).tpe == CSRControl, s"Register $name is not a status")
     getCSRByName(name)
   }
   protected def getCSRByName(name: String): UInt
@@ -193,16 +193,16 @@ object DspBlock {
 }
 
 class CSRRecord(csrMap: CSR.Map) extends Record {
-  val elements = new scala.collection.immutable.ListMap() ++
-    csrMap map { case (name, (dir, width, _)) =>
-      val gen = dir match {
+  val elements: immutable.ListMap[String, UInt] = immutable.ListMap[String, UInt]() ++
+    csrMap map { case (name, RegInfo(dir, width, _)) =>
+      val gen: UInt = dir match {
         case CSRStatus  => Input(UInt(width))
         case CSRControl => Output(UInt(width))
       }
       name -> gen
     }
-  def apply(field: CSRField) = elements(field.name)
-  def apply(name: String) = elements(name)
+  def apply(field: CSRField): UInt = elements(field.name)
+  def apply(name: String): UInt = elements(name)
   override def cloneType = new CSRRecord(csrMap).asInstanceOf[this.type]
 }
 
@@ -215,7 +215,7 @@ trait CSRModule extends HasRegMap {
   val io: CSRIO
   val csrMap: CSR.Map
 
-  val widthToRegMap = csrMap map { case (name, (dir, width, init)) =>
+  val widthToRegMap = csrMap map { case (name, RegInfo(dir, width, init)) =>
     val reg = RegInit(init.U(width))
     reg.suggestName(name)
     dir match {

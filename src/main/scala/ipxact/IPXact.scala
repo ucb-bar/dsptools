@@ -8,7 +8,7 @@ import java.util
 
 import chisel3.core.{ActualDirection, Aggregate, DataMirror}
 import chisel3.{Data, Element, Module, Record, Vec}
-import dspblocks.{AXI4DspBlock, AXI4HasCSR, CSR, CSRModule}
+import dspblocks._
 import freechips.rocketchip.amba.axi4.AXI4Bundle
 import freechips.rocketchip.amba.axi4stream.AXI4StreamBundle
 
@@ -211,7 +211,7 @@ trait HasIPXact {
   // registers = list of register names, each assumed to each be widthValue wide
   def makeAddressBlock(name: String, baseAddr: BigInt, module: AXI4HasCSR): AddressBlockType = { //registers: scala.collection.Map[String, CSR.RegInfo]): AddressBlockType = {
     val registers = module.csrMap
-    val widthValue: Int = registers.map { case (_, (_, w, _)) => w.get }.max
+    val widthValue: Int = registers.map { case (_, RegInfo(_, w, _)) => w.get }.max
     assert(widthValue == 64, "Currently width is required to be 64")
     val addrBlockMap = new AddressBlockType
     addrBlockMap.setName(name)

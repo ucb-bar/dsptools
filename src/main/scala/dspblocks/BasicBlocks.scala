@@ -86,18 +86,6 @@ class TLPassthrough(params: PassthroughParams)(implicit p: Parameters)
   override val beatBytes = 8
 
   makeCSRs()
-  class PlusargReaderHack extends BlackBox with HasBlackBoxResource {
-    override def desiredName: String = "plusarg_reader"
-    val io = IO(new Bundle {
-      val out = Output(UInt(32.W))
-    })
-
-    setResource("/plusarg_reader.v")
-  }
-  override lazy val module = new PassthroughModule(this) {
-    val hack = Module(new PlusargReaderHack)
-    dontTouch(hack.io.out)
-  }
 }
 
 case object ByteRotateAmount extends CSRField {

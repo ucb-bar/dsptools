@@ -30,7 +30,7 @@ object TLMasterModel {
     source:  BigInt = 0,
     address: BigInt = 0,
     data:    BigInt = 0,
-    error:   Boolean = false)
+    corrupt:   Boolean = false)
 
   case class DChannel(
     opcode:  BigInt = 0,
@@ -39,7 +39,7 @@ object TLMasterModel {
     source:  BigInt = 0,
     sink:    BigInt = 0,
     data:    BigInt = 0,
-    error:   Boolean = false)
+    corrupt:   Boolean = false)
 
   case class EChannel(
     sink: BigInt = 0)
@@ -124,7 +124,7 @@ trait TLMasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTester
     poke(memTL.c.bits.source,  c.source)
     poke(memTL.c.bits.address, c.address)
     poke(memTL.c.bits.data,    c.data)
-    poke(memTL.c.bits.error,   c.error)
+    poke(memTL.c.bits.corrupt, c.corrupt)
 
   }
 
@@ -146,7 +146,7 @@ trait TLMasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTester
     val source  = peek(memTL.d.bits.source)
     val sink    = peek(memTL.d.bits.sink)
     val data    = peek(memTL.d.bits.data)
-    val error   = peek(memTL.d.bits.error)
+    val corrupt   = peek(memTL.d.bits.corrupt)
 
     DChannel(
       opcode=opcode,
@@ -155,7 +155,7 @@ trait TLMasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTester
       source=source,
       sink=sink,
       data=data,
-      error=error != BigInt(0))
+      corrupt = corrupt != BigInt(0))
   }
 
   def tlReadD(): DChannel = {

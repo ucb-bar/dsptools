@@ -11,7 +11,7 @@ import dsptools.numbers.DspComplex
 import freechips.rocketchip.amba.axi4.{AXI4MasterNode, AXI4MasterParameters, AXI4MasterPortParameters}
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
-import freechips.rocketchip.coreplex.BaseCoreplexConfig
+import freechips.rocketchip.system.BaseConfig
 import freechips.rocketchip.diplomacy.{AddressSet, LazyModule}
 import freechips.rocketchip.util.{GeneratorApp, ParsedInputNames}
 
@@ -55,7 +55,7 @@ object TestGenerator extends IPXactGeneratorApp with App {
   override val verilogFilename: String = "BlindModule.v"
   override val ipxactDir: String = "./"
 
-  implicit val p: Parameters = (new BaseCoreplexConfig).toInstance
+  implicit val p: Parameters = (new BaseConfig).toInstance
 
   val passthroughparams = PassthroughParams(depth = 5)
   val blindNodes = DspBlockBlindNodes.apply(
