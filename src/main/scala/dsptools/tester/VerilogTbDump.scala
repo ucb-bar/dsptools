@@ -1,3 +1,5 @@
+// See LICENSE for license details.
+
 package dsptools
 
 import chisel3._
@@ -25,8 +27,7 @@ trait VerilogTbDump {
 
   val (inputs, outputs) = TestersCompatibility.getDataNames("io", dut.io) partition {
     case (dat, name) =>
-      dat.dir == core.Direction.Input
-      //DataMirror.directionOf(dat) == chisel3.core.ActualDirection.Input
+      DataMirror.directionOf(dat) == chisel3.core.ActualDirection.Input
   }
 
   if (verilogTb) initVerilogTbFile()

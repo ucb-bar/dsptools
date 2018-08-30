@@ -30,13 +30,17 @@ class FixedRing1(val width: Int, val binaryPoint: Int) extends Module {
 class FixedRing1Tester(c: FixedRing1) extends DspTester(c) {
   val increment: Double = if(c.binaryPoint == 0) 1.0 else 1.0 / (1 << c.binaryPoint)
   updatableDspVerbose.withValue(false) {
-    for(i <- -2.0 to 3.0 by increment) {
-      poke(c.io.in, i)
+    for(i <- BigDecimal(-2.0) to 3.0 by increment) {
+      poke(c.io.in, i.toDouble)
 
-      expect(c.io.floor, breeze.numerics.floor(i), s"floor of $i should be ${breeze.numerics.floor(i)}")
-      expect(c.io.ceil, breeze.numerics.ceil(i), s"ceil of $i should be ${breeze.numerics.ceil(i)}")
-      expect(c.io.isWhole, breeze.numerics.floor(i) == i , s"isWhole of $i should be ${breeze.numerics.floor(i) == i}")
-      expect(c.io.round, breeze.numerics.round(i), s"round of $i should be ${breeze.numerics.round(i)}")
+      expect(c.io.floor, breeze.numerics.floor(i.toDouble),
+        s"floor of $i should be ${breeze.numerics.floor(i.toDouble)}")
+      expect(c.io.ceil, breeze.numerics.ceil(i.toDouble),
+        s"ceil of $i should be ${breeze.numerics.ceil(i.toDouble)}")
+      expect(c.io.isWhole, breeze.numerics.floor(i.toDouble) == i ,
+        s"isWhole of $i should be ${breeze.numerics.floor(i.toDouble) == i}")
+      expect(c.io.round, breeze.numerics.round(i.toDouble),
+        s"round of $i should be ${breeze.numerics.round(i.toDouble)}")
       step(1)
     }
   }
@@ -106,13 +110,15 @@ class FixedPointShiftTester(c: FixedPointShifter) extends DspTester(c) {
     val minValue = minSIntValue.toDouble * increment
     val maxValue = maxSIntValue.toDouble * increment
 
-    for(value <- minValue to maxValue by increment) {
-      poke(c.io.inValue, value)
-      expect(c.io.shiftLeftResult, expectedValue(value, left = true, c.fixedShiftSize),
-        s"shift left ${c.fixedShiftSize} of $value should be ${expectedValue(value, left = true, c.fixedShiftSize)}")
+    for(value <- BigDecimal(minValue) to maxValue by increment) {
+      poke(c.io.inValue, value.toDouble)
+      expect(c.io.shiftLeftResult, expectedValue(value.toDouble, left = true, c.fixedShiftSize),
+        s"shift left ${c.fixedShiftSize} of ${value.toDouble}" +
+          s" should be ${expectedValue(value.toDouble, left = true, c.fixedShiftSize)}")
       c.io.shiftRightResult.foreach { sro =>
-        expect(sro, expectedValue(value, left = false, c.fixedShiftSize),
-          s"shift right ${c.fixedShiftSize} of $value should be ${expectedValue(value, left = false, c.fixedShiftSize)}")
+        expect(sro, expectedValue(value.toDouble, left = false, c.fixedShiftSize),
+          s"shift right ${c.fixedShiftSize} of ${value.toDouble}" +
+            s" should be ${expectedValue(value.toDouble, left = false, c.fixedShiftSize)}")
       }
 
       step(1)
@@ -120,12 +126,12 @@ class FixedPointShiftTester(c: FixedPointShifter) extends DspTester(c) {
       for(dynamicShiftValue <- 0 until c.width) {
         poke(c.io.dynamicShiftValue, dynamicShiftValue)
         step(1)
-        expect(c.io.dynamicShiftLeftResult, expectedValue(value, left = true, dynamicShiftValue),
-          s"dynamic shift left $dynamicShiftValue of $value should " +
-            s"be ${expectedValue(value, left = true, dynamicShiftValue)}")
-        expect(c.io.dynamicShiftRightResult, expectedValue(value, left = false, dynamicShiftValue),
-          s"dynamic shift right $dynamicShiftValue of $value should" +
-            s"be ${expectedValue(value, left = false, dynamicShiftValue)}")
+        expect(c.io.dynamicShiftLeftResult, expectedValue(value.toDouble, left = true, dynamicShiftValue),
+          s"dynamic shift left $dynamicShiftValue of ${value.toDouble} should " +
+            s"be ${expectedValue(value.toDouble, left = true, dynamicShiftValue)}")
+        expect(c.io.dynamicShiftRightResult, expectedValue(value.toDouble, left = false, dynamicShiftValue),
+          s"dynamic shift right $dynamicShiftValue of ${value.toDouble} should" +
+            s"be ${expectedValue(value.toDouble, left = false, dynamicShiftValue)}")
       }
     }
 

@@ -4,7 +4,9 @@ package dsptools
 
 import DspTesterUtilities._
 import org.scalatest.{FlatSpec, Matchers}
-import scala.math.{pow, abs}
+
+import scala.collection.immutable.Range
+import scala.math.{abs, pow}
 
 class DspTesterSpec {
 
@@ -48,15 +50,15 @@ class DspTesterUtilitiesSpec extends FlatSpec with Matchers {
     // total > fractional
     width = 19
     var fract = 8
-    for (i <- -pow(2,width-fract-1) to pow(2,width-fract-1)-1 by 1.0/fract*0.9) {
-      check_conversion(i, width, fract)
+    for (i <- BigDecimal(-pow(2,width-fract-1)) to pow(2,width-fract-1)-1 by 1.0/fract*0.9) {
+      check_conversion(i.toDouble, width, fract)
     }
 
     // total < fractional
     width = 11
     fract = 17
-    for (i <- -pow(2,width-fract-1) to pow(2,width-fract-1)-1 by 1.0/fract*0.9) {
-      check_conversion(i, width, fract)
+    for (i <- BigDecimal(-pow(2,width-fract-1)) to pow(2,width-fract-1)-1 by 1.0/fract*0.9) {
+      check_conversion(i.toDouble, width, fract)
     }
 
   }

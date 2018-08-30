@@ -72,7 +72,7 @@ class DspTester[T <: Module](
   override def poke(signal: Bits, value: BigInt): Unit = {
     // bit-level poke is displayed as unsigned
     validRangeTest(signal, value)
-    if (!signal.isLit) backend.poke(signal, value, None)(logger, dispDsp, dispBase)
+    if (!signal.litOption.isDefined) backend.poke(signal, value, None)(logger, dispDsp, dispBase)
     pokePrint(signal, value)
   }
 
@@ -89,7 +89,7 @@ class DspTester[T <: Module](
   override def peek(signal: Bits): BigInt = {
     val o = {
       // bit-level peek is displayed as unsigned
-      if (!signal.isLit) {
+      if (!signal.litOption.isDefined) {
         backend.peek(signal, None)(logger, dispDsp, dispBase)
       } else {
         val litVal = signal.litValue()

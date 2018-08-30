@@ -2,6 +2,8 @@
 
 package dsptools.numbers.resizer
 
+import scala.language.existentials
+
 import firrtl._
 import firrtl.annotations.{Annotation, Named}
 import firrtl.ir._
@@ -15,13 +17,8 @@ import scala.collection.mutable
 /**
   * Create annotation methods for reducing widths of wires
   */
-object ChangeWidthAnnotation {
-  def apply(target: Named, value: String): Annotation = Annotation(target, classOf[ChangeWidthTransform], value)
-
-  def unapply(a: Annotation): Option[(Named, String)] = a match {
-    case Annotation(named, t, value) if t == classOf[ChangeWidthTransform] => Some((named, value))
-    case _ => None
-  }
+case class ChangeWidthAnnotation(target: Named, transform: Class[_ <: Transform], value: String) extends Annotation {
+  override def update(renames: RenameMap): Seq[Annotation] = ???
 }
 
 /**
@@ -33,7 +30,7 @@ class ChangeWidthTransform extends Transform with LazyLogging {
   override def inputForm: CircuitForm = LowForm
   override def outputForm: CircuitForm = LowForm
 
-  def makeChangeRequests(annotations: Seq[Annotation]): Map[String, ChangeRequest] = {
+  def makeChangeRequests(annotations: Seq[ChangeWidthAnnotation]): Map[String, ChangeRequest] = {
     annotations.flatMap { annotation =>
       val componentName :: widthString :: _ = annotation.value.split("""=""", 2).toList
       if(componentName.startsWith("io_")) {
@@ -265,20 +262,18 @@ class ChangeWidthTransform extends Transform with LazyLogging {
 
   override def execute(state: CircuitState): CircuitState = {
     Logger.setLevel(LogLevel.Info)
-    getMyAnnotations(state) match {
-      case Nil => state
-      case myAnnotations =>
-        val changeRequests = makeChangeRequests(myAnnotations)
-        val nodesToWiresTransform = new NodesToWiresTransform
-        val state1 = state.copy(circuit = ToWorkingIR.run(state.circuit))
-        val state2 = state.copy(circuit = InferTypes.run(state1.circuit))
-        val state3 = nodesToWiresTransform.execute(state2)
-        val state4 = state3.copy(circuit = run(state3.circuit, changeRequests))
-        val state5 = state4.copy(circuit = (new InferWidths).run(state4.circuit))
-        val state6 = state5.copy(circuit = InferTypes.run(state5.circuit))
-        val state7 = state6.copy(circuit = FixPrimOps.run(state6.circuit))
-        state7
-    }
+
+    val myAnnotations: Seq[ChangeWidthAnnotation] = state.annotations.collect { case c: ChangeWidthAnnotation => c}
+    val changeRequests = makeChangeRequests(myAnnotations)
+    val nodesToWiresTransform = new NodesToWiresTransform
+    val state1 = state.copy(circuit = ToWorkingIR.run(state.circuit))
+    val state2 = state.copy(circuit = InferTypes.run(state1.circuit))
+    val state3 = nodesToWiresTransform.execute(state2)
+    val state4 = state3.copy(circuit = run(state3.circuit, changeRequests))
+    val state5 = state4.copy(circuit = (new InferWidths).run(state4.circuit))
+    val state6 = state5.copy(circuit = InferTypes.run(state5.circuit))
+    val state7 = state6.copy(circuit = FixPrimOps.run(state6.circuit))
+    state7
   }
 }
 

@@ -1,3 +1,4 @@
+//
 package generatortools.io
 
 import chisel3._
@@ -8,6 +9,7 @@ import chisel3.util.Cat
 import dsptools.numbers._
 import firrtl.passes.IsKnown
 
+//scalastyle:off cyclomatic.complexity method.length
 object ConvertType {
   /** Convert special type (i.e. Clock, Interval) to equivalent base Chisel type.
     * Otherwise, keep the current base Chisel type. Warning: Any kind of Record becomes a CustomBundle!
@@ -25,20 +27,25 @@ object ConvertType {
           case (None, UnknownBinaryPoint) => FixedPoint(128.W, 64.BP)
           case (None, KnownBinaryPoint(bp)) => FixedPoint((64 + bp).W, bp.BP)
           case (Some(width), KnownBinaryPoint(bp)) => FixedPoint(width.W, bp.BP)
+          case (Some(width), UnknownBinaryPoint) =>
+            throw new Exception(s"Error convert called on FixedPoint with width $width and unknown binary point")
         }
       // DspReal = Bundle; needs to have precedence
       case  _: Bool | _: UInt | _: DspReal => tpe
       // TODO: Handle Reset once that becomes a thing
       case _: Clock => Bool()
       // Recursive aggregate handling
-      case v: Vec[_] => Vec(v.getElements.map(apply(_)))
+      case v: Vec[_] => VecInit(v.getElements.map(apply(_)))
       case c: DspComplex[_] =>
         (c.real, c.imag) match {
           case (r: UInt, i: UInt) => DspComplex(apply(r).asInstanceOf[UInt], apply(i).asInstanceOf[UInt])
           case (r: SInt, i: SInt) => DspComplex(apply(r).asInstanceOf[SInt], apply(i).asInstanceOf[SInt])
-          case (r: FixedPoint, i: FixedPoint) => DspComplex(apply(r).asInstanceOf[FixedPoint], apply(i).asInstanceOf[FixedPoint])
-          case (r: DspReal, i: DspReal) => DspComplex(apply(r).asInstanceOf[DspReal], apply(i).asInstanceOf[DspReal])
-          case (r: Interval, i: Interval) => DspComplex(apply(r).asInstanceOf[FixedPoint], apply(i).asInstanceOf[FixedPoint])
+          case (r: FixedPoint, i: FixedPoint) =>
+            DspComplex(apply(r).asInstanceOf[FixedPoint], apply(i).asInstanceOf[FixedPoint])
+          case (r: DspReal, i: DspReal) =>
+            DspComplex(apply(r).asInstanceOf[DspReal], apply(i).asInstanceOf[DspReal])
+          case (r: Interval, i: Interval) =>
+            DspComplex(apply(r).asInstanceOf[FixedPoint], apply(i).asInstanceOf[FixedPoint])
         }
       case r: Record => new CustomBundle(r.elements.toList.map { case (field, elt) => field -> apply(elt) }: _*)
       // Get equivalent base type from Interval type
@@ -85,16 +92,16 @@ object CheckDirection {
   private def matchDirection(d: Data): (Boolean, Boolean) = d match {
     // TODO: Make consistent with new Chisel
     case e: Element =>
-      e.dir match {
-        case core.Direction.Input => (true, false)
-        case core.Direction.Output => (false, true)
+      DataMirror.directionOf(e) match {
+        case chisel3.core.ActualDirection.Input => (true, false)
+        case chisel3.core.ActualDirection.Output => (false, true)
         case _ => (false, false)
       }
     // Fake base type
     case r: DspReal =>
-      r.node.dir match {
-        case core.Direction.Input => (true, false)
-        case core.Direction.Output => (false, true)
+      DataMirror.directionOf(r) match {
+        case chisel3.core.ActualDirection.Input => (true, false)
+        case chisel3.core.ActualDirection.Output => (false, true)
         case _ => (false, false)
       }
     case c: DspComplex[_] =>

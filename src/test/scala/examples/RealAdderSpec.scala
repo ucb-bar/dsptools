@@ -32,14 +32,14 @@ object RealAdder {
 
 class RealAdderTester(c: RealAdder) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    i <- BigDecimal(0.0) to 1.0 by 0.25
+    j <- BigDecimal(0.0) to 4.0 by 0.5
   } {
-    poke(c.io.a1, i)
-    poke(c.io.a2, j)
+    poke(c.io.a1, i.toDouble)
+    poke(c.io.a2, j.toDouble)
     step(1)
 
-    expect(c.io.c, i + j)
+    expect(c.io.c, (i + j).toDouble)
   }
 }
 

@@ -31,14 +31,14 @@ class SimpleComplexAdder extends Module {
 }
 class SimpleComplexAdderTester(c: SimpleComplexAdder) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    i <- BigDecimal(0.0) to 1.0 by 0.25
+    j <- BigDecimal(0.0) to 4.0 by 0.5
   } {
     val expected = i * j
 
-    poke(c.io.a1.real, i)
+    poke(c.io.a1.real, i.toDouble)
     poke(c.io.a1.imag, 0.0)
-    poke(c.io.a2.real, j)
+    poke(c.io.a2.real, j.toDouble)
     poke(c.io.a2.imag, 0.0)
     step(1)
 

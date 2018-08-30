@@ -4,13 +4,8 @@ package dsptools.resizer
 
 import chisel3._
 import chisel3.core.FixedPoint
-import chisel3.iotesters.PeekPokeTester
 import dsptools.DspTester
-import dsptools.numbers.resizer.ChangeWidthTransform
-import firrtl.annotations.{Annotation, CircuitName, ComponentName, ModuleName}
-import firrtl.{AnnotationMap, CircuitState, LowForm, Parser}
 import org.scalatest.{FreeSpec, Matchers}
-import dsptools.numbers.implicits._
 
 //scalastyle:off magic.number
 class ToManyWires extends Module {
@@ -28,12 +23,12 @@ class ToManyWires extends Module {
 }
 
 class ToManyWiresTester(c: ToManyWires) extends DspTester(c) {
-  for(x <- -5.0 to 5.0 by 0.25) {
-    poke(c.io.in, x)
+  for(x <- BigDecimal(-5.0) to 5.0 by 0.25) {
+    poke(c.io.in, x.toDouble)
 
     step(2)
 
-    expect(c.io.out, x * x)
+    expect(c.io.out, x.toDouble * x.toDouble)
     println(s"$x * $x => ${peek(c.io.out)}")
   }
 }

@@ -1,3 +1,5 @@
+// See LICENSE for license details.
+
 package generatortools.io
 
 import chisel3._

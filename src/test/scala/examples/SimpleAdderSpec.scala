@@ -24,13 +24,13 @@ class SimpleAdder extends Module {
 }
 class SimpleAdderTester(c: SimpleAdder) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    i <- BigDecimal(0.0) to 1.0 by 0.25
+    j <- BigDecimal(0.0) to 4.0 by 0.5
   } {
     val expected = i + j
 
-    poke(c.io.a1, i)
-    poke(c.io.a2, j)
+    poke(c.io.a1, i.toDouble)
+    poke(c.io.a2, j.toDouble)
     step(1)
 
     println(s"SimpleAdder: $i + $j should make $expected got ${peek(c.io.c)}")

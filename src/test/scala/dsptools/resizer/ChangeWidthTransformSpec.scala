@@ -2,9 +2,9 @@
 
 package dsptools.resizer
 
-import dsptools.numbers.resizer.ChangeWidthTransform
+import dsptools.numbers.resizer.{ChangeWidthAnnotation, ChangeWidthTransform}
 import firrtl.annotations.{Annotation, CircuitName, ComponentName, ModuleName}
-import firrtl.{AnnotationMap, CircuitState, LowForm, Parser}
+import firrtl.{CircuitState, LowForm, Parser}
 import org.scalatest.{FreeSpec, Matchers}
 
 class ChangeWidthTransformSpec extends FreeSpec with Matchers {
@@ -29,15 +29,15 @@ class ChangeWidthTransformSpec extends FreeSpec with Matchers {
         |
       """.stripMargin
 
-    val annotations = AnnotationMap(Seq(
-      Annotation(
+    val annotations = Seq(
+      ChangeWidthAnnotation(
         ComponentName("io_a1", ModuleName("register1", CircuitName("InstrumentingAdder"))),
         classOf[ChangeWidthTransform],
         "register1=31"
       )
-    ))
+    )
 
-    val circuitState = CircuitState(Parser.parse(input), LowForm, Some(annotations))
+    val circuitState = CircuitState(Parser.parse(input), LowForm, annotations)
 
     val transform = new ChangeWidthTransform
 

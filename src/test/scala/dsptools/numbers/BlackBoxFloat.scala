@@ -237,11 +237,11 @@ class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends 
   }
 
   for {
-    x <- -1.0 to 1.0 by 1.0
-    y <- -1.0 to 1.0 by 1.0
+    x <- BigDecimal(-1.0) to 1.0 by 1.0
+    y <- BigDecimal(-1.0) to 1.0 by 1.0
   } {
-    poke(c.io.in1, x)
-    poke(c.io.in2, y)
+    poke(c.io.in1, x.toDouble)
+    poke(c.io.in2, y.toDouble)
     poke(c.io.opsel, GreaterThan)
     expect(c.io.boolOut, x > y, s"$x > $y should be ${x > y}")
     step(1)

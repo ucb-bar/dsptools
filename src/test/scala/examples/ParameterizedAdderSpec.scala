@@ -27,16 +27,16 @@ class ParameterizedAdder[T <: Data:Ring](gen:() => T) extends Module {
 class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends DspTester(c) {
   updatableDspVerbose.withValue(false) {
     for {
-      i <- -2.0 to 1.0 by 0.25
-      j <- -2.0 to 4.0 by 0.5
+      i <- -BigDecimal(2.0) to 1.0 by 0.25
+      j <- -BigDecimal(2.0) to 4.0 by 0.5
     } {
-      poke(c.io.a1, i)
-      poke(c.io.a2, j)
+      poke(c.io.a1, i.toDouble)
+      poke(c.io.a2, j.toDouble)
       step(1)
 
       val result = peek(c.io.c)
 
-      expect(c.io.c, i + j, s"parameterize adder tester $i + $j => $result should have been ${i + j}")
+      expect(c.io.c, (i + j).toDouble, s"parameterize adder tester $i + $j => $result should have been ${i + j}")
     }
   }
 }

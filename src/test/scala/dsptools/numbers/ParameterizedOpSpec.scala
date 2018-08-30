@@ -41,8 +41,8 @@ class ParameterizedNumberOperation[T <: Data:Ring](
 
 class ParameterizedOpTester[T<:Data:Ring](c: ParameterizedNumberOperation[T]) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    i <- BigDecimal(0.0) to 1.0 by 0.25
+    j <- BigDecimal(0.0) to 4.0 by 0.5
   } {
     val expected = c.op match {
       case "+" => i + j
@@ -51,13 +51,13 @@ class ParameterizedOpTester[T<:Data:Ring](c: ParameterizedNumberOperation[T]) ex
       case _ => i + j
     }
     updatableDspVerbose.withValue(false) {
-      poke(c.io.a1, i)
-      poke(c.io.a2, j)
+      poke(c.io.a1, i.toDouble)
+      poke(c.io.a2, j.toDouble)
       step(1)
 
       val result = peek(c.io.c)
 
-      expect(c.io.c, expected, s"$i ${c.op} $j => $result, should have been $expected")
+      expect(c.io.c, expected.toDouble, s"$i ${c.op} $j => $result, should have been $expected")
     }
   }
 }
@@ -100,11 +100,11 @@ class ParameterizedOpSpecification extends FreeSpec with Matchers {
 
 class ComplexOpTester[T<:DspComplex[_]](c: ParameterizedNumberOperation[T]) extends DspTester(c) {
   for {
-    i <- -1.0 to 1.0 by 0.25
-    j <- -4.0 to 4.0 by 0.5
+    i <- BigDecimal(-1.0) to 1.0 by 0.25
+    j <- BigDecimal(-4.0) to 4.0 by 0.5
   } {
-    val c1 = Complex(i, j)
-    val c2 = Complex(j, i)
+    val c1 = Complex(i.toDouble, j.toDouble)
+    val c2 = Complex(j.toDouble, i.toDouble)
 
     val expected = c.op match {
       case "+" => c1 + c2

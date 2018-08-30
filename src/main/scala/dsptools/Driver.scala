@@ -144,12 +144,12 @@ object Driver {
 //          }
 
           val annoWriter = new PrintWriter(new File(optionsManager.getBuildFileName("anno.width")))
-          annotationMap.annotations.foreach { anno =>
+          annotationMap.foreach { anno =>
             annoWriter.println(anno.serialize)
           }
           annoWriter.close()
 
-          val circuitState = firrtl.CircuitState(Parser.parse(firrtlString), LowForm, Some(annotationMap))
+          val circuitState = firrtl.CircuitState(Parser.parse(firrtlString), LowForm, annotationMap)
 
           val transform = new ChangeWidthTransform
 

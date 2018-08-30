@@ -6,7 +6,6 @@ import dsptools.misc.BitWidth._
 
 import java.io.PrintWriter
 
-import firrtl.AnnotationMap
 import firrtl.annotations.{Annotation, CircuitName}
 import logger.{LazyLogging, LogLevel, Logger}
 
@@ -95,7 +94,7 @@ class BitReducer(
                   fudgeConstant: Int = 0,
                   htmlReportFileName: String = ""
                 ) extends LazyLogging {
-  val annotations = new mutable.ArrayBuffer[Annotation]()
+  val annotations = new mutable.ArrayBuffer[ChangeWidthAnnotation]()
   var bitsRemoved:    Int = 0
   var bitsConsidered: Int = 0
 
@@ -279,7 +278,7 @@ class BitReducer(
 
       if (bitsNeeded < width) {
         bitsRemoved += (width - bitsNeeded)
-        val annotation = Annotation(CircuitName("c"), classOf[ChangeWidthTransform], s"""$name=$bitsNeeded""")
+        val annotation = ChangeWidthAnnotation(CircuitName("c"), classOf[ChangeWidthTransform], s"""$name=$bitsNeeded""")
         logger.debug(s"Creating annotation ${annotation.value} for $bitHistory")
 
         annotations += annotation
@@ -292,7 +291,8 @@ class BitReducer(
       if (neededBits < width) {
         bitsRemoved += (width - neededBits)
 
-        val annotation = Annotation(CircuitName("c"), classOf[ChangeWidthTransform], s"""$name=$neededBits""")
+        val annotation =
+          ChangeWidthAnnotation(CircuitName("c"), classOf[ChangeWidthTransform], s"""$name=$neededBits""")
         // logger.debug(s"Creating annotation ${annotation.value} for $bitHistory")
         annotations += annotation
       }
@@ -300,8 +300,8 @@ class BitReducer(
     true
   }
 
-  def getAnnotationMap: AnnotationMap = {
-    AnnotationMap(annotations)
+  def getAnnotationMap: Seq[ChangeWidthAnnotation] = {
+    annotations
   }
 
   //noinspection ScalaStyle

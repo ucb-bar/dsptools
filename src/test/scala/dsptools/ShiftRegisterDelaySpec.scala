@@ -7,6 +7,7 @@ import chisel3.core.FixedPoint
 import dsptools.numbers._
 import org.scalatest.{FreeSpec, Matchers}
 
+import scala.collection.immutable.Range
 import scala.collection.mutable
 
 //TODO: DspReal truncate, ceil
@@ -49,7 +50,7 @@ class CircuitWithDelaysTester[T <: Data : Signed](c: AbsCircuitWithDelays[T]) ex
   private val delaySize = c.delays
 
   def oneTest(): Unit = {
-    def values: Seq[Double] = -delaySize.toDouble to delaySize.toDouble by 1.0
+    def values: Seq[Double] = (BigDecimal(-delaySize.toDouble) to delaySize.toDouble by 1.0).map(_.toDouble)
     val inQueue = new mutable.Queue[Double] ++ values
     val outQueue = new mutable.Queue[Double] ++ Seq.fill(delaySize-1)(0.0) ++ values.map(_.abs)
 
@@ -82,7 +83,7 @@ class CeilTruncateTester(c: CeilTruncateCircuitWithDelays) extends DspTester(c) 
                inFixedIo: FixedPoint, outFixedIo: FixedPoint,
                inRealIo: DspReal, outRealIo: DspReal,
                delaySize: Int): Unit = {
-    def values: Seq[Double] = -delaySize.toDouble to delaySize.toDouble by 1.0
+    def values: Seq[Double] = (BigDecimal(-delaySize.toDouble) to delaySize.toDouble by 1.0).map(_.toDouble)
     val inQueue = new mutable.Queue[Double] ++ values
     val outQueue = new mutable.Queue[Double] ++ Seq.fill(delaySize)(0.0) ++ values.map(_.ceil)
 
