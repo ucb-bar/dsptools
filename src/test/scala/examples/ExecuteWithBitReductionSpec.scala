@@ -44,7 +44,7 @@ class TooBigWireModuleSpec extends FreeSpec with Matchers {
 
   "reduce bits on SInt register" in {
     dsptools.Driver.executeWithBitReduction(() => new TooBigWireModule,
-      Array("-fimhb", "16", "-dtinv")) { c =>
+      Array("-fimhb", "16", "-dtinv", "--backend-name", "firrtl")) { c =>
       new TooBigWireModuleTester(c)
     } should be (true)
   }
@@ -85,7 +85,7 @@ class UIntTooBigWireModuleSpec extends FreeSpec with Matchers {
 
   "reduce bits on UInt register" in {
     dsptools.Driver.executeWithBitReduction(() => new UIntTooBigWireModule,
-      Array("-fimhb", "16", "-dtinv")) { c =>
+      Array("-fimhb", "16", "-dtinv", "--backend-name", "firrtl")) { c =>
       new UIntTooBigWireModuleTester(c)
     } should be (true)
   }
@@ -163,7 +163,7 @@ class BitReduceSubWithModuleSpec extends FreeSpec with Matchers {
 
   "Run with two submodules who see different values" in {
     dsptools.Driver.executeWithBitReduction(() => new BitReduceParentModule,
-      Array("-fimhb", "16", "-dtinv")) { c =>
+      Array("-fimhb", "16", "-dtinv", "--backend-name", "firrtl")) { c =>
       new BitReduceSubWithModuleTester(c)
     } should be (true)
   }

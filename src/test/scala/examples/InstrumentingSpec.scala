@@ -70,14 +70,14 @@ class InstrumentingAdderSpec extends FlatSpec with Matchers {
 
   it should "run twice with bits reduced in second run based on analysis of first run" in {
     dsptools.Driver.executeWithBitReduction(() => new InstrumentingAdder(getFixed _),
-      Array("-fimhb", "16", "-dtinv")) { c =>
+      Array("-fimhb", "16", "-dtinv", "--backend-name", "firrtl")) { c =>
       new InstrumentingAdderTester(c)
     } should be (true)
   }
 
   it should "run with bit reduction but with guard bits should make nothing happen" in {
     dsptools.Driver.executeWithBitReduction(() => new InstrumentingAdder(getFixed _),
-      Array("-fimhb", "16", "-brgb", "100")) { c =>
+      Array("-fimhb", "16", "-brgb", "100", "--backend-name", "firrtl")) { c =>
       new InstrumentingAdderTester(c)
     } should be (true)
   }
