@@ -112,6 +112,7 @@ val rocketSettings = Seq(
     libraryDependencies ++= Seq("chisel3", "chisel-iotesters", "rocketchip").map {
       dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
     },
+    parallelExecution in Test := false,
 )
 
 publishMavenStyle := true
