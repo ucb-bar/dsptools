@@ -5,8 +5,8 @@ package dsptools.numbers
 import chisel3._
 import chisel3.experimental.FixedPoint
 import dsptools.DspException
-import implicits._
 import breeze.math.Complex
+import chisel3.core.BundleLitBinding
 
 object DspComplex {
 
@@ -19,9 +19,13 @@ object DspComplex {
   // In reality, real and imag should have the same type, so should be using single argument
   // apply if you aren't trying t create a Lit
   def apply[T <: Data:Ring](real: T, imag: T): DspComplex[T] = {
-    val newReal = if (real.litOption.isDefined) real else real.cloneType
-    val newImag = if (imag.litOption.isDefined) imag else imag.cloneType
-    new DspComplex(newReal, newImag)
+//    val newReal = if (real.litOption.isDefined) real else real.cloneType
+//    val newImag = if (imag.litOption.isDefined) imag else imag.cloneType
+//    new DspComplex(newReal, newImag)
+    if(real.litOption.isDefined && imag.litOption.isDefined) {
+      (new DspComplex(real.cloneType, imag.cloneType)).Lit(real.asUInt(), imag.asUInt())
+    }
+    new DspComplex(real.cloneType, imag.cloneType)
   }
 
   // Needed for assigning to results of operations; should not use in user code for making wires
@@ -73,6 +77,16 @@ class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Bundle {
 
   override def cloneType: this.type = {
     new DspComplex(real.cloneType, imag.cloneType).asInstanceOf[this.type]
+  }
+
+  //scalastyle:off method.name
+  def Lit[T <: Bits:Ring](real: T, imag: T): DspComplex[T] = {
+    val clone = cloneType
+    clone.selfBind(BundleLitBinding(Map(
+      clone.real -> litArgOfBits(real),
+      clone.imag -> litArgOfBits(imag)
+    )))
+    clone.asInstanceOf[DspComplex[T]]
   }
 
   def underlyingType(dummy: Int = 0): String = {
