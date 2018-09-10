@@ -27,17 +27,13 @@ case object PassthroughDepth extends CSRField {
 }
 
 abstract class Passthrough[D, U, EO, EI, B <: Data](val params: PassthroughParams)(implicit p: Parameters)
-  extends DspBlock[D, U, EO, EI, B] with HasCSR with HasIPXactParameters {
+  extends DspBlock[D, U, EO, EI, B] with HasCSR {
 
   addStatus(PassthroughDepth)
 
   val streamNode = AXI4StreamIdentityNode()
 
   lazy val module = new PassthroughModule(this)
-
-  override def ipxactParameters: collection.Map[String, String] = Map(
-    "maxDepth" -> params.depth.toString
-  )
 }
 
 class PassthroughModule(val outer: Passthrough[_, _, _, _, _ <: Data]) extends LazyModuleImp(outer) {
