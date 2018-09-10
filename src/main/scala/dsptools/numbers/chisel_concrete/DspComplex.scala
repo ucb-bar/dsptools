@@ -11,7 +11,7 @@ import breeze.math.Complex
 object DspComplex {
 
   def apply[T <: Data:Ring](gen: T): DspComplex[T] = {
-    if (gen.isLit()) throw DspException("Cannot use Lit in single argument DspComplex.apply")
+    if (gen.litOption.isDefined) throw DspException("Cannot use Lit in single argument DspComplex.apply")
     apply(gen, gen)
   }
 
@@ -19,8 +19,8 @@ object DspComplex {
   // In reality, real and imag should have the same type, so should be using single argument
   // apply if you aren't trying t create a Lit
   def apply[T <: Data:Ring](real: T, imag: T): DspComplex[T] = {
-    val newReal = if (real.isLit()) real else real.cloneType
-    val newImag = if (imag.isLit()) imag else imag.cloneType
+    val newReal = if (real.litOption.isDefined) real else real.cloneType
+    val newImag = if (imag.litOption.isDefined) imag else imag.cloneType
     new DspComplex(newReal, newImag)
   }
 
