@@ -1,0 +1,27 @@
+git:
+  submodules: true
+language: scala
+# run on new infrastructure
+sudo: false
+
+cache:
+  directories:
+    $HOME/.ivy2
+    $INSTALL_DIR
+
+env:
+  global:
+    INSTALL_DIR=$TRAVIS_BUILD_DIR/install
+    VERILATOR_ROOT=$INSTALL_DIR
+    PATH=$PATH:$VERILATOR_ROOT/bin:$TRAVIS_BUILD_DIR/utils/bin
+
+install:
+  # Install dependencies
+  - bash .install_verilator.sh
+  - bash .install_deps.sh
+
+script:
+  - sbt "testOnly dspblocks.DspBlockTesterSpec"
+  # AsyncResetReg.v is missing on travis
+  # - sbt "testOnly jtag.JtagAxiSpec"
+
