@@ -4,9 +4,10 @@ package dsptools
 
 import chisel3._
 import chisel3.iotesters._
-import firrtl.{HasFirrtlOptions, ExecutionOptionsManager}
-import numbers.DspRealFactory
+import firrtl.{ExecutionOptionsManager, HasFirrtlOptions}
+import numbers.{DspRealFactory, TreadleDspRealFactory}
 import firrtl_interpreter._
+import treadle.HasTreadleOptions
 
 import scala.util.DynamicVariable
 
@@ -21,11 +22,15 @@ object Driver {
     val om = optionsManager match {
       case d: DspTesterOptionsManager => Some(d)
       case _ => None
-    }                       
+    }
 
-    optionsManagerVar.withValue(om) {                          
+    optionsManagerVar.withValue(om) {
       optionsManager.interpreterOptions = optionsManager.interpreterOptions.copy(
-          blackBoxFactories = optionsManager.interpreterOptions.blackBoxFactories :+ new DspRealFactory)
+          blackBoxFactories = optionsManager.interpreterOptions.blackBoxFactories :+ new DspRealFactory
+      )
+      optionsManager.treadleOptions = optionsManager.treadleOptions.copy(
+        blackBoxFactories = optionsManager.treadleOptions.blackBoxFactories :+ new TreadleDspRealFactory
+      )
       iotesters.Driver.execute(dutGenerator, optionsManager)(testerGen)
     }
 
@@ -36,7 +41,11 @@ object Driver {
 
     val optionsManager = new DspTesterOptionsManager {
       interpreterOptions = interpreterOptions.copy(
-          blackBoxFactories = interpreterOptions.blackBoxFactories :+ new DspRealFactory)
+          blackBoxFactories = interpreterOptions.blackBoxFactories :+ new DspRealFactory
+      )
+      treadleOptions = treadleOptions.copy(
+        blackBoxFactories = treadleOptions.blackBoxFactories :+ new TreadleDspRealFactory
+      )
     }
 
     if (optionsManager.parse(args)) execute(dutGenerator, optionsManager)(testerGen)
@@ -52,7 +61,11 @@ object Driver {
     optionsManager.chiselOptions = optionsManager.chiselOptions.copy(runFirrtlCompiler = false)
     optionsManager.firrtlOptions = optionsManager.firrtlOptions.copy(compilerName = "low")
     optionsManager.interpreterOptions = optionsManager.interpreterOptions.copy(
-        blackBoxFactories = optionsManager.interpreterOptions.blackBoxFactories :+ new DspRealFactory)
+        blackBoxFactories = optionsManager.interpreterOptions.blackBoxFactories :+ new DspRealFactory
+    )
+    optionsManager.treadleOptions = optionsManager.treadleOptions.copy(
+      blackBoxFactories = optionsManager.treadleOptions.blackBoxFactories :+ new TreadleDspRealFactory
+    )
 
     logger.Logger.makeScope(optionsManager) {
       val chiselResult: ChiselExecutionResult = chisel3.Driver.execute(optionsManager, dutGenerator)
@@ -76,3 +89,4 @@ class ReplOptionsManager
     with HasChiselExecutionOptions
     with HasFirrtlOptions
     with HasReplConfig
+    with HasTreadleOptions
