@@ -28,7 +28,7 @@ object ShiftRegisterMem {
     //    //sram.setName(name)
     //  }
     //  val index_counter = Counter(en, n)._1
-    //  val raddr = (index_counter + 2.U) >> 1.U 
+    //  val raddr = (index_counter + 2.U) >> 1.U
     //  val waddr = RegEnable(index_counter >> 1.U, (n/2-1).U, en)
     //  val wen = index_counter(0) && en
     //  val des = Reg(in.cloneType)

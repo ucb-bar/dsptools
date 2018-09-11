@@ -46,7 +46,7 @@ object MemToRegmap {
           /*memWidth*/ bytesPerMemEntry * 8,
           RegReadFn((ivalid, oready) => {
             readEn := ivalid
-            when (ivalid) {
+            when (ivalid && oready) {
               readIdx := i.U
             }
             (memReadReady, RegNext(ivalid), readData.asUInt)
