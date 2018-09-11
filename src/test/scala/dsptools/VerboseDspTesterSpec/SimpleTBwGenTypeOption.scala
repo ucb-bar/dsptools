@@ -173,8 +173,8 @@ class SimpleLitModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boo
   val lutGenSeq = lutVals map {x => genShort.fromDoubleWithFixedWidth(x)}
   val lutSSeq = lutVals map (_.round.toInt.S(p.smallW.W))
 
-  val lutGen = Vec(lutGenSeq)
-  val lutS = Vec(lutSSeq)
+  val lutGen = VecInit(lutGenSeq)
+  val lutS = VecInit(lutSSeq)
 
   io.o.vU := RegNext(io.i.vU)
   io.o.vS := RegNext(io.i.vS)
