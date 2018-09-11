@@ -1,3 +1,5 @@
+// See LICENSE for license details.
+
 package dspblocks
 
 import amba.apb.APBMasterModel
@@ -9,10 +11,51 @@ import dspblocks.BlindWrapperModule._
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.tilelink.TLMasterModel
 
+abstract class PassthroughTester2[D, U, EO, EI, B <: Data](dut: Passthrough[D, U, EO, EI, B] with StandaloneBlock[D, U, EO, EI, B])
+extends PeekPokeTester (dut.module) with MemTester with AXI4StreamModel[PassthroughModule] {
+  val c = dut.module
+  val out = dut.out.getWrappedValue
+  val in = dut.in.getWrappedValue
+
+  resetMem()
+  val master = bindMaster(in)
+  val slave = bindSlave(out)
+
+  step(5)
+
+  val depth = readAddr(BigInt(0)).toInt
+  val expectedDepth = dut.params.depth
+  println(s"Depth was $depth, should be $expectedDepth")
+  require(depth == expectedDepth, s"Depth was $depth, should be $expectedDepth")
+
+  // fill queue
+  master.addTransactions((0 until expectedDepth).map(x => AXI4StreamTransaction(data = x)))
+
+  stepToCompletion()
+
+  // queue should be full
+  expect(in.ready, 0)
+  expect(out.valid, 1)
+
+  // empty queue
+  slave.addExpects((0 until expectedDepth).map(x => AXI4StreamTransactionExpect(data = Some(x))))
+
+  stepToCompletion()
+
+  // should be done
+  expect(out.valid, 0)
+}
+
+class AXI4PassthroughTester2(c: AXI4Passthrough with AXI4StandaloneBlock)
+  extends PassthroughTester2(c) with AXI4MemTester[PassthroughModule] {
+  def memAXI = c.ioMem.map(_.getWrappedValue).get
+}
+
+
 abstract class PassthroughTester[D, U, EO, EI, B <: Data, T <: Passthrough[D, U, EO, EI, B]]
 (c: BlindWrapperModule[D, U, EO, EI, B, T]) extends PeekPokeTester(c) with MemTester
 with AXI4StreamModel[BlindWrapperModule[D, U, EO, EI, B, T]] {
-  val out = c.out.head
+  val out = c.in.head
   val in  = c.in.head
 
   resetMem()

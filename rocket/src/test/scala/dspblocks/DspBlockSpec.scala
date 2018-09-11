@@ -2,9 +2,6 @@
 
 package dspblocks
 
-import chisel3._
-import chisel3.experimental._
-import dsptools.numbers.DspComplex
 import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
@@ -21,7 +18,7 @@ class DspBlockSpec extends FlatSpec with Matchers {
 
   behavior of "Passthrough"
 
-  it should "work with AXI4" ignore {
+  it should "work with AXI4" in {
     val params = PassthroughParams(depth = 5)
     val blindNodes = DspBlockBlindNodes.apply(
       AXI4StreamBundleParameters(
@@ -36,17 +33,17 @@ class DspBlockSpec extends FlatSpec with Matchers {
       () => AXI4MasterNode(Seq(AXI4MasterPortParameters(Seq(AXI4MasterParameters("passthrough")))))
     )
 
-    val dut = () => LazyModule(DspBlock.blindWrapper(() => new AXI4Passthrough(params), blindNodes)).module
+    val dut = () => LazyModule(new AXI4Passthrough(params) with AXI4StandaloneBlock)
 
-    //println(chisel3.Driver.emit(dut))
-    //println(chisel3.Driver.emitVerilog(dut()))
+    println(chisel3.Driver.emit(() => dut().module))
+    println(chisel3.Driver.emitVerilog(dut().module))
 
-    chisel3.iotesters.Driver.execute(Array("-tiv", "-tbn", "verilator", "-fiwv"), dut) {
-      c => new AXI4PassthroughTester(c)
+    chisel3.iotesters.Driver.execute(Array("-tiv", "-tbn", "verilator", "-fiwv"), () => dut().module) {
+      c => new AXI4PassthroughTester2(c.outer.asInstanceOf[AXI4Passthrough with AXI4StandaloneBlock])
     } should be (true)
   }
 
-  it should "work with APB" in {
+  it should "work with APB" ignore {
     val params = PassthroughParams(depth = 5)
     val blindNodes = DspBlockBlindNodes(
       AXI4StreamBundleParameters(
@@ -104,7 +101,7 @@ class DspBlockSpec extends FlatSpec with Matchers {
 
   behavior of "Byte Rotate"
 
-  it should "work with AXI4" in {
+  it should "work with AXI4" ignore {
     val blindNodes = DspBlockBlindNodes.apply(
       AXI4StreamBundleParameters(
         n = 8,
@@ -128,7 +125,7 @@ class DspBlockSpec extends FlatSpec with Matchers {
     } should be (true)
   }
 
-  it should "work with APB" in {
+  it should "work with APB" ignore {
     val blindNodes = DspBlockBlindNodes(
       AXI4StreamBundleParameters(
         n = 8,

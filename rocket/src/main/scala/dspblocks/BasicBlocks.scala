@@ -23,7 +23,7 @@ case class PassthroughParams
 }
 
 case object PassthroughDepth extends CSRField {
-  val name = "depth"
+  override val name = "depth"
 }
 
 abstract class Passthrough[D, U, EO, EI, B <: Data](val params: PassthroughParams)(implicit p: Parameters)
@@ -85,7 +85,7 @@ class TLPassthrough(params: PassthroughParams)(implicit p: Parameters)
 }
 
 case object ByteRotateAmount extends CSRField {
-  val name = "byteRotationAmount"
+  override val name = "byteRotationAmount"
 }
 
 abstract class ByteRotate[D, U, EO, EI, B <: Data]()(implicit p: Parameters) extends DspBlock[D, U, EO, EI, B] with HasCSR {
