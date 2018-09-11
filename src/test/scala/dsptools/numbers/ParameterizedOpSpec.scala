@@ -41,9 +41,10 @@ class ParameterizedNumberOperation[T <: Data:Ring](
 
 class ParameterizedOpTester[T<:Data:Ring](c: ParameterizedNumberOperation[T]) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    iBD <- BigDecimal(0) to 1 by 0.25
+    jBD <- BigDecimal(0) to 4 by 0.5
   } {
+    val (i, j) = (iBD.toDouble, jBD.toDouble)
     val expected = c.op match {
       case "+" => i + j
       case "-" => i - j
@@ -100,9 +101,10 @@ class ParameterizedOpSpecification extends FreeSpec with Matchers {
 
 class ComplexOpTester[T<:DspComplex[_]](c: ParameterizedNumberOperation[T]) extends DspTester(c) {
   for {
-    i <- -1.0 to 1.0 by 0.25
-    j <- -4.0 to 4.0 by 0.5
+    iBD <- BigDecimal(-1.0) to 1 by 0.25
+    jBD <- BigDecimal(-4.0) to 4 by 0.5
   } {
+    val (i, j) = (iBD.toDouble, jBD.toDouble)
     val c1 = Complex(i, j)
     val c2 = Complex(j, i)
 

@@ -35,30 +35,31 @@ class DspTesterUtilitiesSpec extends FlatSpec with Matchers {
 
     // integers
     var width = 14
-    for (i <- -pow(2,width-1).toInt until pow(2,width-1).toInt) {
+    def twoToWidthMinus1: Long = 1 << (width - 1)
+    for (i <- -twoToWidthMinus1 until twoToWidthMinus1) {
       check_conversion(i, width, 0)
     }
 
     // big integers
     width = 40
-    for (i <- -pow(2,width-1).toInt to pow(2,width-1).toInt by pow(2, 20).toInt) {
+    for (i <- -twoToWidthMinus1 to twoToWidthMinus1 by pow(2, 20).toInt) {
       check_conversion(i, width, 0)
     }
 
     // total > fractional
     width = 19
     var fract = 8
-    for (i <- -pow(2,width-fract-1) to pow(2,width-fract-1)-1 by 1.0/fract*0.9) {
-      check_conversion(i, width, fract)
+    def twoToWidthMinusFractMinus1: BigDecimal = BigDecimal(2).pow(width - fract - 1)
+    for (i <- -twoToWidthMinusFractMinus1 to twoToWidthMinusFractMinus1 - 1 by 1.0/fract*0.9) {
+      check_conversion(i.toDouble, width, fract)
     }
 
     // total < fractional
     width = 11
     fract = 17
-    for (i <- -pow(2,width-fract-1) to pow(2,width-fract-1)-1 by 1.0/fract*0.9) {
-      check_conversion(i, width, fract)
+    for (i <- -twoToWidthMinusFractMinus1 to twoToWidthMinusFractMinus1 - 1 by 1.0/fract*0.9) {
+      check_conversion(i.toDouble, width, fract)
     }
-
   }
 
   it should "fail to convert doubles to BigInts when not enough space is supplied" in {
