@@ -118,7 +118,7 @@ val rocketSettings = Seq(
 publishMavenStyle := true
 
 publishArtifact in Test := false
-pomIncludeRepository := { x => false }
+pomIncludeRepository := { _ => false }
 
 // Don't add 'scm' elements if we have a git.remoteRepo definition.
 
