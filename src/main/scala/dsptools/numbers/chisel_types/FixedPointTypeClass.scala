@@ -178,8 +178,11 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
   }
   override def isSignZero(a: FixedPoint): Bool = a === zero
   override def isSignNegative(a:FixedPoint): Bool = {
-    if (a.widthKnown) a(a.getWidth-1)
-    else a < zero
+    if (a.widthKnown) {
+      a(a.getWidth-1)
+    } else {
+      a < zero
+    }
   }
 
   // Can potentially overflow

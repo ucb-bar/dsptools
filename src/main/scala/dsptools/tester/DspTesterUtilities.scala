@@ -20,8 +20,11 @@ object DspTesterUtilities {
     val neg = bi < 0
     val neededWidth = bi.bitLength + 1
     require(neededWidth <= totalWidth, "Double -> BigInt width larger than total width allocated!")
-    if (neg) (BigInt(1) << totalWidth) + bi
-    else bi
+    if (neg) {
+      (BigInt(1) << totalWidth) + bi
+    } else {
+      bi
+    }
   }
 
   // Redundant from chisel-testers
@@ -31,7 +34,7 @@ object DspTesterUtilities {
     // Since the bigInt is always unsigned, bitLength always gets the max # of bits required to represent bigInt
     val w = bigInt.bitLength.max(width)
     // Negative if MSB is set or in this case, ex: 3 bit wide: negative if >= 4
-    if (bigInt >= (BigInt(1) << (w - 1))) (bigInt - (BigInt(1) << w)) else bigInt
+    if (bigInt >= (BigInt(1) << (w - 1))) bigInt - (BigInt(1) << w) else bigInt
   }
 
   // Converts a positive 2's complement BigInt to a Double - used for FixedPoint
@@ -43,8 +46,11 @@ object DspTesterUtilities {
   // For DspReal represented as BigInt from Double (unsigned)
   def doubleToBigIntBits(double: Double): BigInt = {
     val ret = BigInt(java.lang.Double.doubleToLongBits(double))
-    if (ret >= 0) ret
-    else (BigInt(1) << DspReal.underlyingWidth) + ret
+    if (ret >= 0) {
+      ret
+    } else {
+      (BigInt(1) << DspReal.underlyingWidth) + ret
+    }
   }
 
   // For DspReal represented as BigInt back to Double
@@ -72,8 +78,7 @@ object DspTesterUtilities {
   // For printing to Verilog testbench (signed)
   private [dsptools] def signPrefix(e: Element): String = {
     def signed = isSigned(e)
-    if (signed) " signed "
-    else ""
+    if (signed) " signed " else ""
   }
 
   // Determines if peek/poke data fits in bit width
@@ -81,10 +86,12 @@ object DspTesterUtilities {
     val len = value.bitLength
     val neededLen = if (isSigned(signal)) len + 1 else len
     require(signal.widthOption.nonEmpty, "Cannot check range of node with unknown width!")
-    if (neededLen > signal.getWidth) 
+    if (neededLen > signal.getWidth) {
       throw DspException(s"Value is not in node ${getName(signal)} range")
-    if (!isSigned(signal) && value < 0)
+    }
+    if (!isSigned(signal) && value < 0) {
       throw DspException("Negative value can't be used with unsigned")
+    }
   }
 
   // Gets information on bitwidth, binarypoint for printing in console

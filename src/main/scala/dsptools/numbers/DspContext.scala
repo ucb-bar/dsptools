@@ -100,7 +100,7 @@ case class DspContext(
     val complexUse4Muls: Boolean = DspContext.defaultComplexUse4Muls,
     val numMulPipes: Int = DspContext.defaultNumMulPipes,
     val numAddPipes: Int = DspContext.defaultNumAddPipes,
-    val binaryPointGrowth: Int = DspContext.defaultBinaryPointGrowth) {
+    binaryPointGrowth: Int = DspContext.defaultBinaryPointGrowth) {
 
   require(numMulPipes >= 0, "# of pipeline registers for multiplication must be >= 0 ")
   require(numAddPipes >= 0, "# of pipeline registers for addition must be >= 0 ")
@@ -111,7 +111,10 @@ case class DspContext(
   }
 
   def complexMulPipe: Int = {
-    if (complexUse4Muls) numMulPipes + numAddPipes
-    else (2 * numAddPipes) + numMulPipes
+    if (complexUse4Muls) {
+      numMulPipes + numAddPipes
+    } else {
+      (2 * numAddPipes) + numMulPipes
+    }
   }
 }

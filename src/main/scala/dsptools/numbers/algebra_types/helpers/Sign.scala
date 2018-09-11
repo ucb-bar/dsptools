@@ -35,7 +35,7 @@ sealed class Sign(zeroInit: Option[Boolean] = None, negInit: Option[Boolean] = N
     Sign(zero, if (evenPow) false.B else neg)
   }
 
-  // LSB indicates even or oddness -- only negative if this is negative and 
+  // LSB indicates even or oddness -- only negative if this is negative and
   // it's raised by an odd power
   def **(that: UInt): Sign = Sign(this.zero, this.neg && that(0))
 
@@ -58,7 +58,7 @@ object Sign {
     if (!zero.litOption.isDefined) {
       bundle.zero := zero
     }
-    if (!neg.litOption.isDefined) {
+    if (neg.litOption.isEmpty) {
       bundle.neg  := neg
     }
     bundle

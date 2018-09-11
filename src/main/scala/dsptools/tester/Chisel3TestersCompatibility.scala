@@ -8,7 +8,7 @@ object TestersCompatibility {
   // Stolen from chisel-testers hack
   private def extractElementBits(signal: Data): IndexedSeq[Element] = {
     signal match {
-      case elt: Aggregate => elt.getElements.toIndexedSeq flatMap {extractElementBits(_)}
+      case elt: Aggregate => elt.getElements.toIndexedSeq flatMap {extractElementBits}
       case elt: Element => IndexedSeq(elt)
       case elt => throw new Exception(s"Cannot extractElementBits for type ${elt.getClass}")
     }

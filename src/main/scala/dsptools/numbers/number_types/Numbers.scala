@@ -26,7 +26,7 @@ trait IsReal[A <: Data] extends Any with Order[A] with Signed[A] {
   def floor(a: A): A
 
   /**
-    * Rounds `a` to the nearest integer 
+    * Rounds `a` to the nearest integer
     * (When the fractional part is 0.5, tie breaking rounds to positive infinity i.e. round half up)
     */
   def round(a: A): A

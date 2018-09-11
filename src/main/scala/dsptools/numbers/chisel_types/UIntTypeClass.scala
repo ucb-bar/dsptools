@@ -40,7 +40,7 @@ trait UIntRing extends Any with Ring[UInt] with hasContext {
   def timesContext(f: UInt, g: UInt): UInt = {
     // TODO: Overflow via ranging in FIRRTL?
     ShiftRegister(f * g, context.numMulPipes)
-  }  
+  }
 }
 
 trait UIntOrder extends Any with Order[UInt] with hasContext {
@@ -69,7 +69,7 @@ trait UIntSigned extends Any with Signed[UInt] with hasContext {
 }
 
 trait UIntIsReal extends Any with IsIntegral[UInt] with UIntOrder with UIntSigned with hasContext {
-  // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself; 
+  // In IsIntegral: ceil, floor, round, truncate (from IsReal) already defined as itself;
   // isWhole always true
   
   // Unsure what happens if you have a zero-width wire
@@ -95,14 +95,14 @@ trait ConvertableToUInt extends ConvertableTo[UInt] with hasContext {
   }
   def fromDouble(n: Double): UInt = {
     require(n >= 0, "Double literal to UInt needs to be >= 0")
-    n.round.toInt.U  
+    n.round.toInt.U
   }
   // Second argument needed for fixed pt binary point (unused here)
   override def fromDouble(d: Double, a: UInt): UInt = fromDouble(d)
   override def fromDoubleWithFixedWidth(d: Double, a: UInt): UInt = {
     require(a.widthKnown, "UInt width not known!")
     require(d >= 0, "Double literal to UInt needs to be >= 0")
-    val intVal = d.round.toInt  
+    val intVal = d.round.toInt
     val intBits = BigInt(intVal).bitLength
     require(intBits <= a.getWidth, "Lit can't fit in prototype UInt bitwidth")
     intVal.asUInt(a.getWidth.W)
@@ -131,7 +131,7 @@ trait BinaryRepresentationUInt extends BinaryRepresentation[UInt] with hasContex
   // mul2, div2 consistent with shl, shr
  }
 
-trait UIntInteger extends UIntRing with UIntIsReal with ConvertableToUInt with 
+trait UIntInteger extends UIntRing with UIntIsReal with ConvertableToUInt with
     ConvertableFromUInt with BinaryRepresentationUInt with IntegerBits[UInt] with hasContext {
   def signBit(a: UInt): Bool = isSignNegative(a)
   // fromUInt also included in Ring

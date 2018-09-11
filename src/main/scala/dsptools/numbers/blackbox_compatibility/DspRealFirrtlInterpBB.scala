@@ -18,7 +18,7 @@ abstract class DspRealTwoArgumentToDouble extends DspBlackBlackBoxImpl {
     */
   def twoOp(double1: Double, double2: Double): Double
 
-  def outputDependencies(outputName: String): Seq[(String)] = {
+  def outputDependencies(outputName: String): Seq[String] = {
     outputName match {
       case "out" => Seq("in1", "in2")
       case _ => Seq.empty

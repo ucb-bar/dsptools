@@ -12,7 +12,7 @@ object TrigUtility {
   // @ https://en.wikipedia.org/wiki/Bernoulli_number
   def bernoulli(n: Int): Double = {
     this.synchronized {
-      var temp: Array[Double] = Array.fill(n + 1)(0.0) 
+      val temp: Array[Double] = Array.fill(n + 1)(0.0)
       for (m <- 0 to n) {
         temp(m) = 1.toDouble / (m + 1)
         for (j <- m to 1 by -1) {
@@ -20,13 +20,13 @@ object TrigUtility {
         }
       }
       // Bn
-      temp(0) 
+      temp(0)
     }
   }
 
   def factorial(n: Int): Int = (1 to n).product
 
-  def combination(n: Int, k: Int): Double = factorial(n).toDouble / factorial(k) / factorial(n - k) 
+  def combination(n: Int, k: Int): Double = factorial(n).toDouble / factorial(k) / factorial(n - k)
 
   // See Taylor series for trig functions @ https://en.wikipedia.org/wiki/Taylor_series
   def sinCoeff(nmax: Int): Seq[(Double, Double)] = {
@@ -54,11 +54,11 @@ object TrigUtility {
       val i = j / 2
       def sumTerm(k : Int) = math.pow(-1, k) * combination(4 * m, 2 * k)
       math.pow(-1, i + 1) * ((i + 1) to (2 * m)).map(k => sumTerm(k)).sum
-    } 
+    }
     else {
       val i = (j + 1) / 2
       def sumTerm(k : Int) = math.pow(-1, k) * combination(4 * m, 2 * k + 1)
-      math.pow(-1, i + 1) * (i to (2 * m - 1)).map(k => sumTerm(k)).sum
+      math.pow(-1, i + 1) * (i until 2 * m).map(k => sumTerm(k)).sum
     }
   }
 

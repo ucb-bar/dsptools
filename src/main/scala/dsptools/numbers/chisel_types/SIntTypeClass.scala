@@ -45,7 +45,7 @@ trait SIntRing extends Any with Ring[SInt] with hasContext {
   def timesContext(f: SInt, g: SInt): SInt = {
     // TODO: Overflow via ranging in FIRRTL?
     ShiftRegister(f * g, context.numMulPipes)
-  }  
+  }
 }
 
 trait SIntOrder extends Any with Order[SInt] with hasContext {
@@ -67,8 +67,11 @@ trait SIntSigned extends Any with Signed[SInt] with hasContext {
   }
   override def isSignZero(a: SInt): Bool = a === 0.S
   override def isSignNegative(a:SInt): Bool = {
-    if (a.widthKnown) a(a.getWidth-1)
-    else a < 0.S
+    if (a.widthKnown) {
+      a(a.getWidth-1)
+    } else {
+      a < 0.S
+    }
   }
   // isSignPositive, isSignNonZero, isSignNonPositive, isSignNonNegative derived from above (!)
   // abs requires ring (for overflow) so overridden later
@@ -96,16 +99,16 @@ trait ConvertableToSInt extends ConvertableTo[SInt] with hasContext {
   def fromLong(n: Long): SInt = fromBigInt(BigInt(n))
   def fromType[B](n: B)(implicit c: ConvertableFrom[B]): SInt = fromBigInt(c.toBigInt(n))
   def fromBigInt(n: BigInt): SInt = n.S
-  def fromDouble(n: Double): SInt = n.round.toInt.S  
+  def fromDouble(n: Double): SInt = n.round.toInt.S
   // Second argument needed for fixed pt binary point (unused here)
   override def fromDouble(d: Double, a: SInt): SInt = fromDouble(d)
   override def fromDoubleWithFixedWidth(d: Double, a: SInt): SInt = {
     require(a.widthKnown, "SInt width not known!")
-    val intVal = d.round.toInt  
+    val intVal = d.round.toInt
     val intBits = BigInt(intVal).bitLength + 1
     require(intBits <= a.getWidth, "Lit can't fit in prototype SInt bitwidth")
     intVal.asSInt(a.getWidth.W)
-  } 
+  }
 }
 
 trait ConvertableFromSInt extends ChiselConvertableFrom[SInt] with hasContext {

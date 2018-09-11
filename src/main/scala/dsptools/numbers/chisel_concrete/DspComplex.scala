@@ -42,15 +42,15 @@ object DspComplex {
   def apply[T <: Data:Ring:ConvertableTo](c: Complex): DspComplex[T] = {
     DspComplex(ConvertableTo[T].fromDouble(c.real), ConvertableTo[T].fromDouble(c.imag))
   }
-  // Creates a DspComplex literal where real and imaginary parts have type T (and binary point 
+  // Creates a DspComplex literal where real and imaginary parts have type T (and binary point
   // determined by binaryPoint of t)
   def proto[T <: Data:Ring:ConvertableTo](c: Complex, t: T): DspComplex[T] = {
     DspComplex(ConvertableTo[T].fromDouble(c.real, t), ConvertableTo[T].fromDouble(c.imag, t))
   }
-  // Creates a DspComplex literal where real and imaginary parts have type T (width/binary point 
+  // Creates a DspComplex literal where real and imaginary parts have type T (width/binary point
   // determined by width/binaryPoint of t)
   def protoWithFixedWidth[T <: Data:Ring:ConvertableTo](c: Complex, t: T): DspComplex[T] = {
-    DspComplex(ConvertableTo[T].fromDoubleWithFixedWidth(c.real, t), 
+    DspComplex(ConvertableTo[T].fromDoubleWithFixedWidth(c.real, t),
       ConvertableTo[T].fromDoubleWithFixedWidth(c.imag, t))
   }
 
@@ -81,7 +81,7 @@ class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Bundle {
 
   def underlyingType(dummy: Int = 0): String = {
     real match {
-      case f: FixedPoint => "fixed"
+      case _: FixedPoint => "fixed"
       case r: DspReal    => "real"
       case s: SInt       => "SInt"
       case u: UInt       => "UInt"

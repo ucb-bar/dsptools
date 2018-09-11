@@ -86,7 +86,7 @@ trait ConvertableToDspReal extends ConvertableTo[DspReal] with hasContext {
   def fromLong(n: Long): DspReal = fromBigInt(BigInt(n))
   def fromType[B](n: B)(implicit c: ConvertableFrom[B]): DspReal = fromDouble(c.toDouble(n))
   def fromBigInt(n: BigInt): DspReal = DspReal(n.doubleValue)
-  def fromDouble(n: Double): DspReal = DspReal(n) 
+  def fromDouble(n: Double): DspReal = DspReal(n)
   override def fromDouble(d: Double, a: DspReal): DspReal = fromDouble(d)
   // Ignores width
   override def fromDoubleWithFixedWidth(d: Double, a: DspReal): DspReal = fromDouble(d)
@@ -119,7 +119,7 @@ trait BinaryRepresentationDspReal extends BinaryRepresentation[DspReal] with has
   def trimBinary(a: DspReal, n: Option[Int]): DspReal = a
  }
 
-trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspReal with 
+trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspReal with
     ConvertableFromDspReal with BinaryRepresentationDspReal with RealBits[DspReal] with hasContext {
   def signBit(a: DspReal): Bool = isSignNegative(a)
   override def fromInt(n: Int): DspReal = super[ConvertableToDspReal].fromInt(n)
@@ -133,10 +133,10 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
     val out = Wire(proto.cloneType)
     out := DspContext.withTrimType(NoTrim) {
       // round is round half up
-      round(a * DspReal((1 << bp).toDouble)).toSInt().asFixed.div2(bp)
+      round(a * DspReal((1 << bp).toDouble)).toSInt().asFixed().div2(bp)
     }
     out
-  } 
+  }
 }
 
 trait DspRealImpl  {

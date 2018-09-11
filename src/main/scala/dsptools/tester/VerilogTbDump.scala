@@ -24,12 +24,15 @@ trait VerilogTbDump {
   val verilogTb = dsptestersOpt.genVerilogTb
 
   val (inputs, outputs) = TestersCompatibility.getDataNames("io", dut.io) partition {
-    case (dat, name) =>
+    case (dat, _) =>
       DataMirror.directionOf(dat) == chisel3.core.ActualDirection.Input
   }
 
-  if (verilogTb) initVerilogTbFile()
-  else deleteVerilogTbFile
+  if (verilogTb) {
+    initVerilogTbFile()
+  } else {
+    deleteVerilogTbFile()
+  }
 
   def initVerilogTbFile() {
     val dutName = dut.name
@@ -95,7 +98,7 @@ trait VerilogTbDump {
       tb write "\n    #`CLK_PERIOD $display(\"\\t **Ran through all test vectors**\"); $finish;\n"
       tb write "\n  end\n"
       tb write "endmodule"
-      tb.close()  
+      tb.close()
     }
   }
 
@@ -113,7 +116,7 @@ trait VerilogTbDump {
       matchingInput match {
         case Some((_, name)) => {
           // Don't have 0-width inputs (issue for >= #'s)
-          val bitLength = value.bitLength.max(1) 
+          val bitLength = value.bitLength.max(1)
           val id = if (value >= 0) s"$bitLength\'d" else ""
           tb write s"    $name = $id$value;\n"
         }

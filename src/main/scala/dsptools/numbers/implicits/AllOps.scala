@@ -94,7 +94,7 @@ final class IsRealOps[A <: Data](lhs: A)(implicit ev: IsReal[A]) {
 class IsIntegerOps[A <: Data](lhs: A)(implicit ev: IsIntegral[A]) {
   def mod(rhs: A): A = ev.mod(lhs, rhs)
   def %(rhs: A): A = mod(rhs)
-  def isOdd(): Bool = ev.isOdd(lhs) 
+  def isOdd(): Bool = ev.isOdd(lhs)
   def isEven(): Bool = ev.isEven(lhs)
 }
 

@@ -23,7 +23,7 @@ class gainOffCorr[T<:Data:Ring](genIn: => T,genGain: => T,genOff: => T,genOut: =
        val outputVal = Output(Vec(numLanes, genOut))
     })
    
-    val inputGainCorr = io.inputVal.zip(io.gainCorr).map{case (in, gain) => in*gain } 
+    val inputGainCorr = io.inputVal.zip(io.gainCorr).map{case (in, gain) => in*gain }
     io.outputVal := inputGainCorr.zip(io.offsetCorr).map{case (inGainCorr, offset) => inGainCorr + offset }
 }
 

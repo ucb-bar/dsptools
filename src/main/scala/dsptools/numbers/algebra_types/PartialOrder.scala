@@ -40,7 +40,7 @@ trait PartialOrder[A <: Data] extends Any with Eq[A] {
   /** Result of comparing `x` with `y`. Returns ValidIO[ComparisonBundle]
     *  with `valid` false if operands are not comparable. If operands are
     * comparable, `bits.lt` will be true if `x` < `y` and `bits.eq` will
-    * be true if `x` = `y``
+    * be true if `x` = `y`
     */
   def partialCompare(x: A, y: A): ValidIO[ComparisonBundle]
   /** Result of comparing `x` with `y`. Returns None if operands

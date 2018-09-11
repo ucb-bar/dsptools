@@ -137,7 +137,7 @@ class DspReal(val lit: Option[BigInt] = None) extends Bundle {
   //scalastyle:off magic.number
   def sin (dummy: Int = 0): DspReal = {
     if (backendIsVerilator) {
-      // Taylor series; Works best close to 0 (-pi/2, pi/2) -- so normalize! 
+      // Taylor series; Works best close to 0 (-pi/2, pi/2) -- so normalize!
       def sinPiOver2(in: DspReal): DspReal = {
         val nmax = TrigUtility.numTaylorTerms - 1
         //val xpow = (0 to nmax).map(n => in.pow(DspReal(2 * n + 1)))
@@ -187,8 +187,11 @@ class DspReal(val lit: Option[BigInt] = None) extends Bundle {
   }
 
   def cos (dummy: Int = 0): DspReal = {
-    if (backendIsVerilator) (this + halfPi).sin()
-    else oneOperandOperator(Module(new BBFCos()))
+    if (backendIsVerilator) {
+      (this + halfPi).sin()
+    } else {
+      oneOperandOperator(Module(new BBFCos()))
+    }
   }
 
   // Swept input at 0.0001pi increments. For tan < 1e9, ~8 decimal digit precision (fractional)
@@ -207,8 +210,9 @@ class DspReal(val lit: Option[BigInt] = None) extends Bundle {
       
       // Also note: tan(x) = 2*tan(x/2)/(1-tan^2(x/2))
       tanPiOver2(normalizedHalfPi)
+    } else {
+      oneOperandOperator(Module(new BBFTan()))
     }
-    else oneOperandOperator(Module(new BBFTan()))
   }
 
   // Correct to 9 decimal digits sweeping by 0.0001pi
@@ -233,8 +237,9 @@ class DspReal(val lit: Option[BigInt] = None) extends Bundle {
       // Approximation accuracy in [0, 1]
       val outTemp = Mux(inTemp > one, halfPi - arctanPiOver2(one / inTemp), arctanPiOver2(inTemp))
       Mux(isNeg, zero - outTemp, outTemp)
+    } else {
+      oneOperandOperator(Module(new BBFATan()))
     }
-    else oneOperandOperator(Module(new BBFATan()))
   }
 
   // See https://en.wikipedia.org/wiki/Inverse_trigonometric_functions
@@ -245,16 +250,18 @@ class DspReal(val lit: Option[BigInt] = None) extends Bundle {
       val sqrtIn = one - (this * this)
       val atanIn = this / (one + sqrtIn.sqrt())
       DspReal(2) * atanIn.atan()
+    } else {
+      oneOperandOperator(Module(new BBFASin()))
     }
-    else oneOperandOperator(Module(new BBFASin()))
   }
 
   // Must be -1 <= x <= 1
   def acos (dummy: Int = 0): DspReal = {
     if (backendIsVerilator) {
       halfPi - this.asin()
+    } else {
+      oneOperandOperator(Module(new BBFACos()))
     }
-    else oneOperandOperator(Module(new BBFACos()))
   }
 
   // Output in the range (-pi, pi]
@@ -266,57 +273,79 @@ class DspReal(val lit: Option[BigInt] = None) extends Bundle {
       val atanArg = y / x
       val atanRes = atanArg.atan()
       val muxIn: Iterable[(Bool, DspReal)] = Iterable(
-        (x > zero) -> atanRes, 
-        (x.signBit() && !y.signBit()) -> (atanRes + pi), 
-        (x.signBit() && y.signBit()) -> (atanRes - pi), 
-        (x === zero && y > zero) -> halfPi, 
-        (x === zero && y.signBit()) -> negHalfPi, 
+        (x > zero) -> atanRes,
+        (x.signBit() && !y.signBit()) -> (atanRes + pi),
+        (x.signBit() && y.signBit()) -> (atanRes - pi),
+        (x === zero && y > zero) -> halfPi,
+        (x === zero && y.signBit()) -> negHalfPi,
         (x === zero && y === zero) -> atanArg               // undefined
       )
       Mux1H(muxIn)
+    } else {
+      twoOperandOperator(arg1, Module(new BBFATan2()))
     }
-    else twoOperandOperator(arg1, Module(new BBFATan2()))
   }
 
   def hypot (arg1: DspReal): DspReal = {
-    if (backendIsVerilator) (this * this + arg1 * arg1).sqrt()
-    else twoOperandOperator(arg1, Module(new BBFHypot()))
+    if (backendIsVerilator) {
+      (this * this + arg1 * arg1).sqrt()
+    } else {
+      twoOperandOperator(arg1, Module(new BBFHypot()))
+    }
   }
 
   // See https://en.wikipedia.org/wiki/Hyperbolic_function
 
   def sinh (dummy: Int = 0): DspReal = {
-    if (backendIsVerilator) (this.exp() - (zero - this).exp()) / DspReal(2)
-    else oneOperandOperator(Module(new BBFSinh()))
+    if (backendIsVerilator) {
+      (this.exp() - (zero - this).exp()) / DspReal(2)
+    } else {
+      oneOperandOperator(Module(new BBFSinh()))
+    }
   }
 
   def cosh (dummy: Int = 0): DspReal = {
-    if (backendIsVerilator) (this.exp() + (zero - this).exp()) / DspReal(2)
-    else oneOperandOperator(Module(new BBFCosh()))
+    if (backendIsVerilator) {
+      (this.exp() + (zero - this).exp()) / DspReal(2)
+    } else {
+      oneOperandOperator(Module(new BBFCosh()))
+    }
   }
 
   def tanh (dummy: Int = 0): DspReal = {
-    if (backendIsVerilator) (this.exp() - (zero - this).exp()) / (this.exp() + (zero - this).exp())
-    else oneOperandOperator(Module(new BBFTanh()))
+    if (backendIsVerilator) {
+      (this.exp() - (zero - this).exp()) / (this.exp() + (zero - this).exp())
+    } else {
+      oneOperandOperator(Module(new BBFTanh()))
+    }
   }
 
   // Requires Breeze for testing:
 
   def asinh (dummy: Int = 0): DspReal = {
-    if (backendIsVerilator) ((this * this + one).sqrt() + this).ln()
-    else oneOperandOperator(Module(new BBFASinh()))
+    if (backendIsVerilator) {
+      ((this * this + one).sqrt() + this).ln()
+    } else {
+      oneOperandOperator(Module(new BBFASinh()))
+    }
   }
 
   // x >= 1
   def acosh (dummy: Int = 0): DspReal = {
-    if (backendIsVerilator) ((this * this - one).sqrt() + this).ln()
-    else oneOperandOperator(Module(new BBFACosh()))
+    if (backendIsVerilator) {
+      ((this * this - one).sqrt() + this).ln()
+    } else {
+      oneOperandOperator(Module(new BBFACosh()))
+    }
   }
 
   // |x| < 1
   def atanh (dummy: Int = 0): DspReal = {
-    if (backendIsVerilator) ((one + this) / (one - this)).ln() / DspReal(2)
-    else oneOperandOperator(Module(new BBFATanh()))
+    if (backendIsVerilator) {
+      ((one + this) / (one - this)).ln() / DspReal(2)
+    } else {
+      oneOperandOperator(Module(new BBFATanh()))
+    }
   }
   
   // Not used directly -- there's an equivalent in the type classes (was causing some confusion)

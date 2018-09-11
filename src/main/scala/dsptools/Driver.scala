@@ -48,8 +48,9 @@ object Driver {
       )
     }
 
-    if (optionsManager.parse(args)) execute(dutGenerator, optionsManager)(testerGen)
-    else {
+    if (optionsManager.parse(args)) {
+      execute(dutGenerator, optionsManager)(testerGen)
+    } else {
       optionsManager.parser.showUsageAsError()
       false
     }
@@ -75,7 +76,7 @@ object Driver {
           FirrtlRepl.execute(optionsManager)
           true
         case ChiselExecutionFailure(message) =>
-          println("Failed to compile circuit")
+          println("Failed to compile circuit" + message)
           false
       }
     }
