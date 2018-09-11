@@ -4,12 +4,10 @@ package dspblocks
 
 import amba.axi4stream.AXI4StreamNode
 import chisel3._
-import chisel3.core.ImplicitModule
-import chisel3.experimental.{RawModule, withClockAndReset}
+import chisel3.core.IO
 import chisel3.internal.firrtl.Width
-import chisel3.util.{HasBlackBoxResource, log2Ceil}
-import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.amba.ahb._
+import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config._
@@ -27,17 +25,16 @@ case object CSRStatus extends CSRType
 case class RegInfo(tpe: CSRType, width: Width, init: BigInt)
 
 object CSR {
-  type Map     = scala.collection.Map[String, RegInfo]
+  type Map = scala.collection.Map[String, RegInfo]
 }
 
 trait CSRField {
-  def name: String
+  def name: String = this.getClass.getSimpleName
 }
 
 trait HasCSR {
   implicit def csrFieldToString(in: CSRField): String = in.name
   val csrMap = scala.collection.mutable.Map[String, RegInfo]()
-
 
   def addStatus(name: String, init: BigInt = 0, width: Width = 64.W): Unit = {
     csrMap += (name -> RegInfo(CSRStatus, width, init))
@@ -61,21 +58,39 @@ trait HasCSR {
 
 trait DspBlock[D, U, EO, EI, B <: Data] extends LazyModule {
   val streamNode: AXI4StreamNode
-
-    /*MixedNode[
-    AXI4StreamMasterPortParameters,
-    AXI4StreamSlavePortParameters,
-    AXI4StreamEdgeParameters,
-    AXI4StreamBundle,
-    AXI4StreamMasterPortParameters,
-    AXI4StreamSlavePortParameters,
-    AXI4StreamEdgeParameters,
-    AXI4StreamBundle]*/
-
   val mem: Option[MixedNode[D, U, EI, B, D, U, EO, B]]
   //val mem: Option[NodeHandle[D, U, EI, B, D, U, EO, B]]
 }
 
+trait StandaloneBlock[D, U, EO, EI, B <: Data] extends DspBlock[D, U, EO, EI, B] {
+  val ioInNode = BundleBridgeSource(() => new AXI4StreamBundle(AXI4StreamBundleParameters(n = 8)))
+  val ioOutNode = BundleBridgeSink[AXI4StreamBundle]()
+
+  ioOutNode :=
+    AXI4StreamToBundleBridge(AXI4StreamSlaveParameters()) :=
+    streamNode :=
+    BundleBridgeToAXI4Stream(AXI4StreamMasterParameters()) :=
+    ioInNode
+
+  val in = InModuleBody { ioInNode.makeIO() }
+  val out = InModuleBody { ioOutNode.makeIO() }
+}
+
+trait AXI4StandaloneBlock extends StandaloneBlock[AXI4MasterPortParameters,
+  AXI4SlavePortParameters,
+  AXI4EdgeParameters,
+  AXI4EdgeParameters,
+  AXI4Bundle] {
+  val ioMem = mem.map { m => {
+    val ioMemNode = BundleBridgeSource(() => AXI4Bundle(AXI4BundleParameters(64,64,4)))
+    m :=
+      BundleBridgeToAXI4(AXI4MasterPortParameters(Seq(AXI4MasterParameters("bundleBridgeToAXI4")))) :=
+      ioMemNode
+
+    val ioMem = InModuleBody { ioMemNode.makeIO() }
+    ioMem
+  }}
+}
 
 case class DspBlockBlindNodes[D, U, EO, EI, B <: Data]
 (

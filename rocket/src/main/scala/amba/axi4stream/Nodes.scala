@@ -1,3 +1,5 @@
+// See LICENSE for license details
+
 package freechips.rocketchip.amba.axi4stream
 
 import chisel3.internal.sourceinfo.SourceInfo
@@ -59,5 +61,75 @@ object AXI4StreamAdapterNode {
       m.copy(n = dataWidthConversion(n))
     }
     AXI4StreamMasterPortParameters(newMasters)
+  }
+}
+
+object AXI4StreamBundleBridgeImp extends BundleBridgeImp[AXI4StreamBundle]
+
+case class AXI4StreamToBundleBridgeNode(slaveParams: AXI4StreamSlavePortParameters)(implicit valName: ValName)
+extends MixedAdapterNode(AXI4StreamImp, AXI4StreamBundleBridgeImp)(
+  dFn = { masterParams =>
+      BundleBridgeParams(() => AXI4StreamBundle(AXI4StreamBundleParameters.joinEdge(masterParams, slaveParams)))
+  },
+  uFn = { mp => slaveParams }
+)
+
+object AXI4StreamToBundleBridgeNode {
+  def apply(slaveParams: AXI4StreamSlaveParameters)(implicit p: Parameters) =
+    new AXI4StreamToBundleBridge(AXI4StreamSlavePortParameters(slaveParams))
+}
+
+class AXI4StreamToBundleBridge(slaveParams: AXI4StreamSlavePortParameters)(implicit p: Parameters) extends LazyModule {
+  val node = AXI4StreamToBundleBridgeNode(slaveParams)
+
+  lazy val module = new LazyModuleImp(this) {
+    (node.in zip node.out) foreach { case ((in, _), (out, _)) =>
+      out.valid := in.valid
+      out.bits := in.bits
+      in.ready := out.ready
+    }
+  }
+}
+
+object AXI4StreamToBundleBridge {
+  def apply(slaveParams: AXI4StreamSlavePortParameters)(implicit p: Parameters): AXI4StreamToBundleBridgeNode = {
+    val converter = LazyModule(new AXI4StreamToBundleBridge(slaveParams))
+    converter.node
+  }
+  def apply(slaveParams: AXI4StreamSlaveParameters)(implicit p: Parameters): AXI4StreamToBundleBridgeNode = {
+    apply(AXI4StreamSlavePortParameters(slaveParams))
+  }
+}
+
+case class BundleBridgeToAXI4StreamNode(masterParams: AXI4StreamMasterPortParameters)(implicit valName: ValName)
+extends MixedAdapterNode(AXI4StreamBundleBridgeImp, AXI4StreamImp)(
+  dFn = { mp =>
+    masterParams
+  },
+  uFn = { slaveParams => BundleBridgeNull() }// BundleBridgeParams(() => AXI4StreamBundle(AXI4StreamBundleParameters.joinEdge(masterParams, slaveParams)))}
+)
+
+object BundleBridgeToAXI4StreamNode {
+  def apply(masterParams: AXI4StreamMasterParameters)(implicit valName: ValName): BundleBridgeToAXI4StreamNode = {
+    BundleBridgeToAXI4StreamNode(AXI4StreamMasterPortParameters(masterParams))
+  }
+}
+
+class BundleBridgeToAXI4Stream(masterParams: AXI4StreamMasterPortParameters)(implicit p: Parameters) extends LazyModule {
+  val node = BundleBridgeToAXI4StreamNode(masterParams)
+
+  lazy val module = new LazyModuleImp(this) {
+    (node.in zip node.out) foreach { case ((in, _), (out, _)) =>
+    }
+  }
+}
+
+object BundleBridgeToAXI4Stream {
+  def apply(masterParams: AXI4StreamMasterPortParameters)(implicit p: Parameters): BundleBridgeToAXI4StreamNode = {
+    val converter = LazyModule(new BundleBridgeToAXI4Stream(masterParams))
+    converter.node
+  }
+  def apply(masterParams: AXI4StreamMasterParameters)(implicit p: Parameters): BundleBridgeToAXI4StreamNode = {
+    apply(AXI4StreamMasterPortParameters(masterParams))
   }
 }
