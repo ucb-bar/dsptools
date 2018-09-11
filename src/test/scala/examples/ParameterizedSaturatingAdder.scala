@@ -34,14 +34,22 @@ class ParameterizedSaturatingAdderTester[T<:Data:Integer](c: ParameterizedSatura
   println("Min = " + min.toString)
   println("Max = " + max.toString)
   def overflowint(x: Int): Int = {
-    if (x > max) overflowint(min + x - max - 1)
-    else if (x < min) overflowint(max + x - min + 1)
-    else x
+    if (x > max) {
+      overflowint(min + x - max - 1)
+    } else if (x < min) {
+      overflowint(max + x - min + 1)
+    } else {
+      x
+    }
   }
   def saturateint(x: Int): Int = {
-    if (x > max) max
-    else if (x < min) min
-    else x
+    if (x > max) {
+      max
+    } else if (x < min) {
+      min
+    } else {
+      x
+    }
   }
   for {
     i <- min to max
@@ -55,8 +63,8 @@ class ParameterizedSaturatingAdderTester[T<:Data:Integer](c: ParameterizedSatura
     val resultNormal = peek(c.io.normalSum)
     val resultSaturated = peek(c.io.saturatedSum)
 
-    expect(c.io.normalSum, overflowint(i+j), s"parameterized normal adder $i + $j => $resultNormal should have been ${overflowint(i+j)}")
-    expect(c.io.saturatedSum, saturateint(i+j), s"parameterized saturating adder $i + $j => $resultSaturated should have been ${saturateint(i+j)}")
+    expect(c.io.normalSum, overflowint(i + j), s"parameterized normal adder $i + $j => $resultNormal should have been ${overflowint(i + j)}")
+    expect(c.io.saturatedSum, saturateint(i + j), s"parameterized saturating adder $i + $j => $resultSaturated should have been ${saturateint(i + j)}")
   }
 }
 

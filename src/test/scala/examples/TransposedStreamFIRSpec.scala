@@ -32,7 +32,7 @@ class ConstantTapTransposedStreamingTester(c: ConstantTapTransposedStreamingFIR[
   for(num <- smallest to biggest) {
     poke(c.io.input.bits, BigInt(-7))
     poke(c.io.input.valid, 0)
-    for (i<- 0 until 10) {
+    for (_ <- 0 until 10) {
       step(1)
       expect(c.io.output.valid, 0, "Output should not be valid if input is invalid")
     }

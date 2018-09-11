@@ -24,7 +24,6 @@ class StreamingAutocorrelatorTester(c: StreamingAutocorrelator[SInt])
 
 class StreamingAutocorrelatorSpec extends FlatSpec with Matchers {
   "StreamingAutocorrelatorFIR" should "compute a running average like thing" in {
-    val taps = Seq.tabulate(3) { x => x.S}
     //implicit val DefaultDspContext = DspContext()
     //implicit val evidence = (context :DspContext) => new SIntRing()(context)
 

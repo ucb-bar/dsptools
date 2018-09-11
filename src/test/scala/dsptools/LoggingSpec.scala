@@ -62,7 +62,7 @@ class LoggingSpec extends FreeSpec with Matchers {
         captor.getOutputAsString should include ("warn level message")
         captor.getOutputAsString should not include ("info level message")
         captor.getOutputAsString should not include ("debug level message")
-        captor.getOutputAsString should not include ("trace level message")
+        captor.getOutputAsString should not include "trace level message"
       }
     }
   }
