@@ -120,21 +120,31 @@ class AXI4StreamPeekPokeMaster(port: AXI4StreamBundle, tester: PeekPokeTester[_]
       poke(port.valid, 1)
       poke(port.bits.data, t.data)
       poke(port.bits.last, if (t.last) 1 else 0)
-      if (t.strb == -1) {
-        val allOnes = (BigInt(1) << port.bits.strb.getWidth) - 1
-        poke(port.bits.strb, allOnes)
-      } else {
-        poke(port.bits.strb, t.strb)
+      if (port.bits.strb.getWidth > 0) {
+        if (t.strb == -1) {
+          val allOnes = (BigInt(1) << port.bits.strb.getWidth) - 1
+          poke(port.bits.strb, allOnes)
+        } else {
+          poke(port.bits.strb, t.strb)
+        }
       }
-      if (t.keep == -1) {
-        val allOnes = (BigInt(1) << port.bits.keep.getWidth) - 1
-        poke(port.bits.keep, allOnes)
-      } else {
-        poke(port.bits.keep, t.keep)
+      if (port.bits.keep.getWidth > 0) {
+        if (t.keep == -1) {
+          val allOnes = (BigInt(1) << port.bits.keep.getWidth) - 1
+          poke(port.bits.keep, allOnes)
+        } else {
+          poke(port.bits.keep, t.keep)
+        }
       }
-      poke(port.bits.user, t.user)
-      poke(port.bits.id,   t.id)
-      poke(port.bits.dest, t.dest)
+      if (port.bits.user.getWidth > 0) {
+        poke(port.bits.user, t.user)
+      }
+      if (port.bits.id.getWidth > 0) {
+        poke(port.bits.id,   t.id)
+      }
+      if (port.bits.dest.getWidth > 0) {
+        poke(port.bits.dest, t.dest)
+      }
       if (peek(port.ready) != BigInt(0)) {
         input = input.tail
       }
