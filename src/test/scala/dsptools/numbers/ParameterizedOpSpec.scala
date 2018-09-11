@@ -26,15 +26,13 @@ class ParameterizedNumberOperation[T <: Data:Ring](
 
   val register1 = Reg(outputGenerator().cloneType)
 
-  register1 := {
-    op match {
-      case "+" => io.a1 + io.a2
-      case "-" => io.a1 - io.a2
-      case "*" => DspContext.withTrimType(NoTrim) { io.a1 * io.a2 }
+  register1 := (op match {
+    case "+" => io.a1 + io.a2
+    case "-" => io.a1 - io.a2
+    case "*" => DspContext.withTrimType(NoTrim) { io.a1 * io.a2 }
 //      case "/" => io.a1 / io.a2
-      case _ => throw new Exception(s"Bad operator $op passed to ParameterizedNumberOperation")
-    }
-  }
+    case _ => throw new Exception(s"Bad operator $op passed to ParameterizedNumberOperation")
+  })
 
   io.c := register1
 }
@@ -142,9 +140,7 @@ class ComplexOpSpecification extends FreeSpec with Matchers {
         FixedPoint(48.W, 4.BP))
     }
     def complexRealGenerator(): DspComplex[DspReal] = {
-      DspComplex(
-        DspReal(1.0),
-        DspReal(1.0))
+      DspComplex(DspReal(), DspReal())
     }
 
 //    "Run Repl for complexReal" in {

@@ -342,6 +342,8 @@ class DspReal(val lit: Option[BigInt] = None) extends Bundle {
   def toDoubleBits(dummy: Int = 0): UInt = {
     node
   }
+
+  override def litOption(): Option[BigInt] = lit
 }
 
 object DspReal {

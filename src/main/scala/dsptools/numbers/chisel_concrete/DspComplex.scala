@@ -57,7 +57,11 @@ object DspComplex {
 }
 
 class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Bundle {
-  
+  override def litOption: Option[BigInt] = (real.litOption, real.widthOption, imag.litOption, imag.widthOption) match {
+    case (Some(rLit), _, Some(iLit), Some(iWidth)) => Some((rLit << iWidth) + iLit)
+    case (_, _, _, _) => None
+  }
+
   // So old DSP code doesn't break
   def imaginary(dummy: Int = 0): T = imag
 
