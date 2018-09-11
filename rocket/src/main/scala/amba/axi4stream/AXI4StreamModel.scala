@@ -264,7 +264,7 @@ trait AXI4StreamMasterModel[T <: MultiIOModule] extends PeekPokeTester[T] {
 
   def stepToCompletion(maxCycles: Int = 1000): Unit = {
     for (_ <- 0 until maxCycles) {
-      if (mastersComplete) {
+      if (mastersComplete()) {
         step(1)
         return
       } else {
@@ -302,7 +302,7 @@ trait AXI4StreamSlaveModel[T <: MultiIOModule] extends PeekPokeTester[T] {
 
   def stepToCompletion(maxCycles: Int = 1000): Unit = {
     for (_ <- 0 until maxCycles) {
-      if (slavesComplete) {
+      if (slavesComplete()) {
         step(1)
         return
       } else {
