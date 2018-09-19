@@ -1,6 +1,7 @@
 package amba.axi4
 
 import chisel3.experimental.MultiIOModule
+import chisel3.iotesters.PeekPokeTester
 import chisel3.util.IrrevocableIO
 import freechips.rocketchip.amba.axi4._
 
@@ -60,7 +61,7 @@ object AXI4MasterModel {
   val RRESP_DECERR = BigInt(3)
 }
 
-trait AXI4MasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTester[T] =>
+trait AXI4MasterModel[T <: MultiIOModule] extends PeekPokeTester[T] {
   import AXI4MasterModel._
 
   def memAXI: AXI4Bundle
@@ -227,7 +228,7 @@ trait AXI4MasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTest
         rChannel = peekR(memAXI.r.bits)
       }
       step(1)
-      require(cyclesWaited < maxWait, s"Timeout waiting for R to be ready ($maxWait cycles)")
+      require(cyclesWaited < maxWait, s"Timeout waiting for R to be valid ($maxWait cycles)")
       /* if (cyclesWaited >= maxWait) {
         println(s"Timeout waiting for R to be ready ($maxWait cycles)")
         rFinished = true // hack hack hack
