@@ -1,6 +1,5 @@
 package freechips.rocketchip.amba.axi4
 
-import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
 

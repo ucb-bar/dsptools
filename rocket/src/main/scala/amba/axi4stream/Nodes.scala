@@ -120,6 +120,9 @@ class BundleBridgeToAXI4Stream(masterParams: AXI4StreamMasterPortParameters)(imp
 
   lazy val module = new LazyModuleImp(this) {
     (node.in zip node.out) foreach { case ((in, _), (out, _)) =>
+        out.valid := in.valid
+        out.bits := in.bits
+        in.ready := out.ready
     }
   }
 }

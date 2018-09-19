@@ -7,17 +7,16 @@ import amba.axi4.AXI4MasterModel
 import chisel3._
 import chisel3.experimental.MultiIOModule
 import chisel3.iotesters.PeekPokeTester
-import dspblocks.BlindWrapperModule._
 import freechips.rocketchip.amba.axi4stream._
-import freechips.rocketchip.tilelink.TLMasterModel
+import freechips.rocketchip.tilelink.{TLBundle, TLMasterModel}
 
-abstract class PassthroughTester2[D, U, EO, EI, B <: Data](dut: Passthrough[D, U, EO, EI, B] with StandaloneBlock[D, U, EO, EI, B])
-extends PeekPokeTester (dut.module) with MemTester with AXI4StreamModel[PassthroughModule] {
-  val c = dut.module
-  val out = dut.out.getWrappedValue
-  val in = dut.in.getWrappedValue
-
+abstract class PassthroughTester[D, U, EO, EI, B <: Data](dut: Passthrough[D, U, EO, EI, B] with StandaloneBlock[D, U, EO, EI, B])
+extends PeekPokeTester(dut.module) with MemTester with AXI4StreamModel[PassthroughModule[D, U, EO, EI, B]] {
   resetMem()
+
+  val in = dut.in.getWrappedValue
+  val out = dut.out.getWrappedValue
+
   val master = bindMaster(in)
   val slave = bindSlave(out)
 
@@ -25,12 +24,10 @@ extends PeekPokeTester (dut.module) with MemTester with AXI4StreamModel[Passthro
 
   val depth = readAddr(BigInt(0)).toInt
   val expectedDepth = dut.params.depth
-  println(s"Depth was $depth, should be $expectedDepth")
-  require(depth == expectedDepth, s"Depth was $depth, should be $expectedDepth")
+  expect(depth == expectedDepth, s"Depth was $depth, should be $expectedDepth")
 
   // fill queue
   master.addTransactions((0 until expectedDepth).map(x => AXI4StreamTransaction(data = x)))
-
   stepToCompletion()
 
   // queue should be full
@@ -39,72 +36,31 @@ extends PeekPokeTester (dut.module) with MemTester with AXI4StreamModel[Passthro
 
   // empty queue
   slave.addExpects((0 until expectedDepth).map(x => AXI4StreamTransactionExpect(data = Some(x))))
-
   stepToCompletion()
 
   // should be done
   expect(out.valid, 0)
 }
 
-class AXI4PassthroughTester2(c: AXI4Passthrough with AXI4StandaloneBlock)
-  extends PassthroughTester2(c) with AXI4MemTester[PassthroughModule] {
-  def memAXI = c.ioMem.map(_.getWrappedValue).get
+class AXI4PassthroughTester(c: AXI4Passthrough with AXI4StandaloneBlock)
+  extends PassthroughTester(c) with AXI4MemTester[PassthroughModule[_,_,_,_,_ <: Data]] {
+  def memAXI = c.ioMem.get.getWrappedValue
 }
 
-
-abstract class PassthroughTester[D, U, EO, EI, B <: Data, T <: Passthrough[D, U, EO, EI, B]]
-(c: BlindWrapperModule[D, U, EO, EI, B, T]) extends PeekPokeTester(c) with MemTester
-with AXI4StreamModel[BlindWrapperModule[D, U, EO, EI, B, T]] {
-  val out = c.in.head
-  val in  = c.in.head
-
-  resetMem()
-  val master = bindMaster(in)
-  val slave = bindSlave(out)
-
-  step(5)
-
-  val depth = readAddr(BigInt(0)).toInt
-  val expectedDepth = c.outer.internal.params.depth
-  println(s"Depth was $depth, should be $expectedDepth")
-  require(depth == expectedDepth, s"Depth was $depth, should be $expectedDepth")
-
-  // fill queue
-  master.addTransactions((0 until expectedDepth).map(x => AXI4StreamTransaction(data = x)))
-
-  stepToCompletion()
-
-  // queue should be full
-  expect(in.ready, 0)
-  expect(out.valid, 1)
-
-  // empty queue
-  slave.addExpects((0 until expectedDepth).map(x => AXI4StreamTransactionExpect(data = Some(x))))
-
-  stepToCompletion()
-
-  // should be done
-  expect(out.valid, 0)
+class APBPassthroughTester(c: APBPassthrough with APBStandaloneBlock)
+  extends PassthroughTester(c) with APBMemTester[PassthroughModule[_,_,_,_,_ <: Data]] {
+  def memAPB = c.ioMem.get.getWrappedValue
 }
 
-class AXI4PassthroughTester(c: AXI4BlindWrapperModule[AXI4Passthrough])
-  extends PassthroughTester(c) with AXI4MemTester[AXI4BlindWrapperModule[AXI4Passthrough]] {
-  def memAXI = c.mem.head
+class TLPassthroughTester(c: TLPassthrough with TLStandaloneBlock)
+  extends PassthroughTester(c) with TLMemTester[PassthroughModule[_,_,_,_,_ <: Data]] {
+  override def memTL: TLBundle = c.ioMem.get.getWrappedValue
 }
 
-class APBPassthroughTester(c: APBBlindWrapperModule[APBPassthrough])
-  extends PassthroughTester(c) with APBMemTester[APBBlindWrapperModule[APBPassthrough]] {
-  def memAPB = c.mem.head
-}
-
-class TLPassthroughTester(c: TLBlindWrapperModule[TLPassthrough])
-  extends PassthroughTester(c) with TLMemTester[TLBlindWrapperModule[TLPassthrough]] {
-  def memTL = c.mem.head
-}
-
+/*
 abstract class ByteRotateTester[D, U, EO, EI, B <: Data, T <: ByteRotate[D, U, EO, EI, B]]
 (c: BlindWrapperModule[D, U, EO, EI, B, T]) extends PeekPokeTester(c)
-with AXI4StreamModel[BlindWrapperModule[D, U, EO, EI, B, T]] {
+with AXI4StreamModel[T] {
   def resetMem(): Unit
   def readAddr(addr: BigInt): BigInt
   def writeAddr(addr: BigInt, value: BigInt): Unit
@@ -156,6 +112,7 @@ class TLByteRotateTester(c: TLBlindWrapperModule[TLByteRotate])
   extends ByteRotateTester(c) with TLMemTester[TLBlindWrapperModule[TLByteRotate]] {
   def memTL = c.mem.head
 }
+*/
 
 trait MemTester {
   def resetMem(): Unit
@@ -164,7 +121,7 @@ trait MemTester {
   def writeAddr(addr: Int, value: Int): Unit = writeAddr(BigInt(addr), BigInt(value))
 }
 
-trait TLMemTester[T <: MultiIOModule] extends TLMasterModel[T] { this: PeekPokeTester[T] =>
+trait TLMemTester[T <: MultiIOModule] extends TLMasterModel[T] {
   def resetMem(): Unit = {
     tlReset()
   }
@@ -178,7 +135,7 @@ trait TLMemTester[T <: MultiIOModule] extends TLMasterModel[T] { this: PeekPokeT
   }
 }
 
-trait APBMemTester[T <: MultiIOModule] extends APBMasterModel[T] { this: PeekPokeTester[T] =>
+trait APBMemTester[T <: MultiIOModule] extends APBMasterModel[T] {
   def resetMem(): Unit = {
     apbReset()
   }
@@ -192,7 +149,7 @@ trait APBMemTester[T <: MultiIOModule] extends APBMasterModel[T] { this: PeekPok
   }
 }
 
-trait AXI4MemTester[T <: MultiIOModule] extends AXI4MasterModel[T] { this: PeekPokeTester[T] =>
+trait AXI4MemTester[T <: MultiIOModule] extends AXI4MasterModel[T] {
   def resetMem(): Unit = {
     axiReset()
   }
@@ -207,7 +164,7 @@ trait AXI4MemTester[T <: MultiIOModule] extends AXI4MasterModel[T] { this: PeekP
 }
 
 /*
-trait AHBMemTester[T <: BaseModule] extends AHBMasterModel[T] { this: PeekPokeTester[T] =>
+trait AHBMemTester[T <: MultiIOModule] extends AHBMasterModel[T] {
   def resetMem(): Unit = {
     ahbReset()
   }

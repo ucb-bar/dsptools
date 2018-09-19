@@ -3,10 +3,9 @@
 package dspblocks
 
 import chisel3._
-import chisel3.experimental.dontTouch
-import chisel3.util.{HasBlackBoxResource, _}
-import freechips.rocketchip.amba.apb._
+import chisel3.util._
 import freechips.rocketchip.amba.ahb._
+import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config._
@@ -33,16 +32,15 @@ abstract class Passthrough[D, U, EO, EI, B <: Data](val params: PassthroughParam
 
   val streamNode = AXI4StreamIdentityNode()
 
-  lazy val module = new PassthroughModule(this)
+  lazy val module = new PassthroughModule[D, U, EO, EI, B](this)
 }
 
-class PassthroughModule(val outer: Passthrough[_, _, _, _, _ <: Data]) extends LazyModuleImp(outer) {
+class PassthroughModule[D, U, EO, EI, B <: Data](val outer: Passthrough[D, U, EO, EI, B])
+  extends LazyModuleImp(outer) {
   import outer.status
-
 
   val (in, _) = outer.streamNode.in.unzip
   val (out, _) = outer.streamNode.out.unzip
-  //val mem = outer.mem.map(_.in.map(_._1))
 
   status(PassthroughDepth.name) := outer.params.depth.U
 

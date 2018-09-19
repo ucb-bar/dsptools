@@ -4,7 +4,6 @@ package dspblocks
 
 import amba.axi4stream.AXI4StreamNode
 import chisel3._
-import chisel3.core.IO
 import chisel3.internal.firrtl.Width
 import freechips.rocketchip.amba.ahb._
 import freechips.rocketchip.amba.apb._
@@ -76,17 +75,55 @@ trait StandaloneBlock[D, U, EO, EI, B <: Data] extends DspBlock[D, U, EO, EI, B]
   val out = InModuleBody { ioOutNode.makeIO() }
 }
 
-trait AXI4StandaloneBlock extends StandaloneBlock[AXI4MasterPortParameters,
+trait AXI4StandaloneBlock extends StandaloneBlock[
+  AXI4MasterPortParameters,
   AXI4SlavePortParameters,
   AXI4EdgeParameters,
   AXI4EdgeParameters,
   AXI4Bundle] {
+  def standaloneParams = AXI4BundleParameters(addrBits = 64, dataBits = 64, idBits = 1)
   val ioMem = mem.map { m => {
-    val ioMemNode = BundleBridgeSource(() => AXI4Bundle(AXI4BundleParameters(64,64,4)))
+    val ioMemNode = BundleBridgeSource(() => AXI4Bundle(standaloneParams))
+
     m :=
       BundleBridgeToAXI4(AXI4MasterPortParameters(Seq(AXI4MasterParameters("bundleBridgeToAXI4")))) :=
       ioMemNode
 
+    val ioMem = InModuleBody { ioMemNode.makeIO() }
+    ioMem
+  }}
+}
+
+trait APBStandaloneBlock extends StandaloneBlock[
+  APBMasterPortParameters,
+  APBSlavePortParameters,
+  APBEdgeParameters,
+  APBEdgeParameters,
+  APBBundle] {
+  def standaloneParams = APBBundleParameters(addrBits = 64, dataBits = 64)
+  val ioMem = mem.map { m => {
+    val ioMemNode = BundleBridgeSource(() => APBBundle(standaloneParams))
+    m :=
+      BundleBridgeToAPB(APBMasterPortParameters(Seq(APBMasterParameters("bundleBridgeToAPB")))) :=
+      ioMemNode
+
+    val ioMem = InModuleBody { ioMemNode.makeIO() }
+    ioMem
+  }}
+}
+
+trait TLStandaloneBlock extends StandaloneBlock[
+  TLClientPortParameters,
+  TLManagerPortParameters,
+  TLEdgeOut,
+  TLEdgeIn,
+  TLBundle] {
+  def standaloneParams = TLBundleParameters(addressBits = 64, dataBits = 64, sourceBits = 1, sinkBits = 1, sizeBits = 6)
+  val ioMem = mem.map { m => {
+    val ioMemNode = BundleBridgeSource(() => TLBundle(standaloneParams))
+    m :=
+      BundleBridgeToTL(TLClientPortParameters(Seq(TLClientParameters("bundleBridgeToTL")))) :=
+      ioMemNode
     val ioMem = InModuleBody { ioMemNode.makeIO() }
     ioMem
   }}
@@ -127,71 +164,6 @@ object DspBlockBlindNodes {
   }
 }
 
-class BlindWrapper[D, U, EO, EI, B <: Data, T <: DspBlock[D, U, EO, EI, B]]
-(mod: () => T, blindParams: DspBlockBlindNodes[D, U, EO, EI, B])
-(implicit p: Parameters)
-extends DspBlock[D, U, EO, EI, B] {
-  val streamIn  = blindParams.streamIn()
-  val streamOut = blindParams.streamOut()
-
-  val memNode   = blindParams.mem()
-  val mem = Some(memNode)
-  val streamNode = streamIn
-
-
-  val internal: T = LazyModule(mod())
-
-  internal.streamNode := streamIn
-  streamOut           := internal.streamNode
-  internal.mem.map { m => m := memNode }
-
-  lazy val module = new BlindWrapperModule(this)
-}
-
-class BlindWrapperModule[D, U, EO, EI, B <: Data, T <: DspBlock[D, U, EO, EI, B]]
-(val outer: BlindWrapper[D, U, EO, EI, B, T]) extends LazyModuleImp(outer) {
-  override def desiredName: String =
-    "BlindModule" //outer.internal.module.name + "Blind"
-
-
-  val (streamIn, _) = outer.streamIn.out.unzip
-  val (streamOut, _) = outer.streamOut.in.unzip
-  val (memNode, _) = outer.memNode.out.unzip
-
-  val in = streamIn.map { i =>
-    val in = IO(Flipped(chiselTypeOf(i)))
-    i <> in
-    in
-  }
-
-  val out = streamOut.map { o =>
-    val out = IO(chiselTypeOf(o))
-    out <> o
-    out
-  }
-
-  val mem = memNode.map { m =>
-    val mem = IO(Flipped(chiselTypeOf(m)))
-    m <> mem
-    mem
-  }
-
-}
-
-object BlindWrapperModule {
-  type AXI4BlindWrapperModule[T <: DspBlock[
-    AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters, AXI4Bundle]]
-  = BlindWrapperModule[AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters, AXI4Bundle, T]
-
-  type TLBlindWrapperModule[T <: DspBlock[
-    TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle]]
-  = BlindWrapperModule[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle, T]
-
-  type APBBlindWrapperModule[T <: DspBlock[
-    APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle]]
-  = BlindWrapperModule[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle, T]
-}
-
 object DspBlock {
   type AXI4BlindNodes = DspBlockBlindNodes[
     AXI4MasterPortParameters,
@@ -199,12 +171,6 @@ object DspBlock {
     AXI4EdgeParameters,
     AXI4EdgeParameters,
     AXI4Bundle]
-
-  def blindWrapper[D, U, EO, EI, B <: Data, T <: DspBlock[D, U, EO, EI, B]]
-  (mod: () => T, blindParams: DspBlockBlindNodes[D, U, EO, EI, B])
-  (implicit p: Parameters): BlindWrapper[D, U, EO, EI, B, T]= {
-    new BlindWrapper(mod, blindParams)
-  }
 }
 
 class CSRRecord(csrMap: CSR.Map) extends Record {
