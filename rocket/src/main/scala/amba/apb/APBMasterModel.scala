@@ -10,7 +10,8 @@ trait APBMasterModel[T <: MultiIOModule] extends chisel3.iotesters.PeekPokeTeste
   def memAPB: APBBundle
 
   def apbReset(): Unit = {
-
+    poke(memAPB.psel, 0)
+    poke(memAPB.penable, 0)
   }
 
   def apbWrite(addr: Int, data: Int): Unit =
