@@ -113,10 +113,9 @@ class TypeclassSpec extends FreeSpec with Matchers {
     dsptools.Driver.execute( () => new EqModule(FixedPoint(10.W, 4.BP)) ) { c =>
       new FixedPointFuncTester(c, Seq(2, 0), Seq(2, 1))
     } should be (true)
-    // Needs fix to chisel literals
-    // dsptools.Driver.execute( () => new EqModule(DspReal()) ) { c =>
-    //   new DspRealFuncTester(c, Seq(2, 0), Seq(2, 1))
-    // } should be (true)
+    dsptools.Driver.execute( () => new EqModule(DspReal()) ) { c =>
+      new DspRealFuncTester(c, Seq(2, 0), Seq(2, 1))
+    } should be (true)
   }
   "Integer[T].func() should work" in {
     dsptools.Driver.execute( () => new IntegerModule(SInt(10.W)) ) { c =>
