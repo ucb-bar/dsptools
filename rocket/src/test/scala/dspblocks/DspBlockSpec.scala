@@ -2,16 +2,10 @@
 
 package dspblocks
 
-import freechips.rocketchip.amba.apb._
-import freechips.rocketchip.amba.axi4._
-import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.system.BaseConfig
-import freechips.rocketchip.tilelink._
 import org.scalatest.{FlatSpec, Matchers}
-
-import scala.collection.Seq
 
 class DspBlockSpec extends FlatSpec with Matchers {
   implicit val p: Parameters = (new BaseConfig).toInstance
@@ -26,7 +20,7 @@ class DspBlockSpec extends FlatSpec with Matchers {
     // println(chisel3.Driver.emit(() => dut().module))
     // println(chisel3.Driver.emitVerilog(dut().module))
 
-    chisel3.iotesters.Driver.execute(Array("-tiv", "-tbn", "firrtl", "-fiwv"), dut) {
+    chisel3.iotesters.Driver.execute(Array("-tbn", "firrtl", "-fiwv"), dut) {
       c => new AXI4PassthroughTester(lazymod)
     } should be (true)
   }
@@ -57,83 +51,43 @@ class DspBlockSpec extends FlatSpec with Matchers {
     } should be (true)
   }
 
-
   behavior of "Byte Rotate"
 
-  it should "work with AXI4" ignore {
-    val blindNodes = DspBlockBlindNodes.apply(
-      AXI4StreamBundleParameters(
-        n = 8,
-        i = 1,
-        d = 1,
-        u = 1,
-        hasData = true,
-        hasStrb = true,
-        hasKeep = true
-      ),
-      () => AXI4MasterNode(Seq(AXI4MasterPortParameters(Seq(AXI4MasterParameters("rotate")))))
-    )
-
-    val dut = () => LazyModule(new AXI4ByteRotate() with AXI4StandaloneBlock).module
+  it should "work with AXI4" in {
+    val lazymod = LazyModule(new AXI4ByteRotate() with AXI4StandaloneBlock)
+    val dut = () => lazymod.module
 
     //println(chisel3.Driver.emit(dut))
     //println(chisel3.Driver.emitVerilog(dut()))
 
-    //chisel3.iotesters.Driver.execute(Array(/*"-tiv",*/ "-tbn", "firrtl", "-fiwv"), dut) {
-    //  c => new AXI4ByteRotateTester(c)
-    //} should be (true)
+    chisel3.iotesters.Driver.execute(Array(/*"-tiv",*/ "-tbn", "firrtl", "-fiwv"), dut) {
+      c => new AXI4ByteRotateTester(lazymod)
+    } should be (true)
   }
 
-  it should "work with APB" ignore {
-    val blindNodes = DspBlockBlindNodes(
-      AXI4StreamBundleParameters(
-        n = 8,
-        i = 1,
-        d = 1,
-        u = 1,
-        hasData = true,
-        hasKeep = true,
-        hasStrb = true
-      ),
-      mem = () => APBMasterNode(Seq(APBMasterPortParameters(Seq(
-        APBMasterParameters(
-          "rotate"
-        ))))))
-
-    val dut = () => LazyModule(new APBByteRotate() with APBStandaloneBlock).module
+  it should "work with APB" in {
+    val lazymod = LazyModule(new APBByteRotate() with APBStandaloneBlock)
+    val dut = () => lazymod.module
 
     //println(chisel3.Driver.emit(dut))
     //println(chisel3.Driver.emitVerilog(dut()))
 
-    //chisel3.iotesters.Driver.execute(Array("-tbn", "firrtl", "-fiwv"), dut) {
-    //  c => new APBByteRotateTester(c)
-    //} should be (true)
+    chisel3.iotesters.Driver.execute(Array("-tbn", "firrtl", "-fiwv"), dut) {
+      c => new APBByteRotateTester(lazymod)
+    } should be (true)
 
   }
 
-  it should "work with TL" ignore {
-    val blindNodes = DspBlockBlindNodes(
-      AXI4StreamBundleParameters(
-        n = 8,
-        i = 1,
-        d = 1,
-        u = 1,
-        hasData = true,
-        hasKeep = true,
-        hasStrb = true
-      ),
-      mem = () => TLClientNode(
-        Seq(TLClientPortParameters(
-          Seq(TLClientParameters("rotate"))))))
-
-    val dut = () => LazyModule(new TLByteRotate() with TLStandaloneBlock).module
+  it should "work with TL" in {
+    val lazymod = LazyModule(new TLByteRotate() with TLStandaloneBlock)
+    val dut = () => lazymod.module
 
     //println(chisel3.Driver.emit(dut))
     //println(chisel3.Driver.emitVerilog(dut()))
 
-    //chisel3.iotesters.Driver.execute(Array("-tbn", "verilator", "-fiwv"), dut) {
-    //  c => new TLByteRotateTester(c)
-    //} should be (true)
+    chisel3.iotesters.Driver.execute(Array("-tbn", "verilator", "-fiwv"), dut) {
+      c => new TLByteRotateTester(lazymod)
+    } should be (true)
   }
 }
 

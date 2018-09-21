@@ -2,11 +2,10 @@
 
 package amba.apb
 
-import chisel3.Module
 import chisel3.experimental.MultiIOModule
 import freechips.rocketchip.amba.apb._
 
-trait APBMasterModel[T <: MultiIOModule] extends chisel3.iotesters.PeekPokeTester[T] {
+trait APBMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] {
   def memAPB: APBBundle
 
   def apbReset(): Unit = {

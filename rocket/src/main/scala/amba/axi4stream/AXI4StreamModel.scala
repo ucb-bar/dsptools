@@ -1,9 +1,8 @@
 package freechips.rocketchip.amba.axi4stream
 
+import breeze.stats.distributions._
 import chisel3.experimental.MultiIOModule
 import chisel3.iotesters.PeekPokeTester
-
-import breeze.stats.distributions._
 
 import scala.language.implicitConversions
 
@@ -243,7 +242,7 @@ class AXI4StreamPeekPokeSlave(port: AXI4StreamBundle, tester: PeekPokeTester[_])
   }
 }
 
-trait AXI4StreamMasterModel[+T <: MultiIOModule] extends PeekPokeTester[T] {
+trait AXI4StreamMasterModel extends PeekPokeTester[MultiIOModule] {
   protected var masters: Seq[AXI4StreamPeekPokeMaster] = Seq()
 
   def resetMaster(port: AXI4StreamBundle): Unit = {
@@ -285,7 +284,7 @@ trait AXI4StreamMasterModel[+T <: MultiIOModule] extends PeekPokeTester[T] {
   }
 }
 
-trait AXI4StreamSlaveModel[+T <: MultiIOModule] extends PeekPokeTester[T] {
+trait AXI4StreamSlaveModel extends PeekPokeTester[MultiIOModule] {
   protected var slaves: Seq[AXI4StreamPeekPokeSlave] = Seq()
 
   def resetSlave(port: AXI4StreamBundle): Unit = {
@@ -327,8 +326,8 @@ trait AXI4StreamSlaveModel[+T <: MultiIOModule] extends PeekPokeTester[T] {
   }
 }
 
-trait AXI4StreamModel[+T <: MultiIOModule] extends
-  AXI4StreamSlaveModel[T] with AXI4StreamMasterModel[T] {
+trait AXI4StreamModel extends
+  AXI4StreamSlaveModel with AXI4StreamMasterModel {
 
   override def step(n: Int): Unit = {
     for (_ <- 0 until n) {

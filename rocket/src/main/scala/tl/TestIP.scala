@@ -46,7 +46,7 @@ object TLMasterModel {
 }
 
 //noinspection RedundantDefaultArgument
-trait TLMasterModel[T <: MultiIOModule] extends chisel3.iotesters.PeekPokeTester[T] {
+trait TLMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] {
   import TLMasterModel._
 
   def memTL: TLBundle
