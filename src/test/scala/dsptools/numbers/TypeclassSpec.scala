@@ -62,6 +62,10 @@ class SignedModule[T <: Data : Signed](gen: T) extends FuncModule(
   gen, {in: T => Mux(Signed[T].sign(in).neg, Signed[T].abs(in), Mux(Signed[T].sign(in).zero, in, in)) }
 )
 
+class BinaryRepresentationModule[T <: Data : BinaryRepresentation](gen: T) extends FuncModule(
+  gen, {in : T => (((in << 2) >> 1) << 3.U) >> 2.U}
+)
+
 trait FuncTester[T <: Data, V] {
   def dut: FuncModule[T]
   def testInputs: Seq[V]
@@ -113,10 +117,9 @@ class TypeclassSpec extends FreeSpec with Matchers {
     dsptools.Driver.execute( () => new EqModule(FixedPoint(10.W, 4.BP)) ) { c =>
       new FixedPointFuncTester(c, Seq(2, 0), Seq(2, 1))
     } should be (true)
-    // Needs fix to chisel literals
-    // dsptools.Driver.execute( () => new EqModule(DspReal()) ) { c =>
-    //   new DspRealFuncTester(c, Seq(2, 0), Seq(2, 1))
-    // } should be (true)
+    dsptools.Driver.execute( () => new EqModule(DspReal()) ) { c =>
+      new DspRealFuncTester(c, Seq(2, 0), Seq(2, 1))
+    } should be (true)
   }
   "Integer[T].func() should work" in {
     dsptools.Driver.execute( () => new IntegerModule(SInt(10.W)) ) { c =>
@@ -154,6 +157,17 @@ class TypeclassSpec extends FreeSpec with Matchers {
     } should be (true)
     dsptools.Driver.execute( () => new SignedModule(DspReal()) ) { c =>
       new DspRealFuncTester(c, Seq(2, -3), Seq(2, 3))
+    } should be (true)
+  }
+  "BinaryRepresentation[T].func() should work" in {
+    dsptools.Driver.execute( () => new BinaryRepresentationModule(SInt(10.W)) ) { c =>
+      new SIntFuncTester(c, Seq(2, 3), Seq(8, 12))
+    } should be (true)
+    dsptools.Driver.execute( () => new BinaryRepresentationModule(FixedPoint(10.W, 4.BP)) ) { c =>
+      new FixedPointFuncTester(c, Seq(2, 3), Seq(8, 12))
+    } should be (true)
+    dsptools.Driver.execute( () => new BinaryRepresentationModule(DspReal()) ) { c =>
+      new DspRealFuncTester(c, Seq(2, 3), Seq(8, 12))
     } should be (true)
   }
 }
