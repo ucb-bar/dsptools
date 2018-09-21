@@ -61,7 +61,7 @@ object AXI4MasterModel {
   val RRESP_DECERR = BigInt(3)
 }
 
-trait AXI4MasterModel[T <: MultiIOModule] extends PeekPokeTester[T] {
+trait AXI4MasterModel extends PeekPokeTester[MultiIOModule] {
   import AXI4MasterModel._
 
   def memAXI: AXI4Bundle

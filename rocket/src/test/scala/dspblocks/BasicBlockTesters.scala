@@ -5,13 +5,12 @@ package dspblocks
 import amba.apb.APBMasterModel
 import amba.axi4.AXI4MasterModel
 import chisel3._
-import chisel3.experimental.MultiIOModule
 import chisel3.iotesters.PeekPokeTester
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.tilelink.{TLBundle, TLMasterModel}
 
 abstract class PassthroughTester[D, U, EO, EI, B <: Data](dut: Passthrough[D, U, EO, EI, B] with StandaloneBlock[D, U, EO, EI, B])
-extends PeekPokeTester(dut.module) with MemTester with AXI4StreamModel[PassthroughModule[D, U, EO, EI, B]] {
+extends PeekPokeTester(dut.module) with MemTester with AXI4StreamModel {
   resetMem()
 
   val in = dut.in.getWrappedValue
@@ -43,31 +42,24 @@ extends PeekPokeTester(dut.module) with MemTester with AXI4StreamModel[Passthrou
 }
 
 class AXI4PassthroughTester(c: AXI4Passthrough with AXI4StandaloneBlock)
-  extends PassthroughTester(c) with AXI4MemTester[PassthroughModule[_,_,_,_,_ <: Data]] {
+  extends PassthroughTester(c) with AXI4MemTester {
   def memAXI = c.ioMem.get.getWrappedValue
 }
 
 class APBPassthroughTester(c: APBPassthrough with APBStandaloneBlock)
-  extends PassthroughTester(c) with APBMemTester[PassthroughModule[_,_,_,_,_ <: Data]] {
+  extends PassthroughTester(c) with APBMemTester {
   def memAPB = c.ioMem.get.getWrappedValue
 }
 
 class TLPassthroughTester(c: TLPassthrough with TLStandaloneBlock)
-  extends PassthroughTester(c) with TLMemTester[PassthroughModule[_,_,_,_,_ <: Data]] {
+  extends PassthroughTester(c) with TLMemTester {
   override def memTL: TLBundle = c.ioMem.get.getWrappedValue
 }
 
-/*
-abstract class ByteRotateTester[D, U, EO, EI, B <: Data, T <: ByteRotate[D, U, EO, EI, B]]
-(c: BlindWrapperModule[D, U, EO, EI, B, T]) extends PeekPokeTester(c)
-with AXI4StreamModel[T] {
-  def resetMem(): Unit
-  def readAddr(addr: BigInt): BigInt
-  def writeAddr(addr: BigInt, value: BigInt): Unit
-  def writeAddr(addr: Int, value: Int): Unit = writeAddr(BigInt(addr), BigInt(value))
-
-  val out = c.out.head
-  val in  = c.in.head
+abstract class ByteRotateTester[D, U, EO, EI, B <: Data] (dut: ByteRotate[D, U, EO, EI, B] with
+  StandaloneBlock[D, U, EO, EI, B]) extends PeekPokeTester(dut.module) with MemTester with AXI4StreamModel {
+  val in  = dut.in.getWrappedValue
+  val out = dut.out.getWrappedValue
   val n = in.bits.params.n
 
   resetMem()
@@ -80,8 +72,6 @@ with AXI4StreamModel[T] {
 
   for (rot <- 0 until n) {
     writeAddr(0, rot)
-
-
     // fill queue
     def shiftRot(in: Int): Int = {
       (n + in - rot) % n
@@ -97,22 +87,18 @@ with AXI4StreamModel[T] {
   expect(out.valid, 0)
 }
 
-
-class AXI4ByteRotateTester(c: AXI4BlindWrapperModule[AXI4ByteRotate])
-  extends ByteRotateTester(c) with AXI4MemTester[AXI4BlindWrapperModule[AXI4ByteRotate]] {
-  def memAXI = c.mem.head
+class AXI4ByteRotateTester(c: AXI4ByteRotate with AXI4StandaloneBlock) extends ByteRotateTester(c) with AXI4MemTester {
+  def memAXI = c.ioMem.get.getWrappedValue
 }
 
-class APBByteRotateTester(c: APBBlindWrapperModule[APBByteRotate])
-  extends ByteRotateTester(c) with APBMemTester[APBBlindWrapperModule[APBByteRotate]] {
-  def memAPB = c.mem.head
+class APBByteRotateTester(c: APBByteRotate with APBStandaloneBlock) extends ByteRotateTester(c) with APBMemTester {
+  def memAPB = c.ioMem.get.getWrappedValue
 }
 
-class TLByteRotateTester(c: TLBlindWrapperModule[TLByteRotate])
-  extends ByteRotateTester(c) with TLMemTester[TLBlindWrapperModule[TLByteRotate]] {
-  def memTL = c.mem.head
+class TLByteRotateTester(c: TLByteRotate with TLStandaloneBlock) extends ByteRotateTester(c) with TLMemTester {
+  def memTL = c.ioMem.get.getWrappedValue
 }
-*/
+
 
 trait MemTester {
   def resetMem(): Unit
@@ -121,7 +107,7 @@ trait MemTester {
   def writeAddr(addr: Int, value: Int): Unit = writeAddr(BigInt(addr), BigInt(value))
 }
 
-trait TLMemTester[T <: MultiIOModule] extends TLMasterModel[T] {
+trait TLMemTester extends TLMasterModel {
   def resetMem(): Unit = {
     tlReset()
   }
@@ -135,7 +121,7 @@ trait TLMemTester[T <: MultiIOModule] extends TLMasterModel[T] {
   }
 }
 
-trait APBMemTester[T <: MultiIOModule] extends APBMasterModel[T] {
+trait APBMemTester extends APBMasterModel {
   def resetMem(): Unit = {
     apbReset()
   }
@@ -149,7 +135,7 @@ trait APBMemTester[T <: MultiIOModule] extends APBMasterModel[T] {
   }
 }
 
-trait AXI4MemTester[T <: MultiIOModule] extends AXI4MasterModel[T] {
+trait AXI4MemTester extends AXI4MasterModel {
   def resetMem(): Unit = {
     axiReset()
   }

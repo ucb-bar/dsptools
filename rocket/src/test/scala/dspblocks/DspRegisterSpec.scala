@@ -10,7 +10,6 @@ import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
 import org.scalatest.{FlatSpec, Matchers}
-import DoubleToBigIntRand._
 
 class DspRegisterTestModule(
                   val inP: AXI4StreamBundleParameters,
@@ -63,7 +62,7 @@ class DspRegisterTestModuleTester(c: DspRegisterTestModule,
                                   expectTranslator: Seq[AXI4StreamTransaction] => Seq[AXI4StreamTransactionExpect] =
                        { _.map(t => AXI4StreamTransactionExpect(data = Some(t.data))) }
                       )
-  extends PeekPokeTester(c) with AXI4StreamSlaveModel[DspRegisterTestModule] with AXI4MasterModel[DspRegisterTestModule] {
+  extends PeekPokeTester(c) with AXI4StreamSlaveModel with AXI4MasterModel {
 
   override val memAXI: AXI4Bundle = c.io.mem
   axiReset()
