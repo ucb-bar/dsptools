@@ -48,17 +48,17 @@ object Sign {
   case object Negative extends Sign(Some(false), Some(true))
 
   def apply(zero: Bool, neg: Bool): Sign = {
-    val zeroLit = zero.litArg.map{_.num != BigInt(0)}
-    val negLit  = neg.litArg.map{_.num != BigInt(0)}
+    val zeroLit = zero.litOption.map{_ != BigInt(0)}
+    val negLit  = neg.litOption.map{_ != BigInt(0)}
     val isLit = zeroLit.isDefined && negLit.isDefined
     val wireWrapIfNotLit: Sign => Sign = s => if (isLit) { s } else Wire(s)
     val bundle = wireWrapIfNotLit(
       new Sign(zeroInit=zeroLit, negInit=negLit)
     )
-    if (!zero.isLit) {
+    if (!zero.litOption.isDefined) {
       bundle.zero := zero
     }
-    if (!neg.isLit) {
+    if (!neg.litOption.isDefined) {
       bundle.neg  := neg
     }
     bundle

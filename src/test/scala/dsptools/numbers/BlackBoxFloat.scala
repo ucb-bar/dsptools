@@ -237,9 +237,11 @@ class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends 
   }
 
   for {
-    x <- -1.0 to 1.0 by 1.0
-    y <- -1.0 to 1.0 by 1.0
+    xInt <- -1 to 1 by 1
+    yInt <- -1 to 1 by 1
   } {
+    val x = xInt.toDouble
+    val y = yInt.toDouble
     poke(c.io.in1, x)
     poke(c.io.in2, y)
     poke(c.io.opsel, GreaterThan)

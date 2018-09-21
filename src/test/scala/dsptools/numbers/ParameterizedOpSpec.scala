@@ -26,24 +26,23 @@ class ParameterizedNumberOperation[T <: Data:Ring](
 
   val register1 = Reg(outputGenerator().cloneType)
 
-  register1 := {
-    op match {
-      case "+" => io.a1 + io.a2
-      case "-" => io.a1 - io.a2
-      case "*" => DspContext.withTrimType(NoTrim) { io.a1 * io.a2 }
+  register1 := (op match {
+    case "+" => io.a1 + io.a2
+    case "-" => io.a1 - io.a2
+    case "*" => DspContext.withTrimType(NoTrim) { io.a1 * io.a2 }
 //      case "/" => io.a1 / io.a2
-      case _ => throw new Exception(s"Bad operator $op passed to ParameterizedNumberOperation")
-    }
-  }
+    case _ => throw new Exception(s"Bad operator $op passed to ParameterizedNumberOperation")
+  })
 
   io.c := register1
 }
 
 class ParameterizedOpTester[T<:Data:Ring](c: ParameterizedNumberOperation[T]) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    iBD <- BigDecimal(0) to 1 by 0.25
+    jBD <- BigDecimal(0) to 4 by 0.5
   } {
+    val (i, j) = (iBD.toDouble, jBD.toDouble)
     val expected = c.op match {
       case "+" => i + j
       case "-" => i - j
@@ -100,9 +99,10 @@ class ParameterizedOpSpecification extends FreeSpec with Matchers {
 
 class ComplexOpTester[T<:DspComplex[_]](c: ParameterizedNumberOperation[T]) extends DspTester(c) {
   for {
-    i <- -1.0 to 1.0 by 0.25
-    j <- -4.0 to 4.0 by 0.5
+    iBD <- BigDecimal(-1.0) to 1 by 0.25
+    jBD <- BigDecimal(-4.0) to 4 by 0.5
   } {
+    val (i, j) = (iBD.toDouble, jBD.toDouble)
     val c1 = Complex(i, j)
     val c2 = Complex(j, i)
 
@@ -140,9 +140,7 @@ class ComplexOpSpecification extends FreeSpec with Matchers {
         FixedPoint(48.W, 4.BP))
     }
     def complexRealGenerator(): DspComplex[DspReal] = {
-      DspComplex(
-        DspReal(1.0),
-        DspReal(1.0))
+      DspComplex(DspReal(), DspReal())
     }
 
 //    "Run Repl for complexReal" in {

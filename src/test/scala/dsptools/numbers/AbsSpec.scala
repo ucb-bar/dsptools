@@ -29,13 +29,15 @@ class AbsSpec extends FreeSpec with Matchers {
 }
 
 class DoesAbsTester(c: DoesAbs[UInt, SInt, FixedPoint]) extends DspTester(c) {
-  for(i <- 0.0 to 15.0 by 1.0) {
+  for(iInt <- 0 to 15 by 1) {
+    val i = iInt.toDouble
     poke(c.io.uIn, i)
     expect(c.io.uAbsGrow, i)
     expect(c.io.uAbsWrap, i)
     step(1)
   }
-  for(i <- -7.0 to 7.0 by 1.0) {
+  for(iInt <- -7 to 7 by 1) {
+    val i = iInt.toDouble
     poke(c.io.sIn, i)
     expect(c.io.sAbsGrow, i.abs)
     expect(c.io.sAbsWrap, i.abs)
@@ -47,7 +49,8 @@ class DoesAbsTester(c: DoesAbs[UInt, SInt, FixedPoint]) extends DspTester(c) {
 
   val increment = 0.25
 
-  for(i <- -3.75 to 3.75 by increment) {
+  for(iBD <- BigDecimal(-3.75) to 3.75 by increment) {
+    val i = iBD.toDouble
     poke(c.io.fIn, i)
     expect(c.io.fAbsGrow, i.abs)
     expect(c.io.fAbsWrap, i.abs)
