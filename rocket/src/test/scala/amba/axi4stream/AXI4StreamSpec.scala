@@ -12,7 +12,8 @@ class TestModule(val inP: AXI4StreamBundleParameters,
                  outP: AXI4StreamSlaveParameters,
                  func: (AXI4StreamMasterNode, Parameters) => AXI4StreamNodeHandle) extends Module {
   implicit val p: Parameters = Parameters.empty
-  val transactions = AXI4StreamTransaction.defaultSeq(100).map(_.randData(Uniform(0.0, 65535.0)))
+  import DoubleToBigIntRand._
+  val transactions = AXI4StreamTransaction.defaultSeq(100).map(_.randData(Uniform(0, 65535)))
 
   val lazyMod = LazyModule(new LazyModule() {
     val fuzzer = AXI4StreamFuzzer.bundleParams(transactions, inP)

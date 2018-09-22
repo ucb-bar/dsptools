@@ -8,7 +8,6 @@ import freechips.rocketchip.amba.ahb._
 import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
-import freechips.rocketchip.config._
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.tilelink._
 
@@ -120,8 +119,6 @@ trait TLStandaloneBlock extends StandaloneBlock[
   }}
 }
 
-
-
 trait TLDspBlock extends DspBlock[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle]
 
 trait TLDspBlockWithBus extends TLDspBlock {
@@ -156,43 +153,3 @@ trait AHBDspBlockWithBus extends AHBDspBlock {
   val bus = LazyModule(new AHBFanout)
   val mem = Some(bus.node)
 }
-
-trait HierarchicalDspBlock[ID, D, U, EO, EI, B <: Data] extends DspBlock[D, U, EO, EI, B] {
-  type Block = DspBlock[D, U, EO, EI, B]
-  def blocks: Map[ID, () => Block]
-  def connections: Seq[(Block, Block)]
-  def connect(lhs: Block, rhs: Block): Unit = {
-    lhs.streamNode := rhs.streamNode
-  }
-}
-
-case class PGLAHierarchicalDspBlockParameters[ID, D, U, EO, EI, B <: Data]
-(
-  logicAnalyzerSamples: Int = 128,
-  logicAnalyzerUseCombinationalTrigger: Boolean = true,
-  patternGeneratorSamples: Int = 128,
-  patternGeneratorUseCombinationalTrigger: Boolean = true
-)
-
-abstract class PGLAHierarchicalDspBlock[ID, D, U, EO, EI, B <: Data]()(implicit p: Parameters) extends HierarchicalDspBlock[ID, D, U, EO, EI, B] {
-
-  override def connect(lhs: Block, rhs: Block): Unit = {
-
-  }
-}
-
-
-case class DspChainParameters[D, U, EO, EI, B <: Data]
-(
-  blocks: Seq[() => DspBlock[D, U, EO, EI, B]],
-  //blocks: Seq[(Parameters => DspBlock, String, BlockConnectionParameters, Option[SAMConfig])],
-
-  biggestWidth: Int = 128,
-  writeHeader: Boolean = false
-)
-
-/*
-class DspChain[D, U, EO, EI, B <: Data](val params: DspChainParameters[D, U, EO, EI, B])(implicit p: Parameters) extends HierarchicalDspBlock[Int, D, U, EO, EI, B] {
-  val blocks = params.blocks
-}
-*/

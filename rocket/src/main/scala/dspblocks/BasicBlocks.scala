@@ -15,6 +15,38 @@ import freechips.rocketchip.tilelink._
 
 import scala.language.existentials
 
+trait AHBBasicBlock extends AHBDspBlock with AHBHasCSR {
+  val csrAddress = AddressSet(0x0, 0xff)
+  val beatBytes = 8
+  override val mem = Some(AHBRegisterNode(address = csrAddress, beatBytes = beatBytes))
+}
+
+trait APBBasicBlock extends APBDspBlock with APBHasCSR {
+  def csrAddress = AddressSet(0x0, 0xff)
+  def beatBytes = 8
+  override val mem = Some(APBRegisterNode(address = csrAddress, beatBytes = beatBytes))
+}
+
+trait AXI4BasicBlock extends AXI4DspBlock with AXI4HasCSR {
+  def beatBytes = 8
+  def csrAddress = AddressSet(0x0, 0xff)
+  override val mem = Some(AXI4RegisterNode(address = csrAddress, beatBytes=beatBytes))
+}
+
+trait TLBasicBlock extends TLDspBlock with TLHasCSR {
+  def csrAddress = AddressSet(0x0, 0xff)
+  def beatBytes = 8
+  def devname = "tlpassthrough"
+  def devcompat = Seq("ucb-art", "dsptools")
+  val device = new SimpleDevice(devname, devcompat) {
+    override def describe(resources: ResourceBindings): Description = {
+      val Description(name, mapping) = super.describe(resources)
+      Description(name, mapping)
+    }
+  }
+  override val mem = Some(TLRegisterNode(address = Seq(csrAddress), device = device, beatBytes = beatBytes))
+}
+
 case class PassthroughParams
 (
   depth: Int = 0
@@ -38,38 +70,6 @@ abstract class Passthrough[D, U, EO, EI, B <: Data](val params: PassthroughParam
 
     out.head <> Queue(in.head, params.depth)
   }
-}
-
-trait AHBBasicBlock extends AHBDspBlock with AHBHasCSR {
-  val csrAddress = AddressSet(0x0, 0xff)
-  val beatBytes = 8
-  override val mem = Some(AHBRegisterNode(address = csrAddress, beatBytes = beatBytes))
-}
-
-trait APBBasicBlock extends APBDspBlock with APBHasCSR {
-  val csrAddress = AddressSet(0x0, 0xff)
-  val beatBytes = 8
-  override val mem = Some(APBRegisterNode(address = csrAddress, beatBytes = beatBytes))
-}
-
-trait AXI4BasicBlock extends AXI4DspBlock with AXI4HasCSR {
-  val beatBytes = 8
-  val csrAddress = AddressSet(0x0, 0xff)
-  override val mem = Some(AXI4RegisterNode(address = csrAddress, beatBytes=beatBytes))
-}
-
-trait TLBasicBlock extends TLDspBlock with TLHasCSR {
-  val csrAddress = AddressSet(0x0, 0xff)
-  val beatBytes = 8
-  val devname = "tlpassthrough"
-  val devcompat = Seq("ucb-art", "dsptools")
-  val device = new SimpleDevice(devname, devcompat) {
-    override def describe(resources: ResourceBindings): Description = {
-      val Description(name, mapping) = super.describe(resources)
-      Description(name, mapping)
-    }
-  }
-  override val mem = Some(TLRegisterNode(address = Seq(csrAddress), device = device, beatBytes = beatBytes))
 }
 
 class AHBPassthrough(params: PassthroughParams)(implicit p: Parameters)
@@ -121,7 +121,6 @@ abstract class ByteRotate[D, U, EO, EI, B <: Data]()(implicit p: Parameters) ext
       0x0 -> Seq(RegField(1 << log2Ceil(nWidth), byteRotate))
     )
   }
-
 }
 
 class AHBByteRotate()(implicit  p: Parameters) extends
