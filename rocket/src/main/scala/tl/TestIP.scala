@@ -146,7 +146,7 @@ trait TLMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] {
     val source  = peek(memTL.d.bits.source)
     val sink    = peek(memTL.d.bits.sink)
     val data    = peek(memTL.d.bits.data)
-    val corrupt   = peek(memTL.d.bits.corrupt)
+    val corrupt = peek(memTL.d.bits.corrupt)
 
     DChannel(
       opcode=opcode,
@@ -164,12 +164,11 @@ trait TLMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] {
     while (peek(memTL.d.valid) != BigInt(0)) {
       step(1)
     }
-
-
+    val d = peekD()
     step(1)
 
     poke(memTL.d.ready, 0)
-    peekD()
+    d
   }
 
   def pokeE(e: EChannel): Unit = {
