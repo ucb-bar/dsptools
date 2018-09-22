@@ -10,6 +10,7 @@ import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
 import org.scalatest.{FlatSpec, Matchers}
+import DoubleToBigIntRand._
 
 class DspRegisterTestModule(
                   val inP: AXI4StreamBundleParameters,
