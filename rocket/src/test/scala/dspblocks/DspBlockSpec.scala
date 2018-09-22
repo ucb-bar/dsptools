@@ -63,7 +63,7 @@ class DspBlockSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "work with TL" ignore {
+  it should "work with TL" in {
     val lazymod = LazyModule(new TLByteRotate() with TLStandaloneBlock)
     val dut = () => lazymod.module
 
@@ -83,7 +83,7 @@ class DspBlockSpec extends FlatSpec with Matchers {
     )) with APBStandaloneBlock)
     val dut = () => lazymod.module
 
-    chisel3.iotesters.Driver.execute(Array("-tiv", "-tbn", "firrtl", "-fiwv"), dut) {
+    chisel3.iotesters.Driver.execute(Array("-tbn", "firrtl", "-fiwv"), dut) {
       c => new APBPTBRTester(lazymod, 0, 0x100)
     } should be (true)
 
@@ -103,7 +103,7 @@ class DspBlockSpec extends FlatSpec with Matchers {
     } should be (true)
   }
 
-  it should "work with TL" ignore {
+  it should "work with TL" in {
     val lazymod = LazyModule(new TLChain(Seq(
       implicit p => LazyModule(new TLPassthrough(PassthroughParams(5))),
       implicit p => LazyModule(new TLByteRotate() {

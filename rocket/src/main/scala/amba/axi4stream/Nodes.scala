@@ -2,16 +2,9 @@
 
 package freechips.rocketchip.amba.axi4stream
 
-import chisel3.Data
 import chisel3.internal.sourceinfo.SourceInfo
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
-
-object AXI4Stream {
-  type Node = MixedNode[
-    AXI4StreamMasterPortParameters, AXI4StreamSlavePortParameters, AXI4StreamEdgeParameters, AXI4StreamBundle,
-    AXI4StreamMasterPortParameters, AXI4StreamSlavePortParameters, AXI4StreamEdgeParameters, AXI4StreamBundle]
-}
 
 /**
   * Implementation of Node for AXI4 Stream
@@ -81,12 +74,12 @@ extends MixedAdapterNode(AXI4StreamImp, AXI4StreamBundleBridgeImp)(
   uFn = { mp => slaveParams }
 )
 
-case class AXI4StreamHierarchicalNode(lhs: AXI4Stream.Node, rhs: AXI4Stream.Node)(implicit valName: ValName)
+case class AXI4StreamHierarchicalNode(lhs: AXI4StreamNode, rhs: AXI4StreamNode)(implicit valName: ValName)
   extends HierarchicalNode(lhs, rhs) {
 }
 
 object AXI4StreamHierarchicalNode {
-  def apply(nodes: Seq[AXI4Stream.Node])(implicit valName: ValName): AXI4Stream.Node = {
+  def apply(nodes: Seq[AXI4StreamNode])(implicit valName: ValName): AXI4StreamNode = {
     nodes.reduce(AXI4StreamHierarchicalNode(_, _))
   }
 }
