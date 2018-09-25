@@ -9,7 +9,7 @@ class SimpleSplitter()(implicit p: Parameters) extends LazyModule {
 
   val node = AXI4StreamNexusNode(
     masterFn = { seq => seq.reduce({ (a: AXI4StreamMasterPortParameters, b: AXI4StreamMasterPortParameters) => AXI4StreamMasterPortParameters(a.masterParams.union(b.masterParams))}) },
-    slaveFn  = { seq => seq.reduce({ (a: AXI4StreamSlavePortParameters,  b: AXI4StreamSlavePortParameters)  => AXI4StreamSlavePortParameters (b.slaveParams .union(b.slaveParams)) }) }
+    slaveFn  = { seq => seq.reduce({ (_: AXI4StreamSlavePortParameters, b: AXI4StreamSlavePortParameters)  => AXI4StreamSlavePortParameters (b.slaveParams .union(b.slaveParams)) }) }
   )
 
   lazy val module = new LazyModuleImp(this) {

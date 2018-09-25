@@ -1,9 +1,8 @@
 package freechips.rocketchip.amba.axi4stream
 
+import breeze.stats.distributions._
 import chisel3.experimental.MultiIOModule
 import chisel3.iotesters.PeekPokeTester
-
-import breeze.stats.distributions._
 
 import scala.language.implicitConversions
 
@@ -120,21 +119,31 @@ class AXI4StreamPeekPokeMaster(port: AXI4StreamBundle, tester: PeekPokeTester[_]
       poke(port.valid, 1)
       poke(port.bits.data, t.data)
       poke(port.bits.last, if (t.last) 1 else 0)
-      if (t.strb == -1) {
-        val allOnes = (BigInt(1) << port.bits.strb.getWidth) - 1
-        poke(port.bits.strb, allOnes)
-      } else {
-        poke(port.bits.strb, t.strb)
+      if (port.bits.strb.getWidth > 0) {
+        if (t.strb == -1) {
+          val allOnes = (BigInt(1) << port.bits.strb.getWidth) - 1
+          poke(port.bits.strb, allOnes)
+        } else {
+          poke(port.bits.strb, t.strb)
+        }
       }
-      if (t.keep == -1) {
-        val allOnes = (BigInt(1) << port.bits.keep.getWidth) - 1
-        poke(port.bits.keep, allOnes)
-      } else {
-        poke(port.bits.keep, t.keep)
+      if (port.bits.keep.getWidth > 0) {
+        if (t.keep == -1) {
+          val allOnes = (BigInt(1) << port.bits.keep.getWidth) - 1
+          poke(port.bits.keep, allOnes)
+        } else {
+          poke(port.bits.keep, t.keep)
+        }
       }
-      poke(port.bits.user, t.user)
-      poke(port.bits.id,   t.id)
-      poke(port.bits.dest, t.dest)
+      if (port.bits.user.getWidth > 0) {
+        poke(port.bits.user, t.user)
+      }
+      if (port.bits.id.getWidth > 0) {
+        poke(port.bits.id,   t.id)
+      }
+      if (port.bits.dest.getWidth > 0) {
+        poke(port.bits.dest, t.dest)
+      }
       if (peek(port.ready) != BigInt(0)) {
         input = input.tail
       }
@@ -233,7 +242,7 @@ class AXI4StreamPeekPokeSlave(port: AXI4StreamBundle, tester: PeekPokeTester[_])
   }
 }
 
-trait AXI4StreamMasterModel[T <: MultiIOModule] extends PeekPokeTester[T] {
+trait AXI4StreamMasterModel extends PeekPokeTester[MultiIOModule] {
   protected var masters: Seq[AXI4StreamPeekPokeMaster] = Seq()
 
   def resetMaster(port: AXI4StreamBundle): Unit = {
@@ -264,7 +273,7 @@ trait AXI4StreamMasterModel[T <: MultiIOModule] extends PeekPokeTester[T] {
 
   def stepToCompletion(maxCycles: Int = 1000): Unit = {
     for (_ <- 0 until maxCycles) {
-      if (mastersComplete) {
+      if (mastersComplete()) {
         step(1)
         return
       } else {
@@ -275,7 +284,7 @@ trait AXI4StreamMasterModel[T <: MultiIOModule] extends PeekPokeTester[T] {
   }
 }
 
-trait AXI4StreamSlaveModel[T <: MultiIOModule] extends PeekPokeTester[T] {
+trait AXI4StreamSlaveModel extends PeekPokeTester[MultiIOModule] {
   protected var slaves: Seq[AXI4StreamPeekPokeSlave] = Seq()
 
   def resetSlave(port: AXI4StreamBundle): Unit = {
@@ -302,7 +311,7 @@ trait AXI4StreamSlaveModel[T <: MultiIOModule] extends PeekPokeTester[T] {
 
   def stepToCompletion(maxCycles: Int = 1000): Unit = {
     for (_ <- 0 until maxCycles) {
-      if (slavesComplete) {
+      if (slavesComplete()) {
         step(1)
         return
       } else {
@@ -317,8 +326,8 @@ trait AXI4StreamSlaveModel[T <: MultiIOModule] extends PeekPokeTester[T] {
   }
 }
 
-trait AXI4StreamModel[T <: MultiIOModule] extends
-  AXI4StreamSlaveModel[T] with AXI4StreamMasterModel[T] {
+trait AXI4StreamModel extends
+  AXI4StreamSlaveModel with AXI4StreamMasterModel {
 
   override def step(n: Int): Unit = {
     for (_ <- 0 until n) {

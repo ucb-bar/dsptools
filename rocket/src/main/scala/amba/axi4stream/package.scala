@@ -1,6 +1,5 @@
-package amba
+package freechips.rocketchip.amba
 
-import freechips.rocketchip.amba.axi4stream.{AXI4StreamBundle, AXI4StreamEdgeParameters, AXI4StreamMasterPortParameters, AXI4StreamSlavePortParameters}
 import freechips.rocketchip.diplomacy.{MixedNode, NodeHandle}
 
 package object axi4stream {

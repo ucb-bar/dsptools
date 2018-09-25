@@ -3,17 +3,17 @@ package freechips.rocketchip.amba.axi4stream
 import amba.axi4stream._
 import breeze.stats.distributions.Uniform
 import chisel3._
-import freechips.rocketchip.diplomacy._
-import org.scalatest.{FlatSpec, Matchers}
 import chisel3.iotesters.PeekPokeTester
 import freechips.rocketchip.config.Parameters
-import DoubleToBigIntRand._
+import freechips.rocketchip.diplomacy._
+import org.scalatest.{FlatSpec, Matchers}
 
 class TestModule(val inP: AXI4StreamBundleParameters,
                  outP: AXI4StreamSlaveParameters,
                  func: (AXI4StreamMasterNode, Parameters) => AXI4StreamNodeHandle) extends Module {
   implicit val p: Parameters = Parameters.empty
-  val transactions = AXI4StreamTransaction.defaultSeq(100).map(_.randData(Uniform(0.0, 65535.0)))
+  import DoubleToBigIntRand._
+  val transactions = AXI4StreamTransaction.defaultSeq(100).map(_.randData(Uniform(0, 65535)))
 
   val lazyMod = LazyModule(new LazyModule() {
     val fuzzer = AXI4StreamFuzzer.bundleParams(transactions, inP)
@@ -42,7 +42,7 @@ class TestModuleTester(c: TestModule,
                        expectTranslator: Seq[AXI4StreamTransaction] => Seq[AXI4StreamTransactionExpect] =
                          { _.map(t => AXI4StreamTransactionExpect(data = Some(t.data))) }
                       )
-  extends PeekPokeTester(c) with AXI4StreamSlaveModel[TestModule] {
+  extends PeekPokeTester(c) with AXI4StreamSlaveModel {
   bindSlave(c.io.out).addExpects(
     expectTranslator(c.transactions)
   )

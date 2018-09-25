@@ -63,7 +63,7 @@ class DspRegisterTestModuleTester(c: DspRegisterTestModule,
                                   expectTranslator: Seq[AXI4StreamTransaction] => Seq[AXI4StreamTransactionExpect] =
                        { _.map(t => AXI4StreamTransactionExpect(data = Some(t.data))) }
                       )
-  extends PeekPokeTester(c) with AXI4StreamSlaveModel[DspRegisterTestModule] with AXI4MasterModel[DspRegisterTestModule] {
+  extends PeekPokeTester(c) with AXI4StreamSlaveModel with AXI4MasterModel {
 
   override val memAXI: AXI4Bundle = c.io.mem
   axiReset()

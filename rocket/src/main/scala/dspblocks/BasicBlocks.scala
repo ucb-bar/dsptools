@@ -3,17 +3,49 @@
 package dspblocks
 
 import chisel3._
-import chisel3.experimental.dontTouch
-import chisel3.util.{HasBlackBoxResource, _}
-import freechips.rocketchip.amba.apb._
+import chisel3.util._
 import freechips.rocketchip.amba.ahb._
+import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config._
 import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.regmapper.RegField
 import freechips.rocketchip.tilelink._
 
 import scala.language.existentials
+
+trait AHBBasicBlock extends AHBDspBlock with AHBHasCSR {
+  val csrAddress = AddressSet(0x0, 0xff)
+  val beatBytes = 8
+  override val mem = Some(AHBRegisterNode(address = csrAddress, beatBytes = beatBytes))
+}
+
+trait APBBasicBlock extends APBDspBlock with APBHasCSR {
+  def csrAddress = AddressSet(0x0, 0xff)
+  def beatBytes = 8
+  override val mem = Some(APBRegisterNode(address = csrAddress, beatBytes = beatBytes))
+}
+
+trait AXI4BasicBlock extends AXI4DspBlock with AXI4HasCSR {
+  def beatBytes = 8
+  def csrAddress = AddressSet(0x0, 0xff)
+  override val mem = Some(AXI4RegisterNode(address = csrAddress, beatBytes=beatBytes))
+}
+
+trait TLBasicBlock extends TLDspBlock with TLHasCSR {
+  def csrAddress = AddressSet(0x0, 0xff)
+  def beatBytes = 8
+  def devname = "tlpassthrough"
+  def devcompat = Seq("ucb-art", "dsptools")
+  val device = new SimpleDevice(devname, devcompat) {
+    override def describe(resources: ResourceBindings): Description = {
+      val Description(name, mapping) = super.describe(resources)
+      Description(name, mapping)
+    }
+  }
+  override val mem = Some(TLRegisterNode(address = Seq(csrAddress), device = device, beatBytes = beatBytes))
+}
 
 case class PassthroughParams
 (
@@ -23,144 +55,86 @@ case class PassthroughParams
 }
 
 case object PassthroughDepth extends CSRField {
-  val name = "depth"
+  override val name = "depth"
 }
 
 abstract class Passthrough[D, U, EO, EI, B <: Data](val params: PassthroughParams)(implicit p: Parameters)
-  extends DspBlock[D, U, EO, EI, B] with HasCSR with HasIPXactParameters {
-
-  addStatus(PassthroughDepth)
-
+  extends DspBlock[D, U, EO, EI, B] with HasCSR {
   val streamNode = AXI4StreamIdentityNode()
 
-  lazy val module = new PassthroughModule(this)
+  lazy val module = new LazyModuleImp(this) {
+    val (in, _) = streamNode.in.unzip
+    val (out, _) = streamNode.out.unzip
 
-  override def ipxactParameters: collection.Map[String, String] = Map(
-    "maxDepth" -> params.depth.toString
-  )
+    regmap(0x0 -> Seq(RegField.r(64, params.depth.U)))
+
+    out.head <> Queue(in.head, params.depth)
+  }
 }
 
-class PassthroughModule(val outer: Passthrough[_, _, _, _, _ <: Data]) extends LazyModuleImp(outer) {
-  import outer.status
-
-
-  val (in, _) = outer.streamNode.in.unzip
-  val (out, _) = outer.streamNode.out.unzip
-  //val mem = outer.mem.map(_.in.map(_._1))
-
-  status(PassthroughDepth.name) := outer.params.depth.U
-
-  out.head <> Queue(in.head, outer.params.depth)
-}
-
-class AXI4Passthrough(params: PassthroughParams)(implicit p: Parameters)
-  extends Passthrough[AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters, AXI4Bundle](params)
-    with AXI4DspBlock with AXI4HasCSR {
-  val csrSize = 32
-
-  override def csrBase = 0
-
-  override def beatBytes = 8
-
-  override def csrAddress = AddressSet(0x0, 0xff)
-
-  makeCSRs()
-
-}
+class AHBPassthrough(params: PassthroughParams)(implicit p: Parameters)
+  extends Passthrough[AHBMasterPortParameters, AHBSlavePortParameters, AHBEdgeParameters, AHBEdgeParameters,
+    AHBBundle](params) with AHBBasicBlock
 
 class APBPassthrough(params: PassthroughParams)(implicit p: Parameters)
-  extends Passthrough[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle](params)
-    with APBDspBlockWithBus with APBHasCSR {
-  override val csrBase   = 0
-  override val csrSize   = 32
-  override val beatBytes = 8
+  extends Passthrough[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters,
+    APBBundle](params) with APBBasicBlock
 
-  makeCSRs()
-}
+class AXI4Passthrough(params: PassthroughParams)(implicit p: Parameters)
+  extends Passthrough[AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters,
+    AXI4Bundle](params) with AXI4BasicBlock
 
 class TLPassthrough(params: PassthroughParams)(implicit p: Parameters)
   extends Passthrough[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle](params)
-    with TLDspBlock with TLHasCSR {
-  override val csrBase   = BigInt(0)
-  override val csrSize   = BigInt(32)
-  override val beatBytes = 8
-
-  makeCSRs()
-}
+    with TLBasicBlock
 
 case object ByteRotateAmount extends CSRField {
-  val name = "byteRotationAmount"
+  override val name = "byteRotationAmount"
 }
 
 abstract class ByteRotate[D, U, EO, EI, B <: Data]()(implicit p: Parameters) extends DspBlock[D, U, EO, EI, B] with HasCSR {
-  addControl(ByteRotateAmount)
-
   val streamNode = AXI4StreamIdentityNode()
 
-  lazy val module = new ByteRotateModule(this)
+  lazy val module = new LazyModuleImp(this) {
+    val (in, _)  = streamNode.in.unzip
+    val (out, _) = streamNode.out.unzip
+    val n = in.head.bits.params.n
+    val nWidth = log2Ceil(n) + 1
 
-}
+    val byteRotate = RegInit(0.U(nWidth.W))
 
-class ByteRotateModule(val outer: ByteRotate[_, _, _, _, _ <: Data]) extends LazyModuleImp(outer) {
-  import outer.control
-
-  val (in, _)  = outer.streamNode.in.unzip
-  val (out, _) = outer.streamNode.out.unzip
-  val n = in.head.bits.params.n
-
-  def rotateBytes(u: UInt, n: Int, rot: Int): UInt = {
-    Cat(u(8*rot-1, 0), u(8*n-1, 8*rot))
-  }
-
-  out.head.valid := in.head.valid
-  in.head.ready  := out.head.ready
-  out.head.bits  := in.head.bits
-
-  for (i <- 1 until n) {
-    when (control(ByteRotateAmount.name) === i.U) {
-      out.head.bits.data := rotateBytes(in.head.bits.data, n, i)
+    def rotateBytes(u: UInt, n: Int, rot: Int): UInt = {
+      Cat(u(8*rot-1, 0), u(8*n-1, 8*rot))
     }
+
+    out.head.valid := in.head.valid
+    in.head.ready  := out.head.ready
+    out.head.bits  := in.head.bits
+
+    for (i <- 1 until n) {
+      when (byteRotate === i.U) {
+        out.head.bits.data := rotateBytes(in.head.bits.data, n, i)
+      }
+    }
+
+    regmap(
+      0x0 -> Seq(RegField(1 << log2Ceil(nWidth), byteRotate))
+    )
   }
-}
-
-class APBByteRotate()(implicit  p: Parameters) extends
-  ByteRotate[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle]()(p)
-  with APBHasCSR with APBDspBlockWithBus {
-  override val csrBase   = 0
-  override val csrSize   = 32
-  override val beatBytes = 8
-
-  makeCSRs()
 }
 
 class AHBByteRotate()(implicit  p: Parameters) extends
   ByteRotate[AHBMasterPortParameters, AHBSlavePortParameters, AHBEdgeParameters, AHBEdgeParameters, AHBBundle]()(p)
-  with AHBHasCSR with AHBDspBlockWithBus {
-  override val csrBase   = 0
-  override val csrSize   = 32
-  override val beatBytes = 8
+  with AHBBasicBlock
 
-  makeCSRs()
-}
+class APBByteRotate()(implicit  p: Parameters) extends
+  ByteRotate[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle]()(p)
+  with APBBasicBlock
 
 class AXI4ByteRotate()(implicit  p: Parameters) extends
   ByteRotate[AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters, AXI4Bundle]()(p)
-  with AXI4HasCSR with AXI4DspBlock {
-  override val csrBase   = 0
-  override val csrSize   = 32
-  override val beatBytes = 8
-  val csrAddress = AddressSet(0x0, 0xff)
-
-  makeCSRs()
-}
+  with AXI4BasicBlock
 
 class TLByteRotate()(implicit  p: Parameters) extends
   ByteRotate[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle]()(p)
-  with TLHasCSR with TLDspBlock {
-  override val csrBase   = BigInt(0)
-  override val csrSize   = BigInt(32)
-  override val beatBytes = 8
-  val csrAddress = AddressSet(0x0, 0xff)
-
-  makeCSRs()
-}
+  with TLBasicBlock

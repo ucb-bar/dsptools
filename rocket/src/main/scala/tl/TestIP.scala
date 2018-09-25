@@ -46,7 +46,7 @@ object TLMasterModel {
 }
 
 //noinspection RedundantDefaultArgument
-trait TLMasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTester[T] =>
+trait TLMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] {
   import TLMasterModel._
 
   def memTL: TLBundle
@@ -146,7 +146,7 @@ trait TLMasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTester
     val source  = peek(memTL.d.bits.source)
     val sink    = peek(memTL.d.bits.sink)
     val data    = peek(memTL.d.bits.data)
-    val corrupt   = peek(memTL.d.bits.corrupt)
+    val corrupt = peek(memTL.d.bits.corrupt)
 
     DChannel(
       opcode=opcode,
@@ -164,12 +164,11 @@ trait TLMasterModel[T <: MultiIOModule] { this: chisel3.iotesters.PeekPokeTester
     while (peek(memTL.d.valid) != BigInt(0)) {
       step(1)
     }
-
-
+    val d = peekD()
     step(1)
 
     poke(memTL.d.ready, 0)
-    peekD()
+    d
   }
 
   def pokeE(e: EChannel): Unit = {

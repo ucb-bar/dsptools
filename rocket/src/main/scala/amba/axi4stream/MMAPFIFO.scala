@@ -1,19 +1,6 @@
 package freechips.rocketchip.amba.axi4stream
 
-import chisel3._
-import chisel3.internal.firrtl.Width
-import chisel3.iotesters._
-import chisel3.util._
-import dspblocks._
-import freechips.rocketchip.config._
-import freechips.rocketchip.diplomacy._
-import freechips.rocketchip.util._
-import freechips.rocketchip.amba.apb._
-import freechips.rocketchip.regmapper._
-
-import scala.collection.mutable
-
-
+/*
 class APBInStreamOutFIFO(val csrBase: Int, val memAddress: AddressSet, val beatBytes: Int = 4)(implicit p: Parameters) extends LazyModule with APBHasCSR with APBDspBlockWithBus
 {
   require(mem.isDefined, "Requires a memory interface")
@@ -165,7 +152,7 @@ class APBInStreamOutFIFOInternalModule(outer: APBInStreamOutFIFOInternal) extend
 
   stream.head.bits.last := RegNext(count === csrEnd)
 }
-
+*/
 /*
 package tester {
 

@@ -124,7 +124,7 @@ trait DspRegisterImp[D, U, EO, EI, B <: Data] extends LazyModuleImp with HasRegM
   }
 
   regmap(
-    (Seq(0 -> Seq(
+    Seq(0 -> Seq(
       RegField(
         64,
         RegReadFn(veclen),
@@ -139,11 +139,11 @@ trait DspRegisterImp[D, U, EO, EI, B <: Data] extends LazyModuleImp with HasRegM
     ),
     8 -> Seq(
       RegField(8,    loading,  RegFieldDesc("streamLoading", "Load from AXI-4 Stream")),
-      RegField(8+48, storing,  RegFieldDesc("streamStoring", "Store to AXI-4 Stream"))
+      RegField(8 + 48, storing,  RegFieldDesc("streamStoring", "Store to AXI-4 Stream"))
     ),
     16 -> Seq(
       RegField(64, user, RegFieldDesc("user", "TUSER"))
-    )) ++ (if (mapMem) memMap else Seq())):_*
+    )) ++ (if (mapMem) memMap else Seq()):_*
   )
 
 }
