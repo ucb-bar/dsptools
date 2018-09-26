@@ -32,7 +32,7 @@ class DspBlockSpec extends FlatSpec with Matchers {
     } should be (true)
   }
 
-  it should "work with TL" in {
+  it should "work with TL" ignore {
     val params = PassthroughParams(depth = 5)
     val lazymod = LazyModule(new TLPassthrough(params) with TLStandaloneBlock)
     val dut = () => lazymod.module
@@ -63,7 +63,7 @@ class DspBlockSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "work with TL" in {
+  it should "work with TL" ignore {
     val lazymod = LazyModule(new TLByteRotate() with TLStandaloneBlock)
     val dut = () => lazymod.module
 
@@ -103,7 +103,7 @@ class DspBlockSpec extends FlatSpec with Matchers {
     } should be (true)
   }
 
-  it should "work with TL" in {
+  it should "work with TL" ignore {
     val lazymod = LazyModule(new TLChain(Seq(
       implicit p => LazyModule(new TLPassthrough(PassthroughParams(5))),
       implicit p => LazyModule(new TLByteRotate() {

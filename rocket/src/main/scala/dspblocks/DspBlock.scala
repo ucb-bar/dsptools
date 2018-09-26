@@ -22,7 +22,7 @@ trait DspBlock[D, U, EO, EI, B <: Data] extends LazyModule {
   /**
     * Diplomatic node for AXI4-Stream interfaces
     */
-  val streamNode: AXI4StreamNode
+  val streamNode: AXI4StreamNodeHandle
   /**
     * Diplmatic node for memory interface
     * Some blocks might not need memory mapping, so this is an Option[]

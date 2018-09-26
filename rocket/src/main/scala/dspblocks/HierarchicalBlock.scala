@@ -3,27 +3,27 @@
 package dspblocks
 
 import chisel3._
-import freechips.rocketchip.amba.axi4stream.{AXI4StreamHierarchicalNode, AXI4StreamNode}
+import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
-import freechips.rocketchip.diplomacy.LazyModuleImp
+import freechips.rocketchip.diplomacy.{LazyModuleImp, NodeHandle}
 
 trait HierarchicalBlock[D, U, EO, EI, B <: Data] extends DspBlock[D, U, EO, EI, B] {
   type Block = DspBlock[D, U, EO, EI, B]
   def blocks: Seq[Block]
   def connections: Seq[(Block, Block)]
-  def connect(lhs: Block, rhs: Block): Unit = {
+  def connect(lhs: Block, rhs: Block): AXI4StreamNodeHandle = {
     lhs.streamNode := rhs.streamNode
   }
-  for (c <- connections) {
-    connect(c._2, c._1)
+  for ((lhs, rhs) <- connections) {
+    connect(lhs, rhs)
   }
 }
 
 abstract class Chain[D, U, EO, EI, B <: Data](blockConstructors: Seq[Parameters => DspBlock[D, U, EO, EI, B]])
                                     (implicit p: Parameters) extends HierarchicalBlock[D, U, EO, EI, B] {
   override lazy val blocks: Seq[Block] = blockConstructors.map(_(p))
-  override lazy val connections = blocks.sliding(2).map(x => (x(0), x(1))).toList
-  override val streamNode: AXI4StreamNode = AXI4StreamHierarchicalNode(blocks.map(_.streamNode))
+  override lazy val connections = blocks.sliding(2).map(x => (x(1), x(0))).toList
+  override lazy val streamNode = NodeHandle(blocks.head.streamNode, blocks.last.streamNode)
 }
 
 class APBChain(blockConstructors: Seq[Parameters => APBDspBlock])(implicit p: Parameters)

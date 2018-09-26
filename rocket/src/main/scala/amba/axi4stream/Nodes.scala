@@ -74,16 +74,6 @@ extends MixedAdapterNode(AXI4StreamImp, AXI4StreamBundleBridgeImp)(
   uFn = { mp => slaveParams }
 )
 
-case class AXI4StreamHierarchicalNode(lhs: AXI4StreamNode, rhs: AXI4StreamNode)(implicit valName: ValName)
-  extends HierarchicalNode(lhs, rhs) {
-}
-
-object AXI4StreamHierarchicalNode {
-  def apply(nodes: Seq[AXI4StreamNode])(implicit valName: ValName): AXI4StreamNode = {
-    nodes.reduce(AXI4StreamHierarchicalNode(_, _))
-  }
-}
-
 object AXI4StreamToBundleBridgeNode {
   def apply(slaveParams: AXI4StreamSlaveParameters)(implicit p: Parameters) =
     new AXI4StreamToBundleBridge(AXI4StreamSlavePortParameters(slaveParams))
