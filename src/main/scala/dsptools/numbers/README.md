@@ -392,7 +392,7 @@ It also demonstrates a simple example of changing the Dsp Context. You can do th
 
 The example also shows you how a tester interacts with the DUT via peek and expect and how to change tester options like expect tolerances. You can change tester options globally via what's passed in to the DspTesterOptionsManager or you can change some of them (for example, display) locally -- just for some portions of the tester operation. 
 
-To run this single test, you can use the command `sbt "test-only SimpleDsp.SimpleDspModuleSpec"`. Note that `sbt test` runs all tests in *src/test/scala*. 
+To run this single test, you can use the command `sbt "testOnly SimpleDsp.SimpleDspModuleSpec"`. Note that `sbt test` runs all tests in *src/test/scala*.
 
 ---
 
@@ -581,3 +581,4 @@ A couple of the DspTesterOptions can be updated locally within your DspTester by
 * When
 * [Enum](https://github.com/ucb-bar/chisel3/wiki/Cookbook)
 * ValidIO, DecoupledIO
+
