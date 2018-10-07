@@ -8,6 +8,15 @@ import chisel3.util.Cat
 import dsptools.numbers._
 import firrtl.passes.IsKnown
 
+object IORange {
+  /** Get the output range (inclusive) required to represent all columns of LUT outputs */
+  def apply(lut: Seq[Seq[Int]]): Seq[(Int, Int)] = {
+    val colMax = lut.transpose.map(col => col.max)
+    val colMin = lut.transpose.map(col => col.min)
+    colMin.zip(colMax)
+  }
+}
+
 object ConvertType {
   /** Convert special type (i.e. Clock, Interval) to equivalent base Chisel type.
     * Otherwise, keep the current base Chisel type. Warning: Any kind of Record becomes a CustomBundle!
