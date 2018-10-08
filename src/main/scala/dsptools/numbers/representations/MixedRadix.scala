@@ -17,6 +17,8 @@ class MixedRadixSpec extends FlatSpec with Matchers {
       val paddedMixedRadix = MixedRadix.toDigitSeqMSDFirst(n, rad, 16)
       require(paddedMixedRadix == Seq.fill(paddedMixedRadix.length - res.length)(0) ++ res,
         s"Padded $rad conversion should work!")
+      require(MixedRadix.add(res, res, rad) == MixedRadix.toPaddedDigitSeqMSDFirst(2 * n, rad), 
+        "Mixed radix addition should work")
     }
   }
 }
@@ -71,4 +73,22 @@ object MixedRadix {
   def numDigits(n: Int, radicesHighFirst: Seq[Int]): Int =
     toDigitSeqInternal(n, radicesHighFirst.reverse).length
 
+  /** a + b, where a and b are in mixed radix form */
+  def add(aShort: Seq[Int], bShort: Seq[Int], radicesHighFirst: Seq[Int]): Seq[Int] = {
+    val a = Seq.fill(radicesHighFirst.length - aShort.length)(0) ++ aShort
+    val b = Seq.fill(radicesHighFirst.length - bShort.length)(0) ++ bShort
+    // Out tuple (result digit, carry out)
+    // Note: LSD has no associated carry in
+    val carryOutLSD = if (a.last + b.last >= radicesHighFirst.last) 1 else 0
+    val resultLSD = (a.last + b.last) % radicesHighFirst.last
+    val (result, carries) = a.init.zip(b.init).zip(radicesHighFirst.init).scanRight((resultLSD, carryOutLSD)) { 
+      case (((aDigit, bDigit), rad), (rightResult, rightCarryOut)) =>
+        // Carry out is either 0 or 1
+        // Sum guaranteed to be less than 2 * current radix so modulo operation can be
+        // computed with simple mux circuit
+        val sum = aDigit + bDigit + rightCarryOut
+        (sum % rad, if (sum >= rad) 1 else 0)
+    }.unzip
+    result
+  }
 }
