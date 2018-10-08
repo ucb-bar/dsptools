@@ -73,14 +73,15 @@ object MixedRadix {
   def numDigits(n: Int, radicesHighFirst: Seq[Int]): Int =
     toDigitSeqInternal(n, radicesHighFirst.reverse).length
 
-  /** a + b, where a and b are in mixed radix form */
-  def add(aShort: Seq[Int], bShort: Seq[Int], radicesHighFirst: Seq[Int]): Seq[Int] = {
+  /** a + b, where a and b are in mixed radix form. Optional carry in */
+  def add(aShort: Seq[Int], bShort: Seq[Int], radicesHighFirst: Seq[Int], carryIn: Boolean = false): Seq[Int] = {
     val a = Seq.fill(radicesHighFirst.length - aShort.length)(0) ++ aShort
     val b = Seq.fill(radicesHighFirst.length - bShort.length)(0) ++ bShort
     // Out tuple (result digit, carry out)
-    // Note: LSD has no associated carry in
-    val carryOutLSD = if (a.last + b.last >= radicesHighFirst.last) 1 else 0
-    val resultLSD = (a.last + b.last) % radicesHighFirst.last
+    val carryInLSD = if (carryIn) 1 else 0
+    val sum = a.last + b.last + carryInLSD
+    val carryOutLSD = if (sum >= radicesHighFirst.last) 1 else 0
+    val resultLSD = (sum) % radicesHighFirst.last
     val (result, carries) = a.init.zip(b.init).zip(radicesHighFirst.init).scanRight((resultLSD, carryOutLSD)) { 
       case (((aDigit, bDigit), rad), (rightResult, rightCarryOut)) =>
         // Carry out is either 0 or 1
