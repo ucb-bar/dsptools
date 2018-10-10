@@ -268,10 +268,10 @@ trait AXI4StreamMasterModel extends PeekPokeTester[MultiIOModule] {
   }
 
   def mastersComplete(): Boolean = {
-    masters.map(_.complete()).foldLeft(true)(_ && _)
+    masters.map(_.complete()).forall(x => x)
   }
 
-  def stepToCompletion(maxCycles: Int = 1000): Unit = {
+  def stepToCompletion(maxCycles: Int = 1000, silentFail: Boolean = false): Unit = {
     for (_ <- 0 until maxCycles) {
       if (mastersComplete()) {
         step(1)
@@ -280,7 +280,7 @@ trait AXI4StreamMasterModel extends PeekPokeTester[MultiIOModule] {
         step(1)
       }
     }
-    require(false, s"slavesComplete: ${mastersComplete()}")
+    require(silentFail, s"slavesComplete: ${mastersComplete()}")
   }
 }
 
@@ -309,7 +309,7 @@ trait AXI4StreamSlaveModel extends PeekPokeTester[MultiIOModule] {
     }
   }
 
-  def stepToCompletion(maxCycles: Int = 1000): Unit = {
+  def stepToCompletion(maxCycles: Int = 1000, silentFail: Boolean = false): Unit = {
     for (_ <- 0 until maxCycles) {
       if (slavesComplete()) {
         step(1)
@@ -318,11 +318,11 @@ trait AXI4StreamSlaveModel extends PeekPokeTester[MultiIOModule] {
         step(1)
       }
     }
-    require(false, s"slavesComplete: ${slavesComplete()}")
+    require(silentFail, s"slavesComplete: ${slavesComplete()}")
   }
 
   def slavesComplete(): Boolean = {
-    slaves.map(_.complete()).foldLeft(true)(_ && _)
+    slaves.map(_.complete()).forall(x => x)
   }
 }
 
@@ -336,7 +336,7 @@ trait AXI4StreamModel extends
     }
   }
 
-  override def stepToCompletion(maxCycles: Int = 1000): Unit = {
+  override def stepToCompletion(maxCycles: Int = 1000, silentFail: Boolean = false): Unit = {
     for (_ <- 0 until maxCycles) {
       if (slavesComplete() && mastersComplete()) {
         step(1)
@@ -345,6 +345,6 @@ trait AXI4StreamModel extends
         step(1)
       }
     }
-    require(false, s"stepToCompletion failed at $maxCycles cycles")
+    require(silentFail, s"stepToCompletion failed at $maxCycles cycles")
   }
 }
