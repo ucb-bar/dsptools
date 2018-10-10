@@ -23,6 +23,8 @@ class AXI4StreamBundlePayload(params: AXI4StreamBundleParameters) extends AXI4St
   val id   = Output(UInt(params.i.W))
   val dest = Output(UInt(params.d.W))
   val user = Output(UInt(params.u.W))
+
+  def makeStrb: UInt = if (params.hasStrb) strb else ((BigInt(1) << params.n) - 1).U
 }
 
 /**
