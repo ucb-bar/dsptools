@@ -10,7 +10,9 @@ class MixedRadixSpec extends FlatSpec with Matchers {
     // Most significant digit first (matched against WolframAlpha)
     val tests = Seq(
       MixedRadixTest(6, Seq(1, 1, 4, 4, 2), Seq(3, 0)),
-      MixedRadixTest(6, Seq(1, 1, 4, 4, 2, 4), Seq(1, 2))
+      MixedRadixTest(6, Seq(1, 1, 4, 4, 2, 4), Seq(1, 2)),
+      MixedRadixTest(6, Seq(4, 4, 2, 1, 1), Seq(3, 0, 0, 0)),
+      MixedRadixTest(6, Seq(1, 1, 4, 4, 2, 4, 1, 1), Seq(1, 2, 0, 0))
     )
     tests foreach { case MixedRadixTest(n, rad, res) =>
       require(MixedRadix.toDigitSeqMSDFirst(n, rad) == res, s"$rad conversion should work!")
