@@ -16,6 +16,7 @@ case object Truncate extends TrimType
 case object RoundHalfUp extends TrimType
 case object NoTrim extends TrimType
 case object Floor extends TrimType
+case object StochasticRound extends TrimType
 
 object DspContext {
   

@@ -3,9 +3,9 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.util.{ShiftRegister, Cat}
-import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floor, NoTrim, DspException}
-import chisel3.experimental.FixedPoint
+import chisel3.util.{ShiftRegister, MuxCase, Counter}
+import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floor, NoTrim, StochasticRound, DspException}
+import chisel3.core.FixedPoint
 import chisel3.internal.firrtl.KnownBinaryPoint
 
 import scala.language.implicitConversions
@@ -146,17 +146,43 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     ConvertableFromFixedPoint with BinaryRepresentationFixedPoint with RealBits[FixedPoint] with hasContext {
 
   def trimBinary(a: FixedPoint, n: Option[Int]): FixedPoint = {
+    
     // TODO: Support other modes?
     n match {
       case None => a
       case Some(b) => context.trimType match {
+        
         case NoTrim => a
         case Floor => a.setBinaryPoint(b)
         case RoundHalfUp => {
+          
           val roundBp = b + 1
           val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
+          
           plus(a, addAmt).setBinaryPoint(b)
         }
+
+        // This rounds result to the lower or higher value with p0 and p1 probabilities
+        // Unbiased rounding 
+        case StochasticRound => {
+
+          val (cntValue, cntWrap) = Counter(true.B, 2) // 2-bit free running counter for randomization
+         
+          //val roundBp = cntValue match {
+          //  case x if x == 0x3.U => b+1
+          //  case _ => b
+          //}
+          //println (s"roundBp = $roundBp")
+          
+          //val roundBp  = fromType(MuxCase (b.U, Array ((cntValue === 0x3.U) -> (b + 1.U), (cntValue === 0x1.U) -> (b-1.U))))
+          val roundBp  = b // workaround
+          
+          val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
+          //val addAmt = (1.U << -roundBp).F(roundBp.BP)
+          
+          plus(a, addAmt).setBinaryPoint(b)
+        }
+
         case _ => throw DspException("Desired trim type not implemented!")
       }
     }
