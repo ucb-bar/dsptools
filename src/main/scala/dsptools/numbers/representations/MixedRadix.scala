@@ -2,6 +2,7 @@ package dsptools.numbers.representations
 import org.scalatest.{FlatSpec, Matchers}
 import chisel3._
 import scala.collection.immutable.ListMap
+import generatortools.io.CustomBundle
 
 class MixedRadixSpec extends FlatSpec with Matchers {
   behavior of "MixedRadix"
@@ -110,17 +111,19 @@ object MixedRadix {
 
   /** Create a MixedRadix Chisel type with digit radices specified. Note that
     * the least significant digit is the highest indexed here. Radices can be
-    * changed -- limited by original UInt bitwidths.
+    * changed -- limited by original UInt bitwidths. Note that
+    * technically, digits are capped at radix_i - 1, but not optimized here. 
     */
   def apply(radicesHighFirst: Seq[UInt]): MixedRadix = {
     // Digits should have the same bitwidth as radices -- cloned internally. 
+    // TODO: actual range is rad - 1
     new MixedRadix(radicesHighFirst, radicesHighFirst)
   }
   /** Creates a MixedRadix wire and assigns to it */
   def wire(digits: Seq[UInt], radicesHighFirst: Seq[UInt]): MixedRadix = {
     val result = Wire(new MixedRadix(digits, radicesHighFirst))
-    result.digits.zip(digits) foreach { case (lhs, rhs) => lhs := rhs }
-    result.radicesHighFirst.zip(radicesHighFirst) foreach { case (lhs, rhs) => lhs := rhs }
+    result.digits.seq.zip(digits) foreach { case (lhs, rhs) => lhs := rhs }
+    result.radicesHighFirst.seq.zip(radicesHighFirst) foreach { case (lhs, rhs) => lhs := rhs }
     result
   }
   /** Creates a MixedRadix "Lit". Currently, you can only assign a MixedRadix to Lits. 
@@ -130,39 +133,25 @@ object MixedRadix {
     val digitsProto = digits.map { case digit => digit.U }
     val radicesHighFirstProto = radicesHighFirst.map { case rad => rad.U }
     val result = Wire(new MixedRadix(digitsProto, radicesHighFirstProto))
-    result.digits.zip(digits) foreach { case (lhs, rhs) => lhs := rhs.U }
-    result.radicesHighFirst.zip(radicesHighFirst) foreach { case (lhs, rhs) => lhs := rhs.U }
+    result.digits.seq.zip(digits) foreach { case (lhs, rhs) => lhs := rhs.U }
+    result.radicesHighFirst.seq.zip(radicesHighFirst) foreach { case (lhs, rhs) => lhs := rhs.U }
     result 
   }
 }
 
-class MixedRadix(digitsProto: Seq[UInt], radicesHighFirstProto: Seq[UInt]) extends Record {
-  /** elements required by Record -- note prototypes are cloned! */
-  val elements: ListMap[String, UInt] = ListMap(
-    (digitsProto.zipWithIndex.map { case (digit, idx) => s"digit_$idx" -> digit.chiselCloneType } ++
-    radicesHighFirstProto.zipWithIndex.map { case (radix, idx) => s"radix_$idx" -> radix.chiselCloneType } ): _*
-  )
-
-  require(digits.length == radicesHighFirst.length, "# of digits should match # of radices.")
-
-  /** Gets digits as a sequence (least significant digit is highest indexed) */
-  def digits: Seq[UInt] = elements.toSeq.filter { case (id, elt) => id.startsWith("digit") } map (_._2)
-  /** Gets radices as a sequence (least significant radix is highest indexed) */
-  def radicesHighFirst: Seq[UInt] = elements.toSeq.filter { case (id, elt) => id.startsWith("radix") } map (_._2)
-  /** Gets digit indexed by idx (least significant digit is highest indexed) */
-  def digit(idx: Int): UInt = digits(idx)
-  /** Gets radix indexed by idx (least significant radix is highest indexed) */
-  def radix(idx: Int): UInt = radicesHighFirst(idx)
+class MixedRadix(digitsProto: Seq[UInt], radicesHighFirstProto: Seq[UInt]) extends Bundle {
+  val digits = CustomBundle(digitsProto)
+  val radicesHighFirst = CustomBundle(radicesHighFirstProto)
   /** Necessary Chisel helper for cloning this data type */
-  override def cloneType = new MixedRadix(digits, radicesHighFirst).asInstanceOf[this.type]
+  override def cloneType = new MixedRadix(digits.seq, radicesHighFirst.seq).asInstanceOf[this.type]
   /** Add two mixed-radix numbers. carryIn set to true adds an extra 1. 
     * WARNING -- no check to see if radices are the same (assumed to be true).
     */
   def add(b: MixedRadix, carryIn: Bool = false.B): MixedRadix = {
-    require(this.digits.length == b.digits.length, "a, b lengths must be the same.")
-    val aDigits = this.digits 
-    val bDigits = b.digits 
-    val rads = this.radicesHighFirst 
+    require(this.digits.seq.length == b.digits.seq.length, "a, b lengths must be the same.")
+    val aDigits = this.digits.seq
+    val bDigits = b.digits.seq
+    val rads = this.radicesHighFirst.seq 
     // Since a digit value is always less than its associated radix, 
     // resultTemp < 2 * radix
     val resultLSDTemp = aDigits.last + bDigits.last + carryIn.asUInt
