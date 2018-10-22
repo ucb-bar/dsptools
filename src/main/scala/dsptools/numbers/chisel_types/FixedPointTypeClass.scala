@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.util.{ShiftRegister, MuxCase, Counter}
+import chisel3.util.{ShiftRegister, Counter}
 import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floor, NoTrim, StochasticRound, DspException}
 import chisel3.core.FixedPoint
 import chisel3.internal.firrtl.KnownBinaryPoint
@@ -90,6 +90,7 @@ trait ConvertableToFixedPoint extends ConvertableTo[FixedPoint] with hasContext 
   // If no binary point is specified, use the default one provided by DspContext
   // TODO: Should you instead be specifying a max width so you can get the most resolution for a given width?
   def fromDouble(n: Double): FixedPoint = n.F(context.binaryPoint.getOrElse(0).BP)
+  //def fromUInt(n: UInt): FixedPoint = n(0.BP) // TODO Convert from Chisel UInt
   override def fromDouble(d: Double, a: FixedPoint): FixedPoint = {
     require(a.binaryPoint.known, "Binary point must be known!")
     d.F(a.binaryPoint)
@@ -166,21 +167,12 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
         // Unbiased rounding 
         case StochasticRound => {
 
-          val (cntValue, cntWrap) = Counter(true.B, 2) // 2-bit free running counter for randomization
-         
-          //val roundBp = cntValue match {
-          //  case x if x == 0x3.U => b+1
-          //  case _ => b
-          //}
-          //println (s"roundBp = $roundBp")
+          val (cntVal, cntWrap) = Counter (true.B, 16)
+
+          // Add random LSB b bits to the Int number and trim b-1 tail bits
+          val res = (a.asUInt + cntVal(b-1,0)) >> (b-2)
           
-          //val roundBp  = fromType(MuxCase (b.U, Array ((cntValue === 0x3.U) -> (b + 1.U), (cntValue === 0x1.U) -> (b-1.U))))
-          val roundBp  = b // workaround
-          
-          val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
-          //val addAmt = (1.U << -roundBp).F(roundBp.BP)
-          
-          plus(a, addAmt).setBinaryPoint(b)
+          res.asFixedPoint(b.BP)
         }
 
         case _ => throw DspException("Desired trim type not implemented!")

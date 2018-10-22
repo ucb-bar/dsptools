@@ -39,11 +39,11 @@ class Multiplier[A <: Data:Ring, B <: Data:Ring] (inType:A, outType:B, mulPipes:
 class MultiplierTester[A <: Data:Ring, B <: Data:Ring](c: Multiplier[A,B]) extends DspTester(c) {
   val uut  = c.io
 
-  val a  = 1.1
+  val a  = 5.29
   val b  = 2.33
   
 
-  (1 to 1) foreach { i =>
+  (1 to 2) foreach { i =>
 
     poke(uut.a, a)
     poke(uut.b, b)
@@ -52,11 +52,30 @@ class MultiplierTester[A <: Data:Ring, B <: Data:Ring](c: Multiplier[A,B]) exten
   }
 }
 
+//class ComplexMultiplierTester[A <: Data:Ring, B <: Data:Ring](c: Multiplier[A,B]) extends DspTester(c) {
+//  val uut  = c.io
+//  
+//  for {
+//    i <- 0.0 to 1.0 by 0.25
+//    j <- 0.0 to 4.0 by 0.5
+//  } {
+//    val expected = i * j
+//
+//    poke(uut.a.real, i)
+//    poke(uut.a.imag, i+1)
+//    poke(uut.b.real, j)
+//    poke(uut.b.imag, j+2)
+//    step(1)
+//
+//  }
+//
+//}
+
 class MultiplierSpec extends FlatSpec with Matchers  {
 //class MultiplierSpec extends FlatSpec with PropertyChecks  {
 
-  val inType  = FP(18.W, 8.BP)
-  val outType = FP(36.W, 20.BP)
+  val inType  = FP(16.W, 8.BP)
+  val outType = FP(20.W, 12.BP)
 
   val complexInType   = DspComplex(inType.cloneType, inType.cloneType)
   val complexOutType  = DspComplex(outType.cloneType, outType.cloneType)
@@ -64,7 +83,7 @@ class MultiplierSpec extends FlatSpec with Matchers  {
   val opts = new DspTesterOptionsManager {
   
     dspTesterOptions = DspTesterOptions(
-      fixTolLSBs = 0,
+      fixTolLSBs = 4,
       genVerilogTb = false,
       isVerbose = true
     )
@@ -72,30 +91,23 @@ class MultiplierSpec extends FlatSpec with Matchers  {
   
   behavior of "implementation"
 
-  //it should "Rnd Half UP for FixedPoint" in {
+  it should "Rnd Half UP for FixedPoint" in {
+    //dsptools.Driver.execute (() => new Multiplier(inType, outType, 2), Array("--backend-name", "verilator")) {
+    dsptools.Driver.execute(() => new Multiplier(inType, outType, 2, RoundHalfUp), opts) { 
+      c => new MultiplierTester(c)
+    } should be(true)
+  }
+  
+  //it should "Rnd Stochastic for FixedPoint" in {
   //  //dsptools.Driver.execute (() => new Multiplier(inType, outType, 2), Array("--backend-name", "verilator")) {
-  //  dsptools.Driver.execute(() => new Multiplier(inType, outType, 2, RoundHalfUp), opts) { 
+  //  dsptools.Driver.execute(() => new Multiplier(inType, outType, 2, StochasticRound), opts) { 
   //    c => new MultiplierTester(c)
   //  } should be(true)
   //}
   
-  it should "Rnd Stochastic for FixedPoint" in {
-    //dsptools.Driver.execute (() => new Multiplier(inType, outType, 2), Array("--backend-name", "verilator")) {
-    dsptools.Driver.execute(() => new Multiplier(inType, outType, 2, StochasticRound), opts) { 
-      c => new MultiplierTester(c)
-    } should be(true)
-  }
-  
-  it should "Rnd Stochastic for FixedPoint 1" in {
-    //dsptools.Driver.execute (() => new Multiplier(inType, outType, 2), Array("--backend-name", "verilator")) {
-    dsptools.Driver.execute(() => new Multiplier(inType, outType, 2, StochasticRound), opts) { 
-      c => new MultiplierTester(c)
-    } should be(true)
-  }
-  
-  //it should "StochasticRound for Complex" in {
+  //it should "Rnd Stochastic for Complex" in {
   //  //dsptools.Driver.execute (() => new Multiplier(inType, outType, 2), Array("--backend-name", "verilator")) {
-  //  dsptools.Driver.execute(() => new Multiplier(complexInType, complexOutType, 2), opts) { 
+  //  dsptools.Driver.execute(() => new Multiplier(complexInType, complexOutType, 2, StochasticRound), opts) { 
   //    c => new MultiplierTester(c)
   //  } should be(true)
   //}
