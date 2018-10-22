@@ -1,5 +1,7 @@
 package dsptools.numbers.representations
 import org.scalatest.{FlatSpec, Matchers}
+import chisel3._
+import scala.collection.immutable.ListMap
 
 class MixedRadixSpec extends FlatSpec with Matchers {
   behavior of "MixedRadix"
@@ -12,7 +14,8 @@ class MixedRadixSpec extends FlatSpec with Matchers {
       MixedRadixTest(6, Seq(1, 1, 4, 4, 2), Seq(3, 0)),
       MixedRadixTest(6, Seq(1, 1, 4, 4, 2, 4), Seq(1, 2)),
       MixedRadixTest(6, Seq(4, 4, 2, 1, 1), Seq(3, 0, 0, 0)),
-      MixedRadixTest(6, Seq(1, 1, 4, 4, 2, 4, 1, 1), Seq(1, 2, 0, 0))
+      MixedRadixTest(6, Seq(1, 1, 4, 4, 2, 4, 1, 1), Seq(1, 2, 0, 0)),
+      MixedRadixTest(14, Seq(1, 1, 4, 4, 2, 4), Seq(1, 1, 2))
     )
     tests foreach { case MixedRadixTest(n, rad, res) =>
       require(MixedRadix.toDigitSeqMSDFirst(n, rad) == res, s"$rad conversion should work!")
@@ -21,11 +24,21 @@ class MixedRadixSpec extends FlatSpec with Matchers {
         s"Padded $rad conversion should work!")
       require(MixedRadix.add(res, res, rad) == MixedRadix.toPaddedDigitSeqMSDFirst(2 * n, rad), 
         "Mixed radix addition should work")
+      require(MixedRadix.toInt(res, rad) == n, s"Mixed radix to base 10 conversion should work!")
     }
   }
 }
 
 object MixedRadix {
+  /** Convert a mixed-radix digit sequence (least significant digits highested indexed)
+    * to standard base 10 representation.
+    */
+  def toInt(digits: Seq[Int], radicesHighFirst: Seq[Int]): Int = {
+    require(digits.length <= radicesHighFirst.length, "Seqs: digits must be shorter than radicesHighFirst")
+    val muls = radicesHighFirst.tail.scanRight(1) { case (rad, prev) => prev * rad }
+    val digitsPadded = Seq.fill(radicesHighFirst.length - digits.length)(0) ++ digits
+    digitsPadded.zip(muls).map { case (a, b) => a * b }.sum
+  }
   /** Converts a decimal representation of the number n into a Seq of
     * Ints representing the base-r_i interpretation of n
     * NOTE: Least significant digit is highest indexed (right-most) due to recursion
@@ -93,5 +106,78 @@ object MixedRadix {
         (sum % rad, if (sum >= rad) 1 else 0)
     }.unzip
     result
+  }
+
+  /** Create a MixedRadix Chisel type with digit radices specified. Note that
+    * the least significant digit is the highest indexed here. Radices can be
+    * changed -- limited by original UInt bitwidths.
+    */
+  def apply(radicesHighFirst: Seq[UInt]): MixedRadix = {
+    // Digits should have the same bitwidth as radices -- cloned internally. 
+    new MixedRadix(radicesHighFirst, radicesHighFirst)
+  }
+  /** Creates a MixedRadix wire and assigns to it */
+  def wire(digits: Seq[UInt], radicesHighFirst: Seq[UInt]): MixedRadix = {
+    val result = Wire(new MixedRadix(digits, radicesHighFirst))
+    result.digits.zip(digits) foreach { case (lhs, rhs) => lhs := rhs }
+    result.radicesHighFirst.zip(radicesHighFirst) foreach { case (lhs, rhs) => lhs := rhs }
+    result
+  }
+  /** Creates a MixedRadix "Lit". Currently, you can only assign a MixedRadix to Lits. 
+    * TODO: Correct!
+    */
+  def apply(digits: Seq[Int], radicesHighFirst: Seq[Int]): MixedRadix = {
+    val digitsProto = digits.map { case digit => digit.U }
+    val radicesHighFirstProto = radicesHighFirst.map { case rad => rad.U }
+    val result = Wire(new MixedRadix(digitsProto, radicesHighFirstProto))
+    result.digits.zip(digits) foreach { case (lhs, rhs) => lhs := rhs.U }
+    result.radicesHighFirst.zip(radicesHighFirst) foreach { case (lhs, rhs) => lhs := rhs.U }
+    result 
+  }
+}
+
+class MixedRadix(digitsProto: Seq[UInt], radicesHighFirstProto: Seq[UInt]) extends Record {
+  /** elements required by Record -- note prototypes are cloned! */
+  val elements: ListMap[String, UInt] = ListMap(
+    (digitsProto.zipWithIndex.map { case (digit, idx) => s"digit_$idx" -> digit.chiselCloneType } ++
+    radicesHighFirstProto.zipWithIndex.map { case (radix, idx) => s"radix_$idx" -> radix.chiselCloneType } ): _*
+  )
+
+  require(digits.length == radicesHighFirst.length, "# of digits should match # of radices.")
+
+  /** Gets digits as a sequence (least significant digit is highest indexed) */
+  def digits: Seq[UInt] = elements.toSeq.filter { case (id, elt) => id.startsWith("digit") } map (_._2)
+  /** Gets radices as a sequence (least significant radix is highest indexed) */
+  def radicesHighFirst: Seq[UInt] = elements.toSeq.filter { case (id, elt) => id.startsWith("radix") } map (_._2)
+  /** Gets digit indexed by idx (least significant digit is highest indexed) */
+  def digit(idx: Int): UInt = digits(idx)
+  /** Gets radix indexed by idx (least significant radix is highest indexed) */
+  def radix(idx: Int): UInt = radicesHighFirst(idx)
+  /** Necessary Chisel helper for cloning this data type */
+  override def cloneType = new MixedRadix(digits, radicesHighFirst).asInstanceOf[this.type]
+  /** Add two mixed-radix numbers. carryIn set to true adds an extra 1. 
+    * WARNING -- no check to see if radices are the same (assumed to be true).
+    */
+  def add(b: MixedRadix, carryIn: Bool = false.B): MixedRadix = {
+    require(this.digits.length == b.digits.length, "a, b lengths must be the same.")
+    val aDigits = this.digits 
+    val bDigits = b.digits 
+    val rads = this.radicesHighFirst 
+    // Since a digit value is always less than its associated radix, 
+    // resultTemp < 2 * radix
+    val resultLSDTemp = aDigits.last + bDigits.last + carryIn.asUInt
+    // Assume a, b radices are the same -- carry out is either 0 or 1
+    val carryOutLSD = resultLSDTemp >= rads.last
+    // Equivalent of resultTemp % radix since resultTemp < 2 * radix 
+    // Due to condition, modulo can be computed with a simple mux circuit
+    val resultLSD = Mux(carryOutLSD, resultLSDTemp - rads.last, resultLSDTemp)
+    val (result, carryOuts) = aDigits.init.zip(bDigits.init).zip(rads.init).scanRight((resultLSD, carryOutLSD.asUInt)) {
+      case (((aDigit, bDigit), rad), (rightResult, rightCarryOut)) => 
+        val resultTemp = aDigit + bDigit + rightCarryOut
+        val carryOut = resultTemp >= rad
+        val out = Mux(carryOut, resultTemp - rad, resultTemp)
+        (out, carryOut.asUInt)
+    }.unzip
+    MixedRadix.wire(result, rads)
   }
 }
