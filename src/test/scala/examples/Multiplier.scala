@@ -9,7 +9,7 @@ import chisel3.core.{FixedPoint => FP}
 import dsptools.{DspTester, DspTesterOptions, DspTesterOptionsManager, DspContext, TrimType}
 import dsptools.{NoTrim, RoundHalfUp, StochasticRound}
 
-import org.scalatest.{Matchers, FlatSpec}
+import org.scalatest.{Matchers, FlatSpec, FunSpec}
 import org.scalatest.prop.{PropertyChecks}
 
 //import org.la4j.matrix._
@@ -43,13 +43,13 @@ class MultiplierTester[A <: Data:Ring, B <: Data:Ring](c: Multiplier[A,B]) exten
   val b  = 2.33
   
 
-  (1 to 2) foreach { i =>
+  //(1 to 2) foreach { i =>
 
     poke(uut.a, a)
     poke(uut.b, b)
     step (3)
     expect (uut.res, a*b)
-  }
+  //}
 }
 
 //class ComplexMultiplierTester[A <: Data:Ring, B <: Data:Ring](c: Multiplier[A,B]) extends DspTester(c) {
@@ -112,4 +112,73 @@ class MultiplierSpec extends FlatSpec with Matchers  {
   //  } should be(true)
   //}
 
+}
+
+class MultiplierPropSpec extends FunSpec with PropertyChecks  { 
+  
+  val opts = new DspTesterOptionsManager {
+  
+    dspTesterOptions = DspTesterOptions(
+      fixTolLSBs = 4,
+      genVerilogTb = false,
+      isVerbose = true
+    )
+  }
+
+  val inType  = FP(16.W, 8.BP)
+  val outType = FP(32.W, 20.BP)
+    
+  def add[A](x:A, y:A)(implicit num:Numeric[A]):A = num.plus(x,y)
+  def mul[A](x:A, y:A)(implicit num:Numeric[A]):A = num.times(x,y)
+  
+  def sub[A](x:A, y:A)(implicit num:Numeric[A]):A = {
+    val negY  = num.negate(y)
+    num.plus(x,negY)
+  }
+  def fma[A](x:A, y:A, c:A)(implicit num:Numeric[A]):A = {
+    val mulXY = num.times(x,y)
+    num.plus(mulXY, c)
+  }
+
+  describe ("Stochastic Round Checker") {
+
+
+    //it ("Add for Int") {
+    //  forAll {
+    //    (a:Int, b:Int) => assert (add(a,b) == a+b)
+    //  }
+    //}
+    //
+    //it ("Sub for Int") {
+    //  forAll {
+    //    (a:Int, b:Int) => assert (sub(a,b) == a-b)
+    //  }
+    //}
+    //
+    //it ("Mul for Double") {
+    //  forAll {
+    //    (a:Double, b:Double) => assert (mul(a,b) == a*b)
+    //  }
+    //}
+    //
+    it ("Fma for Double") {
+      forAll {
+        (a:Double, b:Double, c:Double) => assert (fma(a,b,c) == a*b + c)
+      }
+    }
+    
+  // FIXME  How to pass input data from here to the Peek poke tester ?    
+  it ("Mul DSP for Double") {
+    forAll {
+      (a:Double, b:Double) => assert ( mul(a,b) == 
+  
+      dsptools.Driver.execute(() => new Multiplier(inType, outType, 2, RoundHalfUp), opts) {
+        c => new MultiplierTester(c)
+      }
+        
+      )
+    }
+  }
+
+  }
 }

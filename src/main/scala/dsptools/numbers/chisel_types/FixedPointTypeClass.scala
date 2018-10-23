@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.util.{ShiftRegister, Counter}
+import chisel3.util.{ShiftRegister,LFSR16}
 import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floor, NoTrim, StochasticRound, DspException}
 import chisel3.core.FixedPoint
 import chisel3.internal.firrtl.KnownBinaryPoint
@@ -166,11 +166,13 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
         // This rounds result to the lower or higher value with p0 and p1 probabilities
         // Unbiased rounding 
         case StochasticRound => {
+          assume (b <= 16)
 
-          val (cntVal, cntWrap) = Counter (true.B, 16)
+          //val (cntVal, cntWrap) = Counter (true.B, 16)
+          val rnd = LFSR16()
 
-          // Add random LSB b bits to the Int number and trim b-1 tail bits
-          val res = (a.asUInt + cntVal(b-1,0)) >> (b-2)
+          // Add random LSB b bits to the Int number and trim b-1 tail bits and one more bit for a sign
+          val res = (a.asUInt + rnd(b-1,0)) >> b-2
           
           res.asFixedPoint(b.BP)
         }
