@@ -14,6 +14,8 @@ env:
     INSTALL_DIR=$TRAVIS_BUILD_DIR/install
     VERILATOR_ROOT=$INSTALL_DIR
     PATH=$PATH:$VERILATOR_ROOT/bin:$TRAVIS_BUILD_DIR/utils/bin
+    CHISEL3=3.1.2
+    CHISEL_TESTERS=1.2.3
 
 install:
   # Install dependencies
@@ -21,5 +23,5 @@ install:
   - verilator --version
 
 script:
-  - sbt test | sed '/info/,+1 d'
+  - set -o pipefail && sbt -Dchisel3Version=$CHISEL3 -Dchisel-iotestersVersion=$CHISEL_TESTERS test
 

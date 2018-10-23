@@ -79,7 +79,7 @@ case class TestParams(
 }
 
 class DataTypeBundle[R <: Data:Real](genType: R, dataWidth: Width, binaryPoint: BinaryPoint) extends Bundle {
-  val gen = genType.chiselCloneType
+  val gen = genType.cloneType
   val s = SInt(dataWidth)
   val f = FixedPoint(dataWidth, binaryPoint)
   val u = UInt(dataWidth)
@@ -338,7 +338,7 @@ object TestSetup {
       dspTesterOptions = DspTesterOptions(
           fixTolLSBs = 1,
           genVerilogTb = false,
-          isVerbose = true)
+          isVerbose = false)
       testerOptions = testerOptionsGlobal
     }
 

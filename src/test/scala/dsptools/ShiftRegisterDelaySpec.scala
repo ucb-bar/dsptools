@@ -67,10 +67,12 @@ class CircuitWithDelaysTester[T <: Data : Signed](c: AbsCircuitWithDelays[T]) ex
     }
   }
 
-  reset()
-  poke(c.io.in, 0.0)
-  step(10)
-  oneTest()
+  updatableDspVerbose.withValue(false) {
+    reset()
+    poke(c.io.in, 0.0)
+    step(10)
+    oneTest()
+  }
 }
 
 class CeilTruncateTester(c: CeilTruncateCircuitWithDelays) extends DspTester(c) {
@@ -101,11 +103,13 @@ class CeilTruncateTester(c: CeilTruncateCircuitWithDelays) extends DspTester(c) 
     }
   }
 
-  poke(c.io.inFixed, 0.0)
-  poke(c.io.inReal, 0.0)
-  reset()
-  step(10)
-  oneTest(c.io.inFixed, c.io.outFixedCeil, c.io.inReal, c.io.outRealCeil, delaySize)
+  updatableDspVerbose.withValue(false) {
+    poke(c.io.inFixed, 0.0)
+    poke(c.io.inReal, 0.0)
+    reset()
+    step(10)
+    oneTest(c.io.inFixed, c.io.outFixedCeil, c.io.inReal, c.io.outRealCeil, delaySize)
+  }
 }
 
 class ShiftRegisterDelaySpec extends FreeSpec with Matchers {
