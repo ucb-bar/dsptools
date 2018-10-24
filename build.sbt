@@ -39,9 +39,9 @@ resolvers ++= Seq (
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel3" -> "3.2-SNAPSHOT",
-  "chisel-iotesters" -> "1.3-SNAPSHOT",
-  "rocketchip" -> "1.2",
+  "chisel3" -> "3.2-102318-SNAPSHOT",
+  "chisel-iotesters" -> "1.3-102318-SNAPSHOT",
+  "rocketchip" -> "1.2-102318-SNAPSHOT",
   "vegas" -> "0.3.11",
   "handlebars-scala" -> "2.1.1"
 )
@@ -50,17 +50,13 @@ name := "dsptools"
 
 val commonSettings = Seq(
   organization := "edu.berkeley.cs",
-  version := "1.2-SNAPSHOT",
+  version := "1.2-102318-SNAPSHOT",
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
   scalaVersion := "2.12.6",
   crossScalaVersions := Seq("2.12.6", "2.11.12"),
     scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls") ++ scalacOptionsVersion(scalaVersion.value),
   javacOptions ++= javacOptionsVersion(scalaVersion.value),
-)
-
-val dsptoolsSettings = Seq(
-  name := "dsptools",
   pomExtra := (<url>http://chisel.eecs.berkeley.edu/</url>
   <licenses>
     <license>
@@ -96,6 +92,10 @@ val dsptoolsSettings = Seq(
       Some("releases" at nexus + "service/local/staging/deploy/maven2")
     }
   },
+)
+
+val dsptoolsSettings = Seq(
+  name := "dsptools",
   libraryDependencies ++= Seq("chisel3","chisel-iotesters").map {
     dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
   },
@@ -122,15 +122,14 @@ pomIncludeRepository := { x => false }
 
 // Don't add 'scm' elements if we have a git.remoteRepo definition.
 
+val `rocket-dsptools` = (project in file("rocket")).
+  settings(commonSettings: _*).
+  settings(rocketSettings: _*).
+  dependsOn(dsptools).
+  aggregate(dsptools)
 
-val dsptools = (project in file(".")).
+lazy val dsptools = (project in file(".")).
   enablePlugins(BuildInfoPlugin).
   enablePlugins(ScalaUnidocPlugin).
   settings(commonSettings: _*).
   settings(dsptoolsSettings: _*)
-
-
-val `rocket-dsptools` = (project in file("rocket")).
-  settings(commonSettings: _*).
-  settings(rocketSettings: _*).
-  dependsOn(dsptools)
