@@ -1,4 +1,4 @@
-package demo_pkg
+package mul_pkg
 
 import chisel3._
 
@@ -127,33 +127,33 @@ class MultiplierSpec extends FlatSpec with Matchers  {
   //    c => new MultiplierTester(c)
   //  } should be(true)
   //}
-  it should "Rnd Stochastic for UInt" in {
-    //dsptools.Driver.execute (() => new Multiplier(inType, outType, 2), Array("--backend-name", "verilator")) {
-    dsptools.Driver.execute(() => new Multiplier(DspReal, DspReal, 2, StochasticRound), opts) { 
-      c => new MultiplierTester(c)
-    } should be(true)
-  }
-  
-  it should "Rnd Stochastic for DspReal" in {
-    //dsptools.Driver.execute (() => new Multiplier(inType, outType, 2), Array("--backend-name", "verilator")) {
-    dsptools.Driver.execute(() => new Multiplier(DspReal, DspReal, 2, StochasticRound), opts) { 
-      c => new MultiplierTester(c)
-    } should be(true)
-  }
-  
-  it should "Rnd Stochastic for FixedPoint" in {
-    //dsptools.Driver.execute (() => new Multiplier(inType, outType, 2), Array("--backend-name", "verilator")) {
-    dsptools.Driver.execute(() => new Multiplier(inType, outType, 2, StochasticRound), opts) { 
-      c => new MultiplierTester(c)
-    } should be(true)
-  }
-  
   it should "Rnd Stochastic for Complex" in {
     //dsptools.Driver.execute (() => new Multiplier(inType, outType, 2), Array("--backend-name", "verilator")) {
-    dsptools.Driver.execute(() => new ComplexMultiplier(complexInType, complexOutType, 2, StochasticRound), opts) { 
-      c => new ComplexMultiplierTester(c)
+    dsptools.Driver.execute(() => new Multiplier(complexInType, complexOutType, 2, StochasticRound), opts) { 
+      c => new MultiplierTester(c)
     } should be(true)
   }
+  
+  //it should "Rnd Stochastic for DspReal" in {
+  //  //dsptools.Driver.execute (() => new Multiplier(inType, outType, 2), Array("--backend-name", "verilator")) {
+  //  dsptools.Driver.execute(() => new Multiplier(DspReal, DspReal, 2, StochasticRound), opts) { 
+  //    c => new MultiplierTester(c)
+  //  } should be(true)
+  //}
+  //
+  //it should "Rnd Stochastic for FixedPoint" in {
+  //  //dsptools.Driver.execute (() => new Multiplier(inType, outType, 2), Array("--backend-name", "verilator")) {
+  //  dsptools.Driver.execute(() => new Multiplier(inType, outType, 2, StochasticRound), opts) { 
+  //    c => new MultiplierTester(c)
+  //  } should be(true)
+  //}
+  //
+  //it should "Rnd Stochastic for Complex" in {
+  //  //dsptools.Driver.execute (() => new Multiplier(inType, outType, 2), Array("--backend-name", "verilator")) {
+  //  dsptools.Driver.execute(() => new ComplexMultiplier(complexInType, complexOutType, 2, StochasticRound), opts) { 
+  //    c => new ComplexMultiplierTester(c)
+  //  } should be(true)
+  //}
 
 }
 

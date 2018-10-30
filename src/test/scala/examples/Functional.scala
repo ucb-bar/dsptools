@@ -14,8 +14,27 @@ import dsptools.{NoTrim, RoundHalfUp, StochasticRound}
 
 import org.scalatest.{Matchers, FlatSpec}
 
+trait DspArithmetic {
+  
+  val inType  = FP(16.W, 10.BP)
+  val outType = FP(20.W, 12.BP)
+  
+  val complexInType   = DspComplex(inType, inType)
+  val complexOutType  = DspComplex(outType, outType)
+
+  val pipeDepth  = 2
+  val roundType  = StochasticRound
+  
+  // DSP Methods to test
+  def mul[T<:Data with Num[T]] = (x:T, y:T) =>  x * y
+  def add[T<:Data with Num[T]] = (x:T, y:T) =>  x + y
+  def sub[T<:Data with Num[T]] = (x:T, y:T) =>  x - y
+  def div[T<:Data with Num[T]] = (x:T, y:T) =>  x / y
+
+}
+
 // Generic functional class, parametrized by different combinational operations
-class Functional[A <: Data:Ring, B <: Data:Ring] (inType:A, outType:B, mulPipes:Int, rnd:TrimType, op:(A,A) => A) extends Module {
+class Functional[A <: Data, B <: Data] (inType:A, outType:B, pipes:Int, rnd:TrimType, op:(A,A) => A) extends Module {
 
   val io = IO (new Bundle {
     val a   = Input(inType)
@@ -23,7 +42,7 @@ class Functional[A <: Data:Ring, B <: Data:Ring] (inType:A, outType:B, mulPipes:
     val res = Output(outType)
   })
 
-  val mres  = Reg(outType.cloneType)  // mul result
+  val mres  = Reg(outType)
   
   // Compute block
   DspContext.alter(DspContext.current.copy(trimType = rnd)) { 
@@ -46,9 +65,10 @@ trait TestCommon {
 
 }
 
-class RoundingTester[A <: Data:Ring, B <: Data:Ring](c: Functional[A,B]) extends DspTester(c) with TestCommon {
+class FunctionalTester[A <: Data, B <: Data](c: Functional[A,B], op:(A,A) => A) extends DspTester(c) with TestCommon with DspArithmetic {
   val uut  = c.io
-  
+
+    
   (1 to totalTests).foreach { i =>
 
     x = rand.nextDouble * range
@@ -57,24 +77,28 @@ class RoundingTester[A <: Data:Ring, B <: Data:Ring](c: Functional[A,B]) extends
     poke(uut.a, x)
     poke(uut.b, y)
     step (3)
-    expect (uut.res, x*y)
+
+    val expResult = op match {
+
+      case mul  => x * y
+      case add  => x + y
+      case sub  => x - y
+      case div  => x / y
+      case _    => x + y
+
+    }
+
+    expect (uut.res, expResult)
   }
 
 }
 
-
-class RoundingSpec extends FlatSpec with Matchers  {
-
-  val inType  = FP(16.W, 8.BP)
-  val outType = FP(20.W, 12.BP)
-
-  val complexInType   = DspComplex(inType.cloneType, inType.cloneType)
-  val complexOutType  = DspComplex(outType.cloneType, outType.cloneType)
+class RoundingSpec extends FlatSpec with Matchers with DspArithmetic {
 
   val opts = new DspTesterOptionsManager {
   
     dspTesterOptions = DspTesterOptions(
-      fixTolLSBs = 2,
+      fixTolLSBs = 4,
       genVerilogTb = false,
       isVerbose = true
     )
@@ -83,18 +107,38 @@ class RoundingSpec extends FlatSpec with Matchers  {
   
   behavior of "implementation"
 
-  it should "Mul with Rnd Half UP for FixedPoint" in {
-    //def mul[T<:Data with Num[T]](x:T, y:T) = x * y
-    //def mul[T<:Data:Ring](x:T, y:T) = x context_ y
-    def mul[T<:Data:Ring](x:T, y:T) = x * y
-    
-    dsptools.Driver.execute(() => new Functional(inType, outType, 2, RoundHalfUp, mul(inType, inType)), opts) { 
-      c => new RoundingTester(c)
+  it should "Mul with Stochastic Round for FixedPoint" in {
+  
+    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, mul), opts) { 
+      c => new FunctionalTester(c, mul)
     } should be(true)
   }
+  
+  it should "Add with Stochastic Round for FixedPoint" in {
+  
+    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, add), opts) { 
+      c => new FunctionalTester(c, add)
+    } should be(true)
+  }
+  
+  it should "Sub with Stochastic Round for FixedPoint" in {
+    
+    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, sub), opts) { 
+      c => new FunctionalTester(c,sub)
+    } should be(true)
+  }
+  
+  //it should "Div with Stochastic Round for FixedPoint" in {
+  //
+  //  
+  //  dsptools.Driver.execute(() => new Functional(inType, outType, 2, StochasticRound, div), opts) { 
+  //    c => new FunctionalTester(c)
+  //  } should be(true)
+  //}
+
   //it should "Rnd Stochastic for Complex" in {
   //  dsptools.Driver.execute(() => new Functional(complexInType, complexOutType, 2, StochasticRound), opts) { 
-  //    c => new RoundingTester(c)
+  //    c => new FunctionalTester(c)
   //  } should be(true)
   //}
   
