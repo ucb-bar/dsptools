@@ -14,6 +14,7 @@ import dsptools.{NoTrim, RoundHalfUp, StochasticRound}
 
 import org.scalatest.{Matchers, FlatSpec}
 
+// Reference operations
 trait DspArithmetic {
   
   val inType  = FP(16.W, 10.BP)
@@ -26,46 +27,53 @@ trait DspArithmetic {
   val roundType  = StochasticRound
   
   // DSP Methods to test
-  def mul[T<:Data with Num[T]] = (x:T, y:T) =>  x * y
-  def add[T<:Data with Num[T]] = (x:T, y:T) =>  x + y
-  def sub[T<:Data with Num[T]] = (x:T, y:T) =>  x - y
-  def div[T<:Data with Num[T]] = (x:T, y:T) =>  x / y
+  def mul[T<:Data with Num[T]]  = (x:T, y:T, z:T) =>  x * y
+  def add[T<:Data with Num[T]]  = (x:T, y:T, z:T) =>  x + y
+  def sub[T<:Data with Num[T]]  = (x:T, y:T, z:T) =>  x - y
+  def div[T<:Data with Num[T]]  = (x:T, y:T, z:T) =>  x / y
+  def mod[T<:Data with Num[T]]  = (x:T, y:T, z:T) =>  x % y
+  def madd[T<:Data with Num[T]] = (x:T, y:T, z:T) =>  x * y + z
+  def msub[T<:Data with Num[T]] = (x:T, y:T, z:T) =>  x * y - z
 
 }
 
-// Generic functional class, parametrized by different combinational operations
-class Functional[A <: Data, B <: Data] (inType:A, outType:B, pipes:Int, rnd:TrimType, op:(A,A) => A) extends Module {
+// Generic functional class, parametrized with different combinational operations
+class Functional[A <: Data, B <: Data] (inType:A, outType:B, pipes:Int, rnd:TrimType, op:(A,A,A) => A) extends Module {
 
   val io = IO (new Bundle {
     val a   = Input(inType)
     val b   = Input(inType)
+    val c   = Input(inType)
     val res = Output(outType)
   })
 
   val mres  = Reg(outType)
-  
-  // Compute block
+ 
+  // TBD: Add Dsp Pipelining tests if required
   DspContext.alter(DspContext.current.copy(trimType = rnd)) { 
-    mres := op(io.a, io.b) 
+    mres := op(io.a, io.b, io.c) 
   }
  
   io.res := mres
 
 }
 
+// Test setup
 trait TestCommon {
 
-  val totalTests = 1
+  val totalTests = 2
   
   val rand  = scala.util.Random
   val range = 10
   
   var x = 0.0
   var y = 0.0
+  var z = 0.0
 
 }
 
-class FunctionalTester[A <: Data, B <: Data](c: Functional[A,B], op:(A,A) => A) extends DspTester(c) with TestCommon with DspArithmetic {
+// Test top
+class FunctionalTester[A <: Data, B <: Data](c: Functional[A,B], op:String) extends DspTester(c) with TestCommon with DspArithmetic {
   val uut  = c.io
 
     
@@ -73,18 +81,23 @@ class FunctionalTester[A <: Data, B <: Data](c: Functional[A,B], op:(A,A) => A) 
 
     x = rand.nextDouble * range
     y = rand.nextDouble * range
+    z = rand.nextDouble * range
 
     poke(uut.a, x)
     poke(uut.b, y)
+    poke(uut.c, z)
     step (3)
 
     val expResult = op match {
 
-      case mul  => x * y
-      case add  => x + y
-      case sub  => x - y
-      case div  => x / y
-      case _    => x + y
+      case "mul"  => x * y
+      case "add"  => x + y
+      case "sub"  => x - y
+      case "madd" => x * y + z
+      case "msub" => x * y - z 
+      case "div"  => x / y // NYI
+      case "mod"  => x % y // NYI
+      case _      => x + y
 
     }
 
@@ -93,7 +106,10 @@ class FunctionalTester[A <: Data, B <: Data](c: Functional[A,B], op:(A,A) => A) 
 
 }
 
+
 class RoundingSpec extends FlatSpec with Matchers with DspArithmetic {
+
+  println (s"Running a Functional test for data type: $inType and rounding: $roundType")
 
   val opts = new DspTesterOptionsManager {
   
@@ -110,35 +126,50 @@ class RoundingSpec extends FlatSpec with Matchers with DspArithmetic {
   it should "Mul with Stochastic Round for FixedPoint" in {
   
     dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, mul), opts) { 
-      c => new FunctionalTester(c, mul)
+      c => new FunctionalTester(c, "mul")
+    } should be(true)
+  }
+ 
+  // FIXME - how to connects opts here ?
+  it should "Mul with Stochastic Round for FixedPoint with Verilator" in {
+  
+    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, mul), Array("--backend-name", "verilator")) { 
+      c => new FunctionalTester(c, "mul")
     } should be(true)
   }
   
   it should "Add with Stochastic Round for FixedPoint" in {
   
     dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, add), opts) { 
-      c => new FunctionalTester(c, add)
+      c => new FunctionalTester(c, "add")
     } should be(true)
   }
   
   it should "Sub with Stochastic Round for FixedPoint" in {
     
     dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, sub), opts) { 
-      c => new FunctionalTester(c,sub)
+      c => new FunctionalTester(c,"sub")
     } should be(true)
   }
   
-  //it should "Div with Stochastic Round for FixedPoint" in {
-  //
-  //  
-  //  dsptools.Driver.execute(() => new Functional(inType, outType, 2, StochasticRound, div), opts) { 
-  //    c => new FunctionalTester(c)
-  //  } should be(true)
-  //}
-
-  //it should "Rnd Stochastic for Complex" in {
-  //  dsptools.Driver.execute(() => new Functional(complexInType, complexOutType, 2, StochasticRound), opts) { 
-  //    c => new FunctionalTester(c)
+  it should "Madd with Stochastic Round for FixedPoint" in {
+    
+    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, madd), opts) { 
+      c => new FunctionalTester(c,"madd")
+    } should be(true)
+  }
+  
+  it should "Msub with Stochastic Round for FixedPoint" in {
+    
+    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, msub), opts) { 
+      c => new FunctionalTester(c,"msub")
+    } should be(true)
+  }
+ 
+  // FIXME - how to instantiate this test ???
+  //it should "Add with Stochastic for DspComplex" in {
+  //  dsptools.Driver.execute(() => new Functional(complexInType, complexOutType, pipeDepth, roundType, add), opts) { 
+  //    c => new FunctionalTester(c, "add")
   //  } should be(true)
   //}
   
