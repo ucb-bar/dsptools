@@ -54,7 +54,7 @@ object CustomBundle {
   // TODO: Generalize
   /** Check for equality with UInt Custom Bundles*/
   def eq(a: CustomBundle[UInt], b: CustomBundle[UInt]): Bool = {
-    require(a.elements.map(_._2) == b.elements.map(_._2), "CustomBundle types/fields must be the same")
+    require(a.elements.map(_._1) == b.elements.map(_._1), "CustomBundle types/fields must be the same")
     a.elements.zip(b.elements).map { case ((strA, eltA), (strB, eltB)) => eltA === eltB }.reduce(_ & _)
   }
 }
