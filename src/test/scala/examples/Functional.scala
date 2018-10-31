@@ -7,23 +7,27 @@ import chisel3._
 
 import dsptools.numbers.{Ring, DspReal, DspComplex}
 import dsptools.numbers.implicits._
-
-import chisel3.core.{FixedPoint => FP}
-import dsptools.{DspTester, DspTesterOptions, DspTesterOptionsManager, DspContext, TrimType}
+import chisel3.core.{FixedPoint}
 import dsptools.{NoTrim, RoundHalfUp, StochasticRound}
+import dsptools.{DspTester, DspTesterOptions, DspTesterOptionsManager, DspContext, TrimType}
+import iotesters.TesterOptions
 
 import org.scalatest.{Matchers, FlatSpec}
 
 // Reference operations
 trait DspArithmetic {
   
-  val inType  = FP(16.W, 10.BP)
-  val outType = FP(20.W, 12.BP)
+  //val inType  = DspReal
+  //val outType = DspReal
+  val inType  = FixedPoint(16.W, 10.BP)
+  val outType = FixedPoint(20.W, 12.BP)
   
   val complexInType   = DspComplex(inType, inType)
   val complexOutType  = DspComplex(outType, outType)
 
   val pipeDepth  = 2
+  val bitsPrecision = 4
+  
   val roundType  = StochasticRound
   
   // DSP Methods to test
@@ -111,12 +115,25 @@ class RoundingSpec extends FlatSpec with Matchers with DspArithmetic {
 
   println (s"Running a Functional test for data type: $inType and rounding: $roundType")
 
+ 
+  // Default backend 
   val opts = new DspTesterOptionsManager {
-  
     dspTesterOptions = DspTesterOptions(
-      fixTolLSBs = 4,
+      fixTolLSBs = bitsPrecision,
       genVerilogTb = false,
       isVerbose = true
+    )
+  }
+  
+  // Same with Verilator backend
+  val vopts = new DspTesterOptionsManager {
+    dspTesterOptions = DspTesterOptions(
+      fixTolLSBs = bitsPrecision,
+      genVerilogTb = false,
+      isVerbose = true
+    )
+    testerOptions = TesterOptions(
+      backendName = "verilator"
     )
   }
 
@@ -129,11 +146,10 @@ class RoundingSpec extends FlatSpec with Matchers with DspArithmetic {
       c => new FunctionalTester(c, "mul")
     } should be(true)
   }
- 
-  // FIXME - how to connects opts here ?
+  
   it should "Mul with Stochastic Round for FixedPoint with Verilator" in {
   
-    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, mul), Array("--backend-name", "verilator")) { 
+    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, mul), vopts) { 
       c => new FunctionalTester(c, "mul")
     } should be(true)
   }
@@ -165,8 +181,19 @@ class RoundingSpec extends FlatSpec with Matchers with DspArithmetic {
       c => new FunctionalTester(c,"msub")
     } should be(true)
   }
+  
+  // FIXME - how to instantiate other types ???
+  
+  //it should "Mul with Stochastic Round for Real" in {
+  //  val rtype  = DspReal
+  //  
+  //
+  //  dsptools.Driver.execute(() => new Functional(rtype, rtype, pipeDepth, roundType, mul), opts) { 
+  //    c => new FunctionalTester(c, "mul")
+  //  } should be(true)
+  //}
  
-  // FIXME - how to instantiate this test ???
+ 
   //it should "Add with Stochastic for DspComplex" in {
   //  dsptools.Driver.execute(() => new Functional(complexInType, complexOutType, pipeDepth, roundType, add), opts) { 
   //    c => new FunctionalTester(c, "add")
