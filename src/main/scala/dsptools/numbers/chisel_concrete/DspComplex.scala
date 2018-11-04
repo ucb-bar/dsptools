@@ -9,6 +9,8 @@ import implicits._
 import breeze.math.Complex
 
 object DspComplex {
+  
+  def zero[T<:Data:Ring] = DspComplex(Ring[T].zero, Ring[T].zero)
 
   def apply[T <: Data:Ring](gen: T): DspComplex[T] = {
     if (gen.isLit()) throw DspException("Cannot use Lit in single argument DspComplex.apply")
