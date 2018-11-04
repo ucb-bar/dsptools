@@ -172,7 +172,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
           val rnd = LFSR16()
 
           // Add random LSB b bits to the Int number and trim b-1 tail bits and one more bit for a sign
-          val res = (a.asUInt + rnd(b-1,0)) >> b-2
+          val res = a.asUInt + rnd(b-1,0) >> b-2
           
           res.asFixedPoint(b.BP)
         }

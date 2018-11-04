@@ -9,7 +9,7 @@ import dsptools.numbers.{Ring, DspReal, DspComplex}
 import dsptools.numbers.implicits._
 import chisel3.core.{FixedPoint}
 import dsptools.{NoTrim, RoundHalfUp, StochasticRound}
-import dsptools.{DspTester, DspTesterOptions, DspTesterOptionsManager, DspContext, TrimType}
+import dsptools.{DspTester, DspTesterOptions, DspTesterOptionsManager, DspContext, TrimType, Grow, Wrap, OverflowType}
 import iotesters.TesterOptions
 
 import org.scalatest.{Matchers, FlatSpec}
@@ -28,21 +28,13 @@ trait DspArithmetic {
   val pipeDepth  = 2
   val bitsPrecision = 4
   
-  val roundType  = StochasticRound
+  val roundType  = StochasticRound 
+  val overflow  = Grow
   
-  // DSP Methods to test
-  def mul[T<:Data with Num[T]]  = (x:T, y:T, z:T) =>  x * y
-  def add[T<:Data with Num[T]]  = (x:T, y:T, z:T) =>  x + y
-  def sub[T<:Data with Num[T]]  = (x:T, y:T, z:T) =>  x - y
-  def div[T<:Data with Num[T]]  = (x:T, y:T, z:T) =>  x / y
-  def mod[T<:Data with Num[T]]  = (x:T, y:T, z:T) =>  x % y
-  def madd[T<:Data with Num[T]] = (x:T, y:T, z:T) =>  x * y + z
-  def msub[T<:Data with Num[T]] = (x:T, y:T, z:T) =>  x * y - z
-
 }
 
 // Generic functional class, parametrized with different combinational operations
-class Functional[A <: Data, B <: Data] (inType:A, outType:B, pipes:Int, rnd:TrimType, op:(A,A,A) => A) extends Module {
+class Functional[A <: Data:Ring, B <: Data:Ring] (inType:A, outType:B, op:String, pipes:Int, rnd:TrimType, ovf:OverflowType ) extends Module {
 
   val io = IO (new Bundle {
     val a   = Input(inType)
@@ -51,14 +43,33 @@ class Functional[A <: Data, B <: Data] (inType:A, outType:B, pipes:Int, rnd:Trim
     val res = Output(outType)
   })
 
-  val mres  = Reg(outType)
- 
-  // TBD: Add Dsp Pipelining tests if required
-  DspContext.alter(DspContext.current.copy(trimType = rnd)) { 
-    mres := op(io.a, io.b, io.c) 
+  val tmp = op match {
+
+    case "mul"  => 
+      DspContext.alter(DspContext.current.copy(trimType = rnd, numMulPipes = pipes)) { 
+        io.a * io.b
+      }
+
+    case "add"  =>
+      DspContext.alter(DspContext.current.copy(trimType = rnd, numAddPipes = pipes, overflowType = ovf)) { 
+        io.a + io.b
+      }
+    
+    case "sub"  =>
+      DspContext.alter(DspContext.current.copy(trimType = rnd, numAddPipes = pipes, overflowType = ovf)) { 
+        io.a - io.b
+      }
+   
+    // less than
+    //case "lt"  =>
+    //  DspContext.alter(DspContext.current.copy(trimType = rnd, numAddPipes = pipes, overflowType = ovf)) { 
+    //    io.a.lt(io.b)
+    //  }
+
+    case _ => throw DspException ("Unknown operation provided")
   }
- 
-  io.res := mres
+
+  io.res := tmp
 
 }
 
@@ -141,46 +152,49 @@ class RoundingSpec extends FlatSpec with Matchers with DspArithmetic {
   behavior of "implementation"
 
   it should "Mul with Stochastic Round for FixedPoint" in {
+    val op  = "mul"
   
-    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, mul), opts) { 
-      c => new FunctionalTester(c, "mul")
+    dsptools.Driver.execute(() => new Functional(inType, outType, op, pipeDepth, roundType, overflow), opts) { 
+      c => new FunctionalTester(c, op)
     } should be(true)
   }
   
-  it should "Mul with Stochastic Round for FixedPoint with Verilator" in {
-  
-    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, mul), vopts) { 
-      c => new FunctionalTester(c, "mul")
-    } should be(true)
-  }
+//  it should "Mul with Stochastic Round for FixedPoint with Verilator" in {
+//  
+//    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, mul), vopts) { 
+//      c => new FunctionalTester(c, "mul")
+//    } should be(true)
+//  }
   
   it should "Add with Stochastic Round for FixedPoint" in {
+    val op  = "add"
   
-    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, add), opts) { 
-      c => new FunctionalTester(c, "add")
+    dsptools.Driver.execute(() => new Functional(inType, outType, op, pipeDepth, roundType, overflow), opts) { 
+      c => new FunctionalTester(c, op)
     } should be(true)
   }
-  
+
   it should "Sub with Stochastic Round for FixedPoint" in {
+    val op  = "sub"
     
-    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, sub), opts) { 
-      c => new FunctionalTester(c,"sub")
+    dsptools.Driver.execute(() => new Functional(inType, outType, op, pipeDepth, roundType, overflow), opts) { 
+      c => new FunctionalTester(c,op)
     } should be(true)
   }
   
-  it should "Madd with Stochastic Round for FixedPoint" in {
-    
-    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, madd), opts) { 
-      c => new FunctionalTester(c,"madd")
-    } should be(true)
-  }
-  
-  it should "Msub with Stochastic Round for FixedPoint" in {
-    
-    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, msub), opts) { 
-      c => new FunctionalTester(c,"msub")
-    } should be(true)
-  }
+//  it should "Madd with Stochastic Round for FixedPoint" in {
+//    
+//    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, madd), opts) { 
+//      c => new FunctionalTester(c,"madd")
+//    } should be(true)
+//  }
+//  
+//  it should "Msub with Stochastic Round for FixedPoint" in {
+//    
+//    dsptools.Driver.execute(() => new Functional(inType, outType, pipeDepth, roundType, msub), opts) { 
+//      c => new FunctionalTester(c,"msub")
+//    } should be(true)
+//  }
   
   // FIXME - how to instantiate other types ???
   
