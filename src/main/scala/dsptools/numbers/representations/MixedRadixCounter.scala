@@ -42,7 +42,8 @@ class MixedRadixCounter(
     // Only used if init isn't constant
     val init = Input(inc.cloneType)
     val out = Output(inc.cloneType)
-    val wrap = Output(Bool())
+    // Doesn't include enable (just when counter is maxed)
+    val isMax = Output(Bool())
   } )
 
   // TODO: Anywhere to eliminate MixedRadix.wire?
@@ -77,14 +78,14 @@ class MixedRadixCounter(
   val countNextWithWrap =
     if (autoWrap) {
       // Note that this uses the future counter value
-      io.wrap := CustomBundle.eq(countNext.digits, zero.digits) && io.enable
+      io.isMax := CustomBundle.eq(countNext.digits, zero.digits) // && io.enable
       countNext
     }
     else {
       // Whereas this uses the current counter value
       val maxedOut = CustomBundle.eq(count.digits, max)
       // Wrap means that at the next clock cycle, the counter will have wrapped (so factor in enable)
-      io.wrap := maxedOut && io.enable
+      io.isMax := maxedOut // && io.enable
 
       // TODO: Figure out why mux doesn't work
       // Mux(maxedOut, zero, countNext)
@@ -232,7 +233,7 @@ class MixedRadixCounterTester(c: MixedRadixCounter) extends DspTester(c) {
 
   counts.zip(wraps) foreach { case (count, wrap) =>
     expectMixedRadix(c.io.out, count, rads)
-    expect(c.io.wrap, wrap)
+    expect(c.io.isMax, wrap)
     step(1)
   }
  
