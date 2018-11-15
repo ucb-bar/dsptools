@@ -115,43 +115,43 @@ class FunctionalTester[A <: Data:Ring, B <: Data:Ring](c: Functional[A,B], op:St
 
 }
 
-class ComplexFunctionalTester[A <: Data:Ring](c: Functional[A,A], op:String) extends DspTester(c) with TestCommon with DspArithmetic {
-  val uut  = c.io
-
-  val zero = 0.U.asInstanceOf[this.type]
-
-  var x = DspComplex.zero
-  var y = DspComplex.zero
-  var z = DspComplex.zero
-    
-  (1 to totalTests).foreach { i =>
-
-    //x = 
-    //y = 
-    //z = 
-
-    poke(uut.a, x)
-    poke(uut.b, y)
-    poke(uut.c, z)
-    step (3)
-
-    val expResult = op match {
-
-      case "mul"  => x * y
-      case "add"  => x + y
-      case "sub"  => x - y
-      case "madd" => x * y + z
-      case "msub" => x * y - z 
-      case "div"  => x / y // NYI
-      case "mod"  => x % y // NYI
-      case _      => x + y
-
-    }
-
-    //expect (uut.res, expResult)
-  }
-
-}
+//class ComplexFunctionalTester[A <: Data:Ring](c: Functional[A,A], op:String) extends DspTester(c) with TestCommon with DspArithmetic {
+//  val uut  = c.io
+//
+//  val zero = 0.U.asInstanceOf[this.type]
+//
+//  var x = DspComplex.zero
+//  var y = DspComplex.zero
+//  var z = DspComplex.zero
+//    
+//  (1 to totalTests).foreach { i =>
+//
+//    //x = 
+//    //y = 
+//    //z = 
+//
+//    poke(uut.a, x)
+//    poke(uut.b, y)
+//    poke(uut.c, z)
+//    step (3)
+//
+//    val expResult = op match {
+//
+//      case "mul"  => x * y
+//      case "add"  => x + y
+//      case "sub"  => x - y
+//      case "madd" => x * y + z
+//      case "msub" => x * y - z 
+//      case "div"  => x / y // NYI
+//      case "mod"  => x % y // NYI
+//      case _      => x + y
+//
+//    }
+//
+//    //expect (uut.res, expResult)
+//  }
+//
+//}
 
 
 class RoundingSpec extends FlatSpec with Matchers with DspArithmetic {
@@ -199,13 +199,13 @@ class RoundingSpec extends FlatSpec with Matchers with DspArithmetic {
     } should be(true)
   }
   
-  it should "Mul with Stochastic for DspComplex" in {
-    val op  = "mul"
-    
-    dsptools.Driver.execute(() => new Functional(cmpInType, cmpOutType, op, pipeDepth, roundType, overflow), opts) { 
-      c => new ComplexFunctionalTester(c, op)
-    } should be(true)
-  }
+//  it should "Mul with Stochastic for DspComplex" in {
+//    val op  = "mul"
+//    
+//    dsptools.Driver.execute(() => new Functional(cmpInType, cmpOutType, op, pipeDepth, roundType, overflow), opts) { 
+//      c => new ComplexFunctionalTester(c, op)
+//    } should be(true)
+//  }
   
 //  it should "Mul with Stochastic Round for FixedPoint with Verilator" in {
 //  
