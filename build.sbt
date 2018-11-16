@@ -99,6 +99,9 @@ val dsptoolsSettings = Seq(
   libraryDependencies ++= Seq("chisel3","chisel-iotesters").map {
     dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
   },
+// sbt 1.2.6 fails with `Symbol 'term org.junit' is missing from the classpath`
+// when compiling tests under 2.11.12
+// An explicit dependency on junit seems to alleviate this.
   libraryDependencies ++= Seq(
     "org.typelevel" %% "spire" % "0.14.1",
     "org.scalanlp" %% "breeze" % "0.13.2",
