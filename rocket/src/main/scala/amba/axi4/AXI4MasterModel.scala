@@ -1,8 +1,9 @@
-package amba.axi4
+package freechips.rocketchip.amba.axi4
 
 import chisel3.experimental.MultiIOModule
 import chisel3.iotesters.PeekPokeTester
 import chisel3.util.IrrevocableIO
+import dsptools.tester.MemMasterModel
 import freechips.rocketchip.amba.axi4._
 
 object AXI4MasterModel {
@@ -61,7 +62,7 @@ object AXI4MasterModel {
   val RRESP_DECERR = BigInt(3)
 }
 
-trait AXI4MasterModel extends PeekPokeTester[MultiIOModule] {
+trait AXI4MasterModel extends PeekPokeTester[MultiIOModule] with MemMasterModel {
   import AXI4MasterModel._
 
   def memAXI: AXI4Bundle
@@ -134,6 +135,7 @@ trait AXI4MasterModel extends PeekPokeTester[MultiIOModule] {
     )
   }
 
+  def memWriteWord(addr: BigInt, data: BigInt): Unit = axiWriteWord(addr, data)
   def axiWriteWord(addr: BigInt, data: BigInt): Unit = {
     val awChannel = AWChannel(
       addr = addr,
@@ -190,6 +192,7 @@ trait AXI4MasterModel extends PeekPokeTester[MultiIOModule] {
     require(b.resp == BRESP_OKAY, s"BRESP not OKAY (got ${b.resp}")
 
   }
+  def memReadWord(addr: BigInt) = axiReadWord(addr)
   def axiReadWord(addr: BigInt): BigInt = {
     val arChannel = ARChannel(
       addr = addr,

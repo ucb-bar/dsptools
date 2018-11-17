@@ -3,6 +3,7 @@
 package freechips.rocketchip.tilelink
 
 import chisel3.experimental.MultiIOModule
+import dsptools.tester.MemMasterModel
 
 object TLMasterModel {
   case class AChannel(
@@ -46,7 +47,7 @@ object TLMasterModel {
 }
 
 //noinspection RedundantDefaultArgument
-trait TLMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] {
+trait TLMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] with MemMasterModel {
   import TLMasterModel._
 
   def memTL: TLBundle
@@ -186,6 +187,7 @@ trait TLMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] {
     poke(memTL.e.valid, 0)
   }
 
+  def memWriteWord(addr: BigInt, data: BigInt): Unit = tlWriteWord(addr, data)
   def tlWriteWord(addr: BigInt, data: BigInt): Unit = {
     tlWriteA(AChannel(opcode = 0 /* PUT */, address=addr, data=data, mask = BigInt("1"*8, 2)))
     tlReadD()
@@ -202,6 +204,7 @@ trait TLMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] {
     }
   }
 
+  def memReadWord(addr: BigInt): BigInt = tlReadWord(addr)
   def tlReadWord(addr: BigInt): BigInt = {
     tlWriteA(AChannel(opcode = 4 /* GET */, address=addr))
     val d = tlReadD()

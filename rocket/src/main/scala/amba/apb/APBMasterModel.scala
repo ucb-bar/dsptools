@@ -1,11 +1,12 @@
 // See LICENSE for license details
 
-package amba.apb
+package freechips.rocketchip.amba.apb
 
 import chisel3.experimental.MultiIOModule
+import dsptools.tester.MemMasterModel
 import freechips.rocketchip.amba.apb._
 
-trait APBMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] {
+trait APBMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] with MemMasterModel {
   def memAPB: APBBundle
 
   def apbReset(): Unit = {
@@ -16,6 +17,7 @@ trait APBMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] {
   def apbWrite(addr: Int, data: Int): Unit =
     apbWrite(BigInt(addr), BigInt(data))
 
+  def memWriteWord(addr: BigInt, data: BigInt): Unit = apbWrite(addr, data)
   def apbWrite(addr: BigInt, data: BigInt): Unit = {
     var count = 0
     poke(memAPB.psel, 1)
@@ -36,6 +38,7 @@ trait APBMasterModel extends chisel3.iotesters.PeekPokeTester[MultiIOModule] {
     poke(memAPB.penable, 0)
   }
 
+  def memReadWord(addr: BigInt): BigInt = apbRead(addr)
   def apbRead(addr: Int): BigInt =
     apbRead(BigInt(addr))
 
