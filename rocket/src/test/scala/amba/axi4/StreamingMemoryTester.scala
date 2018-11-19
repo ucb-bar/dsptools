@@ -43,7 +43,12 @@ class StreamingMemoryTester(dut: StreamingMemory with AXI4StandaloneBlock, silen
   step(1)
   poke(dut.module.io.streamToMemRequest.valid, false)
 
-  stepToCompletion(silentFail = silentFail)
+  cycle = 0
+  while (peek(dut.module.io.writeComplete) != BigInt(1) && cycle < 100) {
+    cycle += 1
+    step(1)
+  }
+
   slave.addExpects((0 until 50 - 4).map(i => AXI4StreamTransactionExpect(data = Some(i + 3))))
 
   poke(mod.io.memToStreamRequest.bits.baseAddress, beatBytes * 4)

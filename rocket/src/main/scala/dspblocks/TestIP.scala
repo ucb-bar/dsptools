@@ -1,13 +1,13 @@
 package dspblocks
 
-import amba.apb.APBMasterModel
-import amba.axi4.AXI4MasterModel
 import breeze.math.Complex
 import chisel3._
 import chisel3.core.FixedPoint
 import chisel3.internal.firrtl.KnownBinaryPoint
 import dsptools._
 import dsptools.numbers._
+import freechips.rocketchip.amba.apb.APBMasterModel
+import freechips.rocketchip.amba.axi4.AXI4MasterModel
 import freechips.rocketchip.tilelink.TLMasterModel
 import spire.math.ConvertableFrom
 import spire.implicits._

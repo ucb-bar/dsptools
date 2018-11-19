@@ -168,8 +168,7 @@ class StreamingAXI4DMA
 
 
     val readBufferHasSpace = readBuffer.entries.U - readBuffer.io.count > readDescriptor.length
-    // don't allow reading while a write is onging
-    axi.ar.valid := reading && !writing && !readAddrDone && readBufferHasSpace
+    axi.ar.valid := reading && !readAddrDone && readBufferHasSpace
     when (axi.ar.fire()) {
       readAddrDone := true.B
     }

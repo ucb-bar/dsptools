@@ -1,6 +1,5 @@
 package dspblocks
 
-import amba.axi4.AXI4MasterModel
 import breeze.stats.distributions.Uniform
 import chisel3.core.Flipped
 import chisel3.iotesters.PeekPokeTester
