@@ -105,6 +105,13 @@ trait BinaryRepresentationDspReal extends BinaryRepresentation[DspReal] with has
     val lut = VecInit((0 to max).map(x => DspReal(math.pow(2, x))))
     a * lut(n)
   }
+  def shr(a: DspReal, n: Int): DspReal = div2(a, n)
+  def shr(a: DspReal, n: UInt): DspReal = {
+    require(n.widthKnown, "n Width must be known for shr with DspReal")
+    val max = (1 << n.getWidth) - 1
+    val lut = VecInit((0 to max).map(x => DspReal(math.pow(2.0, -x))))
+    a * lut(n)
+  }
   // mul2 consistent with shl
   // signBit relies on Signed
   override def div2(a: DspReal, n: Int): DspReal = a / DspReal(math.pow(2, n))
@@ -118,9 +125,6 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
   override def fromInt(n: Int): DspReal = super[ConvertableToDspReal].fromInt(n)
   override def fromBigInt(n: BigInt): DspReal = super[ConvertableToDspReal].fromBigInt(n)
   def intPart(a: DspReal): SInt = truncate(a).toSInt()
-  // TODO: Implement? Will it ever be used? instead of div2?
-  def shr(a: DspReal, n: Int): DspReal = throw DspException(">> for DspReal is unimplemented")
-  def shr(a: DspReal, n: UInt): DspReal = throw DspException(">> for DspReal is unimplemented")
   // WARNING: Beware of overflow(!)
   def asFixed(a: DspReal, proto: FixedPoint): FixedPoint = {
     require(proto.binaryPoint.known, "Binary point must be known for DspReal -> FixedPoint")
