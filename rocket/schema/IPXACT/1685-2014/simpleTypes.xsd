@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+// Description : simpleTypes.xsd
+// Author: The Accellera System Initiative IP-XACT Schema Working Group
+// 
+// Revision:    $Revision: 1537 $
+// Date:        $Date: 2010-02-26 13:28:40 -0800 (Fri, 26 Feb 2010) $
+// 
+// Copyright (c) 2005 - 2012 Accellera Systems Initiative Inc. 
+// All rights reserved.
+// 
+// This source file is provided on an AS IS basis. The Accellera 
+// Systems Initiative disclaims any warranty express or implied 
+// including any warranty of merchantability and fitness for use 
+// for a particular purpose.
+// 
+// The user of the source file shall indemnify and hold The Accellera 
+// Systems Initiative and its members harmless from any damages or liability.
+// 
+// This file may be copied, and distributed, WITHOUT
+// modifications; this notice must be included on any copy.
+// 
+// This schema shall not be modified, adapted, altered, sublicensed, nor
+// any derivative works shall be created based upon the schema.  The
+// intended and allowed uses of the schema include:
+// 
+//  o Creating and validating XML documents that conform to the schema
+// 
+//  o Building software programs and systems based on the schema
+// 
+//  o Distributing verbatim copy of the schema as long as the full text
+//  of this license is included in all copies of the schema.
+//  Specifically, a tool may include full copies of the schema, and these
+//  copies may be distributed by the tool provider directly.  A link or
+//  URL to the original of the schema is inherent in the schema URI.
+// 
+//  o Documents which are validated against this schema may also
+//  reference additional schema. These additional schemas may provide for
+//  validation of elements and attributes at the extension points
+//  explicitly and implicitly included in the IEEE 1685-???? standard.
+// 
+//  o No right to create new schemas derived from parts of this base
+//  schema is granted pursuant to this License.
+// 
+// Users are requested to provide feedback to The Accellera Systems 
+// Initiative IP-XACT Schema Working Group using: 
+// mailto:ip-xact-swg@lists.accellera.org
+ -->
+<xs:schema xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.accellera.org/XMLSchema/IPXACT/1685-2014" elementFormDefault="qualified">
+    <xs:include schemaLocation="autoConfigure.xsd"/>
+    
+    <xs:complexType name="unsignedLongintExpression">
+        <xs:annotation>
+            <xs:documentation>An unsigned longint which supports an expression value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+          <xs:extension base="ipxact:complexBaseExpression">
+            <xs:attribute name="minimum" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to a unsigend longint value, this indicates the minimum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="maximum" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to an unsigend longint value, this indicates the maximum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+          </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="unsignedPositiveLongintExpression">
+        <xs:annotation>
+            <xs:documentation>A positive unsigned longint which supports an expression value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+          <xs:extension base="ipxact:complexBaseExpression">
+            <xs:attribute name="minimum" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to a positive unsigned longint value, this indicates the minimum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="maximum" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to a positive unsigned longint value, this indicates the maximum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+          </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="signedLongintExpression">
+        <xs:annotation>
+            <xs:documentation>An unsigned longint which supports an expression value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+          <xs:extension base="ipxact:complexBaseExpression">
+            <xs:attribute name="minimum" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to a signed longint value, this indicates the minimum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="maximum" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to a signed longint value, this indicates the maximum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+          </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="unsignedIntExpression">
+        <xs:annotation>
+            <xs:documentation>An unsigned int which supports an expression value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+          <xs:extension base="ipxact:complexBaseExpression">
+            <xs:attribute name="minimum" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to an unsiged int value, this indicates the minimum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="maximum" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to a unsigned int value, this indicates the maximum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+          </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="unsignedPositiveIntExpression">
+        <xs:annotation>
+            <xs:documentation>An positive unsigned int which supports an expression value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+          <xs:extension base="ipxact:complexBaseExpression">
+            <xs:attribute name="minimum" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to an unsiged int value, this indicates the minimum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="maximum" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to a unsigned int value, this indicates the maximum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+          </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="signedIntExpression">
+        <xs:annotation>
+            <xs:documentation>A signed int which supports an expression value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+          <xs:extension base="ipxact:complexBaseExpression">
+            <xs:attribute name="minimum" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to a long value, this indicates the minimum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="maximum" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to a long value, this indicates the maximum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+          </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="realExpression">
+        <xs:annotation>
+            <xs:documentation>A real which supports an expression value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+          <xs:extension base="ipxact:complexBaseExpression">
+            <xs:attribute name="minimum" type="xs:double">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to a real value, this indicates the minimum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="maximum" type="xs:double">
+                <xs:annotation>
+                    <xs:documentation>For elements which can be specified using expression which are supposed to be resolved to a real value, this indicates the maximum value allowed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+          </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="stringExpression">
+        <xs:annotation>
+            <xs:documentation>Represents a string. It supports an expression value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+          <xs:extension base="ipxact:complexBaseExpression"/>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="stringURIExpression">
+        <xs:annotation>
+            <xs:documentation>IP-XACT URI, like a standard xs:anyURI except that it can contain environment variables in the ${ } form, to be replaced by their value to provide the underlying URI</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+          <xs:extension base="ipxact:complexBaseExpression"/>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="unsignedBitExpression">
+        <xs:annotation>
+            <xs:documentation>Represents a single-bit/bool. It supports an expression value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+          <xs:extension base="ipxact:complexBaseExpression"/>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="unsignedBitVectorExpression">
+        <xs:annotation>
+            <xs:documentation>Represents a bit-string. It supports an expression value.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+          <xs:extension base="ipxact:complexBaseExpression"/>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:simpleType name="portName">
+        <xs:annotation>
+            <xs:documentation>A type for a port name string, allows letters, digits, dash, colon, underscore and period</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:whiteSpace value="collapse"/>
+            <xs:pattern value="\i[\p{L}\p{N}\.\-:_]*"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="instancePath">
+        <xs:annotation>
+            <xs:documentation>A type for a instance name path string, allows letters, digits, dash, colon, underscore, period and slash</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:whiteSpace value="collapse"/>
+            <xs:pattern value="\i[\p{L}\p{N}\.\-:_]*"/>
+            <xs:pattern value="\i[\p{L}\p{N}\.\-:_]*/\i[\p{L}\p{N}\.\-:_]*"/>
+            <xs:pattern value="(\i[\p{L}\p{N}\.\-:_]*/)+[\i\p{L}\p{N}\.\-:_]*"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:complexType name="complexBaseExpression">
+        <xs:annotation>
+            <xs:documentation>Represents the base-type for an expressions.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+          <xs:extension base="ipxact:simpleBaseExpression">
+            <xs:attributeGroup ref="ipxact:any.att"/>
+          </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:simpleType name="simpleUnsignedBitExpression">
+        <xs:annotation>
+            <xs:documentation>Represents a single-bit/bool. It supports an expression value.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="ipxact:simpleBaseExpression"/>
+    </xs:simpleType>
+    
+    <xs:simpleType name="simpleUnsignedLongintExpression">
+        <xs:annotation>
+            <xs:documentation>>An unsigned longint which supports an expression value.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="ipxact:simpleBaseExpression"/>
+    </xs:simpleType>
+    
+    <xs:simpleType name="simpleBaseExpression">
+        <xs:annotation>
+            <xs:documentation>Represents the base-type for an expressions, it forces a non whitespace value to be specified.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:whiteSpace value="collapse"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

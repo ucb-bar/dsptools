@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2008 rel. 2 sp2 (http://www.altova.com) by Mark Noll (private) -->
+<!--
+// Description : identifier.xsd
+// Author: The Accellera System Initiative IP-XACT Schema Working Group
+// 
+// Revision:    $Revision: 1537 $
+// Date:        $Date: 2010-02-26 13:28:40 -0800 (Fri, 26 Feb 2010) $
+// 
+// Copyright (c) 2005 - 2012 Accellera Systems Initiative Inc. 
+// All rights reserved.
+// 
+// This source file is provided on an AS IS basis. The Accellera 
+// Systems Initiative disclaims any warranty express or implied 
+// including any warranty of merchantability and fitness for use 
+// for a particular purpose.
+// 
+// The user of the source file shall indemnify and hold The Accellera 
+// Systems Initiative and its members harmless from any damages or liability.
+// 
+// This file may be copied, and distributed, WITHOUT
+// modifications; this notice must be included on any copy.
+// 
+// This schema shall not be modified, adapted, altered, sublicensed, nor
+// any derivative works shall be created based upon the schema.  The
+// intended and allowed uses of the schema include:
+// 
+//  o Creating and validating XML documents that conform to the schema
+// 
+//  o Building software programs and systems based on the schema
+// 
+//  o Distributing verbatim copy of the schema as long as the full text
+//  of this license is included in all copies of the schema.
+//  Specifically, a tool may include full copies of the schema, and these
+//  copies may be distributed by the tool provider directly.  A link or
+//  URL to the original of the schema is inherent in the schema URI.
+// 
+//  o Documents which are validated against this schema may also
+//  reference additional schema. These additional schemas may provide for
+//  validation of elements and attributes at the extension points
+//  explicitly and implicitly included in the IEEE 1685-???? standard.
+// 
+//  o No right to create new schemas derived from parts of this base
+//  schema is granted pursuant to this License.
+// 
+// Users are requested to provide feedback to The Accellera Systems 
+// Initiative IP-XACT Schema Working Group using: 
+// mailto:ip-xact-swg@lists.accellera.org
+ -->
+<xs:schema xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.accellera.org/XMLSchema/IPXACT/1685-2014" elementFormDefault="qualified">
+	<xs:include schemaLocation="simpleTypes.xsd"/>
+	<xs:include schemaLocation="subInstances.xsd"/>
+	<xs:group name="baseIdentifier">
+		<xs:annotation>
+			<xs:documentation>Base IP-XACT identifier group. Identify an IP-XACT document by its by vendor, library and name.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence/>
+	</xs:group>
+	<xs:group name="versionedIdentifier">
+		<xs:annotation>
+			<xs:documentation>This group of elements identifies a top level item (e.g. a component or a bus definition)  with vendor, library, name and a version number. </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="vendor" type="xs:Name">
+				<xs:annotation>
+					<xs:documentation>Name of the vendor who supplies this file.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="library" type="xs:Name">
+				<xs:annotation>
+					<xs:documentation>Name of the logical library this element belongs to.  </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="name" type="xs:NMTOKEN">
+				<xs:annotation>
+					<xs:documentation>The name of the object.  </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="version" type="xs:NMTOKEN">
+				<xs:annotation>
+					<xs:documentation>Indicates the version of the named element.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:group>
+	<xs:attributeGroup name="libraryRefGroup">
+		<xs:annotation>
+			<xs:documentation>Base IP-XACT document reference.  Contains vendor, library, name and version attributes.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="vendor" type="xs:Name" use="required"/>
+		<xs:attribute name="library" type="xs:Name" use="required"/>
+		<xs:attribute name="name" type="xs:NMTOKEN" use="required"/>
+		<xs:attribute name="version" type="xs:NMTOKEN" use="required"/>
+	</xs:attributeGroup>
+	<xs:complexType name="libraryRefType">
+		<xs:annotation>
+			<xs:documentation>Base IP-XACT document reference type. Contains vendor, library, name and version attributes.</xs:documentation>
+		</xs:annotation>
+		<xs:attributeGroup ref="ipxact:libraryRefGroup">
+			<xs:annotation>
+				<xs:documentation>Base IP-XACT document reference.  Contains vendor, library, name and version attributes.</xs:documentation>
+			</xs:annotation>
+		</xs:attributeGroup>
+	</xs:complexType>
+	<xs:complexType name="configurableLibraryRefType">
+		<xs:annotation>
+			<xs:documentation>Base IP-XACT document reference type for configurable top-level objects. Contains vendor, library, name and version attributes along with configurable element values.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="ipxact:configurableElementValues" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="ipxact:libraryRefGroup">
+			<xs:annotation>
+				<xs:documentation>Base IP-XACT document reference.  Contains vendor, library, name and version attributes.</xs:documentation>
+			</xs:annotation>
+		</xs:attributeGroup>
+	</xs:complexType>
+</xs:schema>
