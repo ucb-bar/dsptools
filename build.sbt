@@ -41,7 +41,7 @@ resolvers ++= Seq (
 val defaultVersions = Map(
   "chisel3" -> "3.2-SNAPSHOT",
   "chisel-iotesters" -> "1.3-SNAPSHOT",
-  "rocketchip" -> "1.2",
+  "rocketchip" -> "1.2-SNAPSHOT",
   "vegas" -> "0.3.11",
   "handlebars-scala" -> "2.1.1"
 )
@@ -113,6 +113,7 @@ val rocketSettings = Seq(
       dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
     },
     parallelExecution in Test := false,
+    unmanagedResourceDirectories in Compile += baseDirectory(_ / "schema").value,
 )
 
 publishMavenStyle := true

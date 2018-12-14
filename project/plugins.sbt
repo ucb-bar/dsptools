@@ -9,3 +9,5 @@ addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.7.0")
 
 addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.1")
 
+addSbtPlugin("org.scala-sbt.plugins" % "sbt-xjc" % "0.9")
+

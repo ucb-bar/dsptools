@@ -1,0 +1,5 @@
+package ipxact
+
+class IPXact {
+
+}
