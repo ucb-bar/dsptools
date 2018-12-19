@@ -53,7 +53,7 @@ val commonSettings = Seq(
   version := "1.2-SNAPSHOT",
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
-  scalaVersion := "2.12.6",
+  scalaVersion := "2.12.8",
   crossScalaVersions := Seq("2.12.6", "2.11.12"),
     scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls") ++ scalacOptionsVersion(scalaVersion.value),
   javacOptions ++= javacOptionsVersion(scalaVersion.value),
@@ -96,7 +96,7 @@ val dsptoolsSettings = Seq(
       Some("releases" at nexus + "service/local/staging/deploy/maven2")
     }
   },
-  libraryDependencies ++= Seq("chisel3","chisel-iotesters").map {
+  libraryDependencies ++= Seq("chisel-iotesters").map {
     dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
   },
 // sbt 1.2.6 fails with `Symbol 'term org.junit' is missing from the classpath`

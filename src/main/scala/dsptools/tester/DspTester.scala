@@ -69,7 +69,7 @@ class DspTester[T <: Module](
     backend.poke(path, value)(logger, dispDsp, dispBase)
   }
 
-  def poke(signal: Bits, value: BigInt): Unit = {
+  override def poke(signal: Bits, value: BigInt): Unit = {
     // bit-level poke is displayed as unsigned
     validRangeTest(signal, value)
     if (!signal.isLit) backend.poke(signal, value, None)(logger, dispDsp, dispBase)
@@ -77,7 +77,7 @@ class DspTester[T <: Module](
   }
 
   // Poke at does not involve external signals -- no VerilogTB print
-  def pokeAt[TT <: Bits](data: Mem[TT], value: BigInt, off: Int): Unit = {
+  override def pokeAt[TT <: Bits](data: Mem[TT], value: BigInt, off: Int): Unit = {
     backend.poke(data, value, Some(off))(logger, dispDsp, dispBase)
   }
 
@@ -86,7 +86,7 @@ class DspTester[T <: Module](
     backend.peek(path)(logger, dispDsp, dispBase)
   }
 
-  def peek(signal: Bits): BigInt = {
+  override def peek(signal: Bits): BigInt = {
     val o = {
       // bit-level peek is displayed as unsigned
       if (!signal.isLit) {
@@ -109,7 +109,7 @@ class DspTester[T <: Module](
   }
 
   // Peek at does not involve external signals -- no VerilogTB print
-  def peekAt[TT <: Bits](data: Mem[TT], off: Int): BigInt = {
+  override def peekAt[TT <: Bits](data: Mem[TT], off: Int): BigInt = {
     backend.peek(data, Some(off))(logger, dispDsp, dispBase)
   }
 
@@ -121,7 +121,7 @@ class DspTester[T <: Module](
   }
 
   def expect(signal: Bits, expected: BigInt): Boolean = expect(signal, expected, "")
-  def expect(signal: Bits, expected: BigInt, msg: => String): Boolean = {
+  override def expect(signal: Bits, expected: BigInt, msg: => String): Boolean = {
     validRangeTest(signal, expected)
     val path = getName(signal)
     val got = updatableDspVerbose.withValue(dispSub) { peek(signal) }
