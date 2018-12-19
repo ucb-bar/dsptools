@@ -107,7 +107,7 @@ trait VerilogTbDump {
     if (verilogTb) tb write s"    reset = 1; #($n*`CLK_PERIOD) reset = 0;\n"
   }
 
-  def pokePrint(signal: Bits, value: BigInt) {
+  def pokePrint(signal: Element, value: BigInt) {
     if (verilogTb) {
       val matchingInput = inputs find (_._1 == signal)
       matchingInput match {
