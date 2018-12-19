@@ -122,7 +122,7 @@ trait VerilogTbDump {
     }
   }
 
-  def peekPrint(signal: Bits, res: BigInt) {
+  def peekPrint(signal: Element, res: BigInt) {
     if (verilogTb) {
       val matchingOutput = outputs find (_._1 == signal)
       matchingOutput match {
