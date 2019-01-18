@@ -32,16 +32,11 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
   }
 }
 
-resolvers ++= Seq (
-  Resolver.sonatypeRepo("snapshots"),
-  Resolver.sonatypeRepo("releases")
-)
-
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel3" -> "3.2-SNAPSHOT",
-  "chisel-iotesters" -> "1.3-SNAPSHOT",
-  "rocketchip" -> "1.2-SNAPSHOT",
+  "chisel3" -> "3.2-102318-SNAPSHOT",
+  "chisel-iotesters" -> "1.3-102318-SNAPSHOT",
+  "rocketchip" -> "1.2-102318-SNAPSHOT",
   "vegas" -> "0.3.11",
   "handlebars-scala" -> "2.1.1"
 )
@@ -53,10 +48,14 @@ val commonSettings = Seq(
   version := "1.2-SNAPSHOT",
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
-  scalaVersion := "2.12.6",
-  crossScalaVersions := Seq("2.12.6", "2.11.12"),
+  scalaVersion := "2.12.8",
+  crossScalaVersions := Seq("2.12.8", "2.11.12"),
     scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls") ++ scalacOptionsVersion(scalaVersion.value),
   javacOptions ++= javacOptionsVersion(scalaVersion.value),
+  resolvers ++= Seq (
+    Resolver.sonatypeRepo("snapshots"),
+    Resolver.sonatypeRepo("releases")
+  ),
 )
 
 val dsptoolsSettings = Seq(

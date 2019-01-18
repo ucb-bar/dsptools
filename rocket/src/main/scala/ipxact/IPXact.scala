@@ -1,5 +1,6 @@
 package ipxact
 
+/*
 import org.accellera.xmlschema.ipxact._1685_2014.{File => SpiritFile, Parameters => SpiritParameters, _}
 import scala.collection.mutable.HashMap
 import javax.xml.bind.{JAXBContext, Marshaller}
@@ -750,3 +751,4 @@ trait HasDspIPXact extends HasIPXact {
 }
 
 object DspIPXact extends HasDspIPXact
+*/
