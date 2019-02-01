@@ -6,16 +6,24 @@ import chisel3._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.util._
 import freechips.rocketchip.regmapper.{RegField, RegFieldDesc, RegReadFn, RegWriteFn}
 
-class GCD extends Module {
+case class GCDParams(
+  width: Int = 32
+)
+
+class GCD(params: GCDParams = GCDParams()) extends Module {
   val io = IO(new Bundle {
-    val a  = Input(UInt(32.W))
-    val b  = Input(UInt(32.W))
+    val a  = Input(UInt(params.width.W))
+    val b  = Input(UInt(params.width.W))
     val e  = Input(Bool())
-    val z  = Output(UInt(32.W))
+    val z  = Output(UInt(params.width.W))
     val v  = Output(Bool())
   })
+
+  Annotated.params(this, params)
+
   val x = Reg(UInt(32.W))
   val y = Reg(UInt(32.W))
   when (x > y)   { x := x -% y }
@@ -37,11 +45,22 @@ class AXI4GCD extends LazyModule()(Parameters.empty) {
 
   val ioMem = InModuleBody { ioMemNode.makeIO() }
 
+
   lazy val module = new LazyModuleImp(this) {
+    Annotated.addressMapping(ioMem,
+      Seq(AddressMapEntry(
+        AddressRange(regs.address.base, regs.address.mask),
+        ResourcePermissions(true, true, false, false, false),
+        Seq("GCD"),
+    )))
+    Annotated.params(ioMem, ioMem.params)
+
     val a = Reg(UInt(32.W))
     val b = Reg(UInt(32.W))
 
     val gcd = Module(new GCD())
+    gcd.io.a := a
+    gcd.io.b := b
 
     regs.regmap(
       0x0 -> Seq(RegField(4, a, RegFieldDesc(name = "a", desc = "First term in GCD"))),
@@ -53,12 +72,13 @@ class AXI4GCD extends LazyModule()(Parameters.empty) {
           (true.B, true.B)
         })
       )),
-      0x3 -> Seq(RegField(4, gcd.io.z, RegFieldDesc(name = "z", desc = "Output of GCD"))),
+      0x3 -> Seq(RegField.r(4, gcd.io.z, RegFieldDesc(name = "z", desc = "Output of GCD"))),
     )
   }
 }
 
 object PrintMe extends App {
   val dut = LazyModule(new AXI4GCD)
-  println(chisel3.Driver.emit(() => dut.module))
+  // println(chisel3.Driver.emit(() => dut.module))
+  chisel3.Driver.execute(Array("-X", "verilog"), () => dut.module)
 }
