@@ -46,6 +46,7 @@ class AXI4GCD extends LazyModule()(Parameters.empty) {
   val ioMem = InModuleBody { ioMemNode.makeIO() }
 
 
+
   lazy val module = new LazyModuleImp(this) {
     Annotated.addressMapping(ioMem,
       Seq(AddressMapEntry(
@@ -62,7 +63,7 @@ class AXI4GCD extends LazyModule()(Parameters.empty) {
     gcd.io.a := a
     gcd.io.b := b
 
-    regs.regmap(
+    val mapping = Seq(
       0x0 -> Seq(RegField(4, a, RegFieldDesc(name = "a", desc = "First term in GCD"))),
       0x1 -> Seq(RegField(4, b, RegFieldDesc(name = "b", desc = "Second term in GCD"))),
       0x2 -> Seq(RegField(4,
@@ -70,10 +71,19 @@ class AXI4GCD extends LazyModule()(Parameters.empty) {
         RegWriteFn((ivalid: Bool, oready: Bool, data: UInt) => {
           gcd.io.e := ivalid && oready
           (true.B, true.B)
-        })
+        }),
+        RegFieldDesc(name = "enable/valid", desc = "Write to set enable, read to check valid"),
       )),
       0x3 -> Seq(RegField.r(4, gcd.io.z, RegFieldDesc(name = "z", desc = "Output of GCD"))),
     )
+
+    GenRegDescsAnno.anno(
+      this,
+      0x0,
+      mapping:_*
+    )
+
+    regs.regmap(mapping:_*)
   }
 }
 
