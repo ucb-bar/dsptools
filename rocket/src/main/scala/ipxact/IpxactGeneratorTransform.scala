@@ -4,6 +4,9 @@ package ipxact
 
 import java.io.{File, PrintWriter}
 
+import com.sun.tools.internal.ws.wsdl.document.PortType
+import firrtl.ir._
+import firrtl._
 import firrtl.annotations.NoTargetAnnotation
 import firrtl.{CircuitForm, CircuitState, Driver, ExecutionOptionsManager}
 import firrtl.{HasFirrtlOptions, HighForm, LowForm, Parser, Transform}
@@ -37,10 +40,10 @@ class IpxactXmlDocument(vendor: String, library: String, name: String, version: 
 
   def getXml: scala.xml.Node = {
     <spirit:component xmlns:spirit="http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009">
-      <spirit:vendor>edu.berkeley.cs</spirit:vendor>
-      <spirit:library>craft</spirit:library>
-      <spirit:name>craft_radar_fir1</spirit:name>
-      <spirit:version>1.0</spirit:version>
+      <spirit:vendor>{vendor}</spirit:vendor>
+      <spirit:library>{library}</spirit:library>
+      <spirit:name>{name}</spirit:name>
+      <spirit:version>{version}</spirit:version>
       {
       components
       }
@@ -109,6 +112,100 @@ class IpxactGeneratorTransform extends Transform {
     </spirit:memoryMap>
   }
 
+  def generateModel(state: CircuitState): Seq[scala.xml.Node] = {
+    <spirit:model>
+      <spirit:views>
+        <spirit:view>
+          <spirit:name>RTL</spirit:name>
+          <spirit:envIdentifier>::</spirit:envIdentifier>
+          <spirit:fileSetRef>
+            <spirit:localName>hdlSource</spirit:localName>
+          </spirit:fileSetRef>
+        </spirit:view>
+      </spirit:views>
+      <spirit:ports>
+        {
+        getPorts(state)
+        }
+      </spirit:ports>
+    </spirit:model>
+  }
+
+  def directionToIpxact(direction: Direction): String = {
+    direction match {
+      case Input => "in"
+      case Output => "out"
+      case _ => "unknown"
+    }
+  }
+
+  /**
+    * Walk through all ports of a circuit
+    * @param state the circuit state
+    */
+  //scalastyle:off method.length
+  def getPorts(state: CircuitState): Seq[scala.xml.Node] = {
+
+    def walkFields(field: Field, name: String, direction: Direction, depth: Int = 0): Seq[scala.xml.Node] = {
+
+      val newDirection = Utils.times(direction, field.flip)
+
+      field.tpe match {
+        case b: BundleType =>
+          b.fields.flatMap { field =>
+            walkFields(field, name + "_" + field.name, newDirection, depth + 1)
+          }
+        case _ =>
+          <spirit:port>
+            <spirit:name>{name}</spirit:name>
+            <spirit:wire>
+              <spirit:direction>{directionToIpxact(newDirection)}</spirit:direction>
+              {
+              if (bitWidth(field.tpe) > 1) {
+                <spirit:vector>
+                  <spirit:left>{bitWidth(field.tpe) - 1}</spirit:left>
+                  <spirit:right>0</spirit:right>
+                </spirit:vector>
+              }
+              }
+            </spirit:wire>
+          </spirit:port>
+      }
+    }
+
+    <spirit:ports>
+      {
+        state.circuit.modules.flatMap { module =>
+        module.ports.map { port =>
+          port.tpe match {
+            case b: BundleType =>
+              b.fields.flatMap { field =>
+                val newDirection = Utils.times(port.direction, field.flip)
+                walkFields(field, port.name + "_" + field.name, port.direction)
+              }
+            case _ =>
+              <spirit:port>
+                <spirit:name>{port.name}</spirit:name>
+                <spirit:wire>
+                  <spirit:direction>{directionToIpxact(port.direction)}</spirit:direction>
+                  {
+                    if (bitWidth(port.tpe) > 1) {
+                      <spirit:vector>
+                        <spirit:left>{bitWidth(port.tpe) - 1}</spirit:left>
+                        <spirit:right>0</spirit:right>
+                      </spirit:vector>
+                    }
+                  }
+                </spirit:wire>
+              </spirit:port>
+          }
+
+        }
+      }
+      }
+    </spirit:ports>
+  }
+
   override protected def execute(state: CircuitState): CircuitState = {
 
     val xmlDocument = new IpxactXmlDocument(
@@ -144,6 +241,8 @@ class IpxactGeneratorTransform extends Transform {
       </spirit:memoryMaps>
 
     xmlDocument.addComponents(memoryMaps)
+
+    xmlDocument.addComponents(generateModel(state))
 
     state.copy(annotations = state.annotations :+ GeneratedIpxactAnnotation(xmlDocument))
   }
