@@ -50,14 +50,6 @@ val commonSettings = Seq(
   crossScalaVersions := Seq("2.12.6", "2.11.12"),
     scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls") ++ scalacOptionsVersion(scalaVersion.value),
   javacOptions ++= javacOptionsVersion(scalaVersion.value),
-  resolvers ++= Seq (
-    Resolver.sonatypeRepo("snapshots"),
-    Resolver.sonatypeRepo("releases")
-  )
-)
-
-val dsptoolsSettings = Seq(
-  name := "dsptools",
   pomExtra := (<url>http://chisel.eecs.berkeley.edu/</url>
   <licenses>
     <license>
@@ -93,6 +85,14 @@ val dsptoolsSettings = Seq(
       Some("releases" at nexus + "service/local/staging/deploy/maven2")
     }
   },
+  resolvers ++= Seq (
+    Resolver.sonatypeRepo("snapshots"),
+    Resolver.sonatypeRepo("releases")
+  )
+)
+
+val dsptoolsSettings = Seq(
+  name := "dsptools",
   libraryDependencies ++= Seq("chisel-iotesters").map {
     dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
   },
