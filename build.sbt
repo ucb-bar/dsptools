@@ -51,7 +51,7 @@ val commonSettings = Seq(
   scalaVersion := "2.12.8",
   crossScalaVersions := Seq("2.12.8", "2.11.12"),
     scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls") ++ scalacOptionsVersion(scalaVersion.value),
-  javacOptions ++= javacOptionsVersion(scalaVersion.value),
+  javaOptions in ThisBuild += "--add-modules=java.xml.bind",
   resolvers ++= Seq (
     Resolver.sonatypeRepo("snapshots"),
     Resolver.sonatypeRepo("releases")
@@ -112,7 +112,6 @@ val rocketSettings = Seq(
       dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
     },
     parallelExecution in Test := false,
-    unmanagedResourceDirectories in Compile += baseDirectory(_ / "schema").value,
 )
 
 publishMavenStyle := true
