@@ -47,7 +47,7 @@ val commonSettings = Seq(
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
   scalaVersion := "2.12.8",
-  crossScalaVersions := Seq("2.12.6", "2.11.12"),
+  crossScalaVersions := Seq("2.12.8", "2.11.12"),
     scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls") ++ scalacOptionsVersion(scalaVersion.value),
   javacOptions ++= javacOptionsVersion(scalaVersion.value),
   pomExtra := (<url>http://chisel.eecs.berkeley.edu/</url>
@@ -114,6 +114,8 @@ val rocketSettings = Seq(
       dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
     },
     Test / parallelExecution := false,
+    // rocket-chip currently (3/7/19) doesn't build under 2.11
+    crossScalaVersions := Seq("2.12.8"),
 )
 
 publishMavenStyle := true
