@@ -34,11 +34,9 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel3" -> "3.2-102318-SNAPSHOT",
-  "chisel-iotesters" -> "1.3-102318-SNAPSHOT",
-  "rocketchip" -> "1.2-102318-SNAPSHOT",
-  "vegas" -> "0.3.11",
-  "handlebars-scala" -> "2.1.1"
+  "chisel3" -> "3.2-020719-SNAPSHOT",
+  "chisel-iotesters" -> "1.3-020719-SNAPSHOT",
+  "rocketchip" -> "1.2-020719-SNAPSHOT",
 )
 
 name := "dsptools"
