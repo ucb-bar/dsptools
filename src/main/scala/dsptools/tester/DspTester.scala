@@ -227,7 +227,7 @@ class DspTester[T <: Module](
 
   def expect(signal: Bool, expected: Boolean): Boolean = expect(signal, expected, "")
   def expect(signal: Bool, expected: Boolean, msg: String): Boolean = {
-    expect(signal.asInstanceOf[Bits], if (expected) BigInt(1) else BigInt(0), msg)
+    expect(signal, if (expected) BigInt(1) else BigInt(0), msg)
   }
 
   // If expecting directly on UInt or SInt (rather than generic type class),
