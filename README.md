@@ -92,8 +92,8 @@ To write a generic chisel Module, we might try to write
 ```
 class Passthrough[T](gen: T) extends Module {
   val io = new IO(Bundle {
-    val in = Input(gen.cloneType)
-    val out = Output(gen.cloneType)
+    val in = Input(gen)
+    val out = Output(gen)
   })
   io.out := io.in
 }
@@ -102,7 +102,7 @@ class Passthrough[T](gen: T) extends Module {
 Here, `gen` is a parameter specifying the type you want to use for your IO's, so you could write `Module(new Passthrough(SInt(width=10)))` or `Module(new Passthrough(new Bundle { ... }))`.
 Unfortunately, there's a problem with this.
 `T` can be any type, and a lot of types don't make sense, like `String` or `()=>Unit`.
-This will not compile, because `cloneType, `Input()`, `Output()`, and `:=` are functions defined on chisel types.
+This will not compile, because `Input()`, `Output()`, and `:=` are functions defined on chisel types.
 We can fix this problem by writing
 
 ```class Passthrough[T<:Data](gen: T) extends Module```
@@ -116,8 +116,8 @@ This example isn't very interesting, though.
 ```
 class Doubler[T<:Data](gen: T) extends Module {
   val io = IO(new Bundle {
-    val in = Input(gen.cloneType)
-    val out = Output(gen.cloneType)
+    val in = Input(gen)
+    val out = Output(gen)
   })
   io.out := io.in + io.in
 }
