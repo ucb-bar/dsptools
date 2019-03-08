@@ -4,7 +4,6 @@ package ipxact
 
 import java.io.{File, PrintWriter}
 
-import com.sun.tools.internal.ws.wsdl.document.PortType
 import firrtl.ir._
 import firrtl._
 import firrtl.annotations.NoTargetAnnotation
