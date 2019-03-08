@@ -14,36 +14,42 @@ Feel free to add your own!
 Key Enhancements
 ===============
 
-Key DSP library enhancements over base Chisel (albeit at the expense of coding style restrictions & verbosity--enforces *good practice*!):
+Dsptools is a library that can be used with any Chisel library.
+Some of the goals of dsptools are to enable:
 
  1. Pipeline delay checking (Isn't it annoying when the delays of two signals into an operation don't line up because you forgot to delay a corresponding signal in your haste to close timing?)
 
- 2. Enhanced support for designing and testing DSP with generic types (i.e. switching between **DSPDbl** for verifying functional correctness with double-precision floating point and **DSPFixed** for evaluating fixed-point design metrics by changing a single **sbt run** parameter).
-> Inside any class that extends **GenDSPModule**, any `gen` will conform to the `Fixed=true/false` option used when running `make`. To create a new IO or internal node of type **gen** with `fixedParams=(integerWidth,fractionalWidth)`, use `gen.cloneType(fixedParams)` where the arguments are optional (defaults to integer and fractional widths indicated in the JSON file). If you want to specify a literal (or constant) of type **gen** within your module, use `double2T(yourConstant,fixedParams)`. Likewise, you can leave out *fixedParams* if you want to use defaults.
+ 2. Enhanced support for designing and testing DSP with generic types (i.e. switching between **DSPReal** for verifying functional correctness with double-precision floating point and **FixedPoint** for evaluating fixed-point design metrics by changing a single parameter).
 
- 3. Supports parameterization from external sources via JSON (i.e. in theory, configuration options for your generator can be passed in from a web interface, like [Spiral](http://www.spiral.net/hardware/dftgen.html)). This is achieved with the help of [Json4s](http://json4s.org).
-
- 4. More useful and universal testing platform for numeric types!
- > Numbers are displayed in their correct formats instead of hex for peek, poke, and expect operations. Additionally, if your tester extends **DSPTester**, you can optionally dump your test sequence to a **Verilog testbench** file for functional verification on all simulation platforms (i.e. Xilinx, Altera, etc. instead of only VCS). The tolerance of comparisons with expected values can also be changed via `DSPTester.setTol(floTol = decimal_tolerance,
+ 3. More useful and universal testing platform for numeric types!
+ > Numbers are displayed in their correct formats instead of hex for peek, poke, and expect operations. Additionally, if your tester extends **DSPTester**, you can optionally dump your test sequence to a **Verilog testbench** that replays the test for functional verification on all simulation platforms (i.e. Xilinx, Altera, etc. instead of only VCS). The tolerance of comparisons with expected values can also be changed via `DSPTester.setTol(floTol = decimal_tolerance,
                      fixedTol = number_of_bits)`.
 
- 5. **Miscellaneous additional features**
-	 - Wide range of LUT modules for ease of generating lookup tables from pre-calculated constants (no intermediate representation)
-	 - Memory modules that abstract out confusion associated with Chisel Mem
-	 - Generates useful helper files with each Verilog output (constraints, generator parameters used, etc.).
-	 - Easier to rename modules & signals and have renaming actually succeed.
-	 - Expanding Support for non-base-2 math.
-	 - Adds support for numerical processing in the Chisel Environment via [Breeze](https://github.com/scalanlp/breeze).
+ 4. **Miscellaneous additional features**
+ - Wide range of LUT modules for ease of generating lookup tables from pre-calculated constants (no intermediate representation)
+ - Memory modules that abstract out confusion associated with Chisel Mem
+ - Generates useful helper files with each Verilog output (constraints, generator parameters used, etc.).
+ - Easier to rename modules & signals and have renaming actually succeed.
+ - Expanding Support for non-base-2 math.
+ - Adds support for numerical processing in the Chisel Environment via [Breeze](https://github.com/scalanlp/breeze).
 
 ----------
 
 Getting Started
 ===============
 
-This package is under intensive development right now.
-Changes are happening quickly and there a dependencies on several different branches of related projects.  
-Until we have a stable release, you will have to `sbt publish-local` recent versions of the various dependencies.
-The various projects are
+Dsptools is published alongside Chisel, FIRRTL, and the other related projects.
+It can be used by adding
+
+```scala
+libraryDependencies += "edu.berkeley.cs" %% "dsptools" % "XXXX"
+```
+
+to your build.sbt, where `XXXX` is the desired version.
+See Github for the latest release.
+Snapshots are also published on Sonatype, which are beneficial if you want to use the latest features.
+
+Projects that dsptools depends on are:
 
 - [FIRRTL](https://github.com/ucb-bar/firrtl)
 
@@ -52,12 +58,6 @@ The various projects are
 - [Chisel3](https://github.com/ucb-bar/chisel3)
 
 - [Chisel Testers](https://github.com/ucb-bar/chisel-testers)
-
-Generally speaking, we try to make sure dsptools works on the latest version of the main branch of all dependencies.
-However, new features are pretty commonly added by us and other people and we'll end up in version hell, so we've created
-a repository to track the last known working versions of all our dependencies.
-
-This project is called [dsp-framework](https://github.com/ucb-art/dsp-framework) and includes dsptools.
 
 ----------
 
@@ -76,7 +76,7 @@ After testing that your circuit implementation works with floating point, you ca
 **For a additional, more detailed description of the Numeric classes in dsptools: see [The Numbers ReadMe](https://github.com/ucb-bar/dsptools/blob/master/src/main/scala/dsptools/numbers/README.md)**
 
 
-A generic function in scala is defined via
+A generic function in scala is defined like so:
 
 ```def func[T](in: T): T```
 
@@ -90,10 +90,10 @@ and use `T` like it is a real type for any member functions of variables.
 To write a generic chisel Module, we might try to write
 
 ```
-class Passthrough[T](gen: => T) extends Module {
+class Passthrough[T](gen: T) extends Module {
   val io = new IO(Bundle {
-    val in = Input(gen)
-    val out = Output(gen)
+    val in = Input(gen.cloneType)
+    val out = Output(gen.cloneType)
   })
   io.out := io.in
 }
@@ -102,22 +102,22 @@ class Passthrough[T](gen: => T) extends Module {
 Here, `gen` is a parameter specifying the type you want to use for your IO's, so you could write `Module(new Passthrough(SInt(width=10)))` or `Module(new Passthrough(new Bundle { ... }))`.
 Unfortunately, there's a problem with this.
 `T` can be any type, and a lot of types don't make sense, like `String` or `()=>Unit`.
-This will not compile, because `.asInput, `.asOutput`, and `:=` are functions defined on chisel types.
+This will not compile, because `cloneType, `Input()`, `Output()`, and `:=` are functions defined on chisel types.
 We can fix this problem by writing
 
-```class Passthrough[T<:Data](gen: => T) extends Module```
+```class Passthrough[T<:Data](gen: T) extends Module```
 
-This means that we have to choose `T` to be a subtype of the chisel type `Data`.
+This type constraint means that we have to choose `T` to be a subtype of the chisel type `Data`.
 Things like `UInt`, `SInt`, and `Bundle` are subtypes of `Data`.
 Now the example above should compile.
 This example isn't very interesting, though.
 `Data` lets you do basic things like assignment and make registers, but doesn't define any mathematical operations, so if we write
 
 ```
-class Doubler[T<:Data](gen: => T) extends Module {
+class Doubler[T<:Data](gen: T) extends Module {
   val io = IO(new Bundle {
-    val in = Input(gen)
-    val out = Output(gen)
+    val in = Input(gen.cloneType)
+    val out = Output(gen.cloneType)
   })
   io.out := io.in + io.in
 }
@@ -137,14 +137,12 @@ trait Real[T] {
 
 as well as an implicit conversion so that `a+b` gets converted to `Real[T].plus(a,b)`.
 `Real[T]` is a typeclass.
-Typeclasses are a useful pattern in scala, so there is nice concise syntax to make using them easy:
+Typeclasses are a useful pattern in scala, so there is syntactic sugar to make using them easy:
 
 ```
-import dsptools.numbers.implicits._
-class Doubler[T<:Data:Real](gen: => T) extends Module
+import dsptools.numbers._
+class Doubler[T<:Data:Real](gen: T) extends Module
 ```
-
-(Including the `implicits._` object is important, otherwise the implicit conversion from `io.in + io.in` to `Real[T].plus(io.in, io.in)` won't work).
 
 Note: If you don't include the `:Real` at the end, the scala compiler will think `io.in + io.in` is string concatenation and you'll get a weird error saying
 
@@ -161,7 +159,7 @@ Some useful typeclasses:
     - Note: We chose to restrict ourselves to `Ring` rather than `Field` because division is particularly expensive and nuanced in hardware. Rather than typing `a / b` we think it is better to require users to instantiate a module and think about what's going on.
 
 - Eq
-    - defines === and =!= (returning chisel Bools!)
+    - defines === and =/= (returning chisel Bools!)
 - PartialOrder
     - extends Eq
     - defines >, <, <=, >= (returning a `ValidIO[ComparisonBundle]` that has `valid` false if the objects are not comparable
@@ -180,6 +178,19 @@ Some useful typeclasses:
 
 ----------
 
+Rocket-chip
+===============
+This repo contains a set of tools useful for DSP projects involving rocket-chip:
+
+1) `DspBlock`, a generic DSP building block with streaming and memory mapped IO.
+The type of memory interface is generic and can be selected after the block has been designed.
+Abstractions are built on top of `DspBlock`, for example a chain of blocks is a kind of `DspBlock`.
+2) A diplomatic implementation of AXI4-Stream
+3) Some DMA (stream <-> mem) blocks
+4) Simulation models for chisel-testers for memory interfaces (AHB, APB, AXI4, TileLink) and AXI4-Stream.
+
+----------
+
 This code is maintained by [Chick](https://github.com/chick), [Angie](https://github.com/shunshou) and [Paul](https://github.com/grebe). Let us know if you have any questions/feedback!
 
-Copyright (c) 2015 - 2016 The Regents of the University of California. Released under the Modified (3-clause) BSD license.
+Copyright (c) 2015 - 2019 The Regents of the University of California. Released under the Modified (3-clause) BSD license.
