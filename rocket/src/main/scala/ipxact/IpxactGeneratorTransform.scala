@@ -4,12 +4,9 @@ package ipxact
 
 import java.io.{File, PrintWriter}
 
-import com.sun.tools.internal.ws.wsdl.document.PortType
+import firrtl.annotations.{ModuleName, NoTargetAnnotation}
 import firrtl.ir._
-import firrtl._
-import firrtl.annotations.NoTargetAnnotation
-import firrtl.{CircuitForm, CircuitState, Driver, ExecutionOptionsManager}
-import firrtl.{HasFirrtlOptions, HighForm, LowForm, Parser, Transform}
+import firrtl.{CircuitForm, CircuitState, Driver, ExecutionOptionsManager, HasFirrtlOptions, HighForm, LowForm, Parser, Transform, _}
 import freechips.rocketchip.diplomacy.AddressMapEntry
 import freechips.rocketchip.util.{AddressMapAnnotation, ParamsAnnotation, RegFieldDescMappingAnnotation}
 
@@ -91,9 +88,9 @@ class IpxactGeneratorTransform extends Transform {
     * @param annotation reg field information
     * @return
     */
-  def regFieldDescMappingAnnotationsToXml(annotation: RegFieldDescMappingAnnotation): Seq[scala.xml.Node] = {
+  def regFieldDescMappingAnnotationsToXml(name: String, annotation: RegFieldDescMappingAnnotation): Seq[Any] = {
     <spirit:memoryMap>
-      <spirit:name>{annotation.target}</spirit:name>
+      <spirit:name>{s"${name}_mm"}</spirit:name>
       <spirit:addressBlock>
         <spirit:name>{annotation.regMappingSer.displayName}</spirit:name>
         <spirit:baseAddress>{annotation.regMappingSer.baseAddress}</spirit:baseAddress>
@@ -123,11 +120,9 @@ class IpxactGeneratorTransform extends Transform {
           </spirit:fileSetRef>
         </spirit:view>
       </spirit:views>
-      <spirit:ports>
         {
         getPorts(state)
         }
-      </spirit:ports>
     </spirit:model>
   }
 
@@ -180,6 +175,9 @@ class IpxactGeneratorTransform extends Transform {
           port.tpe match {
             case b: BundleType =>
               b.fields.flatMap { field =>
+
+                //TODO (chick) Ask Paul what new direction is for here.
+
                 val newDirection = Utils.times(port.direction, field.flip)
                 walkFields(field, port.name + "_" + field.name, port.direction)
               }
@@ -206,6 +204,29 @@ class IpxactGeneratorTransform extends Transform {
     </spirit:ports>
   }
 
+  def generateBusInterface(annotation: ParamsAnnotation): Option[scala.xml.Node] = {
+    annotation.paramsClassName match {
+      case "AXI4BundleParameters" =>
+        annotation.target match {
+          case ModuleName(name, circuit) =>
+            Some(
+              <spirit:busInterface>
+                <spirit:name>{name}</spirit:name>
+                <spirit:busType spirit:vendor="amba.com" spirit:library="AMBA4" spirit:name="AXI4Stream" spirit:version="r0p0_1"/>
+                <spirit:abstractionType spirit:vendor="amba.com" spirit:library="AMBA4" spirit:name="AXI4Stream_rtl" spirit:version="r0p0_1"/>
+                <spirit:slave/>
+                <spirit:portMaps>
+                </spirit:portMaps>
+              </spirit:busInterface>
+            )
+          case _ =>
+            None
+        }
+      case _ =>
+        None
+    }
+  }
+
   override protected def execute(state: CircuitState): CircuitState = {
 
     val xmlDocument = new IpxactXmlDocument(
@@ -214,6 +235,20 @@ class IpxactGeneratorTransform extends Transform {
       name = state.circuit.main,
       version = "0.1"
     )
+
+    val busInterfaceXml = <spirit:busInterfaces>
+      {
+        state.annotations.flatMap {
+          case a: ParamsAnnotation =>
+            generateBusInterface(a)
+          case _ =>
+            None
+
+        }
+      }
+    </spirit:busInterfaces>
+
+    xmlDocument.addComponents(busInterfaceXml)
 
     val paramsXml = <spirit:parameters>
       {
@@ -233,7 +268,7 @@ class IpxactGeneratorTransform extends Transform {
       {
       state.annotations.flatMap {
         case a: RegFieldDescMappingAnnotation =>
-          regFieldDescMappingAnnotationsToXml(a)
+          regFieldDescMappingAnnotationsToXml(state.circuit.main, a)
         case _ =>
           Seq.empty
       }
@@ -254,12 +289,13 @@ object IpxactGeneratorTransform {
 
   def main(args: Array[String]): Unit = {
 
-    val fileName = "AXI4GCD.fir"
-
     val optionsManager = new ExecutionOptionsManager("ipxact") with HasFirrtlOptions {
-      commonOptions = commonOptions.copy(targetDirName = "./")
+      commonOptions = commonOptions.copy(targetDirName = "test_run_dir/axi4gcd", topName = "axi4gcd")
+//      firrtlOptions = firrtlOptions.copy(annotationFileNames = List("AXI4GCD.anno.json"))
       firrtlOptions = firrtlOptions.copy(annotationFileNames = List("AXI4GCD.anno.json"))
     }
+
+    val fileName = optionsManager.getBuildFileName("fir")
 
     val firrtlSource = io.Source.fromFile(fileName).getLines()
 

@@ -84,11 +84,19 @@ class AXI4GCD extends LazyModule()(Parameters.empty) {
     )
 
     regs.regmap(mapping:_*)
+
+    Ipxact(this) // Mark this module for IP-XACT generation
   }
 }
 
-object PrintMe extends App {
-  val dut = LazyModule(new AXI4GCD)
-  // println(chisel3.Driver.emit(() => dut.module))
-  chisel3.Driver.execute(Array("-X", "verilog"), () => dut.module)
+object BuildAxi4Gcd {
+  def main(args: Array[String]): Unit = {
+    val dut = LazyModule(new AXI4GCD)
+    // println(chisel3.Driver.emit(() => dut.module))
+    chisel3.Driver.execute(Array(
+      "--target-dir", "test_run_dir/axi4gcd/",
+      "--top-name", "axi4gcd",
+      "-X", "verilog"
+    ), () => dut.module)
+  }
 }
