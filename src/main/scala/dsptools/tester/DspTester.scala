@@ -7,7 +7,7 @@ import dsptools.numbers.{DspComplex, DspReal}
 import chisel3._
 import chisel3.experimental.FixedPoint
 import chisel3.internal.firrtl.KnownBinaryPoint
-import chisel3.iotesters.PeekPokeTester
+import chisel3.iotesters.{PeekPokeTester, Pokeable}
 import scala.util.DynamicVariable
 
 import DspTesterUtilities._
@@ -69,7 +69,7 @@ class DspTester[T <: Module](
     backend.poke(path, value)(logger, dispDsp, dispBase)
   }
 
-  override def poke(signal: Bits, value: BigInt): Unit = {
+  override def poke[T <: Element : Pokeable](signal: T, value: BigInt): Unit = {
     // bit-level poke is displayed as unsigned
     validRangeTest(signal, value)
     if (!signal.isLit) backend.poke(signal, value, None)(logger, dispDsp, dispBase)
@@ -77,7 +77,7 @@ class DspTester[T <: Module](
   }
 
   // Poke at does not involve external signals -- no VerilogTB print
-  override def pokeAt[TT <: Bits](data: Mem[TT], value: BigInt, off: Int): Unit = {
+  override def pokeAt[TT <: Element : Pokeable](data: Mem[TT], value: BigInt, off: Int): Unit = {
     backend.poke(data, value, Some(off))(logger, dispDsp, dispBase)
   }
 
@@ -86,7 +86,7 @@ class DspTester[T <: Module](
     backend.peek(path)(logger, dispDsp, dispBase)
   }
 
-  override def peek(signal: Bits): BigInt = {
+  override def peek[T <: Element : Pokeable](signal: T): BigInt = {
     val o = {
       // bit-level peek is displayed as unsigned
       if (!signal.isLit) {
@@ -109,7 +109,7 @@ class DspTester[T <: Module](
   }
 
   // Peek at does not involve external signals -- no VerilogTB print
-  override def peekAt[TT <: Bits](data: Mem[TT], off: Int): BigInt = {
+  override def peekAt[TT <: Element : Pokeable](data: Mem[TT], off: Int): BigInt = {
     backend.peek(data, Some(off))(logger, dispDsp, dispBase)
   }
 
@@ -120,7 +120,8 @@ class DspTester[T <: Module](
     good
   }
 
-  override def expect(signal: Bits, expected: BigInt, msg: => String = ""): Boolean = {
+  def expect(signal: Bits, expected: BigInt): Boolean = expect(signal, expected, "")
+  override def expect[T <: Element : Pokeable](signal: T, expected: BigInt, msg: => String): Boolean = {
     validRangeTest(signal, expected)
     val path = getName(signal)
     val got = updatableDspVerbose.withValue(dispSub) { peek(signal) }
@@ -226,7 +227,7 @@ class DspTester[T <: Module](
 
   def expect(signal: Bool, expected: Boolean): Boolean = expect(signal, expected, "")
   def expect(signal: Bool, expected: Boolean, msg: String): Boolean = {
-    expect(signal.asInstanceOf[Bits], if (expected) BigInt(1) else BigInt(0))
+    expect(signal.asInstanceOf[Bits], if (expected) BigInt(1) else BigInt(0), msg)
   }
 
   // If expecting directly on UInt or SInt (rather than generic type class),
