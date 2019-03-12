@@ -4,20 +4,19 @@ package ipxact
 
 import java.io.{File, PrintWriter}
 
-import firrtl.annotations.{ModuleName, NoTargetAnnotation}
+import firrtl.annotations.{Annotation, ModuleName, ModuleTarget, NoTargetAnnotation}
 import firrtl.ir._
-import firrtl.{CircuitForm, CircuitState, Driver, ExecutionOptionsManager, HasFirrtlOptions, HighForm, LowForm, Parser, Transform, _}
+import firrtl.{CircuitForm, CircuitState, Driver, ExecutionOptionsManager}
+import firrtl.{HasFirrtlOptions, HighForm, LowForm, Parser, Transform, _}
 import freechips.rocketchip.diplomacy.AddressMapEntry
 import freechips.rocketchip.util.{AddressMapAnnotation, ParamsAnnotation, RegFieldDescMappingAnnotation}
-
-//class IpxactGeneratorAnnotation(target: InstanceId, transform: Transform, value: String) extends Annotation {
-//  override def update(renames: RenameMap): Seq[Annotation] = ???
-//}
+import ipxact.IpxactGeneratorTransform.{indent, lineWidth}
 
 /**
   * This annotation carries the generated IP-XACT xml.
   * @param xmlDocument the document
   */
+//TODO chick: Is there any merit in passing this down the compiler stack
 case class GeneratedIpxactAnnotation(xmlDocument: IpxactXmlDocument) extends NoTargetAnnotation
 
 /**
@@ -109,6 +108,7 @@ class IpxactGeneratorTransform extends Transform {
     </spirit:memoryMap>
   }
 
+  //TODO chick: Should this module be module specific
   def generateModel(state: CircuitState): Seq[scala.xml.Node] = {
     <spirit:model>
       <spirit:views>
@@ -212,8 +212,10 @@ class IpxactGeneratorTransform extends Transform {
             Some(
               <spirit:busInterface>
                 <spirit:name>{name}</spirit:name>
-                <spirit:busType spirit:vendor="amba.com" spirit:library="AMBA4" spirit:name="AXI4Stream" spirit:version="r0p0_1"/>
-                <spirit:abstractionType spirit:vendor="amba.com" spirit:library="AMBA4" spirit:name="AXI4Stream_rtl" spirit:version="r0p0_1"/>
+                <spirit:busType spirit:vendor="amba.com"
+                                spirit:library="AMBA4" spirit:name="AXI4Stream" spirit:version="r0p0_1"/>
+                <spirit:abstractionType spirit:vendor="amba.com" spirit:library="AMBA4"
+                                        spirit:name="AXI4Stream_rtl" spirit:version="r0p0_1"/>
                 <spirit:slave/>
                 <spirit:portMaps>
                 </spirit:portMaps>
@@ -227,59 +229,105 @@ class IpxactGeneratorTransform extends Transform {
     }
   }
 
+  def writeXml(dir: String, moduleName: String, xmlDocument: IpxactXmlDocument): Unit = {
+    val xmlFile = new File(dir + File.separator + s"$moduleName.ipxact.xml")
+
+    val pp = new scala.xml.PrettyPrinter(lineWidth, indent)
+    val sb = new StringBuilder
+    sb ++= """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>""" + "\n"
+    pp.format(xmlDocument.getXml, sb)
+
+    val writer = new PrintWriter(xmlFile)
+    writer.write(sb.toString)
+    writer.close()
+  }
+
+  //scalastyle:off cyclomatic.complexity
   override protected def execute(state: CircuitState): CircuitState = {
+    val ipxactModules = state.annotations.collect {
+      case a: IpxactModuleAnnotation => a.target.complete
+    }
 
-    val xmlDocument = new IpxactXmlDocument(
-      vendor = "edu.berkeley.cs",
-      library = "rocket-chip",
-      name = state.circuit.main,
-      version = "0.1"
-    )
+    val targetDir = state.annotations.collectFirst {
+      case t: firrtl.stage.TargetDirAnnotation => t.targetDirName
+    }.getOrElse("./")
 
-    val busInterfaceXml = <spirit:busInterfaces>
-      {
-        state.annotations.flatMap {
+    def doOneModule(moduleName: String, filteredAnnotations: AnnotationSeq): Annotation = {
+
+      //TODO chick: what should the name be here
+      val xmlDocument = new IpxactXmlDocument(
+        vendor = "edu.berkeley.cs",
+        library = "rocket-chip",
+//        name = state.circuit.main,
+        name = moduleName,
+        version = "0.1"
+      )
+
+      val busInterfaceXml = <spirit:busInterfaces>
+        {
+        filteredAnnotations.flatMap {
           case a: ParamsAnnotation =>
             generateBusInterface(a)
           case _ =>
             None
 
         }
-      }
-    </spirit:busInterfaces>
+        }
+      </spirit:busInterfaces>
 
-    xmlDocument.addComponents(busInterfaceXml)
+      xmlDocument.addComponents(busInterfaceXml)
 
-    val paramsXml = <spirit:parameters>
-      {
-        state.annotations.flatMap {
+      val paramsXml = <spirit:parameters>
+        {
+        filteredAnnotations.flatMap {
           case a: ParamsAnnotation =>
             parameterAnnotationsToXml(a)
           case _ =>
             Seq.empty
         }
+        }
+      </spirit:parameters>
+
+      xmlDocument.addComponents(paramsXml)
+
+      val memoryMaps =
+        <spirit:memoryMaps>
+          {
+          filteredAnnotations.flatMap {
+            case a: RegFieldDescMappingAnnotation =>
+              regFieldDescMappingAnnotationsToXml(state.circuit.main, a)
+            case _ =>
+              Seq.empty
+          }
+          }
+        </spirit:memoryMaps>
+
+      xmlDocument.addComponents(memoryMaps)
+
+      xmlDocument.addComponents(generateModel(state))
+
+      writeXml(targetDir, moduleName, xmlDocument)
+      GeneratedIpxactAnnotation(xmlDocument)
+    }
+
+    val ipxactXmlAnnotations = ipxactModules.map { moduleTarget =>
+      val moduleNameString = moduleTarget match {
+        case m: ModuleTarget => s"${m.circuit}.${m.module}"
       }
-    </spirit:parameters>
 
-    xmlDocument.addComponents(paramsXml)
-
-    val memoryMaps =
-      <spirit:memoryMaps>
-      {
-      state.annotations.flatMap {
-        case a: RegFieldDescMappingAnnotation =>
-          regFieldDescMappingAnnotationsToXml(state.circuit.main, a)
+      val annosForThisModule = state.annotations.flatMap {
+        case a: ParamsAnnotation if a.target.toTarget.serialize.startsWith(moduleNameString) =>
+          Some(a)
         case _ =>
-          Seq.empty
+          None
       }
-      }
-      </spirit:memoryMaps>
 
-    xmlDocument.addComponents(memoryMaps)
 
-    xmlDocument.addComponents(generateModel(state))
+      doOneModule(moduleNameString, annosForThisModule)
+    }
 
-    state.copy(annotations = state.annotations :+ GeneratedIpxactAnnotation(xmlDocument))
+
+    state.copy(annotations = state.annotations ++ ipxactXmlAnnotations)
   }
 }
 
@@ -291,7 +339,6 @@ object IpxactGeneratorTransform {
 
     val optionsManager = new ExecutionOptionsManager("ipxact") with HasFirrtlOptions {
       commonOptions = commonOptions.copy(targetDirName = "test_run_dir/axi4gcd", topName = "axi4gcd")
-//      firrtlOptions = firrtlOptions.copy(annotationFileNames = List("AXI4GCD.anno.json"))
       firrtlOptions = firrtlOptions.copy(annotationFileNames = List("AXI4GCD.anno.json"))
     }
 
@@ -309,20 +356,8 @@ object IpxactGeneratorTransform {
 
     val finalState = generator.execute(initialCircuitState)
 
-    finalState.annotations.collectFirst { case g: GeneratedIpxactAnnotation => g } match {
-      case Some(GeneratedIpxactAnnotation(xmlDocument)) =>
-        val pp = new scala.xml.PrettyPrinter(lineWidth, indent)
-        val sb = new StringBuilder
-        sb ++= """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>""" + "\n"
-        pp.format(xmlDocument.getXml, sb)
-        println(sb.toString)
-
-        val writer = new PrintWriter(new File(s"${finalState.circuit.main}.ipxact.xml"))
-        writer.write(sb.toString)
-        writer.close()
-
-      case _ =>
-        println(s"Something went wrong, no ipxact generated")
-    }
+    finalState.annotations.collectFirst { case a: GeneratedIpxactAnnotation => }.getOrElse(
+      throw new Exception("oops some xml should have been generated")
+    )
   }
 }
