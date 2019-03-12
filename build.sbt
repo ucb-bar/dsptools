@@ -113,6 +113,7 @@ val rocketSettings = Seq(
     libraryDependencies ++= Seq("chisel3", "chisel-iotesters", "rocketchip").map {
       dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
     },
+    crossScalaVersions := Seq("2.12.6"),
     Test / parallelExecution := false,
 )
 
