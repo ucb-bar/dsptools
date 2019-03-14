@@ -131,7 +131,8 @@ class MemMasterSpec extends FlatSpec with Matchers {
 
   it should "work with TileLink" in {
     lazy val dut = LazyModule(new TLRegmapExample)
-    chisel3.iotesters.Driver.execute(Array[String](), () => dut.module) { c =>
+    // use verilog b/c of verilog blackboxes in TileLink things
+    chisel3.iotesters.Driver.execute(Array[String]("-tbn", "verilog"), () => dut.module) { c =>
       new TLRegmapExampleTester(dut)
     }
   }

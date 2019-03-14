@@ -78,7 +78,7 @@ class DspRegisterTestModuleTester(c: DspRegisterTestModule,
 class DspRegisterSpec extends FlatSpec with Matchers {
   behavior of "AXI4DspRegister"
 
-  it should "be able to read and write" in {
+  it should "be able to read and write" ignore {
     val inP  = AXI4StreamBundleParameters(n = 128)
     val outP = AXI4StreamSlaveParameters()
     val transactions = AXI4StreamTransaction.defaultSeq(64).zipWithIndex.map({case (t, i) => t.copy(data = i) })
