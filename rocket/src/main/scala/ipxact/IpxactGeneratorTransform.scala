@@ -35,7 +35,9 @@ class IpxactXmlDocument(vendor: String, library: String, name: String, version: 
   }
 
   def getXml: scala.xml.Node = {
-    <spirit:component xmlns:spirit="http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009">
+    <spirit:component xmlns:spirit="http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009"
+                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                      xsi:schemaLocation="http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009">
       <spirit:vendor>{vendor}</spirit:vendor>
       <spirit:library>{library}</spirit:library>
       <spirit:name>{name}</spirit:name>
@@ -44,6 +46,7 @@ class IpxactXmlDocument(vendor: String, library: String, name: String, version: 
       components
       }
     </spirit:component>
+
   }
 }
 
