@@ -4,7 +4,7 @@ package ipxact
 
 import java.io.{File, PrintWriter}
 
-import firrtl.annotations.{Annotation, ModuleName, ModuleTarget, NoTargetAnnotation}
+import firrtl.annotations._
 import firrtl.ir._
 import firrtl.{CircuitForm, CircuitState, Driver, ExecutionOptionsManager}
 import firrtl.{HasFirrtlOptions, HighForm, LowForm, Parser, Transform, _}
@@ -16,7 +16,7 @@ import ipxact.IpxactGeneratorTransform.{indent, lineWidth}
   * This annotation carries the generated IP-XACT xml.
   * @param xmlDocument the document
   */
-//TODO chick: Is there any merit in passing this down the compiler stack
+//TODO: (chick) Is there any merit in passing this down the compiler stack
 case class GeneratedIpxactAnnotation(xmlDocument: IpxactXmlDocument) extends NoTargetAnnotation
 
 /**
@@ -50,6 +50,20 @@ class IpxactXmlDocument(vendor: String, library: String, name: String, version: 
   }
 }
 
+case class IpxactBundleName(moduleName: ModuleTarget, bundleName: String) extends Annotation {
+  override def update(renames: RenameMap): Seq[Annotation] = Seq.empty
+}
+
+class IpxactBundleCaptureTransform extends Transform {
+  override def inputForm: CircuitForm = HighForm
+
+  override def outputForm: CircuitForm = HighForm
+
+  override def execute(state: CircuitState): CircuitState = {
+//    state.copy(annotations = updatedAnnotations)
+    state
+  }
+}
 /**
   * This transform builds a xml object from the annotations
   * and firrtl circuit
@@ -64,7 +78,7 @@ class IpxactGeneratorTransform extends Transform {
     * @param annotation the firrtl annotation for parameters
     * @return
     */
-  def parameterAnnotationsToXml(annotation: ParamsAnnotation): Seq[scala.xml.Node] = {
+  def generateParameter(annotation: ParamsAnnotation): Seq[scala.xml.Node] = {
     val prefix = annotation.paramsClassName
     annotation.params.map { case (paramName, value) =>
       <spirit:parameter>
@@ -72,6 +86,24 @@ class IpxactGeneratorTransform extends Transform {
         <spirit:value>{value}</spirit:value>
       </spirit:parameter>
     }.toSeq
+  }
+
+  def generateParameters(annotationSeq: AnnotationSeq): Option[scala.xml.Node] = {
+    val parametersXml = annotationSeq.flatMap {
+      case a: ParamsAnnotation => generateParameter(a)
+      case _ =>
+        Seq.empty
+    }
+    if(parametersXml.isEmpty) {
+      None
+    }
+    else {
+      Some(
+        <spirit:parameters>
+          parametersXml
+        </spirit:parameters>
+      )
+    }
   }
 
   /**
@@ -111,8 +143,8 @@ class IpxactGeneratorTransform extends Transform {
     </spirit:memoryMap>
   }
 
-  //TODO chick: Should this module be module specific
-  def generateModel(state: CircuitState): Seq[scala.xml.Node] = {
+  //TODO: (chick) Should this module be module specific
+  def generateModel(state: CircuitState, moduleName: String): Seq[scala.xml.Node] = {
     <spirit:model>
       <spirit:views>
         <spirit:view>
@@ -124,9 +156,28 @@ class IpxactGeneratorTransform extends Transform {
         </spirit:view>
       </spirit:views>
         {
-        getPorts(state)
+          getPorts(state, moduleName)
         }
     </spirit:model>
+  }
+
+  /**
+    * Describes where the associated verilog source resides
+    * @param moduleName
+    * @return
+    */
+  //TODO: (chick) how does this related to one-file per module and the name of the verilog output in general
+  // can we just point to all .v files for each module
+  def generateFileSets(moduleName: String): scala.xml.Node = {
+    <spirit:fileSets>
+      <spirit:fileSet>
+        <spirit:name>hdlSource</spirit:name>
+        <spirit:file>
+          <spirit:name>{moduleName}.v</spirit:name>
+          <spirit:fileType>verilogSource</spirit:fileType>
+        </spirit:file>
+      </spirit:fileSet>
+    </spirit:fileSets>
   }
 
   def directionToIpxact(direction: Direction): String = {
@@ -142,7 +193,7 @@ class IpxactGeneratorTransform extends Transform {
     * @param state the circuit state
     */
   //scalastyle:off method.length
-  def getPorts(state: CircuitState): Seq[scala.xml.Node] = {
+  def getPorts(state: CircuitState, moduleName: String): Seq[scala.xml.Node] = {
 
     def walkFields(field: Field, name: String, direction: Direction, depth: Int = 0): Seq[scala.xml.Node] = {
 
@@ -173,62 +224,95 @@ class IpxactGeneratorTransform extends Transform {
 
     <spirit:ports>
       {
-        state.circuit.modules.flatMap { module =>
-        module.ports.map { port =>
-          port.tpe match {
-            case b: BundleType =>
-              b.fields.flatMap { field =>
-
-                //TODO (chick) Ask Paul what new direction is for here.
-
-                val newDirection = Utils.times(port.direction, field.flip)
-                walkFields(field, port.name + "_" + field.name, port.direction)
-              }
-            case _ =>
-              <spirit:port>
-                <spirit:name>{port.name}</spirit:name>
-                <spirit:wire>
-                  <spirit:direction>{directionToIpxact(port.direction)}</spirit:direction>
-                  {
-                    if (bitWidth(port.tpe) > 1) {
-                      <spirit:vector>
-                        <spirit:left>{bitWidth(port.tpe) - 1}</spirit:left>
-                        <spirit:right>0</spirit:right>
-                      </spirit:vector>
-                    }
+        state.circuit.modules.find { module => module.name == moduleName } match {
+          case Some(module) =>
+            module.ports.map { port =>
+              port.tpe match {
+                case b: BundleType =>
+                  b.fields.flatMap { field =>
+                    walkFields(field, port.name + "_" + field.name, port.direction)
                   }
-                </spirit:wire>
-              </spirit:port>
-          }
-
+                case _ =>
+                  <spirit:port>
+                    <spirit:name>{port.name}</spirit:name>
+                    <spirit:wire>
+                      <spirit:direction>{directionToIpxact(port.direction)}</spirit:direction>
+                      {
+                      if (bitWidth(port.tpe) > 1) {
+                        <spirit:vector>
+                          <spirit:left>{bitWidth(port.tpe) - 1}</spirit:left>
+                          <spirit:right>0</spirit:right>
+                        </spirit:vector>
+                      }
+                      }
+                    </spirit:wire>
+                  </spirit:port>
+              }
+            }
+          case None =>
         }
-      }
       }
     </spirit:ports>
   }
 
-  def generateBusInterface(annotation: ParamsAnnotation): Option[scala.xml.Node] = {
-    annotation.paramsClassName match {
-      case "AXI4BundleParameters" =>
-        annotation.target match {
-          case ModuleName(name, circuit) =>
-            Some(
-              <spirit:busInterface>
-                <spirit:name>{name}</spirit:name>
-                <spirit:busType spirit:vendor="amba.com"
-                                spirit:library="AMBA4" spirit:name="AXI4Stream" spirit:version="r0p0_1"/>
-                <spirit:abstractionType spirit:vendor="amba.com" spirit:library="AMBA4"
-                                        spirit:name="AXI4Stream_rtl" spirit:version="r0p0_1"/>
-                <spirit:slave/>
-                <spirit:portMaps>
-                </spirit:portMaps>
-              </spirit:busInterface>
-            )
+  def generatePortMaps(portInfo: Map[String, Any]): Seq[scala.xml.Node] = {
+    portInfo.map { case (key, value) =>
+        <spirit:portMap>
+          <spirit:logicalPort>{key}</spirit:logicalPort>
+          <spirit:physicalPort>{key}</spirit:physicalPort>
+        </spirit:portMap>
+    }.toSeq
+  }
+
+  def generateBusInterface(infoList: Seq[(String, String, Map[String, Any])]): Seq[scala.xml.Node] = {
+      infoList.map { case (interfaceName, otherName, ports) =>
+          <spirit:busInterface>
+            <spirit:name>
+              {interfaceName}
+            </spirit:name>
+            <spirit:busType spirit:vendor="amba.com"
+                            spirit:library="AMBA4" spirit:name="AXI4Stream" spirit:version="r0p0_1"/>
+            <spirit:abstractionType spirit:vendor="amba.com" spirit:library="AMBA4"
+                                    spirit:name="AXI4Stream_rtl" spirit:version="r0p0_1"/>
+            <spirit:slave/>
+            <spirit:portMaps>
+              {
+                generatePortMaps(ports)
+              }
+            </spirit:portMaps>
+          </spirit:busInterface>
+      }
+  }
+
+  def generateBusInterfaces(annotationSeq: AnnotationSeq): Option[scala.xml.Node] = {
+    val busInterfaceSections = annotationSeq.flatMap {
+      case a: ParamsAnnotation if a.paramsClassName == "freechips.rocketchip.amba.axi4.AXI4BundleParameters" =>
+        a.target match {
+          case ComponentName(componentName, _) =>
+            Some((componentName, a.target.toTarget.serialize, a.params))
           case _ =>
             None
         }
       case _ =>
         None
+    }.groupBy {
+      case (moduleName, componentName, params) => moduleName
+    }
+
+    if(busInterfaceSections.isEmpty) {
+      None
+    }
+    else {
+      Some(
+        <spirit:busInterfaces>
+          {
+            busInterfaceSections.values.flatMap { case info =>
+              generateBusInterface(info)
+            }
+          }
+          </spirit:busInterfaces>
+
+      )
     }
   }
 
@@ -257,7 +341,7 @@ class IpxactGeneratorTransform extends Transform {
 
     def doOneModule(moduleName: String, filteredAnnotations: AnnotationSeq): Annotation = {
 
-      //TODO chick: what should the name be here
+      //TODO: (chick) what should the name be here
       val xmlDocument = new IpxactXmlDocument(
         vendor = "edu.berkeley.cs",
         library = "rocket-chip",
@@ -266,32 +350,21 @@ class IpxactGeneratorTransform extends Transform {
         version = "0.1"
       )
 
-      val busInterfaceXml = <spirit:busInterfaces>
-        {
-        filteredAnnotations.flatMap {
-          case a: ParamsAnnotation =>
-            generateBusInterface(a)
-          case _ =>
-            None
+      xmlDocument.addComponents(generateModel(state, moduleName))
 
-        }
-        }
-      </spirit:busInterfaces>
+      xmlDocument.addComponents(generateFileSets(moduleName))
 
-      xmlDocument.addComponents(busInterfaceXml)
+      generateBusInterfaces(filteredAnnotations).foreach { section =>
+        xmlDocument.addComponents(section)
+      }
 
-      val paramsXml = <spirit:parameters>
-        {
-        filteredAnnotations.flatMap {
-          case a: ParamsAnnotation =>
-            parameterAnnotationsToXml(a)
-          case _ =>
-            Seq.empty
-        }
-        }
-      </spirit:parameters>
+      generateParameters(filteredAnnotations).foreach { section =>
+        xmlDocument.addComponents(section)
+      }
 
-      xmlDocument.addComponents(paramsXml)
+//      generateMemoryMaps(filteredAnnotations).foreach { section =>
+//
+//      }
 
       val memoryMaps =
         <spirit:memoryMaps>
@@ -307,24 +380,30 @@ class IpxactGeneratorTransform extends Transform {
 
       xmlDocument.addComponents(memoryMaps)
 
-      xmlDocument.addComponents(generateModel(state))
-
       writeXml(targetDir, moduleName, xmlDocument)
       GeneratedIpxactAnnotation(xmlDocument)
     }
 
     val ipxactXmlAnnotations = ipxactModules.map { moduleTarget =>
       val moduleNameString = moduleTarget match {
-        case m: ModuleTarget => s"${m.circuit}.${m.module}"
+        case ModuleTarget(topName, moduleName) =>
+          moduleName
+        case _ =>
+          "NOMATCH"
       }
 
       val annosForThisModule = state.annotations.flatMap {
-        case a: ParamsAnnotation if a.target.toTarget.serialize.startsWith(moduleNameString) =>
+        case a @  IpxactModuleAnnotation(ModuleTarget(name, _)) if name == moduleNameString =>
+          Some(a)
+        case a @ ParamsAnnotation(ComponentName(_, ModuleName(name, _)), _, _) if name == moduleNameString =>
+          Some(a)
+        case a @ AddressMapAnnotation(ComponentName(_, ModuleName(name, _)), _, _) if name == moduleNameString =>
+          Some(a)
+        case a @ RegFieldDescMappingAnnotation(ModuleName(name, _), _) if name == moduleNameString =>
           Some(a)
         case _ =>
           None
       }
-
 
       doOneModule(moduleNameString, annosForThisModule)
     }

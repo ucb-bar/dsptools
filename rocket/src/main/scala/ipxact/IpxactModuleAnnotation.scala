@@ -7,6 +7,7 @@ import chisel3.experimental.{ChiselAnnotation, RawModule, RunFirrtlTransform}
 import firrtl.RenameMap
 import firrtl.annotations.{Annotation, SingleTargetAnnotation, Target}
 
+//TODO: (chick) consider to allow a name to override the xml header name
 case class IpxactModuleAnnotation(target: Target) extends SingleTargetAnnotation[Target] {
 
   override def duplicate(n: Target): Annotation = {this.copy(n)}
