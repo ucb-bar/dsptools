@@ -2,10 +2,8 @@
 
 package ipxact
 
-import chisel3.core.annotate
-import chisel3.experimental.{ChiselAnnotation, RawModule, RunFirrtlTransform}
 import firrtl.RenameMap
-import firrtl.annotations.{Annotation, ModuleTarget, SingleTargetAnnotation, Target}
+import firrtl.annotations._
 
 /**
   * This triggers a pre-lowering transform to run and to capture the ipxact bundle names
@@ -33,22 +31,19 @@ case class IpxactModuleAnnotation(target: ModuleTarget) extends SingleTargetAnno
   }
 }
 
-object Ipxact {
-  def apply(rawModule: RawModule): Unit = {
-    val ipxactBundleMemoizer: ChiselAnnotation with RunFirrtlTransform = new ChiselAnnotation with RunFirrtlTransform {
-      def transformClass = classOf[IpxactBundleCaptureTransform]
-
-      override def toFirrtl: Annotation = IpxactBundleMemoizerTrigger(rawModule.toNamed)
-    }
-
-    val ipxactGeneratorTriggerAnnotation: ChiselAnnotation with RunFirrtlTransform =
-      new ChiselAnnotation with RunFirrtlTransform {
-
-      def transformClass = classOf[IpxactGeneratorTransform]
-
-      override def toFirrtl: Annotation = IpxactModuleAnnotation(rawModule.toNamed)
-    }
-    annotate(ipxactBundleMemoizer)
-    annotate(ipxactGeneratorTriggerAnnotation)
-  }
+/**
+  * This class memoizes a Bundle that will be referenced by Ipxact
+  * Without this the bundles original name will be lost during bundle expansion in firrtl compiler
+  * @param moduleName the module name
+  * @param bundleName the bundle name we want to save
+  */
+case class IpxactBundleName(moduleName: ModuleTarget, bundleName: String) extends Annotation {
+  override def update(renames: RenameMap): Seq[Annotation] = Seq(this.copy())
 }
+
+/**
+  * This annotation carries the generated IP-XACT xml.
+  * @param xmlDocument the document
+  */
+//TODO: (chick) Is there any merit in passing this down the compiler stack
+case class GeneratedIpxactFileNameAnnotation(fileName: String) extends NoTargetAnnotation
