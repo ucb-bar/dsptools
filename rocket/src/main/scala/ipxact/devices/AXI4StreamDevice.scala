@@ -5,13 +5,13 @@ package ipxact.devices
 object AXI4StreamDevice extends Device {
 
   // Assumes you use ValidWithSync Chisel bundle for AXI4-Stream
-  def getPortMap(prefix: String): Seq[(String, String)] = {
+  val portMap: Seq[(String, String)] = {
     Seq(
-      "clock"            -> "ACLK",
-      "reset"            -> "ARESETn",
-      s"${prefix}_valid" -> "TVALID",
-      s"${prefix}_sync"  -> "TLAST",
-      s"${prefix}_bits"  -> "TDATA"
+      "clock"      -> "ACLK",
+      "reset"      -> "ARESETn",
+      "_valid"     -> "TVALID",
+      "_sync"      -> "TLAST",
+      "_bits"      -> "TDATA"
     )
   }
 }

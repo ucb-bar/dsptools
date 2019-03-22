@@ -11,6 +11,9 @@ import firrtl.{HasFirrtlOptions, HighForm, LowForm, Parser, Transform, _}
 import freechips.rocketchip.diplomacy.AddressMapEntry
 import freechips.rocketchip.util.{AddressMapAnnotation, ParamsAnnotation, RegFieldDescMappingAnnotation}
 import ipxact.IpxactGeneratorTransform.{indent, lineWidth}
+import ipxact.devices.AXI4Device
+
+import scala.collection.mutable
 
 /**
   * This annotation carries the generated IP-XACT xml.
@@ -51,7 +54,7 @@ class IpxactXmlDocument(vendor: String, library: String, name: String, version: 
 }
 
 case class IpxactBundleName(moduleName: ModuleTarget, bundleName: String) extends Annotation {
-  override def update(renames: RenameMap): Seq[Annotation] = Seq.empty
+  override def update(renames: RenameMap): Seq[Annotation] = Seq(this.copy())
 }
 
 class IpxactBundleCaptureTransform extends Transform {
@@ -60,8 +63,18 @@ class IpxactBundleCaptureTransform extends Transform {
   override def outputForm: CircuitForm = HighForm
 
   override def execute(state: CircuitState): CircuitState = {
-//    state.copy(annotations = updatedAnnotations)
-    state
+    val bundleAnnotations = state.annotations.flatMap {
+      case a: ParamsAnnotation if a.paramsClassName == "freechips.rocketchip.amba.axi4.AXI4BundleParameters" =>
+        a.target match {
+          case ComponentName(componentName, moduleName) =>
+            Some(IpxactBundleName(moduleName, componentName))
+          case _ =>
+            None
+        }
+      case _ =>
+        Seq.empty
+    }
+    state.copy(annotations = state.annotations ++ bundleAnnotations)
   }
 }
 /**
@@ -163,7 +176,7 @@ class IpxactGeneratorTransform extends Transform {
 
   /**
     * Describes where the associated verilog source resides
-    * @param moduleName
+    * @param moduleName module name being rendered
     * @return
     */
   //TODO: (chick) how does this related to one-file per module and the name of the verilog output in general
@@ -255,49 +268,56 @@ class IpxactGeneratorTransform extends Transform {
     </spirit:ports>
   }
 
-  def generatePortMaps(portInfo: Map[String, Any]): Seq[scala.xml.Node] = {
-    portInfo.map { case (key, value) =>
-        <spirit:portMap>
-          <spirit:logicalPort>{key}</spirit:logicalPort>
-          <spirit:physicalPort>{key}</spirit:physicalPort>
-        </spirit:portMap>
-    }.toSeq
+  def generatePortMaps(interfaceName: String, portsList: Seq[(String, Map[String, Any])]): Seq[scala.xml.Node] = {
+    portsList.flatMap { case (portName, _) =>
+        AXI4Device.findLogicalPort(interfaceName, portName) match {
+          case Some(logicalName) =>
+            <spirit:portMap>
+              <spirit:logicalPort>{logicalName}</spirit:logicalPort>
+              <spirit:physicalPort>{portName}</spirit:physicalPort>
+            </spirit:portMap>
+          case _ =>
+            throw new Exception("Logical name not found for")
+            None
+        }
+    }
   }
 
-  def generateBusInterface(infoList: Seq[(String, String, Map[String, Any])]): Seq[scala.xml.Node] = {
-      infoList.map { case (interfaceName, otherName, ports) =>
-          <spirit:busInterface>
-            <spirit:name>
-              {interfaceName}
-            </spirit:name>
-            <spirit:busType spirit:vendor="amba.com"
-                            spirit:library="AMBA4" spirit:name="AXI4Stream" spirit:version="r0p0_1"/>
-            <spirit:abstractionType spirit:vendor="amba.com" spirit:library="AMBA4"
-                                    spirit:name="AXI4Stream_rtl" spirit:version="r0p0_1"/>
-            <spirit:slave/>
-            <spirit:portMaps>
-              {
-                generatePortMaps(ports)
-              }
-            </spirit:portMaps>
-          </spirit:busInterface>
-      }
+  def generateBusInterface(interfaceName: String, fields: Seq[(String, Map[String, Any])]): Seq[scala.xml.Node] = {
+    <spirit:busInterface>
+      <spirit:name>{interfaceName}</spirit:name>
+      <spirit:busType spirit:vendor="amba.com"
+                      spirit:library="AMBA4" spirit:name="AXI4Stream" spirit:version="r0p0_1"/>
+      <spirit:abstractionType spirit:vendor="amba.com" spirit:library="AMBA4"
+                              spirit:name="AXI4Stream_rtl" spirit:version="r0p0_1"/>
+      <spirit:slave/>
+      <spirit:portMaps>
+        {
+          generatePortMaps(interfaceName, fields)
+        }
+      </spirit:portMaps>
+    </spirit:busInterface>
   }
 
+  //scalastyle:off cyclomatic.complexity
   def generateBusInterfaces(annotationSeq: AnnotationSeq): Option[scala.xml.Node] = {
     val busInterfaceSections = annotationSeq.flatMap {
-      case a: ParamsAnnotation if a.paramsClassName == "freechips.rocketchip.amba.axi4.AXI4BundleParameters" =>
-        a.target match {
-          case ComponentName(componentName, _) =>
-            Some((componentName, a.target.toTarget.serialize, a.params))
+      case IpxactBundleName(_, bundleName) =>
+        val fields = annotationSeq.flatMap {
+          case ParamsAnnotation(
+                 ComponentName(componentName, _), "freechips.rocketchip.amba.axi4.AXI4BundleParameters", params
+               )
+            if componentName.startsWith(bundleName) =>
+
+            Some((componentName, params))
           case _ =>
             None
         }
+        Some(bundleName, fields)
       case _ =>
         None
-    }.groupBy {
-      case (moduleName, componentName, params) => moduleName
     }
+
 
     if(busInterfaceSections.isEmpty) {
       None
@@ -306,8 +326,8 @@ class IpxactGeneratorTransform extends Transform {
       Some(
         <spirit:busInterfaces>
           {
-            busInterfaceSections.values.flatMap { case info =>
-              generateBusInterface(info)
+            busInterfaceSections.flatMap { case (bundleName, fields) =>
+              generateBusInterface(bundleName, fields)
             }
           }
           </spirit:busInterfaces>
@@ -339,7 +359,7 @@ class IpxactGeneratorTransform extends Transform {
       case t: firrtl.stage.TargetDirAnnotation => t.targetDirName
     }.getOrElse("./")
 
-    def doOneModule(moduleName: String, filteredAnnotations: AnnotationSeq): Annotation = {
+    def doOneModule(moduleName: String, annosForThisModule: AnnotationSeq): Annotation = {
 
       //TODO: (chick) what should the name be here
       val xmlDocument = new IpxactXmlDocument(
@@ -354,11 +374,11 @@ class IpxactGeneratorTransform extends Transform {
 
       xmlDocument.addComponents(generateFileSets(moduleName))
 
-      generateBusInterfaces(filteredAnnotations).foreach { section =>
+      generateBusInterfaces(annosForThisModule).foreach { section =>
         xmlDocument.addComponents(section)
       }
 
-      generateParameters(filteredAnnotations).foreach { section =>
+      generateParameters(annosForThisModule).foreach { section =>
         xmlDocument.addComponents(section)
       }
 
@@ -369,7 +389,7 @@ class IpxactGeneratorTransform extends Transform {
       val memoryMaps =
         <spirit:memoryMaps>
           {
-          filteredAnnotations.flatMap {
+          annosForThisModule.flatMap {
             case a: RegFieldDescMappingAnnotation =>
               regFieldDescMappingAnnotationsToXml(state.circuit.main, a)
             case _ =>
@@ -400,6 +420,8 @@ class IpxactGeneratorTransform extends Transform {
         case a @ AddressMapAnnotation(ComponentName(_, ModuleName(name, _)), _, _) if name == moduleNameString =>
           Some(a)
         case a @ RegFieldDescMappingAnnotation(ModuleName(name, _), _) if name == moduleNameString =>
+          Some(a)
+        case a @ IpxactBundleName(ModuleTarget(name, _), _) if name == moduleNameString =>
           Some(a)
         case _ =>
           None
