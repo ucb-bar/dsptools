@@ -9,7 +9,7 @@ import firrtl.ir._
 import firrtl.{
   CircuitForm, CircuitState, Driver, ExecutionOptionsManager, HasFirrtlOptions, HighForm, LowForm, Parser, Transform, _
 }
-import freechips.rocketchip.diplomacy.AddressMapEntry
+import freechips.rocketchip.diplomacy.{AddressMapEntry, LazyModule}
 import freechips.rocketchip.util.{AddressMapAnnotation, ParamsAnnotation, RegFieldDescMappingAnnotation}
 import ipxact.IpxactGeneratorTransform.{indent, lineWidth}
 import ipxact.devices.AXI4Device
@@ -390,10 +390,13 @@ object IpxactGeneratorTransform {
 
   def main(args: Array[String]): Unit = {
 
-    val optionsManager = new ExecutionOptionsManager("ipxact") with HasFirrtlOptions {
-      commonOptions = commonOptions.copy(targetDirName = "test_run_dir/axi4gcd", topName = "axi4gcd")
-      firrtlOptions = firrtlOptions.copy(annotationFileNames = List("AXI4GCD.anno.json"))
+    val optionsManager = new ExecutionOptionsManager("ipxact") with HasFirrtlOptions
+      with chisel3.HasChiselExecutionOptions {
+      commonOptions = commonOptions.copy(targetDirName = "test_run_dir/axi4gcd", topName = "AXI4GCD")
     }
+
+    val dut = LazyModule(new AXI4GCD())
+    chisel3.Driver.execute(optionsManager, () => dut.module)
 
     val fileName = optionsManager.getBuildFileName("fir")
 
