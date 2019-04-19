@@ -2,7 +2,7 @@ package freechips.rocketchip.amba.axi4stream
 
 import chisel3._
 import chisel3.util._
-import freechips.rocketchip.util.GenericParameterizedBundle
+import freechips.rocketchip.util.{AsyncBundle, GenericParameterizedBundle}
 
 /**
   * Base class for all AXI4Stream bundles
@@ -61,4 +61,11 @@ object AXI4StreamValidBundle
     * @return
     */
   def apply(params: AXI4StreamBundleParameters) = new AXI4StreamValidBundle(params)
+}
+
+class AXI4StreamAsyncBundle(params: AXI4StreamAsyncBundleParameters)
+  extends AsyncBundle(new AXI4StreamBundlePayload(params.base), params.async)
+
+object AXI4StreamAsyncBundle {
+  def apply(params: AXI4StreamAsyncBundleParameters) = new AXI4StreamAsyncBundle(params)
 }

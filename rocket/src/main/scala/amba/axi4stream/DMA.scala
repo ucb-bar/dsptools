@@ -1,10 +1,11 @@
-package freechips.rocketchip.amba.axi4
+package freechips.rocketchip.amba.axi4stream
 
 import chisel3._
 import chisel3.util.{Decoupled, Queue, log2Ceil}
-import freechips.rocketchip.amba.axi4stream.{AXI4StreamBundle, AXI4StreamIdentityNode, AXI4StreamNode}
+import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.config.Parameters
-import freechips.rocketchip.diplomacy.{AddressSet, IdRange, LazyModule, LazyModuleImp, NodeHandle}
+import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.regmapper.RegField
 
 trait StreamingDMA extends LazyModule {
   val streamNode: AXI4StreamNode
@@ -23,20 +24,20 @@ class DMARequest
   /**
     * Base address of DMA request
     */
-  val baseAddress = UInt(addrWidth.W)
+  val baseAddress: UInt = UInt(addrWidth.W)
   /**
     * Length of DMA request, minus 1. length = 0 corresponds to a single beat
     */
-  val length = UInt(lenWidth.W)
+  val length: UInt = UInt(lenWidth.W)
   /**
     * Default value is zero. If > 0, then do the same read or write @cycles number of times
     */
-  val cycles = UInt(addrWidth.W)
+  val cycles: UInt = UInt(addrWidth.W)
   /**
     * If false, addresses considered are from @baseAddress to @baseAddress + @length
     * If true, addresses considered are @baseAddress only, in fixed mode
     */
-  val fixedAddress = Bool()
+  val fixedAddress: UInt = Bool()
 }
 /**
   * Companion object factory
@@ -51,13 +52,12 @@ object DMARequest {
   * AXI-4 Master <=> AXI-4 Stream DMA* @param id range of IDs allowed
   * @param id id range, but only one is used
   * @param aligned aligned accesses only
-  * @param p implicit parameters
   */
 class StreamingAXI4DMA
 (
   id: IdRange = IdRange(0, 1),
   aligned: Boolean = false,
-)(implicit p: Parameters) extends LazyModule {
+) extends LazyModule()(Parameters.empty) {
 
   val streamNode = AXI4StreamIdentityNode()
   val axiNode = AXI4MasterNode(Seq(AXI4MasterPortParameters(
@@ -159,7 +159,7 @@ class StreamingAXI4DMA
     }
 
 
-    val readBuffer = Module(new Queue(axi.r.bits.cloneType, beatLength))
+    val readBuffer = Module(new Queue(chiselTypeOf(axi.r.bits), beatLength))
     readBuffer.io.enq <> axi.r
     readBuffer.io.deq.ready := out.ready
     out.valid := readBuffer.io.deq.valid
@@ -248,17 +248,84 @@ class StreamingAXI4DMA
   }
 }
 
-class StreamingMemory
+class StreamingAXI4DMAWithCSR
 (
+  csrAddress: AddressSet,
+  beatBytes: Int = 4,
   id: IdRange = IdRange(0, 1),
   aligned: Boolean = false,
+) extends LazyModule()(Parameters.empty) { outer =>
+
+  val dma = LazyModule(new StreamingAXI4DMA(id = id, aligned = aligned))
+
+  val axiMasterNode = dma.axiNode
+  val axiSlaveNode = AXI4RegisterNode(address = csrAddress, beatBytes = beatBytes)
+
+  val streamNode = dma.streamNode
+
+  lazy val module = new LazyModuleImp(this) {
+    val dma = outer.dma.module
+
+    val enReg = RegInit(false.B)
+    val watchdogReg = RegInit(0.U(32.W))
+    val intReg = RegInit(0.U(6.W))
+
+    dma.enable := enReg
+
+    when (dma.readComplete) {
+      intReg := intReg | 1.U
+    }
+    when (dma.readWatchdog) {
+      intReg := intReg | 2.U
+    }
+    when (dma.readError) {
+      intReg := intReg | 4.U
+    }
+    when (dma.writeComplete) {
+      intReg := intReg | 8.U
+    }
+    when (dma.writeWatchdog) {
+      intReg := intReg | 16.U
+    }
+    when (dma.writeError) {
+      intReg := intReg | 32.U
+    }
+
+    val s2m = Wire(util.Decoupled(UInt()))
+    val m2s = Wire(util.Decoupled(UInt()))
+
+    dma.streamToMemRequest.valid := s2m.valid
+    dma.streamToMemRequest.bits := s2m.bits.asTypeOf(dma.streamToMemRequest.bits)
+    s2m.ready := dma.streamToMemRequest.ready
+
+    dma.memToStreamRequest.valid := m2s.valid
+    dma.memToStreamRequest.bits := m2s.bits.asTypeOf(dma.memToStreamRequest.bits)
+    m2s.ready := dma.memToStreamRequest.ready
+
+    axiSlaveNode.regmap(
+      axiSlaveNode.beatBytes * 0 -> Seq(RegField(1, enReg)),
+      axiSlaveNode.beatBytes * 1 -> Seq(RegField.r(1, dma.idle)),
+      axiSlaveNode.beatBytes * 2 -> Seq(RegField(32, watchdogReg)),
+      axiSlaveNode.beatBytes * 3 -> Seq(RegField(6, intReg)),
+      axiSlaveNode.beatBytes * 4 -> Seq(RegField.w(32, s2m)),
+      axiSlaveNode.beatBytes * 5 -> Seq(RegField.r(32, dma.streamToMemLengthRemaining)),
+      axiSlaveNode.beatBytes * 6 -> Seq(RegField.w(32, m2s)),
+      axiSlaveNode.beatBytes * 7 -> Seq(RegField.r(32, dma.memToStreamLengthRemaining)),
+    )
+  }
+}
+
+class StreamingAXI4DMAWithMemory
+(
   address: AddressSet,
+  id: IdRange = IdRange(0, 1),
+  aligned: Boolean = false,
   executable: Boolean = true,
   beatBytes: Int = 4,
   devName: Option[String] = None,
   errors: Seq[AddressSet] = Nil,
   wcorrupt: Boolean = false
-)(implicit p: Parameters) extends LazyModule {
+) extends LazyModule()(Parameters.empty) {
 
   val dma = LazyModule(new StreamingAXI4DMA(id = id, aligned = aligned))
   val lhs = AXI4StreamIdentityNode()
@@ -280,7 +347,6 @@ class StreamingMemory
     val (streamIn, inP) = lhs.in.head
     val (streamOut, outP) = rhs.out.head
     // val axiP =
-
     val addrWidth = dma.module.addrWidth
     val lenWidth = dma.module.lenWidth
     val beatLength = 1 << lenWidth

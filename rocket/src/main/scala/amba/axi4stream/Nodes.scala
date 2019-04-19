@@ -5,6 +5,7 @@ package freechips.rocketchip.amba.axi4stream
 import chisel3.internal.sourceinfo.SourceInfo
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.util.AsyncQueueParams
 
 /**
   * Implementation of Node for AXI4 Stream
@@ -43,6 +44,12 @@ object AXI4StreamSlaveNode {
   }
 }
 
+object AXI4StreamNameNode {
+  def apply(name: ValName) = AXI4StreamIdentityNode()(name)
+  def apply(name: Option[String]): AXI4StreamIdentityNode = apply(ValName(name.getOrElse("with_no_name")))
+  def apply(name: String): AXI4StreamIdentityNode = apply(Some(name))
+}
+
 case class AXI4StreamNexusNode(
   masterFn: Seq[AXI4StreamMasterPortParameters] => AXI4StreamMasterPortParameters,
   slaveFn:  Seq[AXI4StreamSlavePortParameters]  => AXI4StreamSlavePortParameters
@@ -62,6 +69,68 @@ object AXI4StreamAdapterNode {
     }
     AXI4StreamMasterPortParameters(newMasters)
   }
+}
+
+object AXI4StreamAsyncImp extends
+  SimpleNodeImp[
+    AXI4StreamAsyncMasterPortParameters,
+    AXI4StreamAsyncSlavePortParameters,
+    AXI4StreamAsyncEdgeParameters,
+    AXI4StreamAsyncBundle
+  ] {
+  def edge(
+            pd: AXI4StreamAsyncMasterPortParameters,
+            pu: AXI4StreamAsyncSlavePortParameters,
+            p: Parameters,
+            sourceInfo: SourceInfo): AXI4StreamAsyncEdgeParameters = {
+     AXI4StreamAsyncEdgeParameters(pd, pu, p, sourceInfo)
+  }
+
+  override def bundle(e: AXI4StreamAsyncEdgeParameters): AXI4StreamAsyncBundle =
+    AXI4StreamAsyncBundle(e.bundle)
+
+  override def render(e: AXI4StreamAsyncEdgeParameters): RenderedEdge =
+    RenderedEdge(colour = "#ffcc00", label = e.slave.async.depth.toString)
+
+  override def mixO(
+                     pd: AXI4StreamAsyncMasterPortParameters,
+                     node: OutwardNode[
+                       AXI4StreamAsyncMasterPortParameters,
+                       AXI4StreamAsyncSlavePortParameters,
+                       AXI4StreamAsyncBundle]
+                   ): AXI4StreamAsyncMasterPortParameters = {
+    pd.copy(base = pd.base.copy(masters = pd.base.masters.map { c => c.copy(nodePath = node +: c.nodePath) }))
+  }
+
+  override def mixI(
+    pu: AXI4StreamAsyncSlavePortParameters,
+    node: InwardNode[
+      AXI4StreamAsyncMasterPortParameters,
+      AXI4StreamAsyncSlavePortParameters,
+      AXI4StreamAsyncBundle]
+                   ): AXI4StreamAsyncSlavePortParameters = {
+    pu.copy(base = pu.base.copy(slaves = pu.base.slaves.map { c => c.copy(nodePath = node +: c.nodePath) }))
+  }
+}
+
+case class AXI4StreamAsyncSourceNode(sync: Option[Int])(implicit valName: ValName)
+  extends MixedAdapterNode(AXI4StreamImp, AXI4StreamAsyncImp)(
+    dFn = { p => AXI4StreamAsyncMasterPortParameters(p) },
+    uFn = { p => p.base.copy() }
+  )
+
+case class AXI4StreamAsyncSinkNode(async: AsyncQueueParams)(implicit valName: ValName)
+  extends MixedAdapterNode(AXI4StreamAsyncImp, AXI4StreamImp)(
+    dFn = { p => p.base },
+    uFn = { p => AXI4StreamAsyncSlavePortParameters(async, p) }
+  )
+
+case class AXI4StreamAsyncIdentityNode()(implicit valName: ValName) extends IdentityNode(AXI4StreamAsyncImp)()
+
+object AXI4StreamAsyncNameNode {
+  def apply(name: ValName) = AXI4StreamAsyncIdentityNode()(name)
+  def apply(name: Option[String]): AXI4StreamAsyncIdentityNode = apply(ValName(name.getOrElse("with_no_name")))
+  def apply(name: String): AXI4StreamAsyncIdentityNode = apply(Some(name))
 }
 
 object AXI4StreamBundleBridgeImp extends BundleBridgeImp[AXI4StreamBundle]
