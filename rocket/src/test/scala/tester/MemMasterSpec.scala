@@ -29,7 +29,7 @@ trait RegmapExample extends HasRegMap {
 class TLRegmapExample extends TLRegisterRouter(0, "example", Seq("dsptools", "example"), beatBytes = 8, interrupts = 1)(
   new TLRegBundle(null, _))(
     new TLRegModule(null, _, _) with RegmapExample)(Parameters.empty) {
-  def standaloneParams = TLBundleParameters(addressBits = 64, dataBits = 64, sourceBits = 1, sinkBits = 1, sizeBits = 6)
+  def standaloneParams = TLBundleParameters(addressBits = 64, dataBits = 64, sourceBits = 1, sinkBits = 1, sizeBits = 6, hasBCE = false)
 
   val ioMemNode = BundleBridgeSource(() => TLBundle(standaloneParams))
   node :=
