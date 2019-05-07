@@ -2,13 +2,13 @@ package freechips.rocketchip.amba.axi4
 
 import chisel3.iotesters.PeekPokeTester
 import dspblocks.AXI4StandaloneBlock
-import freechips.rocketchip.amba.axi4stream.{AXI4StreamModel, AXI4StreamTransaction, AXI4StreamTransactionExpect}
+import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy.{AddressSet, LazyModule}
 import freechips.rocketchip.system.BaseConfig
 import org.scalatest.{FlatSpec, Matchers}
 
-class StreamingMemoryTester(dut: StreamingMemory with AXI4StandaloneBlock, silentFail: Boolean = false)
+class StreamingMemoryTester(dut: StreamingAXI4DMAWithMemory with AXI4StandaloneBlock, silentFail: Boolean = false)
   extends PeekPokeTester(dut.module)
   with AXI4StreamModel {
 
@@ -72,7 +72,7 @@ class StreamingMemorySpec extends FlatSpec with Matchers {
   implicit val p: Parameters = (new BaseConfig).toInstance
 
   "StreamingMemory" should "stream in and out of SRAM" in {
-    val lazyDut = LazyModule(new StreamingMemory(
+    val lazyDut = LazyModule(new StreamingAXI4DMAWithMemory(
       address = AddressSet(0x0, 0xFFFF),
       beatBytes = 8,
     ) with AXI4StandaloneBlock {

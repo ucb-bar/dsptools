@@ -4,6 +4,7 @@ import chisel3.internal.sourceinfo.SourceInfo
 import chisel3.util.log2Ceil
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.util.AsyncQueueParams
 
 import scala.math.max
 
@@ -199,4 +200,37 @@ case class AXI4StreamEdgeParameters(
   sourceInfo: SourceInfo)
 {
   val bundle: AXI4StreamBundleParameters = AXI4StreamBundleParameters.joinEdge(master, slave)
+}
+
+case class AXI4StreamAsyncSlavePortParameters(async: AsyncQueueParams, base: AXI4StreamSlavePortParameters)
+object AXI4StreamAsyncSlavePortParameters {
+  def apply(async: AsyncQueueParams, base: AXI4StreamSlaveParameters): AXI4StreamAsyncSlavePortParameters =
+    AXI4StreamAsyncSlavePortParameters(async, AXI4StreamSlavePortParameters(Seq(base)))
+}
+case class AXI4StreamAsyncMasterPortParameters(base: AXI4StreamMasterPortParameters)
+object AXI4StreamAsyncMasterPortParameters {
+  def apply(base: AXI4StreamMasterParameters): AXI4StreamAsyncMasterPortParameters =
+    AXI4StreamAsyncMasterPortParameters(AXI4StreamMasterPortParameters(Seq(base)))
+}
+
+case class AXI4StreamAsyncBundleParameters(async: AsyncQueueParams, base: AXI4StreamBundleParameters)
+case class AXI4StreamAsyncEdgeParameters
+(
+  master: AXI4StreamAsyncMasterPortParameters,
+  slave: AXI4StreamAsyncSlavePortParameters,
+  params: Parameters,
+  sourceInfo: SourceInfo
+) {
+  val bundle =
+    AXI4StreamAsyncBundleParameters(slave.async, AXI4StreamBundleParameters.joinEdge(master.base, slave.base))
+}
+
+case class AXI4StreamBufferParams(p: BufferParams = BufferParams.none) extends DirectedBuffers[AXI4StreamBufferParams] {
+  // no channels in
+  override def copyIn(x: BufferParams): AXI4StreamBufferParams = this.copy()
+
+  // only one channel, and it is out
+  override def copyOut(x: BufferParams): AXI4StreamBufferParams = this.copy(p = x)
+
+  override def copyInOut(x: BufferParams): AXI4StreamBufferParams = this.copyIn(x).copyOut(x)
 }

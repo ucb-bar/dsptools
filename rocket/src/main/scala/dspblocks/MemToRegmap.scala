@@ -40,7 +40,7 @@ object MemToRegmap {
       mem.write(writeIdx, writeData)
     }
 
-    val map: Seq[RegField.Map] = (0 until mem.length).map (i => {
+    val map: Seq[RegField.Map] = (0 until mem.length.toInt).map (i => {
       (baseAddress + bytesPerMemEntry * i) ->
         Seq(RegField(
           /*memWidth*/ bytesPerMemEntry * 8,
