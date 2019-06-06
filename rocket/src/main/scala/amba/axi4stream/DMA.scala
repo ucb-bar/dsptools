@@ -5,7 +5,7 @@ import chisel3.util.{Decoupled, Queue, log2Ceil}
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
-import freechips.rocketchip.regmapper.RegField
+import freechips.rocketchip.regmapper._
 
 trait StreamingDMA extends LazyModule {
   val streamNode: AXI4StreamNode
@@ -291,26 +291,52 @@ class StreamingAXI4DMAWithCSR
       intReg := intReg | 32.U
     }
 
-    val s2m = Wire(util.Decoupled(UInt()))
-    val m2s = Wire(util.Decoupled(UInt()))
+    val s2mbits = dma.streamToMemRequest.bits
+    val m2sbits = dma.memToStreamRequest.bits
+    val s2mBaseAddress = RegInit(0.U(s2mbits.addrWidth.W))
+    val s2mLength = RegInit(0.U(s2mbits.lenWidth.W))
+    val s2mCycles = RegInit(0.U(s2mbits.addrWidth.W))
+    val s2mFixedAddress = RegInit(false.B)
+    val m2sBaseAddress = RegInit(0.U(s2mbits.addrWidth.W))
+    val m2sLength = RegInit(0.U(s2mbits.lenWidth.W))
+    val m2sCycles = RegInit(0.U(s2mbits.addrWidth.W))
+    val m2sFixedAddress = RegInit(false.B)
 
-    dma.streamToMemRequest.valid := s2m.valid
-    dma.streamToMemRequest.bits := s2m.bits.asTypeOf(dma.streamToMemRequest.bits)
-    s2m.ready := dma.streamToMemRequest.ready
+    s2mbits.baseAddress := s2mBaseAddress
+    s2mbits.length := s2mLength
+    s2mbits.cycles := s2mCycles
+    s2mbits.fixedAddress := s2mFixedAddress
 
-    dma.memToStreamRequest.valid := m2s.valid
-    dma.memToStreamRequest.bits := m2s.bits.asTypeOf(dma.memToStreamRequest.bits)
-    m2s.ready := dma.memToStreamRequest.ready
+    m2sbits.baseAddress := m2sBaseAddress
+    m2sbits.length := m2sLength
+    m2sbits.cycles := m2sCycles
+    m2sbits.fixedAddress := m2sFixedAddress
 
     axiSlaveNode.regmap(
       axiSlaveNode.beatBytes * 0 -> Seq(RegField(1, enReg)),
       axiSlaveNode.beatBytes * 1 -> Seq(RegField.r(1, dma.idle)),
       axiSlaveNode.beatBytes * 2 -> Seq(RegField(32, watchdogReg)),
       axiSlaveNode.beatBytes * 3 -> Seq(RegField(6, intReg)),
-      axiSlaveNode.beatBytes * 4 -> Seq(RegField.w(32, s2m)),
-      axiSlaveNode.beatBytes * 5 -> Seq(RegField.r(32, dma.streamToMemLengthRemaining)),
-      axiSlaveNode.beatBytes * 6 -> Seq(RegField.w(32, m2s)),
-      axiSlaveNode.beatBytes * 7 -> Seq(RegField.r(32, dma.memToStreamLengthRemaining)),
+      axiSlaveNode.beatBytes * 4 -> Seq(RegField.w(32, s2mBaseAddress)),
+      axiSlaveNode.beatBytes * 5 -> Seq(RegField.w(32, s2mLength)),
+      axiSlaveNode.beatBytes * 6 -> Seq(RegField.w(32, s2mCycles)),
+      axiSlaveNode.beatBytes * 7 -> Seq(RegField.w(1, s2mFixedAddress)),
+      axiSlaveNode.beatBytes * 8 -> Seq(RegField(32,
+        dma.streamToMemLengthRemaining,
+        RegWriteFn((valid, data) => {
+          dma.streamToMemRequest.valid := valid
+          dma.streamToMemRequest.ready
+        }))),
+      axiSlaveNode.beatBytes * 9 -> Seq(RegField.w(32, m2sBaseAddress)),
+      axiSlaveNode.beatBytes * 10 -> Seq(RegField.w(32, m2sLength)),
+      axiSlaveNode.beatBytes * 11-> Seq(RegField.w(32, m2sCycles)),
+      axiSlaveNode.beatBytes * 12 -> Seq(RegField.w(1, m2sFixedAddress)),
+      axiSlaveNode.beatBytes * 13 -> Seq(RegField(32,
+        dma.memToStreamLengthRemaining,
+        RegWriteFn((valid, data) => {
+          dma.memToStreamRequest.valid := valid
+          dma.memToStreamRequest.ready
+        }))),
     )
   }
 }
