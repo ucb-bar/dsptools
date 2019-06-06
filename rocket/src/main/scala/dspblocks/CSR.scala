@@ -118,7 +118,7 @@ trait TLHasCSR extends TLDspBlock with HasCSR {
   override def regmap(mapping: (Int, Seq[RegField])*): Unit = mem.get.regmap(mapping:_*)
 }
 
-trait AHBHasCSR extends AHBDspBlock with HasCSR {
+trait AHBSlaveHasCSR extends AHBSlaveDspBlock with HasCSR {
   override val mem: Some[AHBRegisterNode]
   override def regmap(mapping: (Int, Seq[RegField])*): Unit = mem.get.regmap(mapping:_*)
 }
