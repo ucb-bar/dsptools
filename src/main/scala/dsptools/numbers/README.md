@@ -272,7 +272,7 @@ We need to come up with better names, but at least this makes it easy to search 
 
 A basic DSP Module + Tester might look like this:
 
-```
+```scala
 package SimpleDsp
 
 // Allows you to use Chisel Module, Bundle, etc.
