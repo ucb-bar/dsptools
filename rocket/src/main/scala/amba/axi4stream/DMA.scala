@@ -2,6 +2,7 @@ package freechips.rocketchip.amba.axi4stream
 
 import chisel3._
 import chisel3.util.{Decoupled, Queue, log2Ceil}
+import dspblocks.AXI4DspBlock
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
@@ -46,6 +47,33 @@ object DMARequest {
   def apply(addrWidth: Int, lenWidth: Int): DMARequest = {
     new DMARequest(addrWidth = addrWidth, lenWidth = lenWidth)
   }
+}
+
+class DMACounterIO(addrWidth: Int, lenWidth: Int) extends Bundle {
+  val in = Flipped(Decoupled(DMARequest(addrWidth, lenWidth)))
+  val out = Decoupled(DMARequest(addrWidth, lenWidth))
+}
+class DMACounter(addrWidth: Int, lenWidth: Int) extends Module {
+  val io = IO(new DMACounterIO(addrWidth, lenWidth))
+
+  val reg = Reg(DMARequest(addrWidth, lenWidth))
+  val regValid = RegInit(false.B)
+
+  val takeInput = !regValid && io.in.valid
+  val lastCount = (regValid && reg.cycles === 0.U) || (io.in.valid && io.in.bits.cycles === 0.U)
+  val dmaReq = Mux(takeInput, io.in.bits, reg)
+
+  when (io.in.fire()) {
+    reg := io.in.bits
+    regValid := true.B
+  }
+  when (io.out.fire()) {
+    reg.cycles := dmaReq.cycles - 1.U
+    regValid := !lastCount
+  }
+  io.in.ready := io.out.ready && !regValid
+  io.out.valid := regValid || lastCount
+  io.out.bits := dmaReq
 }
 
 /**
@@ -100,10 +128,28 @@ class StreamingAXI4DMA
     )))
     val streamToMemLengthRemaining = IO(Output(UInt(lenWidth.W)))
 
+    val streamToMemQueue = Module(new Queue(DMARequest(addrWidth = addrWidth, lenWidth = lenWidth), 8))
+    streamToMemQueue.io.enq <> streamToMemRequest
+
+    val streamToMemQueueCount = IO(Output(UInt()))
+    streamToMemQueueCount := streamToMemQueue.io.count
+
+    val streamToMemCounter = Module(new DMACounter(addrWidth = addrWidth, lenWidth = lenWidth))
+    streamToMemCounter.io.in <> streamToMemQueue.io.deq
+
     val memToStreamRequest = IO(Flipped(Decoupled(
       DMARequest(addrWidth = addrWidth, lenWidth = lenWidth)
     )))
     val memToStreamLengthRemaining = IO(Output(UInt(lenWidth.W)))
+
+    val memToStreamQueue = Module(new Queue(DMARequest(addrWidth = addrWidth, lenWidth = lenWidth), 8))
+    memToStreamQueue.io.enq <> memToStreamRequest
+
+    val memToStreamQueueCount = IO(Output(UInt()))
+    memToStreamQueueCount := memToStreamQueue.io.count
+
+    val memToStreamCounter = Module(new DMACounter(addrWidth = addrWidth, lenWidth = lenWidth))
+    memToStreamCounter.io.in <> memToStreamQueue.io.deq
 
     val reading = RegInit(false.B)
     val writing = RegInit(false.B)
@@ -131,20 +177,20 @@ class StreamingAXI4DMA
     writeWatchdog := writeWatchdogCounter > watchdogInterval
     writeError := false.B
 
-    memToStreamRequest.ready := !reading && enable
-    when (memToStreamRequest.fire()) {
+    memToStreamCounter.io.out.ready := !reading && enable
+    when (memToStreamCounter.io.out.fire()) {
       reading := true.B
-      readDescriptor := memToStreamRequest.bits
+      readDescriptor := memToStreamCounter.io.out.bits
       readBeatCounter := 0.U
       readAddrDone := false.B
       readDataDone := false.B
       readWatchdogCounter := 0.U
     }
 
-    streamToMemRequest.ready := !writing && enable
-    when (streamToMemRequest.fire()) {
+    streamToMemCounter.io.out.ready := !writing && enable
+    when (streamToMemCounter.io.out.fire()) {
       writing := true.B
-      writeDescriptor := streamToMemRequest.bits
+      writeDescriptor := streamToMemCounter.io.out.bits
       writeBeatCounter := 0.U
       writeAddrDone := false.B
       writeDataDone := false.B
@@ -193,6 +239,8 @@ class StreamingAXI4DMA
     when (readAddrDone && readDataDone) {
       readComplete := true.B
       reading := false.B
+      readAddrDone := false.B
+      readDataDone := false.B
     }
 
     // Stream to AXI write
@@ -420,4 +468,37 @@ class StreamingAXI4DMAWithMemory
     io.streamToMemLengthRemaining := dma.module.streamToMemLengthRemaining
     io.memToStreamLengthRemaining := dma.module.memToStreamLengthRemaining
   }
+}
+
+class StreamingAXI4DMAWithCSRWithScratchpad
+(
+  val csrAddress: AddressSet,
+  val scratchpadAddress: AddressSet,
+  val beatBytes: Int = 4,
+  val id: IdRange = IdRange(0, 1),
+  val aligned: Boolean = false,
+) extends LazyModule()(Parameters.empty) with AXI4DspBlock {
+  val dma = LazyModule(new StreamingAXI4DMAWithCSR(csrAddress, beatBytes, id, aligned))
+
+  val streamNode = NodeHandle(dma.streamNode.inward, dma.streamNode.outward)
+  val mem = Some(AXI4IdentityNode())
+
+  val ram = AXI4RAM(
+    address = scratchpadAddress,
+    executable = false,
+    beatBytes = beatBytes,
+    devName = Some("bwrc,dmascratchpad"),
+    errors = Nil,
+  )
+
+  val ramXbar = AXI4Xbar()
+  val topXbar = AXI4Xbar()
+
+  ram := AXI4Fragmenter() := ramXbar
+  ramXbar := dma.axiMasterNode
+  ramXbar := topXbar
+  dma.axiSlaveNode := topXbar
+  topXbar := mem.get
+
+  lazy val module = new LazyModuleImp(this)
 }
