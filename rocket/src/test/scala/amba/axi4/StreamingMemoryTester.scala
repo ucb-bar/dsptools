@@ -131,8 +131,59 @@ class StreamingAXI4DMAWithWithCSRWithScratchpadTester
   stepToCompletion(silentFail = silentFail)
 }
 
+class DMASimplifierTester(dut: DMASimplifier) extends PeekPokeTester(dut) {
+  import dut.{addrWidth, beatBytes, complexLenWidth, maxSimpleLength, simpleLenWidth}
+
+  poke(dut.io.in.valid, true)
+  poke(dut.io.out.ready, false)
+
+  poke(dut.io.in.bits.fixedAddress, 0)
+  poke(dut.io.in.bits.cycles, 0)
+  poke(dut.io.in.bits.baseAddress, beatBytes)
+  poke(dut.io.in.bits.length, maxSimpleLength + 1)
+
+  expect(dut.io.out.valid, 1)
+  step(5)
+
+  poke(dut.io.out.ready, 1)
+  expect(dut.io.out.bits.baseAddress, beatBytes)
+  expect(dut.io.out.bits.fixedAddress, 0)
+  expect(dut.io.out.bits.length, maxSimpleLength)
+  expect(dut.io.in.ready, 0)
+
+  step(1)
+  expect(dut.io.out.bits.baseAddress, beatBytes + beatBytes * (maxSimpleLength + 1))
+  expect(dut.io.out.bits.fixedAddress, 0)
+  expect(dut.io.out.bits.length, 1)
+  expect(dut.io.in.ready, 1)
+
+  step(1)
+  poke(dut.io.in.bits.cycles, 2)
+
+  for (c <- 0 to 2) {
+    expect(dut.io.out.bits.baseAddress, beatBytes)
+    expect(dut.io.out.bits.fixedAddress, 0)
+    expect(dut.io.out.bits.length, maxSimpleLength)
+    expect(dut.io.in.ready, 0)
+    step(1)
+
+    expect(dut.io.out.bits.baseAddress, beatBytes + beatBytes * (maxSimpleLength + 1))
+    expect(dut.io.out.bits.fixedAddress, 0)
+    expect(dut.io.out.bits.length, 1)
+    expect(dut.io.in.ready, c == 2)
+    step(1)
+  }
+}
+
 class StreamingMemorySpec extends FlatSpec with Matchers {
   implicit val p: Parameters = (new BaseConfig).toInstance
+
+  behavior of "DMASimplifier"
+
+  it should "simplify complex DMA requests" in {
+    val dut = () => new DMASimplifier(8, 8, 2, 8)
+    chisel3.iotesters.Driver.execute(Array("-tbn", "treadle"), dut) { c => new DMASimplifierTester(c) } should be (true)
+  }
 
   behavior of "StreamingMemory"
 

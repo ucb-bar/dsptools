@@ -8,10 +8,6 @@ import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.regmapper._
 
-trait StreamingDMA extends LazyModule {
-  val streamNode: AXI4StreamNode
-}
-
 /**
   * Bundle class for dma request descriptors
   * @param addrWidth width of address
@@ -49,31 +45,68 @@ object DMARequest {
   }
 }
 
-class DMACounterIO(addrWidth: Int, lenWidth: Int) extends Bundle {
-  val in = Flipped(Decoupled(DMARequest(addrWidth, lenWidth)))
-  val out = Decoupled(DMARequest(addrWidth, lenWidth))
+class SimpleDMARequest(addrWidth: Int, lenWidth: Int) extends Bundle {
+  /**
+    * Base address of DMA request
+    */
+  val baseAddress: UInt = UInt(addrWidth.W)
+  /**
+    * Length of DMA request, minus 1. length = 0 corresponds to a single beat
+    */
+  val length: UInt = UInt(lenWidth.W)
+  /**
+    * If false, addresses considered are from @baseAddress to @baseAddress + @length
+    * If true, addresses considered are @baseAddress only, in fixed mode
+    */
+  val fixedAddress: UInt = Bool()
+
+  override def cloneType: this.type =
+    SimpleDMARequest(addrWidth = addrWidth, lenWidth = lenWidth).asInstanceOf[this.type]
 }
-class DMACounter(addrWidth: Int, lenWidth: Int) extends Module {
-  val io = IO(new DMACounterIO(addrWidth, lenWidth))
+object SimpleDMARequest {
+  def apply(addrWidth: Int, lenWidth: Int): SimpleDMARequest =
+    new SimpleDMARequest(addrWidth = addrWidth, lenWidth = lenWidth)
+}
 
-  val reg = Reg(DMARequest(addrWidth, lenWidth))
-  val regValid = RegInit(false.B)
+class DMASimplifierIO(addrWidth: Int, complexLenWidth: Int, simpleLenWidth: Int) extends Bundle {
+  val in = Flipped(Decoupled(DMARequest(addrWidth, complexLenWidth)))
+  val out = Decoupled(SimpleDMARequest(addrWidth, simpleLenWidth))
 
-  val takeInput = !regValid && io.in.valid
-  val lastCount = (regValid && reg.cycles === 0.U) || (io.in.valid && io.in.bits.cycles === 0.U)
-  val dmaReq = Mux(takeInput, io.in.bits, reg)
+  override def cloneType: this.type =
+    new DMASimplifierIO(addrWidth = addrWidth, complexLenWidth = complexLenWidth, simpleLenWidth = simpleLenWidth).
+      asInstanceOf[this.type]
+}
+class DMASimplifier(val addrWidth: Int, val complexLenWidth: Int, val simpleLenWidth: Int, val beatBytes: Int)
+  extends Module {
+  require(complexLenWidth >= simpleLenWidth)
 
-  when (io.in.fire()) {
-    reg := io.in.bits
-    regValid := true.B
-  }
+  val io = IO(new DMASimplifierIO(addrWidth, complexLenWidth, simpleLenWidth))
+
+  val maxSimpleLength = (BigInt(1) << simpleLenWidth) - 1
+  val lengthCnt = RegInit(0.U((complexLenWidth - simpleLenWidth).W))
+  val cycleCnt = RegInit(0.U(addrWidth.W))
+
+  val lastBeat = lengthCnt >= (io.in.bits.length >> simpleLenWidth).asUInt
+  val lastCycle = cycleCnt >= io.in.bits.cycles
+  val last = lastBeat && lastCycle
+
+  val base = io.in.bits.baseAddress + lengthCnt * (beatBytes * (maxSimpleLength + 1)).U
+  val length = Mux(lastBeat, io.in.bits.length - lengthCnt * maxSimpleLength.U, maxSimpleLength.U)
+
+  io.out.bits.baseAddress := base
+  io.out.bits.length := length
+  io.out.bits.fixedAddress := io.in.bits.fixedAddress
+
+  io.in.ready := last
   when (io.out.fire()) {
-    reg.cycles := dmaReq.cycles - 1.U
-    regValid := !lastCount
+    lengthCnt := Mux(lastBeat, 0.U, lengthCnt + 1.U)
+    cycleCnt := Mux(lastBeat, cycleCnt + 1.U, cycleCnt)
   }
-  io.in.ready := io.out.ready && !regValid
-  io.out.valid := regValid || lastCount
-  io.out.bits := dmaReq
+  when (io.in.fire()) {
+    lengthCnt := 0.U
+    cycleCnt := 0.U
+  }
+  io.out.valid := io.in.valid
 }
 
 /**
@@ -109,6 +142,7 @@ class StreamingAXI4DMA
     val lenWidth: Int = axiP.bundle.lenBits
     val beatLength: Int = 1 << lenWidth
     val dataWidth: Int = axiP.bundle.dataBits
+    val beatBytes = dataWidth >> 3
 
     val enable = IO(Input(Bool()))
     // val softReset = IO(Input(Bool()))
@@ -134,7 +168,8 @@ class StreamingAXI4DMA
     val streamToMemQueueCount = IO(Output(UInt()))
     streamToMemQueueCount := streamToMemQueue.io.count
 
-    val streamToMemCounter = Module(new DMACounter(addrWidth = addrWidth, lenWidth = lenWidth))
+    val streamToMemCounter = Module(
+      new DMASimplifier(addrWidth = addrWidth, complexLenWidth = addrWidth, simpleLenWidth = lenWidth, beatBytes = beatBytes))
     streamToMemCounter.io.in <> streamToMemQueue.io.deq
 
     val memToStreamRequest = IO(Flipped(Decoupled(
@@ -148,14 +183,15 @@ class StreamingAXI4DMA
     val memToStreamQueueCount = IO(Output(UInt()))
     memToStreamQueueCount := memToStreamQueue.io.count
 
-    val memToStreamCounter = Module(new DMACounter(addrWidth = addrWidth, lenWidth = lenWidth))
+    val memToStreamCounter = Module(
+      new DMASimplifier(addrWidth = addrWidth, complexLenWidth = addrWidth, simpleLenWidth = lenWidth, beatBytes = beatBytes))
     memToStreamCounter.io.in <> memToStreamQueue.io.deq
 
     val reading = RegInit(false.B)
     val writing = RegInit(false.B)
 
-    val readDescriptor = Reg(DMARequest(addrWidth = addrWidth, lenWidth = lenWidth))
-    val writeDescriptor = Reg(DMARequest(addrWidth = addrWidth, lenWidth = lenWidth))
+    val readDescriptor = Reg(SimpleDMARequest(addrWidth = addrWidth, lenWidth = lenWidth))
+    val writeDescriptor = Reg(SimpleDMARequest(addrWidth = addrWidth, lenWidth = lenWidth))
 
     val readBeatCounter = Reg(UInt(lenWidth.W))
     val writeBeatCounter = Reg(UInt(lenWidth.W))
@@ -204,14 +240,12 @@ class StreamingAXI4DMA
       writeWatchdogCounter := writeWatchdogCounter + 1.U
     }
 
-
     val readBuffer = Module(new Queue(chiselTypeOf(axi.r.bits), beatLength))
     readBuffer.io.enq <> axi.r
     readBuffer.io.deq.ready := out.ready
     out.valid := readBuffer.io.deq.valid
     out.bits.data := readBuffer.io.deq.bits.data
     out.bits.strb := ((BigInt(1) << out.params.n) - 1).U
-
 
     val readBufferHasSpace = readBuffer.entries.U - readBuffer.io.count > readDescriptor.length
     axi.ar.valid := reading && !readAddrDone && readBufferHasSpace
