@@ -97,7 +97,7 @@ class DMASimplifier(val addrWidth: Int, val complexLenWidth: Int, val simpleLenW
   io.out.bits.length := length
   io.out.bits.fixedAddress := io.in.bits.fixedAddress
 
-  io.in.ready := last
+  io.in.ready := last && io.out.ready
   when (io.out.fire()) {
     lengthCnt := Mux(lastBeat, 0.U, lengthCnt + 1.U)
     cycleCnt := Mux(lastBeat, cycleCnt + 1.U, cycleCnt)
@@ -168,9 +168,9 @@ class StreamingAXI4DMA
     val streamToMemQueueCount = IO(Output(UInt()))
     streamToMemQueueCount := streamToMemQueue.io.count
 
-    val streamToMemCounter = Module(
+    val streamToMemSimple = Module(
       new DMASimplifier(addrWidth = addrWidth, complexLenWidth = addrWidth, simpleLenWidth = lenWidth, beatBytes = beatBytes))
-    streamToMemCounter.io.in <> streamToMemQueue.io.deq
+    streamToMemSimple.io.in <> streamToMemQueue.io.deq
 
     val memToStreamRequest = IO(Flipped(Decoupled(
       DMARequest(addrWidth = addrWidth, lenWidth = lenWidth)
@@ -183,9 +183,9 @@ class StreamingAXI4DMA
     val memToStreamQueueCount = IO(Output(UInt()))
     memToStreamQueueCount := memToStreamQueue.io.count
 
-    val memToStreamCounter = Module(
+    val memToStreamSimple = Module(
       new DMASimplifier(addrWidth = addrWidth, complexLenWidth = addrWidth, simpleLenWidth = lenWidth, beatBytes = beatBytes))
-    memToStreamCounter.io.in <> memToStreamQueue.io.deq
+    memToStreamSimple.io.in <> memToStreamQueue.io.deq
 
     val reading = RegInit(false.B)
     val writing = RegInit(false.B)
@@ -213,20 +213,20 @@ class StreamingAXI4DMA
     writeWatchdog := writeWatchdogCounter > watchdogInterval
     writeError := false.B
 
-    memToStreamCounter.io.out.ready := !reading && enable
-    when (memToStreamCounter.io.out.fire()) {
+    memToStreamSimple.io.out.ready := !reading && enable
+    when (memToStreamSimple.io.out.fire()) {
       reading := true.B
-      readDescriptor := memToStreamCounter.io.out.bits
+      readDescriptor := memToStreamSimple.io.out.bits
       readBeatCounter := 0.U
       readAddrDone := false.B
       readDataDone := false.B
       readWatchdogCounter := 0.U
     }
 
-    streamToMemCounter.io.out.ready := !writing && enable
-    when (streamToMemCounter.io.out.fire()) {
+    streamToMemSimple.io.out.ready := !writing && enable
+    when (streamToMemSimple.io.out.fire()) {
       writing := true.B
-      writeDescriptor := streamToMemCounter.io.out.bits
+      writeDescriptor := streamToMemSimple.io.out.bits
       writeBeatCounter := 0.U
       writeAddrDone := false.B
       writeDataDone := false.B
