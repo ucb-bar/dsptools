@@ -159,11 +159,11 @@ class StreamingAXI4DMA
     val writeError = IO(Output(Bool()))
 
     val streamToMemRequest = IO(Flipped(Decoupled(
-      DMARequest(addrWidth = addrWidth, lenWidth = lenWidth)
+      DMARequest(addrWidth = addrWidth, lenWidth = addrWidth)
     )))
     val streamToMemLengthRemaining = IO(Output(UInt(lenWidth.W)))
 
-    val streamToMemQueue = Module(new Queue(DMARequest(addrWidth = addrWidth, lenWidth = lenWidth), 8))
+    val streamToMemQueue = Module(new Queue(DMARequest(addrWidth = addrWidth, lenWidth = addrWidth), 8))
     streamToMemQueue.io.enq <> streamToMemRequest
 
     val streamToMemQueueCount = IO(Output(UInt()))
@@ -174,11 +174,11 @@ class StreamingAXI4DMA
     streamToMemSimple.io.in <> streamToMemQueue.io.deq
 
     val memToStreamRequest = IO(Flipped(Decoupled(
-      DMARequest(addrWidth = addrWidth, lenWidth = lenWidth)
+      DMARequest(addrWidth = addrWidth, lenWidth = addrWidth)
     )))
     val memToStreamLengthRemaining = IO(Output(UInt(lenWidth.W)))
 
-    val memToStreamQueue = Module(new Queue(DMARequest(addrWidth = addrWidth, lenWidth = lenWidth), 8))
+    val memToStreamQueue = Module(new Queue(DMARequest(addrWidth = addrWidth, lenWidth = addrWidth), 8))
     memToStreamQueue.io.enq <> memToStreamRequest
 
     val memToStreamQueueCount = IO(Output(UInt()))
@@ -197,14 +197,11 @@ class StreamingAXI4DMA
     val readBeatCounter = Reg(UInt(lenWidth.W))
     val writeBeatCounter = Reg(UInt(lenWidth.W))
 
+    memToStreamLengthRemaining := Mux(reading, readDescriptor.length - readBeatCounter, 0.U)
+    streamToMemLengthRemaining := Mux(writing, writeDescriptor.length - writeBeatCounter, 0.U)
+
     val readWatchdogCounter = RegInit(0.U(64.W))
     val writeWatchdogCounter = RegInit(0.U(64.W))
-
-    val readAddrDone = RegInit(false.B)
-    val writeAddrDone = RegInit(false.B)
-
-    val readDataDone = RegInit(false.B)
-    val writeDataDone = RegInit(false.B)
 
     // Set some defaults
     readComplete := false.B
@@ -214,23 +211,22 @@ class StreamingAXI4DMA
     writeWatchdog := writeWatchdogCounter > watchdogInterval
     writeError := false.B
 
-    memToStreamSimple.io.out.ready := !reading && enable
+    axi.ar.valid := !reading && enable && memToStreamSimple.io.out.valid
+    memToStreamSimple.io.out.ready := !reading && enable && axi.ar.ready
+
     when (memToStreamSimple.io.out.fire()) {
       reading := true.B
       readDescriptor := memToStreamSimple.io.out.bits
       readBeatCounter := 0.U
-      readAddrDone := false.B
-      readDataDone := false.B
       readWatchdogCounter := 0.U
     }
 
-    streamToMemSimple.io.out.ready := !writing && enable
+    axi.aw.valid := !writing && enable && streamToMemSimple.io.out.valid
+    streamToMemSimple.io.out.ready := !writing && enable && axi.aw.ready
     when (streamToMemSimple.io.out.fire()) {
       writing := true.B
       writeDescriptor := streamToMemSimple.io.out.bits
       writeBeatCounter := 0.U
-      writeAddrDone := false.B
-      writeDataDone := false.B
       writeWatchdogCounter := 0.U
     }
 
@@ -248,58 +244,42 @@ class StreamingAXI4DMA
     out.bits.data := readBuffer.io.deq.bits.data
     out.bits.strb := ((BigInt(1) << out.params.n) - 1).U
 
-    val readBufferHasSpace = readBuffer.entries.U - readBuffer.io.count > readDescriptor.length
-    axi.ar.valid := reading && !readAddrDone && readBufferHasSpace
-    when (axi.ar.fire()) {
-      readAddrDone := true.B
-    }
-
-    axi.ar.bits.addr := readDescriptor.baseAddress
-    axi.ar.bits.burst := !readDescriptor.fixedAddress
+    axi.ar.bits.addr := memToStreamSimple.io.out.bits.baseAddress
+    axi.ar.bits.burst := !memToStreamSimple.io.out.bits.fixedAddress
     axi.ar.bits.cache := AXI4Parameters.CACHE_BUFFERABLE
     axi.ar.bits.id := id.start.U
-    axi.ar.bits.len := readDescriptor.length - 1.U
+    axi.ar.bits.len := memToStreamSimple.io.out.bits.length
     axi.ar.bits.lock := 0.U // normal access
     axi.ar.bits.prot := AXI4Parameters.PROT_INSECURE
     axi.ar.bits.size := log2Ceil((dataWidth + 7) / 8).U
 
     when (axi.r.fire()) {
       readBeatCounter := readBeatCounter + 1.U
+      // todo: readDescriptor isn't correct for a single-beat single-cycle transaction (are they possible?)
       when (axi.r.bits.last || readBeatCounter >= readDescriptor.length) {
-        readDataDone := true.B
+        readComplete := true.B
+        reading := false.B
       }
       readError := axi.r.bits.resp =/= AXI4Parameters.RESP_OKAY
     }
-
-    when (readAddrDone && readDataDone) {
-      readComplete := true.B
-      reading := false.B
-      readAddrDone := false.B
-      readDataDone := false.B
-    }
-
     // Stream to AXI write
     val writeBuffer = Module(new Queue(in.bits.cloneType, beatLength))
     writeBuffer.io.enq <> in
     axi.w.bits.data := writeBuffer.io.deq.bits.data
     axi.w.bits.strb := writeBuffer.io.deq.bits.makeStrb
     axi.w.bits.corrupt.foreach(_ := false.B)
-    axi.w.bits.last := writeBeatCounter >= writeDescriptor.length
-    //writeBuffer.io.deq.bits.last // || lastBeat
-    axi.w.valid := writeAddrDone && writeBuffer.io.deq.valid
-    writeBuffer.io.deq.ready := axi.w.ready && writeAddrDone
+    axi.w.bits.last := Mux(axi.aw.fire(), // check if single beat
+      axi.aw.bits.len === 0.U, // if single beat, writeBeatCounter and writeDescriptor won't be set
+      writeBeatCounter >= writeDescriptor.length
+    )
+    axi.w.valid := writing && writeBuffer.io.deq.valid
+    writeBuffer.io.deq.ready := axi.w.ready && writing
 
-    val writeBufferHasEnough = writeBuffer.io.deq.valid && writeBuffer.io.count > writeDescriptor.length
-    axi.aw.valid := writing && !writeAddrDone && writeBufferHasEnough
-    when (axi.aw.fire()) {
-      writeAddrDone := true.B
-    }
-
-    axi.aw.bits.addr := writeDescriptor.baseAddress
-    axi.aw.bits.burst := !writeDescriptor.fixedAddress
+    axi.aw.bits.addr := streamToMemSimple.io.out.bits.baseAddress
+    axi.aw.bits.burst := !streamToMemSimple.io.out.bits.fixedAddress
     axi.aw.bits.cache := AXI4Parameters.CACHE_BUFFERABLE
     axi.aw.bits.id := id.start.U
-    axi.aw.bits.len := writeDescriptor.length - 1.U
+    axi.aw.bits.len := streamToMemSimple.io.out.bits.length
     axi.aw.bits.lock := 0.U // normal access
     axi.aw.bits.prot := AXI4Parameters.PROT_INSECURE
     axi.aw.bits.size := log2Ceil((dataWidth + 7) / 8).U
@@ -307,13 +287,9 @@ class StreamingAXI4DMA
     when (axi.w.fire()) {
       writeBeatCounter := writeBeatCounter + 1.U
       when (axi.w.bits.last) {
-        writeDataDone := true.B
+        writing := false.B
+        writeComplete := true.B
       }
-    }
-
-    when (writeAddrDone && writeDataDone) {
-      writing := false.B
-      writeComplete := true.B
     }
 
     axi.b.ready := true.B
@@ -376,11 +352,11 @@ class StreamingAXI4DMAWithCSR
     val s2mbits = dma.streamToMemRequest.bits
     val m2sbits = dma.memToStreamRequest.bits
     val s2mBaseAddress = RegInit(0.U(s2mbits.addrWidth.W))
-    val s2mLength = RegInit(0.U(s2mbits.lenWidth.W))
+    val s2mLength = RegInit(0.U(s2mbits.addrWidth.W))
     val s2mCycles = RegInit(0.U(s2mbits.addrWidth.W))
     val s2mFixedAddress = RegInit(false.B)
     val m2sBaseAddress = RegInit(0.U(s2mbits.addrWidth.W))
-    val m2sLength = RegInit(0.U(s2mbits.lenWidth.W))
+    val m2sLength = RegInit(0.U(s2mbits.addrWidth.W))
     val m2sCycles = RegInit(0.U(s2mbits.addrWidth.W))
     val m2sFixedAddress = RegInit(false.B)
 
