@@ -1,11 +1,13 @@
 package freechips.rocketchip.amba.axi4
 
 import chisel3.iotesters.PeekPokeTester
-import dspblocks.AXI4StandaloneBlock
+import dspblocks.{AXI4DspBlock, AXI4StandaloneBlock, TLDspBlock, TLStandaloneBlock}
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
-import freechips.rocketchip.diplomacy.{AddressSet, LazyModule}
+import freechips.rocketchip.diplomacy.{AddressSet, LazyModule, LazyModuleImp, LazyModuleImpLike, MixedNode, NodeHandle}
+import freechips.rocketchip.subsystem.{PeripheryBus, PeripheryBusParams}
 import freechips.rocketchip.system.BaseConfig
+import freechips.rocketchip.tilelink.{TLBundleParameters, TLFragmenter, TLIdentityNode, TLToAXI4}
 import org.scalatest.{FlatSpec, Matchers}
 
 class StreamingAXI4DMAWithMemoryTester(dut: StreamingAXI4DMAWithMemory with AXI4StandaloneBlock, silentFail: Boolean = false)
@@ -208,5 +210,41 @@ class StreamingMemorySpec extends FlatSpec with Matchers {
     chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "treadle", "-tivsuv"), () => lazyDut.module) {
       c => new StreamingAXI4DMAWithWithCSRWithScratchpadTester(lazyDut, false)
     } should be (true)
+  }
+
+  it should "elaborate connected to the pbus" in {
+    class WithPBUS extends TLDspBlock {
+      val dma = LazyModule(new StreamingAXI4DMAWithCSRWithScratchpad(
+        csrAddress = AddressSet(0x400, 0xFF),
+        scratchpadAddress = AddressSet(0x0, 0x3FF),
+        beatBytes = 8,
+      ))
+      val pbus = LazyModule(new PeripheryBus(PeripheryBusParams(
+        beatBytes = 16,
+        blockBytes = 16 * 8,
+        atomics = None,
+      )))
+      pbus.toFixedWidthSlave(Some("dma")) {
+        dma.mem.get := AXI4Buffer() := TLToAXI4() := TLFragmenter(8, 8 *8, holdFirstDeny = true)
+      }
+      /**
+        * Diplomatic node for AXI4-Stream interfaces
+        */
+      override val streamNode = dma.streamNode
+      /**
+        * Diplmatic node for memory interface
+        * Some blocks might not need memory mapping, so this is an Option[]
+        */
+      val mem = Some(TLIdentityNode())
+      pbus.inwardNode := mem.get
+
+      override def module = new LazyModuleImp(this) {
+
+      }
+    }
+    val lazyDut = LazyModule(new WithPBUS with TLStandaloneBlock {
+      // override def standaloneParams: TLBundleParameters = super.standaloneParams.copy(dataBits = 128)
+    })
+    chisel3.Driver.execute(Array[String](), () => lazyDut.module)
   }
 }

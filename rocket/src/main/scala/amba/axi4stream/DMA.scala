@@ -136,7 +136,8 @@ class StreamingAXI4DMA
 
     require(inP.bundle.hasData)
     require(!inP.bundle.hasKeep)
-    require(inP.bundle.n * 8 == axiP.bundle.dataBits)
+    require(inP.bundle.n * 8 == axiP.bundle.dataBits,
+      s"Streaming interface was ${inP.bundle.n * 8} bits, axi was ${axiP.bundle.dataBits}")
 
     val addrWidth: Int = axiP.bundle.addrBits
     val lenWidth: Int = axiP.bundle.lenBits
@@ -326,7 +327,6 @@ class StreamingAXI4DMA
         !writing &&
         writeBuffer.io.count === 0.U &&
         readBuffer.io.count === 0.U
-
   }
 }
 
@@ -446,7 +446,8 @@ class StreamingAXI4DMAWithMemory
     executable=executable,
     beatBytes=beatBytes,
     devName = devName,
-    errors = errors
+    errors = errors,
+    cacheable = false,
   )
 
   ram := AXI4Fragmenter() := dma.axiNode
@@ -528,11 +529,14 @@ class StreamingAXI4DMAWithCSRWithScratchpad
   val ramXbar = AXI4Xbar()
   val topXbar = AXI4Xbar()
 
-  ram := AXI4Fragmenter() := ramXbar
-  ramXbar := dma.axiMasterNode
+  // ram := AXI4Fragmenter() := ramXbar
+  ram := ramXbar
+  ramXbar := AXI4Fragmenter() := dma.axiMasterNode
   ramXbar := topXbar
   dma.axiSlaveNode := topXbar
   topXbar := mem.get
 
-  lazy val module = new LazyModuleImp(this)
+  lazy val module = new LazyModuleImp(this) {
+    mem.get.out.foreach { o => o._2.slave.slaves.foreach(s => println(s"${s.name} is ${s.interleavedId}")) }
+  }
 }
