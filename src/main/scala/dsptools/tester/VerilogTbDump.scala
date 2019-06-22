@@ -2,9 +2,10 @@ package dsptools
 
 import chisel3._
 import chisel3.experimental._
-import java.io.{File, FileWriter, BufferedWriter}
+import java.io.{BufferedWriter, File, FileWriter}
 
 import DspTesterUtilities._
+import chisel3.core.ActualDirection
 
 // TODO: Get rid of
 import chisel3.iotesters.TestersCompatibility
@@ -12,7 +13,7 @@ import chisel3.iotesters.TestersCompatibility
 // Note: This will dump as long as genVerilogTb is true (even if you're peeking/poking DspReal)
 trait VerilogTbDump {
 
-  def dut: Module
+  def dut: MultiIOModule
 
   // Used for getting target directory only (set in iotesters.Driver)
   val iotestersOM = chisel3.iotesters.Driver.optionsManager
@@ -23,10 +24,14 @@ trait VerilogTbDump {
   val dsptestersOpt = dsptools.Driver.optionsManager.dspTesterOptions
   val verilogTb = dsptestersOpt.genVerilogTb
 
-  val (inputs, outputs) = TestersCompatibility.getDataNames("io", dut.io) partition {
-    case (dat, name) =>
-      DataMirror.directionOf(dat) == chisel3.core.ActualDirection.Input
-  }
+  val (inputs, outputs) = TestersCompatibility.getModuleNames(dut).filter({
+    case (_, "clock") => false
+    case (_, "reset") => false
+    case _ => true
+  }).partition({
+    case (dat, _) =>
+      DataMirror.directionOf(dat) == ActualDirection.Input
+  })
 
   if (verilogTb) initVerilogTbFile()
   else deleteVerilogTbFile

@@ -433,7 +433,7 @@ class SimpleTBSpec extends FlatSpec with Matchers {
         commonOptions = optionsPassTB.commonOptions.copy(targetDirName = "test_run_dir/io_fix_tb")
       }
       var tbFileLoc: String = ""
-      dsptools.Driver.execute(() => new SimpleIOModule(p.genShortF, p.genLongF, includeR = false, p), 
+      dsptools.Driver.execute(() => new SimpleIOModule(p.genShortF, p.genLongF, includeR = false, p),
           opt) { c => {
         val tester = new PassIOTester(c)
         tbFileLoc = tester.tbFileName
@@ -445,7 +445,7 @@ class SimpleTBSpec extends FlatSpec with Matchers {
       val resourceGoldenModel = getClass.getResourceAsStream("/TBGoldenModel.v")
       val TbGoldenModelTxt = scala.io.Source.fromInputStream(resourceGoldenModel).getLines
       TbGoldenModelTxt.zip(tbTxt) foreach { case (expected, in) =>
-        (expected == in) should be (true)
+        expected should be (in)
       }
     }
   }

@@ -3,20 +3,20 @@
 package dsptools
 
 import breeze.math.Complex
-import dsptools.numbers.{DspComplex, DspReal}
 import chisel3._
-import chisel3.experimental.FixedPoint
+import chisel3.experimental.{FixedPoint, MultiIOModule}
 import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3.iotesters.{PeekPokeTester, Pokeable}
-import scala.util.DynamicVariable
+import dsptools.DspTesterUtilities._
+import dsptools.numbers.{DspComplex, DspReal}
 
-import DspTesterUtilities._
+import scala.util.DynamicVariable
 
 // TODO: Get rid of
 import chisel3.iotesters.TestersCompatibility
 
 //scalastyle:off number.of.methods
-class DspTester[T <: Module](
+class DspTester[+T <: MultiIOModule](
     dut: T,
     base: Int = 16,
     logFile: Option[java.io.File] = None) extends PeekPokeTester(dut, base, logFile) with VerilogTbDump {
