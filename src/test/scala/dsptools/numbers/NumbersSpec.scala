@@ -45,11 +45,12 @@ class NumbersSpec extends FreeSpec with Matchers {
           } should be(true)
         }
         "UInt subtract with overflow type Grow not supported" in {
-          intercept[DspException] {
+          val exception = intercept[Exception] {
             dsptools.Driver.execute(() => new BadUIntSubtractWithGrow2(u(4))) { c =>
               new NumbersEmptyTester(c)
-            } should be(true)
+            }
           }
+          exception.getCause should be(new DspException("OverflowType Grow is not supported for UInt subtraction"))
         }
         "UInt subtract with overflow type Grow not supported cannot be detected without evidence that io is ring" in {
           dsptools.Driver.execute(() => new ShouldBeBadUIntSubtractWithGrow) { c =>
