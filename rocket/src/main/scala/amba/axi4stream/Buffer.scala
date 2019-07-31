@@ -10,7 +10,10 @@ class AXI4StreamBuffer(params: BufferParams) extends LazyModule()(Parameters.emp
   lazy val module = new LazyModuleImp(this) {
     (node.in zip node.out) foreach { case ((in, _), (out, _)) =>
       if (params.isDefined) {
-        out <> Queue.irrevocable(in, params.depth, pipe=params.pipe, flow=params.flow)
+        val queue = Queue.irrevocable(in, params.depth, pipe=params.pipe, flow=params.flow)
+        out.valid := queue.valid
+        out.bits := queue.bits
+        queue.ready := out.ready
       } else {
         out.valid := in.valid
         out.bits := in.bits
