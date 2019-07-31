@@ -100,7 +100,7 @@ object AXI4StreamWidthAdapter {
 
     val regs = Seq.fill(n - 1) { Reg(chiselTypeOf(u)) }
     val cnt = RegInit(0.U(log2Ceil(n).W))
-    when (iv && or) { cnt := cnt +& 1.U }
+    when (iv && or) { cnt := Mux(cnt === (n-1).U, 0.U, cnt +& 1.U) }
 
     for ((r, i) <- regs.zipWithIndex) {
       when (iv && or && cnt === i.U) {
@@ -108,7 +108,7 @@ object AXI4StreamWidthAdapter {
       }
     }
 
-    val adaptedU = regs.foldLeft(u) { case (prev, r) => Cat(prev, r) }
+    val adaptedU = regs.foldRight(u) { case (prev, r) => Cat(r, prev) }
     val adaptedF = cnt === (n - 1).U
 
     (adaptedU, adaptedF, or)
@@ -147,7 +147,7 @@ object AXI4StreamWidthAdapter {
   def oneToNSliceAdapter(n: Int): AdapterFun = (d, iv, or) => {
     require(((d.getWidth + n - 1) / n) * n == d.getWidth, s"width ${d.getWidth} must be divisible by $n")
     val l = d.getWidth / n
-    val slices = VecInit(for (i <- 0 until n) yield {
+    val slices = VecInit(for (i <- n-1 to 0 by -1) yield {
       if (d.getWidth == 0) {
         d
       } else {
@@ -156,7 +156,7 @@ object AXI4StreamWidthAdapter {
     })
 
     val cnt = RegInit(0.U(log2Ceil(n).W))
-    when (iv && or) { cnt := cnt +& 1.U }
+    when (iv && or) { cnt := Mux(cnt === (n-1).U, 0.U, cnt +& 1.U) }
 
     val dOut = slices(cnt)
 
@@ -165,7 +165,7 @@ object AXI4StreamWidthAdapter {
 
   def oneToNLastAdapter(n: Int): AdapterFun = (d, iv, or) => {
     val cnt = RegInit(0.U(log2Ceil(n).W))
-    when (iv && or) { cnt := cnt +& 1.U }
+    when (iv && or) { cnt := Mux(cnt === (n-1).U, 0.U, cnt +& 1.U) }
 
     (d =/= 0.U && cnt === (n - 1).U, iv, cnt === (n - 1).U)
   }
