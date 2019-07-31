@@ -15,7 +15,7 @@ import freechips.rocketchip.tilelink._
 
 import scala.language.existentials
 
-trait AHBBasicBlock extends AHBDspBlock with AHBHasCSR {
+trait AHBSlaveBasicBlock extends AHBSlaveDspBlock with AHBSlaveHasCSR {
   val csrAddress = AddressSet(0x0, 0xff)
   val beatBytes = 8
   override val mem = Some(AHBRegisterNode(address = csrAddress, beatBytes = beatBytes))
@@ -74,7 +74,7 @@ abstract class Passthrough[D, U, EO, EI, B <: Data](val params: PassthroughParam
 
 class AHBPassthrough(params: PassthroughParams)(implicit p: Parameters)
   extends Passthrough[AHBMasterPortParameters, AHBSlavePortParameters, AHBEdgeParameters, AHBEdgeParameters,
-    AHBBundle](params) with AHBBasicBlock
+    AHBSlaveBundle](params) with AHBSlaveBasicBlock
 
 class APBPassthrough(params: PassthroughParams)(implicit p: Parameters)
   extends Passthrough[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters,
@@ -124,8 +124,8 @@ abstract class ByteRotate[D, U, EO, EI, B <: Data]()(implicit p: Parameters) ext
 }
 
 class AHBByteRotate()(implicit  p: Parameters) extends
-  ByteRotate[AHBMasterPortParameters, AHBSlavePortParameters, AHBEdgeParameters, AHBEdgeParameters, AHBBundle]()(p)
-  with AHBBasicBlock
+  ByteRotate[AHBMasterPortParameters, AHBSlavePortParameters, AHBEdgeParameters, AHBEdgeParameters, AHBSlaveBundle]()(p)
+  with AHBSlaveBasicBlock
 
 class APBByteRotate()(implicit  p: Parameters) extends
   ByteRotate[APBMasterPortParameters, APBSlavePortParameters, APBEdgeParameters, APBEdgeParameters, APBBundle]()(p)

@@ -1,6 +1,7 @@
 package chisel3.iotesters
 
 import chisel3._
+import chisel3.experimental.{DataMirror, RawModule}
 
 // Bring out a bunch of private functions
 object TestersCompatibility {
@@ -15,7 +16,10 @@ object TestersCompatibility {
   }
 
   def flatten[T <: Aggregate](d: T): IndexedSeq[Bits] = extractElementBits(d) map { x => x.asInstanceOf[Bits]}
-  
+
+  def getModuleNames(mod: RawModule): Seq[(Element, String)] = {
+    DataMirror.modulePorts(mod).flatMap(p => getDataNames(p._1, p._2))
+  }
   def getDataNames(name: String, data: Data): Seq[(Element, String)] = {
     chisel3.iotesters.getDataNames(name, data)
   }

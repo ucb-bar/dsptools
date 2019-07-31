@@ -34,16 +34,16 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel3" -> "3.2-050719-SNAPSHOT",
-  "chisel-iotesters" -> "1.3-050719-SNAPSHOT",
-  "rocketchip" -> "1.2-050719-SNAPSHOT",
+  "chisel3" -> "3.2-073119-SNAPSHOT",
+  "chisel-iotesters" -> "1.3-073119-SNAPSHOT",
+  "rocketchip" -> "1.2-073119-SNAPSHOT",
 )
 
 name := "dsptools"
 
 val commonSettings = Seq(
   organization := "edu.berkeley.cs",
-  version := "1.2-050719-SNAPSHOT",
+  version := "1.2-073119-SNAPSHOT",
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
   scalaVersion := "2.12.8",

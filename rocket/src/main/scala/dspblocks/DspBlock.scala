@@ -107,7 +107,7 @@ trait TLStandaloneBlock extends StandaloneBlock[
   TLEdgeOut,
   TLEdgeIn,
   TLBundle] {
-  def standaloneParams = TLBundleParameters(addressBits = 64, dataBits = 64, sourceBits = 1, sinkBits = 1, sizeBits = 6, hasBCE = false)
+  def standaloneParams = TLBundleParameters(addressBits = 64, dataBits = 64, sourceBits = 1, sinkBits = 1, sizeBits = 6, hasBCE = false, aUserBits = 0, dUserBits = 0)
   val ioMem = mem.map { m => {
     val ioMemNode = BundleBridgeSource(() => TLBundle(standaloneParams))
     m :=
@@ -146,9 +146,9 @@ trait AXI4DspBlockWithBus extends AXI4DspBlock {
   val mem = Some(bus.node)
 }
 
-trait AHBDspBlock extends DspBlock[AHBMasterPortParameters, AHBSlavePortParameters, AHBEdgeParameters, AHBEdgeParameters, AHBBundle]
+trait AHBSlaveDspBlock extends DspBlock[AHBMasterPortParameters, AHBSlavePortParameters, AHBEdgeParameters, AHBEdgeParameters, AHBSlaveBundle]
 
-trait AHBDspBlockWithBus extends AHBDspBlock {
+trait AHBSlaveDspBlockWithBus extends AHBSlaveDspBlock {
   val bus = LazyModule(new AHBFanout)
   val mem = Some(bus.node)
 }
