@@ -108,10 +108,10 @@ object AXI4StreamWidthAdapter {
       }
     }
 
-    val adaptedU = regs.foldRight(u) { case (prev, r) => Cat(r, prev) }
-    val adaptedF = cnt === (n - 1).U
+    val od = regs.foldRight(u) { case (prev, r) => Cat(r, prev) }
+    val ov = cnt === (n - 1).U && iv
 
-    (adaptedU, adaptedF, or)
+    (od, ov, or)
   }
 
   def nToOneOrAdapater(n: Int): AdapterFun = (u, iv, or) => {
@@ -160,14 +160,14 @@ object AXI4StreamWidthAdapter {
 
     val dOut = slices(cnt)
 
-    (dOut, iv, cnt === (n - 1).U)
+    (dOut, iv, cnt === (n - 1).U && or)
   }
 
   def oneToNLastAdapter(n: Int): AdapterFun = (d, iv, or) => {
     val cnt = RegInit(0.U(log2Ceil(n).W))
     when (iv && or) { cnt := Mux(cnt === (n-1).U, 0.U, cnt +& 1.U) }
 
-    (d =/= 0.U && cnt === (n - 1).U, iv, cnt === (n - 1).U)
+    (d =/= 0.U && cnt === (n - 1).U, iv, cnt === (n - 1).U && or)
   }
 
   def oneToN(n: Int): AXI4StreamAdapterNode =
