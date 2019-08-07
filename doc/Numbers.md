@@ -1,72 +1,9 @@
-> Note: Type classes require that you `import dsptools.numbers.implicits._`
-> To support the operations below for DspReal, FixedPoint, SInt, UInt, you want a: T where `[T <: Data:RealBits]`
-> If you want to support IsIntegral operations for SInt + UInt (in addition to the others), you want a: T where `[T <: Data:IntegerBits]`
-> DspReal is *not* synthesizable!
+# Typeclasses supported by UInt, SInt, FixedPoint, DspReal, DspComplex[T]
 
-BIG WARNING: If you want to directly use UInt, SInt, & FixedPoint without passing them through some generic, you **should not** use the Ring operators +, -, *, unary_- *if* you want to use DspContext. Using + on a normal UInt will result in Chisel + behavior (wrapped addition). To guarantee that the Ring operators follow DspContext, after importing implicits, you should instead use:
-* a context_+ b
-* a context_- b
-* a context_* b
-* a.context_unary_- 
-
-We need to come up with better names, but at least this makes it easy to search for context_...
-
-
-# DspContext
-* DspContext allows you to change how certain operations behave via a dynamic variable
-* The DspContext case class contains the following fields:
-  * overflowType (type: OverflowType; default: Grow) specifies overflow behavior for ops like a + b, a - b, -a
-    * Saturate (not implemented)
-    * Wrap: Wrap output on overflow (output has max width of either input)
-    * Grow: Grow bits so your output is numerically correct
-  * trimType (type: TrimType; default: Floor) specifies how Fixed point ops like a * b, a.trimBinary(n), and a.div2(n) should round results
-    * NoTrim: Keep maximal precision + bit growth
-    * Truncate (not implemented)
-    * RoundHalfUp: Assumes binaryPoints are well defined, 
-      * For *, div2: Rounds half up to a.binaryPoint.get.max(b.binaryPoint.get) + DspContext.binaryPointGrowth # of fractional bits -- looks at the result's next bit
-      * For trimBinary: Rounds half up to n fractional bits
-      * **WARNING**: The overflow behavior when you try to round up the largest representable positive FixedPoint value is defined by DspContext.overflowType. It's only guaranteed to be mathematically correct if you grow!
-    * Floor: Rounds towards negative infinity; # of fractional bits is the same as in RoundHalfUp case
-    * Caution: Any time a known binary point is expected, you might run into Chisel/Firrtl bugs. Please let us know if you suspect something is wrong.
-  * binaryPointGrowth (type: Int; default: 1)
-    * Use case explained above
-    * Requires that the input binary point is well defined
-  * binaryPoint (type: Option[Int]; default: Some(14))
-    * Specifies the default # of fractional bits when creating FixedPoint literals with something like ConvertableTo[T].fromDouble(3.14)
-  * numBits (type: Option[Int]; default: Some(16), unused)
-  * complexUse4Muls (type: Boolean, default: false)
-    * true: Use 4 real multiplies to perform a complex multiply
-    * false: Use 3 real multiplies to perform a complex multiply
-  * numMulPipes (type: Int; default: 0)
-    * # of pipeline registers to add after a multiply operation between two inputs of type [T <: Data:RealBits]
-    * Note: This only applies to multiplications with [T <: Data:RealBits]; DspComplex multiplication utilizes some combination of this and numAddPipes
-  * numAddPipes (type: Int; default: 0)
-    * # of pipeline registers to add after an add operation between two inputs of type [T <: Data:RealBits]
-* How to Use
-  * You must have `import dsptools._`
-  * You can change the DspContext @ any level (Top, Module, local operations) based off of where you wrap the change i.e. what you surround by `DspContext.with...{ whatever_code_you_want_to_use_this_context }` where { might be found at the top of a module and } might be at the bottom,e tc.
-  * Changing the local +, - overflow behavior (while keeping other options the same; only for the operations inside the braces -- otherwise use defaults)
-    ```
-    val sum = DspContext.withOverflowType(Wrap) { a + b }
-    ```
-  * `val prod = DspContext.withTrimType(RoundHalfUp) { a * b }`
-  * `val prod = DspContext.withBinaryPointGrowth(3) { a * b }`
-  * `val lit = DspContext.withBinaryPoint(8) { ConvertableTo[FixedPoint].fromDouble(3.14) }`
-  * `val prod = DspContext.withComplexUse4Muls(true) { ca * cb }`
-  * `val prod = DspContext.withNumMulPipes(2) { a * b }`
-  * `val sum = DspContext.withNumAddPipes(1) { a + b }`
-  * Change several options locally:
-    ```
-    val prod = DspContext.alter(DspContext.current.copy(trimType = NoTrim, binaryPointGrowth = 3, numMulPipes = 2)) { a * b }
-    ```
-  * Figure out how many pipeline registers are used in a Complex multiply:
-    * `DspContext.current.complexMulDly`
-
-# Operations supported by T of UInt, SInt, FixedPoint, DspReal (or DspComplex[T])
-* Eq Type 
+* Eq Typeclass
   * a === b
   * a =/= b
-* Ring Type
+* Ring Typeclass
   * a + b 
     * Affected by DspContext.overflowType, DspContext.numAddPipes
   * a - b 
@@ -107,7 +44,7 @@ We need to come up with better names, but at least this makes it easy to search 
     * Trims to n fractional bits with rounding specified by DspContext.trimType. Be aware of overflow behavior!
     * DspComplex[T]: Trims both real and imaginary values to the same # of fractional bits (only for FixedPoint T)
 
-# Additional operations supported by T of UInt, SInt, FixedPoint, DspReal
+# Typeclasses supported by UInt, SInt, FixedPoint, DspReal
 * Order Type
   * a < b
   * a <= b
@@ -134,13 +71,13 @@ We need to come up with better names, but at least this makes it easy to search 
   * a.truncate
   * a.isWhole
 
-# Additional operations support by T of UInt, SInt
+# Typeclasses supported by UInt, SInt
 * IsIntegral
   * a % b
   * a.isOdd
   * a.isEven
 
-# Additional (non-synthesizable) operations for DspReal (Not part of type classes)
+# Operations (non-synthesizable) supported by DspReal (not part of a type class)
 * a / b
 * Requires `import dsptools.numbers.RealTrig`
   * Implemented with Verilator default operations
@@ -168,7 +105,7 @@ We need to come up with better names, but at least this makes it easy to search 
     * acosh(a)
     * atanh(a)
 
-# Additional operations for Complex[T] where T is UInt, SInt, FixedPoint, or DspReal
+# Operations for DspComplex[T] where T <: Data : Ring
   * DspComplex.j[T]
     * Creates a DspComplex literal j where the real and imaginary parts are of type T
   * a.mulj()
@@ -181,7 +118,7 @@ We need to come up with better names, but at least this makes it easy to search 
     * Returns the squared norm of a (If a = x + y * i, returns x^2 + y^2)
     * Context behavior goverened by the context behavior of add and multiply operations above (See Ring)
 
-# Special operations supported by T of UInt, SInt, FixedPoint, DspReal for type conversion [ChiselConvertableFrom type class]
+# Operations supported UInt, SInt, FixedPoint, DspReal for type conversion [ChiselConvertableFrom type class]
   * a.intPart()
     * For a = UInts and SInts, just return the number represented as an SInt (with sign bit of 0 for UInt)
     * For a = FixedPoint, DspReal, returns the integer part (truncated) as an SInt
@@ -267,301 +204,6 @@ We need to come up with better names, but at least this makes it easy to search 
   * Elements have the same width as gen
 * Inside an IO Bundle, you should wrap these declarations (or at some higher Aggregate level) as Input or Output i.e. Input(Bool()) or Output(Bool())
 * If you're trying to make a wire of type T that you later assign to, you must use something like Wire(Bool()) or Wire(Vec(n, gen))
-
----
-
-A basic DSP Module + Tester might look like this:
-
-```scala
-package SimpleDsp
-
-// Allows you to use Chisel Module, Bundle, etc.
-import chisel3._
-// Allows you to use FixedPoint
-import chisel3.experimental.FixedPoint
-// If you want to take advantage of type classes >> Data:RealBits (i.e. pass in FixedPoint or DspReal)
-import dsptools.numbers.{RealBits}
-// Required for you to use operators defined via type classes (+ has special Dsp overflow behavior, etc.)
-import dsptools.numbers.implicits._
-// Enables you to set DspContext's for things like overflow behavior, rounding modes, etc.
-import dsptools.DspContext
-// Use DspTester, specify options for testing (i.e. expect tolerances on fixed point, etc.)
-import dsptools.{DspTester, DspTesterOptionsManager, DspTesterOptions}
-// Allows you to modify default Chisel tester behavior (note that DspTester is a special version of Chisel tester)
-import iotesters.TesterOptions
-// Scala unit testing style
-import org.scalatest.{FlatSpec, Matchers}
-
-// IO Bundle. Note that when you parameterize the bundle, you MUST override cloneType.
-// This also creates x, y, z inputs/outputs (direction must be specified at some IO hierarchy level)
-// of the type you specify via gen (must be Data:RealBits = UInt, SInt, FixedPoint, DspReal)
-class SimpleDspIo[T <: Data:RealBits](gen: T) extends Bundle {
-  val x = Input(gen.cloneType)
-  val y = Input(gen.cloneType)
-  val z = Output(gen.cloneType)
-  override def cloneType: this.type = new SimpleDspIo(gen).asInstanceOf[this.type]
-}
-
-// Parameterized Chisel Module; takes in type parameters as explained above
-class SimpleDspModule[T <: Data:RealBits](gen: T, val addPipes: Int) extends Module {
-  // This is how you declare an IO with parameters
-  val io = IO(new SimpleDspIo(gen))
-  // Output will be current x + y addPipes clock cycles later
-  // Note that this relies on the fact that type classes have a special + that
-  // add addPipes # of ShiftRegister after the sum. If you don't wrap the sum in 
-  // DspContext.withNumAddPipes(addPipes), the default # of addPipes is used.
-  DspContext.withNumAddPipes(addPipes) { 
-    io.z := io.x + io.y
-  }
-}
-
-// You create a tester that must extend DspTester to support Dsp type peeks/pokes (with doubles, complex, etc.)
-class SimpleDspModuleTester[T <: Data:RealBits](c: SimpleDspModule[T]) extends DspTester(c) {
-  val x = Seq(-1.1, -0.4, 0.4, 1.1)
-  val z = x map (2 * _)
-  for (i <- 0 until (x.length + c.addPipes)) {
-    val in = x(i % x.length)
-    // Feed in to the x, y inputs
-    poke(c.io.x, in)
-    // Locally (just for the stuff in {}) change console print properties
-    // so that this second peek isn't displayed on the console 
-    // (since the input value is the same as the first peek)
-    updatableDspVerbose.withValue(false) {
-      poke(c.io.y, in)
-    }
-    if (i >= c.addPipes) {
-      // Expect that the z output matches the expected value @ z(i - c.addPipes) to some tolerance
-      // as described below
-      expect(c.io.z, z(i - c.addPipes))
-    }
-    // Step the clock by 1 period
-    step(1)
-  }
-}
-
-// Scala style testing
-class SimpleDspModuleSpec extends FlatSpec with Matchers {
-  
-  // If you don't want to use default tester options, you need to create your own DspTesterOptionsManager
-  val testOptions = new DspTesterOptionsManager {
-    // Customizing Dsp-specific tester features (unspecified options remain @ default values)
-    dspTesterOptions = DspTesterOptions(
-        // # of bits of error tolerance allowed by expect (for FixedPoint, UInt, SInt type classes)
-        fixTolLSBs = 1,
-        // Generate a Verilog testbench to mimic peek/poke testing
-        genVerilogTb = true,
-        // Show all tester interactions with the module (not just failed expects) on the console
-        isVerbose = true)
-    // Customizing Chisel tester features
-    testerOptions = TesterOptions(
-        // If set to true, prints out all nested peeks/pokes (i.e. for FixedPoint or DspReal, would
-        // print out BigInt or base n versions of peeks/pokes -- rather than the proper decimal representation)
-        isVerbose = false,
-        // Default backend uses FirrtlInterpreter. If you want to simulate with the generated Verilog,
-        // you need to switch the backend to Verilator. Note that tests currently need to be dumped in 
-        // different output directories with Verilator; otherwise you run into weird concurrency issues (bug!)...
-        backendName = "verilator")
-    // Override default output directory while maintaining other default settings
-    commonOptions = commonOptions.copy(targetDirName = "test_run_dir/simple_dsp_fix")
-  }
-
-  behavior of "simple dsp module"
-
-  it should "properly add fixed point types" in {
-    // Run the dsp tester by following this style: You need to pass in the Chisel Module [SimpleDspModule] 
-    // to test and your created DspTesterOptionsManager [testOptions]. You must also specify the tester 
-    // [SimpleDspModuleTester] to run with the module. This tester should be something that extends DspTester. 
-    // Note that here, you're testing the module with inputs/outputs of FixedPoint type (Q15.12) 
-    // and 3 registers (for retiming) at the output. You could alternatively use DspReal()
-    // Scala keeps track of which tests pass/fail; the execute method returns true if the test passes. 
-    // Supposedly, Chisel3 testing infrastructure might be overhauled to reduce the amount of boilerplate, 
-    // but this is currently the endorsed way to do things.
-    dsptools.Driver.execute(() => new SimpleDspModule(FixedPoint(16.W, 12.BP), addPipes = 3), testOptions) { c =>
-      new SimpleDspModuleTester(c)
-    } should be (true)
-  }
-
-}
-```
-
-Please read the above code + comments carefully. 
-
-It shows you how to create a parameterized module + IO bundle (API might change again...) with generic type classes to allow you to test your "math" both with real numbers (that result in numerically correct outputs) and fixed point numbers (that allow you to factor in quantization, etc. and are actually synthesizable). Note the need of cloneType for parameterized bundles!
-
-It also demonstrates a simple example of changing the Dsp Context. You can do this locally (per operation), at the module level, or at the top level (simply affected by where you wrap the DspContext.withNumAddPipes(addPipes) {}).
-
-The example also shows you how a tester interacts with the DUT via peek and expect and how to change tester options like expect tolerances. You can change tester options globally via what's passed in to the DspTesterOptionsManager or you can change some of them (for example, display) locally -- just for some portions of the tester operation. 
-
-To run this single test, you can use the command `sbt "testOnly SimpleDsp.SimpleDspModuleSpec"`. Note that `sbt test` runs all tests in *src/test/scala*.
-
----
-
-# Details on DspTesterOptionsManager
-* As in the example above, the DspTesterOptionsManager manages the following category of options listed hierarchically [objectName = caseClass] (Case class files linked):
-  * dspTesterOptions = DspTesterOptions() [file](https://github.com/ucb-bar/dsptools/blob/add_ops/src/main/scala/dsptools/tester/DspTesterOptions.scala)
-  * testerOptions = TesterOptions() [file](https://github.com/ucb-bar/chisel-testers/blob/master/src/main/scala/chisel3/iotesters/TesterOptions.scala)
-  * interpreterOptions = InterpreterOptions() [file](https://github.com/ucb-bar/firrtl-interpreter/blob/master/src/main/scala/firrtl_interpreter/Driver.scala)
-  * chiselOptions = ChiselExecutionOptions() [file](https://github.com/ucb-bar/chisel3/blob/master/src/main/scala/chisel3/ChiselExecutionOptions.scala)
-  * firrtlOptions = FirrtlExecutionOptions() [file](https://github.com/ucb-bar/firrtl/blob/master/src/main/scala/firrtl/ExecutionOptionsManager.scala)
-  * commonOptions = CommonOptions() [file](https://github.com/ucb-bar/firrtl/blob/master/src/main/scala/firrtl/ExecutionOptionsManager.scala)
-    * All XOptionsManager s have this.
-* Default options are used if you don't reassign to the object (var), which is already part of the DspTesterOptionsManager
-* Below, I've listed the options + their defaults that you'll likely change for some of the case classes mentioned above (for the full list of options, look through the linked files). See the example above on how to override defaults.
-  * DspTesterOptions
-    * isVerbose
-      * Default = true
-      * Top-level DspTester verbosity (peek, poke, expect, step, reset prints on console)
-    * fixTolLSBs
-      * Default = 0 (Int)
-      * Expect tolerance in terms of LSBs for FixedPoint, SInt, UInt
-    * realTolDecPts
-      * Default = 8 (Int)
-      * 10^(-realTolDecPts) toerance for expect on DspReal
-    * genVerilogTb
-      * Default = false
-      * Generate Verilog TB (in the target directory and called tb.v) that mirrors Chisel tester's peek/poke/expect/step/reset for use with outside simulators
-    * clkMul
-      * Default = 1 (Int)
-      * clock period in ps = clkMul * tbTimeUnitPs
-    * tbTimeUnitPs
-      * Default = 100 (Int)
-      * Test bench time unit in ps
-    * tbTimePrecisionPs
-      * Default = 10 (Int)
-      * Time precision in ps
-    * initClkPeriods
-      * Default = 5 (Int)
-      * # clock periods for initial reset (for use with TB generation)
-    * inOutDelay
-      * Default = 0.5 (Double) i.e. half a clock period
-      * Input/output delay after which to peek/poke values (some fraction of clkMul)
-      * Note that this # affects whether the TB will pass post-synthesis or post-PR and should match the input/output delay constraints #
-  * TesterOptions
-    * isVerbose
-      * Default = false
-      * Whether to print out sub-peek/poke/expect info onto the console (i.e. for Complex, prints the individual real/imaginary peek or for UInt, print with the default PeekPokeTester representation via displayBase)
-    * displayBase
-      * Default = 10 (Int)
-      * Base to print out sub-peek/poke/expect info (converts raw bits into the specified base)
-    * backendName
-      * Default = "firrtl"
-      * Either "firrtl" for Firrtl-Interpreter or "verilator" for Verilator (preferred) [also supports VCS? untested]
-  * FirrtlExecutionOptions
-    * compilerName
-      * Default = "verilog"
-      * If using the testers, this will be automatically set to "low" with Firrtl-Interpreter and "verilog" with Verilator
-      * If you want to only compile your code without running tests, you can use something like `chisel3.Driver.execute(optionsManager, dut)` where dut is a Chisel Module and optionsManager is of type: *ExecutionOptionsManager with HasChiselExecutionOptions with HasFirrtlOptions*. This optionsManager also has commonOptions.
-      * When only doing compilation, this supports outputting the circuit in "high", "middle", or "low" Firrtl or "verilog".
-    * customTransforms - Seq[Transform]
-      * Default = Empty
-      * See below for an example
-      * Order matters
-    * annotations - List[Annotation]
-      * Default = Empty
-      * See below for an example (tends to go hand in hand with customTransforms + this method is really only for InferReadWrite and ReplSeqMem -- an alternative method is currently being made for more tapeout-y Firrtl transforms)
-  * CommonOptions
-    * targetDirName
-      * If not specified, test outputs will be dumped to test_run_dir, otherwise, outputs will be dumped in specified directory, as in the example above!   
-
-Let's say you create a Chisel Module called CustomMemory (circuit class name) which contains some SeqMem's that you want to replace with black boxes + infer readwrite ports so you can use single-ported SRAMs instead of dual-ported ones if reads are deemed to never occur simultaneously with writes. Two Firrtl transforms can do this for you: ReplSeqMem and InferReadWrite. In order to run these transforms, you'll need to use custom FirrtlExecutionOptions. Note that black box substitution should only occur when compiling (and not testing) the Chisel code, *unless* you provide a black box resource to match the outputted black boxes. Otherwise, Verilator won't be able to find the memory black boxes, and it'll be sad. 
-
-Note: A configuration file to be able to run the ucb-bar vlsi_mem_gen Python script is output with ReplSeqMem. The file name/location is, in this case, vlsi_mem_gen.conf in your top level directory (you need to specify the location as opposed to just the name; this is legacy because "targetDirName" didn't exist when the transform was written)
-
-Your code (either inside a Scala test Spec if you want to run `sbt test` or inside a Scala main function if you want to run `sbt run`) might look something like this:
-
-```
-  val opts = new ExecutionOptionsManager("chisel3") with HasChiselExecutionOptions with HasFirrtlOptions {
-    firrtlOptions = FirrtlExecutionOptions(
-      compilerName = "verilog",
-      customTransforms = Seq(
-        new passes.memlib.InferReadWrite(),
-        new passes.memlib.ReplSeqMem()),
-      annotations = List(
-        passes.memlib.InferReadWriteAnnotation("CustomMemory"),
-        passes.memlib.ReplSeqMemAnnotation(s"-c:CustomMemory:-o:vlsi_mem_gen.conf"))
-    )
-  }
-
-  chisel3.Driver.execute(opts, () => new CustomMemory())
-
-```
-
----
-
-# DspTester Functions
-* step(n)
-  * Step the clock forward by n cycles
-* reset(n)
-  * Hold reset for n clock cycles
-* poke(input, value) -- Input, Value types given below
-  * Bool, Boolean
-  * UInt, Int -- prints width
-  * SInt, Int -- prints width
-  * FixedPoint, Double -- prints Qn.m notation
-  * DspReal, Double
-  * T <: Data:RealBits, Double
-  * DspComplex[T], breeze.math.Complex -- prints a + bi
-* peek(node) -- Node, Output types given below
-  * Bool, Boolean
-  * UInt, Int -- prints width
-  * SInt, Int -- prints width
-  * FixedPoint, Double -- prints Qn.m notation
-  * DspReal, Double
-  * T <: Data:RealBits, Double
-  * DspComplex[T], breeze.math.Complex -- prints a + bi
-* expect(node, expectedValue, message: String) -- Node, expectedValue types given below 
-  * Returns true if node value = expectedValue, otherwise false
-  * message is optional
-  * Prints tolerance
-  * Will always print if the expect failed (regardless of display flag)
-  * Bool, Boolean
-  * UInt, Int -- prints width
-  * SInt, Int -- prints width
-  * FixedPoint, Double -- prints Qn.m
-  * DspReal, Double
-  * T <: Data:RealBits, Double
-  * DspComplex[T], breeze.math.Complex -- prints a + bi
-
-# Other Tester Functions (from PeekPokeTester)
-* pokeAt[T <: Bits](memory: Mem[T], value: BigInt, offset: Int)
-  * Updates memory[offset] = value via tester, not valid when a Verilog TB is printed
-  * Not something you should usually use with DspTester, since everything is BigInt bit representation
-* peek(signal: Aggregate): IndexedSeq[BigInt]
-  * Peeks elements of a generic Aggregate (Bundle, Vec) one by one and returns the bit representation as a BigInt
-  * Not something you should usually use with DspTester
-* peekAt[T <: Bits](memory: Mem[T], offset: Int): BigInt
-  * Peeks the value at memory[offset] as a BigInt bit representation
-  * Not something you should usually use with DspTester
-* expect(pass: Boolean, message: String)
-  * Prints PASS if pass is true, otherwise FAIL, along with message
-
-Example console printout:
-
-```
-STEP 5x -> 16
-  POKE SimpleIOModule.io_i_vU_0 <- 3.0, 8-bit U
-  POKE SimpleIOModule.io_i_vS_0 <- 3.3, 8-bit S
-  POKE SimpleIOModule.io_i_vF_0 <- 3.3, Q3.4
-  PEEK SimpleIOModule.io_o_vU_0 -> 3.0, 8-bit U
-  EXPECT SimpleIOModule.io_o_vU_0 -> 3.0 == E 3.0 PASS, tolerance = 0.0, 8-bit U
-  PEEK SimpleIOModule.io_o_vS_0 -> -3.0, 8-bit S
-  EXPECT SimpleIOModule.io_o_vS_0 -> -3.0 == E -3.0 PASS, tolerance = 0.0, 8-bit S
-  PEEK SimpleIOModule.io_o_vF_0 -> -3.3125, Q3.4
-  EXPECT SimpleIOModule.io_o_vF_0 -> -3.3125 == E -3.3 PASS, tolerance = 0.0625, Q3.4
-```
-
-A couple of the DspTesterOptions can be updated locally within your DspTester by wrapping the region in which the change should apply in much the way DspContext changes were done. Earlier code showed you how to update the verbosity locally. You can locally change the verbosity for debugging. Additionally, you can locally weaken or strengthen expect tolerances if you know certain operations are more prone to quantization error, etc. 
-
-* DspTesterOptions.isVerbose
-  * `updatableDspVerbose.withValue(false) { /* code here */ }`
-* TesterOptions.isVerbose
-  * `updatableSubVerbose.withValue(true) { /* code here */ }`
-* TesterOptions.displayBase
- * `updatableBase.withValue(2) { /* code here */ }`
-* DspTesterOptions.fixTolLSBs
- * `fixTolLSBs.withValue(3) { /* code here */ }`
-* DspTesterOptions.realTolDecPts
- * `realTolDecPts.withValue(5) { /* code here */ }`
 
 ---
 

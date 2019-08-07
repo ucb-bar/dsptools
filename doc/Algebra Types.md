@@ -1,32 +1,33 @@
 Abstract Algebra Type Classes ([Spire](https://github.com/non/spire))
 
-Listed here are hierarchically presented type classes and operations associated with them that return Chisel base types (Bool or numbers). These operations can be used in a Chisel DSP design. 
+Listed here are hierarchically presented type classes and operations associated with them that return Chisel base types (Bool or numbers).
 
-> Note that when classes are extended, subclass def's have the most precedence
-
-# Ring (Spire base)
+# `Ring` (based on `Ring` from Spire)
 * plus (+)
 * minus (-)
-* negate (unary -)
+* negate (unary_-)
 * times (*)
 * one
 * zero
+* context_+
+* context_- (binary and unary)
+* context_*
 
-> Note: +, -, negate, * all have associated pipelining amounts [+, -, negate associated with numAddPipes; * associated with numMulPipes set in DspContext]. Additionally, you can control the overflow behavior of +, -, negate via overflowType in DspContext. Finally, for *, you can control binary trim behavior for FixedPoint #'s via trimType and binaryPointGrowth in DspContext.
+> Note: `context_+`, `context_-`, and `context_*` all have associated pipelining amounts [+, -, negate associated with `numAddPipes`; * associated with `numMulPipes` set in `DspContext`]. You can control the overflow behavior of `context_+` and `context_-` via `overflowType` in `DspContext`. Finally, for *, you can control binary trim behavior for `FixedPoint` #'s via `trimType` and `binaryPointGrowth` in `DspContext`.
 
-# Eq
+# `Eq`
 * eqv (===)
 * neqv (=!=)
 
-# PartialOrder extends Eq 
-* *Not practically useful for Chisel base numbers; assumes inputs can be invalid!*
+# `PartialOrder extends Eq `
+* *Not likely to be practically useful for many Chisel designs, but it is part of the hierarchy in Spire*
 * eqv (===)
 * lteqv (<=)
 * lt (<)
 * gteqv (>=)
 * gt (>)
 
-# Order extends PartialOrder
+# `Order extends PartialOrder`
 * eqv (===)
 * gt (>)
 * lt (<)
@@ -35,7 +36,7 @@ Listed here are hierarchically presented type classes and operations associated 
 * min
 * max
 
-# Signed
+# `Signed`
 * abs
 * isSignZero
 * isSignPositive

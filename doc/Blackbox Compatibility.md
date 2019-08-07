@@ -1,6 +1,9 @@
-Black boxes useful functions that operate on "real" number types.
+# Blackbox Compatibility
+A number of operations for `DspReal`s have been implemented via Chisel blackboxes.
+Some operations have equivalents that are synthesizeable- these are useful for testing `FixedPoint` designs with better finite precision effects.
+Some operations do not have synthesizeable equivalents- these are useful for modeling (e.g. an ADC).
 
-# Operations that have FixedPoint (and other Chisel number type) equivalents
+## Operations that are equivalents for synthesizeable types (e.g. FixedPoint)
 * Add
 * Subtract
 * Multiply
@@ -14,14 +17,14 @@ Black boxes useful functions that operate on "real" number types.
 * Floor
 * Ceil
 
-# Conversion functions between synthesizable Chisel number types + DspReal (use with caution!)
+## Conversion functions between synthesizable Chisel number types + DspReal (non-synthesizeable, use with caution!)
 
 > Note: These are only good for golden model testing. They should *never* be used in your final design. 
 
 * SInt -> Real
 * Real -> SInt
 
-# Non-synthesizable operations that don't have Chisel number type equivalents
+## Non-synthesizable operations that don't have Chisel number type equivalents (with Verilator support)
 
 > Note: These work with Verilator + FIRRTL interpreter, but can't be used with type classes.
 
@@ -31,7 +34,7 @@ Black boxes useful functions that operate on "real" number types.
 * Sqrt
 * Pow
 
-# Non-synthesizable operations 
+## Non-synthesizable operations (no Verilator support)
 
 > These don't have Chisel number type equivalents and work with FIRRTL interpreter. Verilator doesn't support these :( but we built out approximation functions with no guarantees on precision...)
 
