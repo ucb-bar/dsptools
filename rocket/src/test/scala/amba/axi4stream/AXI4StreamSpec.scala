@@ -61,7 +61,7 @@ class AXI4StreamSpec extends FlatSpec with Matchers {
 
     }
 
-    chisel3.iotesters.Driver.execute(Array("-fiwv"), () => new TestModule(inP, outP, func)) {
+    chisel3.iotesters.Driver.execute(Array("-tiwv"), () => new TestModule(inP, outP, func)) {
       c => new TestModuleTester(c)
     } should be(true)
   }
@@ -78,8 +78,61 @@ class AXI4StreamSpec extends FlatSpec with Matchers {
       adapter := in
     }
 
-    chisel3.iotesters.Driver.execute(Array("-fiwv"), () => new TestModule(inP, outP, func)) {
+    chisel3.iotesters.Driver.execute(Array("-tiwv"), () => new TestModule(inP, outP, func)) {
       c => new TestModuleTester(c, expectTranslator = _.map(t => AXI4StreamTransactionExpect(data = Some(t.data & 0xFF))))
     } should be(true)
+  }
+
+  it should "work with one-to-two adapter" in {
+    val inP  = AXI4StreamBundleParameters(n = 2)
+    val outP = AXI4StreamSlaveParameters()
+    def func(in: AXI4StreamMasterNode, x: Parameters) = {
+      implicit val p = Parameters.empty
+      val adapter = AXI4StreamWidthAdapter.oneToN(2)
+      adapter := in
+    }
+    def expectTranslator(ts: Seq[AXI4StreamTransaction]): Seq[AXI4StreamTransactionExpect] = {
+      ts.flatMap({ case t => Seq((t.data >> 0) & 0xFF, (t.data >> 8) & 0xFF) })
+        .map(t => AXI4StreamTransactionExpect(data = Some(t)))
+    }
+    chisel3.iotesters.Driver.execute(Array("-tiwv"), () => new TestModule(inP, outP, func)) {
+      c => new TestModuleTester(c, expectTranslator = expectTranslator)
+    } should be(true)
+  }
+
+  it should "work with two-to-one adapter" in {
+    val inP  = AXI4StreamBundleParameters(n = 2)
+    val outP = AXI4StreamSlaveParameters()
+    def func(in: AXI4StreamMasterNode, x: Parameters) = {
+      implicit val p = Parameters.empty
+      val adapter = AXI4StreamWidthAdapter.nToOne(2)
+      adapter := in
+    }
+    def expectTranslator(ts: Seq[AXI4StreamTransaction]): Seq[AXI4StreamTransactionExpect] = {
+      ts.map(_.data & 0xFFFF).grouped(2).map({ case l :: r :: Nil =>
+        AXI4StreamTransactionExpect(data = Some((r << 16) | l))
+      }).toSeq
+    }
+    chisel3.iotesters.Driver.execute(Array("-tiwv"), () => new TestModule(inP, outP, func)) {
+      c => new TestModuleTester(c, expectTranslator = expectTranslator)
+    } should be(true)
+  }
+
+  for (i <- 2 until 10) {
+    it should s"work with one-to-$i to $i-to-one adapters back to back" in {
+      val inP  = AXI4StreamBundleParameters(n = 2)
+      val outP = AXI4StreamSlaveParameters()
+      def func(in: AXI4StreamMasterNode, x: Parameters) = {
+        implicit val p = Parameters.empty
+        AXI4StreamWidthAdapter.oneToN(i) := AXI4StreamBuffer() := AXI4StreamWidthAdapter.nToOne(i) := in
+      }
+      def expectTranslator(ts: Seq[AXI4StreamTransaction]): Seq[AXI4StreamTransactionExpect] = {
+        ts.map(t => AXI4StreamTransactionExpect(data = Some(t.data & 0xFFFF)))
+      }
+      chisel3.iotesters.Driver.execute(Array("-tiwv"), () => new TestModule(inP, outP, func)) {
+        c => new TestModuleTester(c, expectTranslator = expectTranslator)
+      } should be(true)
+
+    }
   }
 }

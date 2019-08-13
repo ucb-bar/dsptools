@@ -373,23 +373,23 @@ class StreamingAXI4DMAWithCSR
     axiSlaveNode.regmap(
       axiSlaveNode.beatBytes * 0 -> Seq(RegField(1, enReg)),
       axiSlaveNode.beatBytes * 1 -> Seq(RegField.r(1, dma.idle)),
-      axiSlaveNode.beatBytes * 2 -> Seq(RegField(32, watchdogReg)),
+      axiSlaveNode.beatBytes * 2 -> Seq(RegField(beatBytes * 8, watchdogReg)),
       axiSlaveNode.beatBytes * 3 -> Seq(RegField(6, intReg)),
-      axiSlaveNode.beatBytes * 4 -> Seq(RegField(32, s2mBaseAddress)),
-      axiSlaveNode.beatBytes * 5 -> Seq(RegField(32, s2mLength)),
-      axiSlaveNode.beatBytes * 6 -> Seq(RegField(32, s2mCycles)),
+      axiSlaveNode.beatBytes * 4 -> Seq(RegField(beatBytes * 8, s2mBaseAddress)),
+      axiSlaveNode.beatBytes * 5 -> Seq(RegField(beatBytes * 8, s2mLength)),
+      axiSlaveNode.beatBytes * 6 -> Seq(RegField(beatBytes * 8, s2mCycles)),
       axiSlaveNode.beatBytes * 7 -> Seq(RegField(1, s2mFixedAddress)),
-      axiSlaveNode.beatBytes * 8 -> Seq(RegField(32,
+      axiSlaveNode.beatBytes * 8 -> Seq(RegField(beatBytes * 8,
         dma.streamToMemLengthRemaining,
         RegWriteFn((valid, data) => {
           dma.streamToMemRequest.valid := valid
           dma.streamToMemRequest.ready
         }))),
-      axiSlaveNode.beatBytes * 9  -> Seq(RegField(32, m2sBaseAddress)),
-      axiSlaveNode.beatBytes * 10 -> Seq(RegField(32, m2sLength)),
-      axiSlaveNode.beatBytes * 11 -> Seq(RegField(32, m2sCycles)),
+      axiSlaveNode.beatBytes * 9  -> Seq(RegField(beatBytes * 8, m2sBaseAddress)),
+      axiSlaveNode.beatBytes * 10 -> Seq(RegField(beatBytes * 8, m2sLength)),
+      axiSlaveNode.beatBytes * 11 -> Seq(RegField(beatBytes * 8, m2sCycles)),
       axiSlaveNode.beatBytes * 12 -> Seq(RegField(1, m2sFixedAddress)),
-      axiSlaveNode.beatBytes * 13 -> Seq(RegField(32,
+      axiSlaveNode.beatBytes * 13 -> Seq(RegField(beatBytes * 8,
         dma.memToStreamLengthRemaining,
         RegWriteFn((valid, data) => {
           dma.memToStreamRequest.valid := valid

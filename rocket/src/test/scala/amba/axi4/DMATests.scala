@@ -181,7 +181,7 @@ class DMASimplifierTester(dut: DMASimplifier) extends PeekPokeTester(dut) {
   }
 }
 
-class StreamingMemorySpec extends FlatSpec with Matchers {
+class DmaSpec extends FlatSpec with Matchers {
   implicit val p: Parameters = (new BaseConfig).toInstance
 
   behavior of "DMASimplifier"
@@ -191,7 +191,7 @@ class StreamingMemorySpec extends FlatSpec with Matchers {
     chisel3.iotesters.Driver.execute(Array("-tbn", "treadle"), dut) { c => new DMASimplifierTester(c) } should be (true)
   }
 
-  behavior of "StreamingMemory"
+  behavior of "DMA"
 
   it should "stream in and out of SRAM" in {
     val lazyDut = LazyModule(new StreamingAXI4DMAWithMemory(
@@ -200,7 +200,7 @@ class StreamingMemorySpec extends FlatSpec with Matchers {
     ) with AXI4StandaloneBlock {
       lazy val mem = None
     })
-    chisel3.iotesters.Driver.execute(Array("-fiwv", "-tbn", "treadle", "-tiwv", "-tivsuv"), () => lazyDut.module) {
+    chisel3.iotesters.Driver.execute(Array("-fiwv", "-tbn", "verilator", "-tiwv", "-tivsuv"), () => lazyDut.module) {
       c => new StreamingAXI4DMAWithMemoryTester(lazyDut)
     } should be (true)
   }
@@ -211,7 +211,7 @@ class StreamingMemorySpec extends FlatSpec with Matchers {
       scratchpadAddress = AddressSet(0x0, 0x1FFFF),
       beatBytes = 8,
     ) with AXI4StandaloneBlock)
-    chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "treadle", "-tivsuv"), () => lazyDut.module) {
+    chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv"), () => lazyDut.module) {
       c => new StreamingAXI4DMAWithWithCSRWithScratchpadTester(lazyDut, true)
     } should be (true)
   }
