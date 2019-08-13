@@ -103,7 +103,7 @@ val dsptoolsSettings = Seq(
     "org.typelevel" %% "spire" % "0.14.1",
     "org.scalanlp" %% "breeze" % "0.13.2",
     "junit" % "junit" % "4.12" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+    "org.scalatest" %% "scalatest" % "3.0.8" % "test",
     "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
   ),
 )
