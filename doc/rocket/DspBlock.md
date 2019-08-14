@@ -42,9 +42,46 @@ The trait `HasCSR` can be mixed into `DspBlock` to make the block's memory node 
 An example `DspBlock` called `ByteRotate` is [here](https://github.com/ucb-bar/dsptools/blob/bd5b0912ef0c85226d6d53cf6a07ce43e2a0d959/rocket/src/main/scala/dspblocks/BasicBlocks.scala#L95)- note the call to `regmap()`.
 
 ```
-regmap(
-  0x0 -> Seq(RegField(1 << log2Ceil(nWidth), byteRotate))
-) 
+// D, U, EO, EI are memory interface parameter types
+// B is memory interface bundle type
+abstract class ByteRotate[D, U, EO, EI, B <: Data]()(implicit p: Parameters) extends DspBlock[D, U, EO, EI, B] with HasCSR {
+  // Identity node- input and output are the same
+  val streamNode = AXI4StreamIdentityNode()
+
+  // module is the hardware that gets generated after parameters are resolved
+  lazy val module = new LazyModuleImp(this) {
+    // get bundles for streaming inputs and outputs
+    val (in, _)  = streamNode.in.unzip
+    val (out, _) = streamNode.out.unzip
+    val n = in.head.bits.params.n
+    val nWidth = log2Ceil(n) + 1
+
+    // register to store rotation amount
+    val byteRotate = RegInit(0.U(nWidth.W))
+
+    def rotateBytes(u: UInt, n: Int, rot: Int): UInt = {
+      Cat(u(8*rot-1, 0), u(8*n-1, 8*rot))
+    }
+
+    out.head.valid := in.head.valid
+    in.head.ready  := out.head.ready
+    out.head.bits  := in.head.bits
+
+    for (i <- 1 until n) {
+      when (byteRotate === i.U) {
+        out.head.bits.data := rotateBytes(in.head.bits.data, n, i)
+      }
+    }
+
+    // generate logic for memory interface
+    regmap(
+      // address 0 -> byteRotate register
+      // uses default read and write behavior- can override with RegReadFn and RegWriteFn
+      0x0 -> Seq(RegField(1 << log2Ceil(nWidth), byteRotate))
+    )
+  }
+}
+
 ```
 
 `regmap()` takes a list of pairs (address -> Seq(field)).
@@ -61,4 +98,47 @@ It also defines a `connect` function that describes how the edges in `connection
 The default is to simply do the diplomatic connection on the `streamNode` (`lhs.streamNode := rhs.streamNode`), but it may be desireable to add queues, instrumentation, etc.
 
 One version of a `HierarchicalBlock` is a `Chain`.
-A `Chain` connects blocks sequentially.
+A `Chain` connects blocks sequentially, makes a crossbar, and connects every block with a memory interface to the crossbar.
+Because `Chain`s are themselves `DspBlock`s, `Chain`s can be nested.
+
+## Standalone Blocks
+The point of diplomacy is to enable parameters to be negotiated by different blocks across a design.
+Diplomacy can make unit testing somewhat difficult:
+- Diplomatic nodes are not meant to be top level IOs, but unit tests need the DUT to be top level
+- Sink and/or source nodes are needed to parameterize diplomatic nodes
+
+Preparing a `DspBlock` to be unit tested (especially by chisel-testers `PeekPokeTester`) can be tedious and error-prone, so dsptools includes functionality to automate making `DspBlock` a top-level standalone DUT.
+This is achieved with mixin traits:
+- `StandaloneBlock` is the base trait and creates top level IOs that are connected to AXI4StreamMasterNode and AXI4StreamSlaveNode for the input and output of the `DspBlock`
+- Flavors like `TLStandaloneBlock` and `AXI4StandaloneBlock` specialize to specific memory interfaces
+
+`StandaloneBlock` et. al. should not generally be mixed in with your `DspBlock`'s class.
+
+```
+// DON'T DO THIS!!! (UNLESS YOU'RE POSITIVE IT'S WHAT YOU WANT)
+class MyBlock() extends AXI4DspBlock with AXI4StandaloneBlock { ... }
+```
+
+Instead, you should mixin in your tester, like these truncated examples from [here](https://github.com/ucb-bar/dsptools/blob/master/rocket/src/test/scala/dspblocks/BasicBlockTesters.scala):
+
+```
+abstract class PassthroughTester[D, U, EO, EI, B <: Data](dut: Passthrough[D, U, EO, EI, B] with StandaloneBlock[D, U, EO, EI, B])
+extends PeekPokeTester(dut.module)
+class AXI4PassthroughTester(c: AXI4Passthrough with AXI4StandaloneBlock)
+  extends PassthroughTester(c)
+```
+
+The tester then needs to be invoked with the mixin, [like so](https://github.com/ucb-bar/dsptools/blob/master/rocket/src/test/scala/dspblocks/DspBlockSpec.scala#L15):
+```
+// do the mixin here
+val lazymod = LazyModule(new AXI4Passthrough(params) with AXI4StandaloneBlock)
+val dut = () => lazymod.module
+
+chisel3.iotesters.Driver.execute(Array("-tbn", "firrtl", "-fiwv"), dut) {
+  c => new AXI4PassthroughTester(lazymod)
+} should be (true)
+```
+
+`StandaloneBlock` et. al. work by using Rocketchip's `BundleBridge`s.
+`BundleBridge`s are diplomatic nodes that can contain any kind of bundle and can also be used to punch out IOs.
+Diplomatic converters converter `BundleBridge`s to/from AXI4-Stream, AXI-4, TileLink, etc., and the `BundleBridge` is punched out to IOs.
