@@ -1,6 +1,6 @@
 package freechips.rocketchip.amba.axi4
 
-import chisel3.experimental.MultiIOModule
+import chisel3.MultiIOModule
 import chisel3.iotesters.PeekPokeTester
 import chisel3.util.IrrevocableIO
 import dsptools.tester.MemMasterModel
