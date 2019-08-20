@@ -2,7 +2,7 @@
 
 package freechips.rocketchip.amba.apb
 
-import chisel3.experimental.MultiIOModule
+import chisel3.MultiIOModule
 import dsptools.tester.MemMasterModel
 import freechips.rocketchip.amba.apb._
 
