@@ -203,6 +203,11 @@ class StreamingAXI4DMA
     val readWatchdogCounter = RegInit(0.U(64.W))
     val writeWatchdogCounter = RegInit(0.U(64.W))
 
+    val arprot = IO(Input(UInt(AXI4Parameters.protBits.W)))
+    val awprot = IO(Input(UInt(AXI4Parameters.protBits.W)))
+    val arcache = IO(Input(UInt(AXI4Parameters.cacheBits.W)))
+    val awcache = IO(Input(UInt(AXI4Parameters.cacheBits.W)))
+
     // Set some defaults
     readComplete := false.B
     readWatchdog := readWatchdogCounter > watchdogInterval
@@ -246,11 +251,11 @@ class StreamingAXI4DMA
 
     axi.ar.bits.addr := memToStreamSimple.io.out.bits.baseAddress
     axi.ar.bits.burst := !memToStreamSimple.io.out.bits.fixedAddress
-    axi.ar.bits.cache := AXI4Parameters.CACHE_BUFFERABLE
+    axi.ar.bits.cache := arcache
     axi.ar.bits.id := id.start.U
     axi.ar.bits.len := memToStreamSimple.io.out.bits.length
     axi.ar.bits.lock := 0.U // normal access
-    axi.ar.bits.prot := AXI4Parameters.PROT_INSECURE
+    axi.ar.bits.prot := arprot
     axi.ar.bits.size := log2Ceil((dataWidth + 7) / 8).U
 
     when (axi.r.fire()) {
@@ -277,11 +282,11 @@ class StreamingAXI4DMA
 
     axi.aw.bits.addr := streamToMemSimple.io.out.bits.baseAddress
     axi.aw.bits.burst := !streamToMemSimple.io.out.bits.fixedAddress
-    axi.aw.bits.cache := AXI4Parameters.CACHE_BUFFERABLE
+    axi.aw.bits.cache := awcache
     axi.aw.bits.id := id.start.U
     axi.aw.bits.len := streamToMemSimple.io.out.bits.length
     axi.aw.bits.lock := 0.U // normal access
-    axi.aw.bits.prot := AXI4Parameters.PROT_INSECURE
+    axi.aw.bits.prot := awprot
     axi.aw.bits.size := log2Ceil((dataWidth + 7) / 8).U
 
     when (axi.w.fire()) {
@@ -292,7 +297,7 @@ class StreamingAXI4DMA
       }
     }
 
-    axi.b.ready := true.B
+    axi.b.ready := true.B // should probably monitor responses!
 
     when (axi.b.fire()) {
       writeError := axi.b.bits.resp =/= AXI4Parameters.RESP_OKAY
@@ -370,6 +375,17 @@ class StreamingAXI4DMAWithCSR
     m2sbits.cycles := m2sCycles
     m2sbits.fixedAddress := m2sFixedAddress
 
+    // Defaults are for Xilinx -> HPx interfaces
+    val arprot = RegInit(0.U(AXI4Parameters.protBits.W))
+    val awprot = RegInit(0.U(AXI4Parameters.protBits.W))
+    val arcache = RegInit(AXI4Parameters.CACHE_MODIFIABLE | AXI4Parameters.CACHE_BUFFERABLE)
+    val awcache = RegInit(AXI4Parameters.CACHE_MODIFIABLE | AXI4Parameters.CACHE_BUFFERABLE)
+
+    dma.arprot := arprot
+    dma.awprot := awprot
+    dma.arcache := arcache
+    dma.awcache := awcache
+
     axiSlaveNode.regmap(
       axiSlaveNode.beatBytes * 0 -> Seq(RegField(1, enReg)),
       axiSlaveNode.beatBytes * 1 -> Seq(RegField.r(1, dma.idle)),
@@ -395,6 +411,10 @@ class StreamingAXI4DMAWithCSR
           dma.memToStreamRequest.valid := valid
           dma.memToStreamRequest.ready
         }))),
+      axiSlaveNode.beatBytes * 14 -> Seq(RegField(AXI4Parameters.protBits, arprot)),
+      axiSlaveNode.beatBytes * 15 -> Seq(RegField(AXI4Parameters.protBits, awprot)),
+      axiSlaveNode.beatBytes * 16 -> Seq(RegField(AXI4Parameters.cacheBits, arcache)),
+      axiSlaveNode.beatBytes * 17 -> Seq(RegField(AXI4Parameters.cacheBits, awcache)),
     )
   }
 }
