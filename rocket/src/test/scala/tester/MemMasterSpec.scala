@@ -135,25 +135,22 @@ class MemMasterSpec extends FlatSpec with Matchers {
   it should "work with TileLink" ignore {
     lazy val dut = LazyModule(new TLRegmapExample)
     // use verilog b/c of verilog blackboxes in TileLink things
-    val result = chisel3.iotesters.Driver.execute(Array[String]("-tbn", "verilator"), () => dut.module) { c =>
+    assert(chisel3.iotesters.Driver.execute(Array[String]("-tbn", "verilator"), () => dut.module) { c =>
       new TLRegmapExampleTester(dut)
-    }
-    assert(result === true)
+    })
   }
 
   it should "work with AXI-4" in {
     lazy val dut = LazyModule(new AXI4RegmapExample)
-    val result = chisel3.iotesters.Driver.execute(Array[String](), () => dut.module) { c =>
+    assert(chisel3.iotesters.Driver.execute(Array[String](), () => dut.module) { c =>
       new AXI4RegmapExampleTester(dut)
-    }
-    assert(result === true)
+    })
   }
 
   it should "work with APB" in {
     lazy val dut = LazyModule(new APBRegmapExample)
-    val result = chisel3.iotesters.Driver.execute(Array[String](), () => dut.module) { c =>
+    assert(chisel3.iotesters.Driver.execute(Array[String](), () => dut.module) { c =>
       new APBRegmapExampleTester(dut)
-    }
-    assert(result === true)
+    })
   }
 }
