@@ -3,9 +3,8 @@
 package dsptools
 
 import chisel3._
-import chisel3.experimental.MultiIOModule
 import chisel3.iotesters._
-import firrtl.{ExecutionOptionsManager, HasFirrtlOptions}
+import firrtl.HasFirrtlOptions
 import numbers.{DspRealFactory, TreadleDspRealFactory}
 import firrtl_interpreter._
 import treadle.HasTreadleOptions

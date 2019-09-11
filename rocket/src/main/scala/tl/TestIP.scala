@@ -2,7 +2,7 @@
 
 package freechips.rocketchip.tilelink
 
-import chisel3.experimental.MultiIOModule
+import chisel3.MultiIOModule
 import dsptools.tester.MemMasterModel
 
 object TLMasterModel {
