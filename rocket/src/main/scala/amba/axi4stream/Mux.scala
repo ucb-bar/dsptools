@@ -1,10 +1,9 @@
-package amba.axi4stream
+package freechips.rocketchip.amba.axi4stream
 
 import chisel3._
 import chisel3.util.log2Ceil
 import dspblocks.HasCSR
 import freechips.rocketchip.amba.axi4._
-import freechips.rocketchip.amba.axi4stream.AXI4StreamNexusNode
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.regmapper.{RegField, RegFieldDesc}
@@ -26,14 +25,18 @@ abstract class StreamMux[D, U, EO, EI, B <: Data]() extends LazyModule()(Paramet
     val (out, _) = streamNode.out.head
 
     val selBits = log2Ceil(ins.length)
-    val sel = RegInit(UInt(selBits.W))
+    val sel = RegInit(0.U(selBits.W))
 
-    out <> ins.head
+    out.bits := ins.head.bits
+    out.valid := ins.head.valid
+    ins.head.ready := out.ready
 
     // drop the first input, it's the default
     for ((in, idx) <- ins.tail.zipWithIndex) {
       when (sel === idx.U) {
-        out <> in
+        out.bits := in.bits
+        out.valid := in.valid
+        in.ready := out.ready
       }
     }
 
