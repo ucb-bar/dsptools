@@ -109,9 +109,9 @@ val dsptoolsSettings = Seq(
 
 val rocketSettings = Seq(
     name := "rocket-dsptools",
-    libraryDependencies ++= Seq("chisel3", "chisel-iotesters", "rocketchip").map {
-      dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
-    },
+    libraryDependencies ++= defaultVersions.map { case (dep, version) =>
+      "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", version)
+    }.toSeq,
     Test / parallelExecution := false,
     // rocket-chip currently (3/7/19) doesn't build under 2.11
     crossScalaVersions := Seq("2.12.8"),
