@@ -1,9 +1,8 @@
 package dspblocks
 
 import breeze.stats.distributions.Uniform
-import chisel3.core.Flipped
 import chisel3.iotesters.PeekPokeTester
-import chisel3.{Bundle, Module}
+import chisel3.{Bundle, Flipped, Module}
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters

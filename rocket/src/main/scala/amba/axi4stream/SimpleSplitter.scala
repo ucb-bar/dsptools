@@ -5,7 +5,7 @@ import freechips.rocketchip.amba.axi4stream.{AXI4StreamMasterPortParameters, AXI
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
 
-class SimpleSplitter()(implicit p: Parameters) extends LazyModule {
+class SimpleSplitter() extends LazyModule()(Parameters.empty) {
 
   val node = AXI4StreamNexusNode(
     masterFn = { seq => seq.reduce({ (a: AXI4StreamMasterPortParameters, b: AXI4StreamMasterPortParameters) => AXI4StreamMasterPortParameters(a.masterParams.union(b.masterParams))}) },
