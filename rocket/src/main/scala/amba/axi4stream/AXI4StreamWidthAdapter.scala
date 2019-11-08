@@ -1,9 +1,9 @@
 package freechips.rocketchip.amba.axi4stream
 
 import AXI4StreamWidthAdapter._
-import breeze.linalg.{max, min}
+import breeze.linalg.max
 import chisel3._
-import chisel3.core.requireIsHardware
+import chisel3.internal.requireIsHardware
 import chisel3.util.{Cat, log2Ceil}
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy.{LazyModule, LazyModuleImp}
