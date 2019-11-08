@@ -1,4 +1,4 @@
-package amba.axi4stream
+package freechips.rocketchip.amba.axi4stream
 
 import chisel3._
 import freechips.rocketchip.amba.axi4stream.{AXI4StreamMasterPortParameters, AXI4StreamNexusNode, AXI4StreamSlavePortParameters}
