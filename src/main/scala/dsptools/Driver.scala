@@ -33,7 +33,6 @@ object Driver {
       )
       iotesters.Driver.execute(dutGenerator, optionsManager)(testerGen)
     }
-
   }
 
   def execute[T <: MultiIOModule](dutGenerator: () => T,

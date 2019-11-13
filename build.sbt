@@ -35,7 +35,7 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
   "chisel3" -> "3.2-SNAPSHOT",
-  "chisel-iotesters" -> "1.3-SNAPSHOT",
+  "chisel-iotesters" -> "1.4-SNAPSHOT",
   "rocketchip" -> "1.2-SNAPSHOT"
 )
 
