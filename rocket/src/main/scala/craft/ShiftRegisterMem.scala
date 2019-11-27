@@ -17,8 +17,7 @@ object ShiftRegisterMem {
     if (n == 0) {
       in
     } else if (n == 1) {
-      val out = Reg(in.cloneType)
-      out := in
+      val out = RegEnable(in, en)
       out
     //} else if (use_sp_mem && n%2 == 0) { // TODO: this passes the test but doesn't work for all cases
     //  val out = Wire(in.cloneType)
