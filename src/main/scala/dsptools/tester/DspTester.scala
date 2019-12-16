@@ -77,7 +77,7 @@ class DspTester[+T <: MultiIOModule](
   }
 
   // Poke at does not involve external signals -- no VerilogTB print
-  override def pokeAt[TT <: Element : Pokeable](data: Mem[TT], value: BigInt, off: Int): Unit = {
+  override def pokeAt[TT <: Element : Pokeable](data: MemBase[TT], value: BigInt, off: Int): Unit = {
     backend.poke(data, value, Some(off))(logger, dispDsp, dispBase)
   }
 
@@ -109,7 +109,7 @@ class DspTester[+T <: MultiIOModule](
   }
 
   // Peek at does not involve external signals -- no VerilogTB print
-  override def peekAt[TT <: Element : Pokeable](data: Mem[TT], off: Int): BigInt = {
+  override def peekAt[TT <: Element : Pokeable](data: MemBase[TT], off: Int): BigInt = {
     backend.peek(data, Some(off))(logger, dispDsp, dispBase)
   }
 
