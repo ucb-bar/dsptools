@@ -85,15 +85,15 @@ trait MuxInOuts[D, U, EO, EI, B <: Data] {
   def nIn: Int
   def nOut: Int
 
-  val ins: Seq[ModuleValue[AXI4StreamBundle]] = for (_ <- 0 until nIn) yield {
-    val in = BundleBridgeSource(() => AXI4StreamBundle(AXI4StreamBundleParameters(n = 8)))
+  val ins: Seq[ModuleValue[AXI4StreamBundle]] = for (i <- 0 until nIn) yield {
+    implicit val valName = ValName(s"inIOs_$i")
+    val in = BundleBridgeSource[AXI4StreamBundle](() => AXI4StreamBundle(AXI4StreamBundleParameters(n = 8)))
     streamNode :=
       BundleBridgeToAXI4Stream(AXI4StreamMasterPortParameters(AXI4StreamMasterParameters())) :=
       in
     InModuleBody { in.makeIO() }
   }
   val outIOs: Seq[ModuleValue[AXI4StreamBundle]] = for (o <- 0 until nOut) yield {
-    // it's strange to me that this is evidently needed for the outputs but not the inputs...
     implicit val valName = ValName(s"outIOs_$o")
     val out = BundleBridgeSink[AXI4StreamBundle]()
     out :=
