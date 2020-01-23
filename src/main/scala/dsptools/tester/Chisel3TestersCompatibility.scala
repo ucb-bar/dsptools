@@ -1,7 +1,7 @@
 package chisel3.iotesters
 
 import chisel3._
-import chisel3.experimental.{DataMirror, RawModule}
+import chisel3.experimental.DataMirror
 
 // Bring out a bunch of private functions
 object TestersCompatibility {

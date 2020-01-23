@@ -29,7 +29,7 @@ class LoggingSpec extends FreeSpec with Matchers {
           new DutWithLoggingTester(c)
         }
         captor.getOutputAsString should include("error level message")
-        captor.getOutputAsString should not include ("warn level message")
+        captor.getOutputAsString should include("warn level message")
         captor.getOutputAsString should not include ("info level message")
         captor.getOutputAsString should not include ("debug level message")
         captor.getOutputAsString should not include ("trace level message")

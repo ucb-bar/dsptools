@@ -34,8 +34,7 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel3" -> "3.2-SNAPSHOT",
-  "chisel-iotesters" -> "1.3-SNAPSHOT",
+  "chisel-iotesters" -> "1.4-SNAPSHOT",
   "rocketchip" -> "1.2-SNAPSHOT"
 )
 
@@ -43,11 +42,11 @@ name := "dsptools"
 
 val commonSettings = Seq(
   organization := "edu.berkeley.cs",
-  version := "1.2-SNAPSHOT",
+  version := "1.3-SNAPSHOT",
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
-  scalaVersion := "2.12.8",
-  crossScalaVersions := Seq("2.12.8", "2.11.12"),
+  scalaVersion := "2.12.10",
+  crossScalaVersions := Seq("2.12.10", "2.11.12"),
     scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls") ++ scalacOptionsVersion(scalaVersion.value),
   javacOptions ++= javacOptionsVersion(scalaVersion.value),
   pomExtra := (<url>http://chisel.eecs.berkeley.edu/</url>
@@ -110,12 +109,12 @@ val dsptoolsSettings = Seq(
 
 val rocketSettings = Seq(
     name := "rocket-dsptools",
-    libraryDependencies ++= Seq("chisel3", "chisel-iotesters", "rocketchip").map {
-      dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
-    },
+    libraryDependencies ++= defaultVersions.map { case (dep, version) =>
+      "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", version)
+    }.toSeq,
     Test / parallelExecution := false,
     // rocket-chip currently (3/7/19) doesn't build under 2.11
-    crossScalaVersions := Seq("2.12.8"),
+    crossScalaVersions := Seq("2.12.10"),
 )
 
 publishMavenStyle := true

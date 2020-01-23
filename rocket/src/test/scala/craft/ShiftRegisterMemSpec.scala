@@ -35,7 +35,7 @@ class ShiftRegisterMemSpec extends FlatSpec with Matchers {
 
   val testVector: Seq[(Int, Boolean)] = Seq(
     1 -> true,
-    1 -> false,
+    6 -> false,
     2 -> true,
     3 -> true,
     4 -> true,
@@ -66,7 +66,7 @@ class ShiftRegisterMemSpec extends FlatSpec with Matchers {
 
   it should "work with single-ported memories, an enable, and an even shift" in {
     def testMem(in: UInt, en: Bool): UInt = ShiftRegisterMem(in, 6, en)
-    
+
     runTest(testMem _,
       Seq(X, X, X, X, X, X, X, 1, 2, 3, 4, 5, 0)
     )
@@ -76,7 +76,7 @@ class ShiftRegisterMemSpec extends FlatSpec with Matchers {
     def testMem(in: UInt, en: Bool) = ShiftRegisterMem(in, 5)
 
     runTest(testMem _,
-      Seq(X, X, X, X, X, 1, 1, 2, 3, 4, 5, 0, 0)
+      Seq(X, X, X, X, X, 1, 6, 2, 3, 4, 5, 0, 0)
     )
   }
 
@@ -84,7 +84,7 @@ class ShiftRegisterMemSpec extends FlatSpec with Matchers {
     def testMem(in: UInt, en: Bool) = ShiftRegisterMem(in, 6)
 
     runTest(testMem _,
-      Seq(X, X, X, X, X, X, 1, 1, 2, 3, 4, 5, 0)
+      Seq(X, X, X, X, X, X, 1, 6, 2, 3, 4, 5, 0)
     )
   }
 
@@ -98,7 +98,7 @@ class ShiftRegisterMemSpec extends FlatSpec with Matchers {
 
   it should "work with dual-ported memories, an enable, and an even shift" in {
     def testMem(in: UInt, en: Bool): UInt = ShiftRegisterMem(in, 6, en, use_sp_mem = false)
-    
+
     runTest(testMem _,
       Seq(X, X, X, X, X, X, X, 1, 2, 3, 4, 5, 0)
     )
@@ -108,7 +108,7 @@ class ShiftRegisterMemSpec extends FlatSpec with Matchers {
     def testMem(in: UInt, en: Bool) = ShiftRegisterMem(in, 5, use_sp_mem = false)
 
     runTest(testMem _,
-      Seq(X, X, X, X, X, 1, 1, 2, 3, 4, 5, 0, 0)
+      Seq(X, X, X, X, X, 1, 6, 2, 3, 4, 5, 0, 0)
     )
   }
 
@@ -116,7 +116,7 @@ class ShiftRegisterMemSpec extends FlatSpec with Matchers {
     def testMem(in: UInt, en: Bool) = ShiftRegisterMem(in, 6, use_sp_mem = false)
 
     runTest(testMem _,
-      Seq(X, X, X, X, X, X, 1, 1, 2, 3, 4, 5, 0)
+      Seq(X, X, X, X, X, X, 1, 6, 2, 3, 4, 5, 0)
     )
   }
 
@@ -127,11 +127,18 @@ class ShiftRegisterMemSpec extends FlatSpec with Matchers {
 
   }
 
-  it should "work with delay 1" in {
+  it should "work with delay 1, and no enable" in {
     def testMem(in: UInt, en: Bool) = ShiftRegisterMem(in, 1)
 
     runTest(testMem _,
-      Seq(X, 1, 1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 0)
+      Seq(X, 1, 6, 2, 3, 4, 5, 0, 0, 0, 0, 0, 0)
+    )
+  }
+  it should "work with delay 1, and an enable" in {
+    def testMem(in: UInt, en: Bool) = ShiftRegisterMem(in, 1, en)
+
+    runTest(testMem _,
+      Seq(X, 1, 1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 0, 0)
     )
   }
 }

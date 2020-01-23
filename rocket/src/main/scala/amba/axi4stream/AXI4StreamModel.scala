@@ -1,7 +1,7 @@
 package freechips.rocketchip.amba.axi4stream
 
 import breeze.stats.distributions._
-import chisel3.experimental.MultiIOModule
+import chisel3.MultiIOModule
 import chisel3.iotesters.PeekPokeTester
 
 import scala.language.implicitConversions
