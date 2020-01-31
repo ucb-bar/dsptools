@@ -4,7 +4,7 @@ package dsptools.numbers
 
 import chisel3._
 import chisel3.util.{ShiftRegister, Cat}
-import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, NoTrim, Floor, RoundDown, Ceiling, RoundUp, RoundTowardsZero, RoundTowardsInfinity, RoundHalfDown, RoundHalfUp, RoundHalfTowardsZero, RoundHalfTowardsInfinity, Convergent, RoundHalfToEven, Round, RoundHalfToOdd, DspException}
+import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, NoTrim, RoundDown, RoundUp, RoundTowardsZero, RoundTowardsInfinity, RoundHalfDown, RoundHalfUp, RoundHalfTowardsZero, RoundHalfTowardsInfinity, RoundHalfToEven, RoundHalfToOdd, DspException}
 import chisel3.experimental.FixedPoint
 import chisel3.internal.firrtl.KnownBinaryPoint
 import scala.language.implicitConversions
@@ -150,8 +150,8 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
       case None => a
       case Some(b) => context.trimType match {
         case NoTrim => a
-        case Floor | RoundDown => a.setBinaryPoint(b)
-        case Ceiling | RoundUp => {
+        case RoundDown => a.setBinaryPoint(b)
+        case RoundUp => {
           val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
           Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
         }
@@ -181,12 +181,12 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
           val valueForPositiveNum = Mux((a > plus(a.setBinaryPoint(b), addAmt2)), plus(a.setBinaryPoint(b), addAmt1), a.setBinaryPoint(b))
           Mux(isSignNegative(a), plus(a, addAmt2).setBinaryPoint(b), valueForPositiveNum)
         }
-        case Round | RoundHalfTowardsInfinity => {
+        case RoundHalfTowardsInfinity => {
           val roundBp = b + 1
           val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
           Mux(isSignNegative(a) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
         }
-        case Convergent | RoundHalfToEven => {
+        case RoundHalfToEven => {
           require(b > 0, "Binary point of input fixed point number must be larger than zero when trimming")
           val roundBp = b + 1
           val checkIfEvenBp = b - 1

@@ -249,10 +249,10 @@ class TrimTypeDiv2Circuit[T <: Data : Ring : BinaryRepresentation](gen1: T, gen2
 
   val d = 2
   DspContext.withBinaryPointGrowth(0){
-    val regDiv2Floor = RegNext(DspContext.withTrimType(Floor) {
+    val regDiv2Floor = RegNext(DspContext.withTrimType(RoundDown) {
       io.a.div2(d)
     })
-    val regDiv2Ceiling = RegNext(DspContext.withTrimType(Ceiling) {
+    val regDiv2Ceiling = RegNext(DspContext.withTrimType(RoundUp) {
       io.a.div2(d)
     })
     val regDiv2RoundTowardsZero = RegNext(DspContext.withTrimType(RoundTowardsZero) {
@@ -270,10 +270,10 @@ class TrimTypeDiv2Circuit[T <: Data : Ring : BinaryRepresentation](gen1: T, gen2
     val regDiv2RoundHalfTowardsZero = RegNext(DspContext.withTrimType(RoundHalfTowardsZero) {
       io.a.div2(d)
     })
-    val regDiv2Round = RegNext(DspContext.withTrimType(Round) {
+    val regDiv2Round = RegNext(DspContext.withTrimType(RoundHalfTowardsInfinity) {
       io.a.div2(d)
     })
-    val regDiv2Convergent = RegNext(DspContext.withTrimType(Convergent) {
+    val regDiv2Convergent = RegNext(DspContext.withTrimType(RoundHalfToEven) {
       io.a.div2(d)
     })
     val regDiv2RoundHalfToOdd = RegNext(DspContext.withTrimType(RoundHalfToOdd) {

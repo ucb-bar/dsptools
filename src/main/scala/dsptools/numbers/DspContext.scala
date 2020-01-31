@@ -14,25 +14,21 @@ case object Grow extends OverflowType
 abstract class TrimType
 case object Truncate extends TrimType
 case object NoTrim extends TrimType
-case object Floor extends TrimType
 case object RoundDown extends TrimType
-case object Ceiling extends TrimType
 case object RoundUp extends TrimType
 case object RoundTowardsZero extends TrimType
 case object RoundTowardsInfinity extends TrimType
 case object RoundHalfDown extends TrimType
 case object RoundHalfUp extends TrimType
 case object RoundHalfTowardsZero extends TrimType
-case object Round extends TrimType
 case object RoundHalfTowardsInfinity extends TrimType
-case object Convergent extends TrimType
 case object RoundHalfToEven extends TrimType
 case object RoundHalfToOdd extends TrimType
 
 object DspContext {
 
   val defaultOverflowType = Grow
-  val defaultTrimType = Floor
+  val defaultTrimType = RoundDown
   val defaultBinaryPointGrowth = 1
   val defaultBinaryPoint = Some(14)
   val defaultNumBits = Some(16)
