@@ -4,10 +4,9 @@ package dsptools.numbers
 
 import chisel3._
 import chisel3.util.{ShiftRegister, Cat}
-import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floor, NoTrim, DspException}
+import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, NoTrim, RoundDown, RoundUp, RoundTowardsZero, RoundTowardsInfinity, RoundHalfDown, RoundHalfUp, RoundHalfTowardsZero, RoundHalfTowardsInfinity, RoundHalfToEven, RoundHalfToOdd, DspException}
 import chisel3.experimental.FixedPoint
 import chisel3.internal.firrtl.KnownBinaryPoint
-
 import scala.language.implicitConversions
 
 //scalastyle:off method.name
@@ -151,11 +150,55 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
       case None => a
       case Some(b) => context.trimType match {
         case NoTrim => a
-        case Floor => a.setBinaryPoint(b)
+        case RoundDown => a.setBinaryPoint(b)
+        case RoundUp => {
+          val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
+          Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
+        }
+        case RoundTowardsZero => {
+          val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
+          val valueForNegativeNum = Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
+          Mux(isSignNegative(a), valueForNegativeNum, a.setBinaryPoint(b))
+        }
+        case RoundTowardsInfinity => {
+          val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
+          val valueForPositiveNum = Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
+          Mux(isSignNegative(a), a.setBinaryPoint(b), valueForPositiveNum)
+        }
+        case RoundHalfDown => {
+          val addAmt1 = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
+          val addAmt2 = math.pow(2, -(b+1)).F((b+1).BP) // shr(1.0.F((b+1).BP),(b+1))
+          Mux((a > plus(a.setBinaryPoint(b), addAmt2)), plus(a.setBinaryPoint(b), addAmt1), a.setBinaryPoint(b))
+        }
         case RoundHalfUp => {
           val roundBp = b + 1
           val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
           plus(a, addAmt).setBinaryPoint(b)
+        }
+        case RoundHalfTowardsZero => {
+          val addAmt1 = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
+          val addAmt2 = math.pow(2, -(b+1)).F((b+1).BP) // shr(1.0.F((b+1).BP),(b+1))
+          val valueForPositiveNum = Mux((a > plus(a.setBinaryPoint(b), addAmt2)), plus(a.setBinaryPoint(b), addAmt1), a.setBinaryPoint(b))
+          Mux(isSignNegative(a), plus(a, addAmt2).setBinaryPoint(b), valueForPositiveNum)
+        }
+        case RoundHalfTowardsInfinity => {
+          val roundBp = b + 1
+          val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
+          Mux(isSignNegative(a) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
+        }
+        case RoundHalfToEven => {
+          require(b > 0, "Binary point of input fixed point number must be larger than zero when trimming")
+          val roundBp = b + 1
+          val checkIfEvenBp = b - 1
+          val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
+          Mux((a.setBinaryPoint(checkIfEvenBp) === a.setBinaryPoint(b)) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
+        }
+        case RoundHalfToOdd => {
+          require(b > 0, "Binary point of input fixed point number must be larger than zero when trimming")
+          val roundBp = b + 1
+          val checkIfOddBp = b - 1
+          val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
+          Mux((a.setBinaryPoint(checkIfOddBp) =/= a.setBinaryPoint(b)) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
         }
         case _ => throw DspException("Desired trim type not implemented!")
       }
