@@ -2,13 +2,16 @@
 
 package ipxact
 
+import java.io.File
+
 import chisel3._
 import chisel3.iotesters.PeekPokeTester
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
-import freechips.rocketchip.util._
 import freechips.rocketchip.regmapper.{RegField, RegFieldDesc, RegReadFn, RegWriteFn}
+import freechips.rocketchip.util._
+import org.scalatest.{FreeSpec, Matchers}
 
 case class GCDParams(
   width: Int = 32
@@ -46,13 +49,11 @@ class AXI4GCD extends LazyModule()(Parameters.empty) {
 
   val ioMem = InModuleBody { ioMemNode.makeIO() }
 
-
-
   lazy val module = new LazyModuleImp(this) {
     Annotated.addressMapping(ioMem,
       Seq(AddressMapEntry(
         AddressRange(regs.address.base, regs.address.mask),
-        ResourcePermissions(true, true, false, false, false),
+        ResourcePermissions(r = true, w = true, x = false, c = false, a = false),
         Seq("GCD"),
     )))
     Annotated.params(ioMem, ioMem.params)
@@ -68,9 +69,9 @@ class AXI4GCD extends LazyModule()(Parameters.empty) {
       0x0 -> Seq(RegField(4, a, RegFieldDesc(name = "a", desc = "First term in GCD"))),
       0x1 -> Seq(RegField(4, b, RegFieldDesc(name = "b", desc = "Second term in GCD"))),
       0x2 -> Seq(RegField(4,
-        RegReadFn((ivalid: Bool, oready: Bool) => (true.B, true.B, gcd.io.v)),
-        RegWriteFn((ivalid: Bool, oready: Bool, data: UInt) => {
-          gcd.io.e := ivalid && oready
+        RegReadFn((_: Bool, _: Bool) => (true.B, true.B, gcd.io.v)),
+        RegWriteFn((iValid: Bool, oReady: Bool, _: UInt) => {
+          gcd.io.e := iValid && oReady
           (true.B, true.B)
         }),
         RegFieldDesc(name = "enable/valid", desc = "Write to set enable, read to check valid"),
@@ -90,20 +91,25 @@ class AXI4GCD extends LazyModule()(Parameters.empty) {
   }
 }
 
-object BuildAxi4Gcd {
-  def main(args: Array[String]): Unit = {
+class BuildAxi4GcdTest extends FreeSpec with Matchers {
+  "running the properly annotated AXI4GCD should create an IP-XACT XML FILE" in {
+    val targetDir = "test_run_dir/axi4gcd/"
+    val targetFilName = s"$targetDir/AXI4GCD.ipxact.xml"
+
+    val targetFile = new File(targetFilName)
+    if (targetFile.exists()) {
+      targetFile.delete()
+    }
+    targetFile.exists() should be (false)
+
     val dut = LazyModule(new AXI4GCD)
-    // println(chisel3.Driver.emit(() => dut.module))
-//    chisel3.Driver.execute(Array(
-//      "--target-dir", "test_run_dir/axi4gcd/",
-//      "--top-name", "axi4gcd",
-//      "-X", "verilog"
-//    ), () => dut.module)
 
     iotesters.Driver.execute(Array(
-            "--target-dir", "test_run_dir/axi4gcd/",
+            "--target-dir", targetDir,
             "--top-name", "axi4gcd"), () => dut.module) { c =>
       new PeekPokeTester(c) {}
     }
+
+    targetFile.exists() should be (true)
   }
 }
