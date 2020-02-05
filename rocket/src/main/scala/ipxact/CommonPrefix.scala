@@ -6,8 +6,12 @@ import java.lang.System.currentTimeMillis
 import treadle.chronometry.Timer
 
 object CommonPrefix {
-  private val l = List.tabulate(1000000) { i => s"a_b_c_${i}"}
-
+  /** Collection style method to find common prefixes at head of tring
+    *
+    * @param a  string 1
+    * @param b  string 2
+    * @return
+    */
   def findPrefix(a: String, b: String): String = {
     a.zip(b).flatMap { case (a1, b1) => if(a1 == b1) Some(a1) else None }.mkString("")
   }
@@ -24,21 +28,4 @@ object CommonPrefix {
     while(index < length && a(index) == b(index)) { index += 1 }
     a.take(index)
   }
-
-  def main(args: Array[String]): Unit = {
-    val timer = new Timer
-
-    for(i <- 0 until 10) {
-      timer("zip method") {
-        l.tail.foldLeft(l.head) { case (a, b) => findPrefix(a, b) }
-      }
-
-      timer("var method") {
-        l.tail.foldLeft(l.head) { case (a, b) => apply(a, b) }
-      }
-    }
-
-    println(timer.report())
-  }
-
 }
