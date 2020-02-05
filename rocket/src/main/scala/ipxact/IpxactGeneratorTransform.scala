@@ -318,7 +318,7 @@ class IpxactGeneratorTransform extends Transform {
     }
 
     val targetDir = state.annotations.collectFirst {
-      case t: firrtl.stage.TargetDirAnnotation => t.targetDirName
+      case t: firrtl.options.TargetDirAnnotation => t.directory
     }.getOrElse("./")
 
     def doOneModule(moduleName: String, annosForThisModule: AnnotationSeq): Annotation = {
