@@ -6,15 +6,18 @@ import java.io.{File, PrintWriter}
 
 import firrtl.annotations._
 import firrtl.ir._
-import firrtl.{
-  CircuitForm, CircuitState, Driver, ExecutionOptionsManager, HasFirrtlOptions, HighForm, LowForm, Parser, Transform, _
-}
-import freechips.rocketchip.diplomacy.{AddressMapEntry, LazyModule}
+import firrtl.{CircuitForm, CircuitState, LowForm, Transform, _}
+import freechips.rocketchip.diplomacy.AddressMapEntry
 import freechips.rocketchip.util.{AddressMapAnnotation, ParamsAnnotation, RegFieldDescMappingAnnotation}
 import ipxact.IpxactGeneratorTransform.{indent, lineWidth}
 import ipxact.devices.AXI4Device
 
-/**
+object IpxactGeneratorTransform {
+  val lineWidth: Int = 300
+  val indent: Int = 2
+}
+
+  /**
   * This transform builds a xml object from the annotations
   * and firrtl circuit
   */
@@ -381,39 +384,5 @@ class IpxactGeneratorTransform extends Transform {
 
 
     state.copy(annotations = state.annotations ++ ipxactXmlAnnotations)
-  }
-}
-
-object IpxactGeneratorTransform {
-  val lineWidth: Int = 300
-  val indent: Int    =   2
-
-  def main(args: Array[String]): Unit = {
-
-    val optionsManager = new ExecutionOptionsManager("ipxact") with HasFirrtlOptions
-      with chisel3.HasChiselExecutionOptions {
-      commonOptions = commonOptions.copy(targetDirName = "test_run_dir/axi4gcd", topName = "AXI4GCD")
-    }
-
-    val dut = LazyModule(new AXI4GCD())
-    chisel3.Driver.execute(optionsManager, () => dut.module)
-
-    val fileName = optionsManager.getBuildFileName("fir")
-
-    val firrtlSource = io.Source.fromFile(fileName).getLines()
-
-    val firrtl = Parser.parse(firrtlSource)
-
-    val annotations = Driver.getAnnotations(optionsManager)
-
-    val initialCircuitState = CircuitState(firrtl, HighForm, annotations)
-
-    val generator = new IpxactGeneratorTransform
-
-    val finalState = generator.execute(initialCircuitState)
-
-    finalState.annotations.collectFirst { case _: GeneratedIpxactFileNameAnnotation => }.getOrElse(
-      throw new Exception("oops some xml should have been generated")
-    )
   }
 }
