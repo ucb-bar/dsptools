@@ -18,7 +18,7 @@ trait BinaryRepresentation[A <: Data] extends Any {
   // Divide/multiply by 2^n
   def div2(a: A, n: Int): A = shr(a, n)
   def mul2(a: A, n: Int): A = shl(a, n)
-  // Trim to n fractional bits (with DspContext) -- doens't affect DspReal
+  // Trim to n fractional bits (with DspContext) -- doesn't affect DspReal
   def trimBinary(a: A, n: Int): A = trimBinary(a, Some(n))
   def trimBinary(a: A, n: Option[Int]): A 
 }
