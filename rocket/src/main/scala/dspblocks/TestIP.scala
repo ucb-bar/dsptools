@@ -2,7 +2,7 @@ package dspblocks
 
 import breeze.math.Complex
 import chisel3._
-import chisel3.core.FixedPoint
+import chisel3.experimental.FixedPoint
 import chisel3.internal.firrtl.KnownBinaryPoint
 import dsptools._
 import dsptools.numbers._

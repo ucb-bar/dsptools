@@ -227,7 +227,7 @@ class DmaSpec extends FlatSpec with Matchers {
         beatBytes = 16,
         blockBytes = 16 * 8,
         atomics = None,
-      )))
+      ), "pbus"))
       pbus.toFixedWidthSlave(Some("dma")) {
         dma.mem.get := AXI4Buffer() := TLToAXI4() := TLFragmenter(8, 8 *8, holdFirstDeny = true)
       }

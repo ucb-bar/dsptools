@@ -34,20 +34,20 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel3" -> "3.2.2",
-  "chisel-iotesters" -> "1.3.2",
-  "rocketchip" -> "1.2.2",
+  "chisel3" -> "3.2.3",
+  "chisel-iotesters" -> "1.3.3",
+  "rocketchip" -> "1.2.3",
 )
 
 name := "dsptools"
 
 val commonSettings = Seq(
   organization := "edu.berkeley.cs",
-  version := "1.2.2",
+  version := "1.2.3",
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
-  scalaVersion := "2.12.8",
-  crossScalaVersions := Seq("2.12.8", "2.11.12"),
+  scalaVersion := "2.12.10",
+  crossScalaVersions := Seq("2.12.10", "2.11.12"),
     scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls") ++ scalacOptionsVersion(scalaVersion.value),
   javacOptions ++= javacOptionsVersion(scalaVersion.value),
   pomExtra := (<url>http://chisel.eecs.berkeley.edu/</url>
@@ -115,7 +115,7 @@ val rocketSettings = Seq(
     },
     Test / parallelExecution := false,
     // rocket-chip currently (3/7/19) doesn't build under 2.11
-    crossScalaVersions := Seq("2.12.8"),
+    crossScalaVersions := Seq("2.12.10"),
 )
 
 publishMavenStyle := true

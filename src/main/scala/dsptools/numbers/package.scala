@@ -11,4 +11,9 @@ package object numbers extends AllSyntax with AllImpl with spire.syntax.RingSynt
 
   val Multiplicative              = spire.algebra.Multiplicative
 
+  // rounding aliases
+  val Floor                       = RoundDown
+  val Ceiling                     = RoundUp
+  val Convergent                  = RoundHalfToEven
+  val Round                       = RoundHalfTowardsInfinity
 }
