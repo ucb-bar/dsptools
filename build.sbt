@@ -34,15 +34,15 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel-iotesters" -> "1.4-20200205-SNAPSHOT",
-  "rocketchip" -> "1.3-20200205-SNAPSHOT",
+  "chisel-iotesters" -> "1.4-SNAPSHOT",
+  "rocketchip" -> "1.3-SNAPSHOT",
 )
 
 name := "dsptools"
 
 val commonSettings = Seq(
   organization := "edu.berkeley.cs",
-  version := "1.3-20200205-SNAPSHOT",
+  version := "1.3-SNAPSHOT",
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
   scalaVersion := "2.12.10",
@@ -99,11 +99,11 @@ val dsptoolsSettings = Seq(
 // when compiling tests under 2.11.12
 // An explicit dependency on junit seems to alleviate this.
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "spire" % "0.14.1",
-    "org.scalanlp" %% "breeze" % "0.13.2",
-    "junit" % "junit" % "4.12" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.5" % "test",
-    "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
+    "org.typelevel" %% "spire" % "0.16.2",
+    "org.scalanlp" %% "breeze" % "1.0",
+    "junit" % "junit" % "4.13" % "test",
+    "org.scalatest" %% "scalatest" % "3.0.8" % "test",
+    "org.scalacheck" %% "scalacheck" % "1.14.3" % "test"
   ),
 )
 

@@ -4,7 +4,7 @@ package dsptools.numbers
 
 import chisel3._
 import chisel3.util.{ShiftRegister, Cat}
-import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floor, NoTrim, DspException}
+import dsptools.{hasContext, DspContext, NoTrim}
 import chisel3.experimental.FixedPoint
 import chisel3.internal.firrtl.KnownBinaryPoint
 

@@ -114,16 +114,43 @@ class NumbersSpec extends FreeSpec with Matchers {
           } should be(true)
         }
       }
-    }
-    "trimType controls how a * b, a.trimBinary(n) and a.div2(n) should round results" - {
-      "TrimType tests" in {
-        def f(w: Int, b: Int): FixedPoint = FixedPoint(w.W, b.BP)
-        dsptools.Driver.execute(
-          () => new TrimTypeCircuit(f(4, 2), f(10, 5), f(20, 7)),
-          Array("--backend-name", "verilator")
-        ) { c =>
-          new TrimTypeCircuitTester(c)
-        } should be(true)
+      "trim type controls how a * b, a.trimBinary(n) and a.div2(n) should round results" - {
+        "Trim type tests for multiplication" in {
+          dsptools.Driver.execute(
+            () => new TrimTypeMultiplyCircuit(f(6, 2), f(8, 4), f(12, 5)),
+            Array("--backend-name", "firrtl")
+          ) { c =>
+            new TrimTypeMultiplyCircuitTester(c,
+              // a, b, mulF, mulC, mulRTZ, mulRTI, mulRHD, mulRHUp, mulRHTZ, mulRHTI, mulRHTE, mulRHTO, mulNoTrim
+              (1.5, 1.25, 1.75, 2.0, 1.75, 2.0, 1.75, 2.0, 1.75, 2.0, 2.0, 1.75, 1.875),
+              (1.25, 1.25, 1.5, 1.75, 1.5, 1.75, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5625),
+              (0.75, 1.5, 1.0, 1.25, 1.0, 1.25, 1.0, 1.25, 1.0, 1.25, 1.0, 1.25, 1.125),
+              (1.25, 0.75, 0.75, 1.0, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.9375),
+              (-1.5, 1.25, -2.0, -1.75, -1.75, -2.0, -2.0, -1.75, -1.75, -2.0, -2.0, -1.75, -1.875),
+              (-1.25, 1.25, -1.75, -1.5, -1.5, -1.75, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5625),
+              (-0.75, 1.5, -1.25, -1.0, -1.0, -1.25, -1.25, -1.0, -1.0, -1.25, -1.0, -1.25, -1.125),
+              (-1.25, 0.75, -1.0, -0.75, -0.75, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -0.9375)
+            )
+          } should be(true)
+        }
+      "Trim type tests for division" in {
+          dsptools.Driver.execute(
+            () => new TrimTypeDiv2Circuit(f(6, 2), f(8, 4), f(12, 5)),
+            Array("--backend-name", "firrtl")
+          ) { c =>
+            new TrimTypeDiv2CircuitTester(c,
+              // a, divF, divC, divRTZ, divRTI, divRHD, divRHUp, divRHTZ, divRHTI, divRHTE, divRHTO, divNoTrim
+              (1.5, 0.25, 0.5, 0.25, 0.5, 0.25, 0.5, 0.25, 0.5, 0.5, 0.25, 0.375),
+              (1.25, 0.25, 0.5, 0.25, 0.5, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.3125),
+              (0.75, 0.0, 0.25, 0.0, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.1875),
+              (0.5, 0.0, 0.25, 0.0, 0.25, 0.0, 0.25, 0.0, 0.25, 0.0, 0.25, 0.125),
+              (-1.5, -0.5, -0.25, -0.25, -0.5, -0.5, -0.25, -0.25, -0.5, -0.5, -0.25, -0.375),
+              (-1.25, -0.5, -0.25, -0.25, -0.5, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.3125),
+              (-0.75, -0.25, -0.0, -0.0, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.1875),
+              (-0.5, -0.25, -0.0, -0.0, -0.25, -0.25, -0.0, -0.0, -0.25, -0.0, -0.25, -0.125)
+            )
+          } should be(true)
+        }
       }
     }
     "Test for BinaryRepresentation section of Numbers Spec" in {
@@ -138,33 +165,185 @@ class NumbersSpec extends FreeSpec with Matchers {
   }
 }
 
-//scalastyle:off regex
-class TrimTypeCircuitTester[T <: Data : Ring](c: TrimTypeCircuit[T]) extends DspTester(c) {
-  poke(c.io.a, 1.25)
-  poke(c.io.b, 1.25)
-  step(2)
-  println(s"peek ${peek(c.io.multiplyRoundHalfUp)}")
-  println(s"peek ${peek(c.io.multiplyNoTrim)}")
-  println(s"1.25 * 1.25 = ${1.25 * 1.25}")
-}
-
-class TrimTypeCircuit[T <: Data : Ring](gen1: T, gen2: T, gen3: T) extends Module {
+class TrimTypeMultiplyCircuit[T <: Data : Ring](gen1: T, gen2: T, gen3: T) extends Module{
   val io = IO(new Bundle {
     val a = Input(gen1)
     val b = Input(gen1)
+    val multiplyFloor = Output(gen2)
+    val multiplyCeiling = Output(gen2)
+    val multiplyRoundTowardsZero = Output(gen2)
+    val multiplyRoundTowardsInfinity = Output(gen2)
+    val multiplyRoundHalfDown = Output(gen2)
     val multiplyRoundHalfUp = Output(gen2)
+    val multiplyRoundHalfTowardsZero = Output(gen2)
+    val multiplyRound = Output(gen2)
+    val multiplyConvergent = Output(gen2)
+    val multiplyRoundHalfToOdd = Output(gen2)
     val multiplyNoTrim = Output(gen3)
   })
 
-  val regMultiplyRoundHalfUp = RegNext(DspContext.withTrimType(RoundHalfUp) {
-    io.a * io.b
-  })
-  val regMultiplyNoTrim = RegNext(DspContext.withTrimType(NoTrim) {
-    io.a * io.b
+  DspContext.withBinaryPointGrowth(0){
+    val regMultiplyFloor = RegNext(DspContext.withTrimType(Floor) {
+      io.a context_* io.b
+    })
+    val regMultiplyCeiling = RegNext(DspContext.withTrimType(Ceiling) {
+      io.a context_* io.b
+    })
+    val regMultiplyRoundTowardsZero = RegNext(DspContext.withTrimType(RoundTowardsZero) {
+      io.a context_* io.b
+    })
+    val regMultiplyRoundTowardsInfinity = RegNext(DspContext.withTrimType(RoundTowardsInfinity) {
+      io.a context_* io.b
+    })
+    val regMultiplyRoundHalfDown = RegNext(DspContext.withTrimType(RoundHalfDown) {
+      io.a context_* io.b
+    })
+     val regMultiplyRoundHalfUp = RegNext(DspContext.withTrimType(RoundHalfUp) {
+      io.a context_* io.b
+    })
+    val regMultiplyRoundHalfTowardsZero = RegNext(DspContext.withTrimType(RoundHalfTowardsZero) {
+      io.a context_* io.b
+    })
+    val regMultiplyRound = RegNext(DspContext.withTrimType(Round) {
+      io.a context_* io.b
+    })
+    val regMultiplyConvergent = RegNext(DspContext.withTrimType(Convergent) {
+      io.a context_* io.b
+    })
+    val regMultiplyRoundHalfToOdd = RegNext(DspContext.withTrimType(RoundHalfToOdd) {
+      io.a context_* io.b
+    })
+    val regMultiplyNoTrim = RegNext(DspContext.withTrimType(NoTrim) {
+      io.a context_* io.b
+    })
+
+    io.multiplyFloor := regMultiplyFloor
+    io.multiplyCeiling := regMultiplyCeiling
+    io.multiplyRoundTowardsZero := regMultiplyRoundTowardsZero
+    io.multiplyRoundTowardsInfinity := regMultiplyRoundTowardsInfinity
+    io.multiplyRoundHalfDown := regMultiplyRoundHalfDown
+    io.multiplyRoundHalfUp := regMultiplyRoundHalfUp
+    io.multiplyRoundHalfTowardsZero := regMultiplyRoundHalfTowardsZero
+    io.multiplyRound := regMultiplyRound
+    io.multiplyConvergent := regMultiplyConvergent
+    io.multiplyRoundHalfToOdd := regMultiplyRoundHalfToOdd
+    io.multiplyNoTrim := regMultiplyNoTrim
+  }
+}
+
+class TrimTypeDiv2Circuit[T <: Data : Ring : BinaryRepresentation](gen1: T, gen2: T, gen3: T) extends Module{
+  val io = IO(new Bundle {
+    val a = Input(gen1)
+    val div2Floor = Output(gen2)
+    val div2Ceiling = Output(gen2)
+    val div2RoundTowardsZero = Output(gen2)
+    val div2RoundTowardsInfinity = Output(gen2)
+    val div2RoundHalfDown = Output(gen2)
+    val div2RoundHalfUp = Output(gen2)
+    val div2RoundHalfTowardsZero = Output(gen2)
+    val div2Round = Output(gen2)
+    val div2Convergent = Output(gen2)
+    val div2RoundHalfToOdd = Output(gen2)
+    val div2NoTrim = Output(gen3)
   })
 
-  io.multiplyRoundHalfUp := regMultiplyRoundHalfUp
-  io.multiplyNoTrim := regMultiplyNoTrim
+  val d = 2
+  DspContext.withBinaryPointGrowth(0){
+    val regDiv2Floor = RegNext(DspContext.withTrimType(RoundDown) {
+      io.a.div2(d)
+    })
+    val regDiv2Ceiling = RegNext(DspContext.withTrimType(RoundUp) {
+      io.a.div2(d)
+    })
+    val regDiv2RoundTowardsZero = RegNext(DspContext.withTrimType(RoundTowardsZero) {
+      io.a.div2(d)
+    })
+    val regDiv2RoundTowardsInfinity = RegNext(DspContext.withTrimType(RoundTowardsInfinity) {
+      io.a.div2(d)
+    })
+    val regDiv2RoundHalfDown = RegNext(DspContext.withTrimType(RoundHalfDown) {
+      io.a.div2(d)
+    })
+    val regDiv2RoundHalfUp = RegNext(DspContext.withTrimType(RoundHalfUp) {
+      io.a.div2(d)
+    })
+    val regDiv2RoundHalfTowardsZero = RegNext(DspContext.withTrimType(RoundHalfTowardsZero) {
+      io.a.div2(d)
+    })
+    val regDiv2Round = RegNext(DspContext.withTrimType(RoundHalfTowardsInfinity) {
+      io.a.div2(d)
+    })
+    val regDiv2Convergent = RegNext(DspContext.withTrimType(RoundHalfToEven) {
+      io.a.div2(d)
+    })
+    val regDiv2RoundHalfToOdd = RegNext(DspContext.withTrimType(RoundHalfToOdd) {
+      io.a.div2(d)
+    })
+    val regDiv2NoTrim = RegNext(DspContext.withTrimType(NoTrim) {
+      io.a.div2(d)
+    })
+
+    io.div2Floor := regDiv2Floor
+    io.div2Ceiling := regDiv2Ceiling
+    io.div2RoundTowardsZero := regDiv2RoundTowardsZero
+    io.div2RoundTowardsInfinity := regDiv2RoundTowardsInfinity
+    io.div2RoundHalfDown := regDiv2RoundHalfDown
+    io.div2RoundHalfTowardsZero := regDiv2RoundHalfTowardsZero
+    io.div2Round := regDiv2Round
+    io.div2Convergent := regDiv2Convergent
+    io.div2RoundHalfUp := regDiv2RoundHalfUp
+    io.div2RoundHalfToOdd := regDiv2RoundHalfToOdd
+    io.div2NoTrim := regDiv2NoTrim
+  }
+}
+
+class TrimTypeMultiplyCircuitTester[T <: Data : Ring]
+(
+  c: TrimTypeMultiplyCircuit[T],
+  testVectors: (Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double)*
+) extends DspTester(c) {
+  for((a, b, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11) <- testVectors) {
+    poke(c.io.a, a)
+    poke(c.io.b, b)
+
+    step(1)
+
+    expect(c.io.multiplyFloor, m1)
+    expect(c.io.multiplyCeiling, m2)
+    expect(c.io.multiplyRoundTowardsZero, m3)
+    expect(c.io.multiplyRoundTowardsInfinity, m4)
+    expect(c.io.multiplyRoundHalfDown, m5)
+    expect(c.io.multiplyRoundHalfUp, m6)
+    expect(c.io.multiplyRoundHalfTowardsZero, m7)
+    expect(c.io.multiplyRound, m8)
+    expect(c.io.multiplyConvergent, m9)
+    expect(c.io.multiplyRoundHalfToOdd, m10)
+    expect(c.io.multiplyNoTrim, m11)
+  }
+}
+
+class TrimTypeDiv2CircuitTester[T <: Data : Ring : BinaryRepresentation]
+(
+  c: TrimTypeDiv2Circuit[T],
+  testVectors: (Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double, Double)*
+) extends DspTester(c) {
+  for((a, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11) <- testVectors) {
+    poke(c.io.a, a)
+
+    step(1)
+
+    expect(c.io.div2Floor, d1)
+    expect(c.io.div2Ceiling, d2)
+    expect(c.io.div2RoundTowardsZero, d3)
+    expect(c.io.div2RoundTowardsInfinity, d4)
+    expect(c.io.div2RoundHalfDown, d5)
+    expect(c.io.div2RoundHalfUp, d6)
+    expect(c.io.div2RoundHalfTowardsZero, d7)
+    expect(c.io.div2Round, d8)
+    expect(c.io.div2Convergent, d9)
+    expect(c.io.div2RoundHalfToOdd, d10)
+    expect(c.io.div2NoTrim, d11)
+  }
 }
 
 class OverflowTypeCircuitTester[T <: Data : Ring, U <: Data : Ring]
