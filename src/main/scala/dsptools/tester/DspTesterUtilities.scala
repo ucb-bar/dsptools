@@ -3,14 +3,15 @@
 package dsptools
 
 import chisel3._
-import chisel3.experimental.FixedPoint
-import dsptools.numbers.{DspReal, DspComplex}
+import chisel3.experimental.{FixedPoint, Interval}
+import dsptools.numbers.{DspComplex, DspReal}
 import chisel3.internal.InstanceId
 import chisel3.internal.firrtl.KnownBinaryPoint
 
 // TODO: Get rid of
 import chisel3.iotesters.TestersCompatibility
 
+//scalastyle:off cyclomatic.complexity method.length
 object DspTesterUtilities {
  
   // Converts signed Double's to their 2's complement BigInt equivalents (unsigned)
@@ -20,8 +21,11 @@ object DspTesterUtilities {
     val neg = bi < 0
     val neededWidth = bi.bitLength + 1
     require(neededWidth <= totalWidth, "Double -> BigInt width larger than total width allocated!")
-    if (neg) (BigInt(1) << totalWidth) + bi
-    else bi
+    if (neg) {
+      (BigInt(1) << totalWidth) + bi
+    } else {
+      bi
+    }
   }
 
   // Redundant from chisel-testers
@@ -61,7 +65,7 @@ object DspTesterUtilities {
   // Checks if a basic number is signed or unsigned
   def isSigned(e: Data): Boolean = {
     e match {
-      case _: SInt | _: FixedPoint => true
+      case _: SInt | _: FixedPoint | _: Interval => true
       case _: DspReal | _: Bool | _: UInt => false
       // Clock isn't a number, but it's still valid IO (should be treated as a Bool)
       case _: Clock => false
@@ -82,7 +86,7 @@ object DspTesterUtilities {
     val neededLen = if (isSigned(signal)) len + 1 else len
     require(signal.widthOption.nonEmpty, "Cannot check range of node with unknown width!")
     if (neededLen > signal.getWidth) 
-      throw DspException(s"Value is not in node ${getName(signal)} range")
+      throw DspException(s"Value: $value is not in node ${getName(signal)} range")
     if (!isSigned(signal) && value < 0)
       throw DspException("Negative value can't be used with unsigned")
   }
@@ -91,6 +95,11 @@ object DspTesterUtilities {
   def bitInfo(signal: Data): String = signal.widthOption match {
     case Some(width) => {
       signal match {
+        case i: Interval => i.binaryPoint match {
+          // Q integer . fractional bits
+          case KnownBinaryPoint(bp) => s"Q${width - 1 - bp}.$bp"
+          case _ => s"${width}-bit F"
+        }
         case f: FixedPoint => f.binaryPoint match {
           // Q integer . fractional bits
           case KnownBinaryPoint(bp) => s"Q${width - 1 - bp}.$bp"
@@ -114,7 +123,7 @@ object DspTesterUtilities {
   def roundData(data: Data, value: Double): Double = {
     data match {
       case _: SInt | _: UInt => value.round
-      case _: DspReal | _: FixedPoint => value
+      case _: DspReal | _: FixedPoint | _: Interval => value
       case _ => throw DspException("Invalid data type for rounding determination")
     }
   }

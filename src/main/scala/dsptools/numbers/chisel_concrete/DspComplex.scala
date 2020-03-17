@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.experimental.FixedPoint
+import chisel3.experimental.{FixedPoint, Interval}
 import dsptools.DspException
 import implicits._
 import breeze.math.Complex
@@ -77,10 +77,11 @@ class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Bundle {
 
   def underlyingType(dummy: Int = 0): String = {
     real match {
-      case f: FixedPoint => "fixed"
-      case r: DspReal    => "real"
-      case s: SInt       => "SInt"
-      case u: UInt       => "UInt"
+      case _: Interval   => "interval"
+      case _: FixedPoint => "fixed"
+      case _: DspReal    => "real"
+      case _: SInt       => "SInt"
+      case _: UInt       => "UInt"
       case _ => throw DspException(s"DspComplex found unsupported underlying type: ${real.getClass.getName}")
     }
   }
