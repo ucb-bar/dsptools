@@ -25,9 +25,9 @@ import org.scalatest.{FlatSpec, Matchers}
 // This also creates x, y, z inputs/outputs (direction must be specified at some IO hierarchy level)
 // of the type you specify via gen (must be Data:RealBits = UInt, SInt, FixedPoint, DspReal)
 class SimpleDspIo[T <: Data:RealBits](gen: T) extends Bundle {
-  val x = Input(gen.cloneType)
-  val y = Input(gen.cloneType)
-  val z = Output(gen.cloneType)
+  val x = Input(gen)
+  val y = Input(gen)
+  val z = Output(gen)
   override def cloneType: this.type = new SimpleDspIo(gen).asInstanceOf[this.type]
 }
 
@@ -122,4 +122,3 @@ It also demonstrates a simple example of changing the Dsp Context. You can do th
 The example also shows you how a tester interacts with the DUT via peek and expect and how to change tester options like expect tolerances. You can change tester options globally via what's passed in to the DspTesterOptionsManager or you can change some of them (for example, display) locally -- just for some portions of the tester operation. 
 
 To run this single test, you can use the command `sbt "testOnly SimpleDsp.SimpleDspModuleSpec"`. Note that `sbt test` runs all tests in *src/test/scala*.
-
