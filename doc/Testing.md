@@ -2,7 +2,8 @@
 * As in the example above, the DspTesterOptionsManager manages the following category of options listed hierarchically [objectName = caseClass] (Case class files linked):
   * dspTesterOptions = [DspTesterOptions()](https://github.com/ucb-bar/dsptools/blob/add_ops/src/main/scala/dsptools/tester/DspTesterOptions.scala)
   * testerOptions = [TesterOptions()](https://github.com/ucb-bar/chisel-testers/blob/master/src/main/scala/chisel3/iotesters/TesterOptions.scala)
-  * interpreterOptions = [InterpreterOptions()](https://github.com/ucb-bar/firrtl-interpreter/blob/master/src/main/scala/firrtl_interpreter/Driver.scala)
+ * interpreterOptions = [InterpreterOptions()](https://github.com/ucb-bar/firrtl-interpreter/blob/master/src/main/scala/firrtl_interpreter/Driver.scala)
+  * treadleOptions = [TreadleOptions()](https://github.com/freechipsproject/treadle/blob/master/src/main/scala/treadle/Driver.scala)
   * chiselOptions = [ChiselExecutionOptions()](https://github.com/ucb-bar/chisel3/blob/master/src/main/scala/chisel3/ChiselExecutionOptions.scala)
   * firrtlOptions = [FirrtlExecutionOptions()](https://github.com/ucb-bar/firrtl/blob/master/src/main/scala/firrtl/ExecutionOptionsManager.scala)
   * commonOptions = [CommonOptions](https://github.com/ucb-bar/firrtl/blob/master/src/main/scala/firrtl/ExecutionOptionsManager.scala)
@@ -164,4 +165,3 @@ A couple of the DspTesterOptions can be updated locally within your DspTester by
  * `fixTolLSBs.withValue(3) { /* code here */ }`
 * DspTesterOptions.realTolDecPts
  * `realTolDecPts.withValue(5) { /* code here */ }`
-
