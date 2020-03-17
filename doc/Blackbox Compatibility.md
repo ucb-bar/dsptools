@@ -26,7 +26,7 @@ Some operations do not have synthesizeable equivalents- these are useful for mod
 
 ## Non-synthesizable operations that don't have Chisel number type equivalents (with Verilator support)
 
-> Note: These work with Verilator + FIRRTL interpreter, but can't be used with type classes.
+> Note: These work with Verilator or Treadle, but can't be used with type classes.
 
 * Ln
 * Log10
