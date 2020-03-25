@@ -2,5 +2,7 @@
 
 package dsptools
 
-case class DspException(message: String) extends Exception(message) {
+import chisel3.ChiselException
+
+case class DspException(message: String) extends ChiselException(message) {
 }
