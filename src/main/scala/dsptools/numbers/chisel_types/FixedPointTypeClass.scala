@@ -3,10 +3,10 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.util.{Cat, ShiftRegister}
-import dsptools.{DspContext, DspException, Grow, NoTrim, RoundDown, RoundHalfDown, RoundHalfToEven, RoundHalfToOdd, RoundHalfTowardsInfinity, RoundHalfTowardsZero, RoundHalfUp, RoundTowardsInfinity, RoundTowardsZero, RoundUp, Saturate, Wrap, hasContext}
 import chisel3.experimental.{FixedPoint, Interval}
 import chisel3.internal.firrtl.{IntervalRange, KnownBinaryPoint}
+import chisel3.util.ShiftRegister
+import dsptools._
 
 import scala.language.implicitConversions
 

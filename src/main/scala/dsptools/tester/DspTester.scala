@@ -76,9 +76,9 @@ class DspTester[+T <: MultiIOModule](
 
   override def poke[T <: Element : Pokeable](signal: T, value: BigInt): Unit = {
     // bit-level poke is displayed as unsigned
-    val maskeValue = maskedBigInt(value, signal.widthOption.getOrElse(128))
+    val maskedValue = maskedBigInt(value, signal.widthOption.getOrElse(128))
     validRangeTest(signal, value)
-    if (!signal.isLit) backend.poke(signal, maskeValue, None)(logger, dispDsp, dispBase)
+    if (!signal.isLit) backend.poke(signal, maskedValue, None)(logger, dispDsp, dispBase)
     pokePrint(signal, value)
   }
 
