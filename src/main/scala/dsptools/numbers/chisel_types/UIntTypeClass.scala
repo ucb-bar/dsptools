@@ -3,9 +3,10 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.util.{ShiftRegister, Cat}
-import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, DspException}
-import chisel3.experimental.FixedPoint
+import chisel3.util.{Cat, ShiftRegister}
+import dsptools.{DspContext, DspException, Grow, Saturate, Wrap, hasContext}
+import chisel3.experimental.{FixedPoint, Interval}
+import chisel3.internal.firrtl.IntervalRange
 
 import scala.language.implicitConversions
 
@@ -112,6 +113,11 @@ trait ConvertableToUInt extends ConvertableTo[UInt] with hasContext {
 trait ConvertableFromUInt extends ChiselConvertableFrom[UInt] with hasContext {
   // Bit grow by 1, but always positive to maintain correctness
   def intPart(a: UInt): SInt = Cat(false.B, a).asSInt
+
+  // Converts to Interval with 0 fractional bits (second arg only used for DspReal)
+  override def asInterval(a: UInt): Interval = intPart(a).asInterval(IntervalRange(0.BP))
+  def asInterval(a: UInt, proto: Interval): Interval = intPart(a).asInterval(proto.range)
+
   // Converts to FixedPoint with 0 fractional bits (second arg only used for DspReal)
   override def asFixed(a: UInt): FixedPoint = intPart(a).asFixedPoint(0.BP)
   def asFixed(a: UInt, proto: FixedPoint): FixedPoint = asFixed(a)
