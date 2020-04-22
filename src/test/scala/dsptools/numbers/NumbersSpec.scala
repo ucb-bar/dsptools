@@ -44,7 +44,7 @@ class NumbersSpec extends FreeSpec with Matchers {
             )
           } should be(true)
         }
-        "UInt subtract with overflow type Grow not supported" in {
+        "UInt subtract with overflow type Grow not supported" ignore {
           val expectedMessage = "OverflowType Grow is not supported for UInt subtraction"
           val exception = intercept[Exception] {
             dsptools.Driver.execute(() => new BadUIntSubtractWithGrow2(u(4))) { c =>
