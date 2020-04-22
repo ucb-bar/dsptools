@@ -3,9 +3,9 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.util.{ShiftRegister, Cat}
-import dsptools.{hasContext, DspContext, NoTrim}
-import chisel3.experimental.FixedPoint
+import chisel3.util.{Cat, ShiftRegister}
+import dsptools.{DspContext, NoTrim, hasContext}
+import chisel3.experimental.{FixedPoint, Interval}
 import chisel3.internal.firrtl.KnownBinaryPoint
 
 import scala.language.implicitConversions
@@ -93,7 +93,7 @@ trait ConvertableToDspReal extends ConvertableTo[DspReal] with hasContext {
 }
 
 trait ConvertableFromDspReal extends ChiselConvertableFrom[DspReal] with hasContext {
-  // intPart requires truncate, asFixed reequires round
+  // intPart requires truncate, asFixed requires round
   def asReal(a: DspReal): DspReal = a
 }
 
@@ -119,7 +119,7 @@ trait BinaryRepresentationDspReal extends BinaryRepresentation[DspReal] with has
   def trimBinary(a: DspReal, n: Option[Int]): DspReal = a
  }
 
-trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspReal with 
+trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspReal with
     ConvertableFromDspReal with BinaryRepresentationDspReal with RealBits[DspReal] with hasContext {
   def signBit(a: DspReal): Bool = isSignNegative(a)
   override def fromInt(n: Int): DspReal = super[ConvertableToDspReal].fromInt(n)
@@ -136,7 +136,19 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
       round(a * DspReal((1 << bp).toDouble)).toSInt().asFixed.div2(bp)
     }
     out
-  } 
+  }
+
+  def asInterval(a: DspReal, proto: Interval): Interval = {
+    require(proto.binaryPoint.known, "Binary point must be known for DspReal -> Interval")
+    val bp = proto.binaryPoint.get
+    // WARNING: Round half up!
+    val out = Wire(proto.cloneType)
+    out := DspContext.withTrimType(NoTrim) {
+      // round is round half up
+      round(a * DspReal((1 << bp).toDouble)).toSInt().asInterval(proto.range).div2(bp)
+    }
+    out
+  }
 }
 
 trait DspRealImpl  {
