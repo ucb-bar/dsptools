@@ -1,4 +1,7 @@
+// See LICENSE for license details.
+
 package dsptools.numbers.representations
+
 import org.scalatest.{FlatSpec, Matchers}
 
 class BaseNSpec extends FlatSpec with Matchers {
@@ -16,7 +19,7 @@ class BaseNSpec extends FlatSpec with Matchers {
     tests foreach { case BaseNTest(n, rad, res) =>
       require(BaseN.toDigitSeqMSDFirst(n, rad) == res, s"Base $rad conversion should work!")
       val paddedBaseN = BaseN.toDigitSeqMSDFirst(n, rad, 500)
-      require(paddedBaseN == (Seq.fill(paddedBaseN.length - res.length)(0) ++ res), 
+      require(paddedBaseN == (Seq.fill(paddedBaseN.length - res.length)(0) ++ res),
         s"Padded base $rad conversion should work!")
     }
   }

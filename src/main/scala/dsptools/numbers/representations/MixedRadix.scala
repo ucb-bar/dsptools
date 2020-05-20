@@ -1,4 +1,7 @@
+// See LICENSE for license details.
+
 package dsptools.numbers.representations
+
 import org.scalatest.{FlatSpec, Matchers}
 
 class MixedRadixSpec extends FlatSpec with Matchers {
