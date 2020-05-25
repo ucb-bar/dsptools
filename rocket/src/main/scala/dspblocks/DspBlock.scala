@@ -107,7 +107,10 @@ trait TLStandaloneBlock extends StandaloneBlock[
   TLEdgeOut,
   TLEdgeIn,
   TLBundle] {
-  def standaloneParams = TLBundleParameters(addressBits = 64, dataBits = 64, sourceBits = 1, sinkBits = 1, sizeBits = 6, hasBCE = false, aUserBits = 0, dUserBits = 0)
+  def standaloneParams = TLBundleParameters(addressBits = 64, dataBits = 64, sourceBits = 1,
+    sinkBits = 1, sizeBits = 6,
+    echoFields = Seq(), requestFields = Seq(), responseFields = Seq(),
+    hasBCE = false)
   val ioMem = mem.map { m => {
     val ioMemNode = BundleBridgeSource(() => TLBundle(standaloneParams))
     m :=

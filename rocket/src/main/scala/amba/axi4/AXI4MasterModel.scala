@@ -1,37 +1,38 @@
 package freechips.rocketchip.amba.axi4
 
-import chisel3.MultiIOModule
-import chisel3.iotesters.PeekPokeTester
+import chisel3._
+import chisel3.iotesters.{PeekPokeTester, Pokeable}
 import chisel3.util.IrrevocableIO
 import dsptools.tester.MemMasterModel
 import freechips.rocketchip.amba.axi4._
+import freechips.rocketchip.util.BundleMap
 
 object AXI4MasterModel {
   case class AWChannel(
-                        id: BigInt     = 0,
-                        addr: BigInt   = 0,
-                        len: BigInt    = 0,
-                        size: BigInt   = 0,
-                        burst: BigInt  = 0,
-                        lock: BigInt   = 0,
-                        cache: BigInt  = 0,
-                        prot: BigInt   = 0,
-                        qos: BigInt    = 0,
-                        region: BigInt = 0,
-                        user: BigInt   = 0
+                        id: BigInt                = 0,
+                        addr: BigInt              = 0,
+                        len: BigInt               = 0,
+                        size: BigInt              = 0,
+                        burst: BigInt             = 0,
+                        lock: BigInt              = 0,
+                        cache: BigInt             = 0,
+                        prot: BigInt              = 0,
+                        qos: BigInt               = 0,
+                        region: BigInt            = 0,
+                        user: Map[String, BigInt] = Map()
                       )
   case class ARChannel(
-                        id: BigInt     = 0,
-                        addr: BigInt   = 0,
-                        len: BigInt    = 0,
-                        size: BigInt   = 0,
-                        burst: BigInt  = 0,
-                        lock: BigInt   = 0,
-                        cache: BigInt  = 0,
-                        prot: BigInt   = 0,
-                        qos: BigInt    = 0,
-                        region: BigInt = 0,
-                        user: BigInt   = 0
+                        id: BigInt                = 0,
+                        addr: BigInt              = 0,
+                        len: BigInt               = 0,
+                        size: BigInt              = 0,
+                        burst: BigInt             = 0,
+                        lock: BigInt              = 0,
+                        cache: BigInt             = 0,
+                        prot: BigInt              = 0,
+                        qos: BigInt               = 0,
+                        region: BigInt            = 0,
+                        user: Map[String, BigInt] = Map()
                       )
   case class WChannel(
                        data: BigInt = 0,
@@ -39,16 +40,16 @@ object AXI4MasterModel {
                        last: BigInt = 0
                      )
   case class RChannel(
-                       id: BigInt   = 0,
-                       data: BigInt = 0,
-                       resp: BigInt = 0,
-                       last: BigInt = 0,
-                       user: BigInt = 0
+                       id: BigInt                = 0,
+                       data: BigInt              = 0,
+                       resp: BigInt              = 0,
+                       last: BigInt              = 0,
+                       user: Map[String, BigInt] = Map()
                      )
   case class BChannel(
-                       id: BigInt   = 0,
-                       resp: BigInt = 0,
-                       user: BigInt = 0
+                       id: BigInt                = 0,
+                       resp: BigInt              = 0,
+                       user: Map[String, BigInt] = Map()
                      )
 
   val BRESP_OKAY   = BigInt(0)
@@ -73,6 +74,21 @@ trait AXI4MasterModel extends PeekPokeTester[MultiIOModule] with MemMasterModel 
     (peek(io.valid) != BigInt(0)) && (peek(io.ready) != BigInt(0))
   }
 
+  def pokeUser(user: BundleMap, values: Map[String, BigInt]): Unit = {
+    for ( (k, v) <- values ) {
+      user.elements.get(k) match {
+        case Some(Pokeable(e)) =>
+          poke(e, v)
+        case Some(b: Bundle) =>
+          poke(b, values)
+        case Some(d) =>
+          println(s"Don't know how to poke element $d")
+        case None =>
+          println(s"user field $k not found")
+      }
+    }
+  }
+
   def pokeAW(aw: AXI4BundleAW, value: AWChannel): Unit = {
     poke(aw.id,     value.id)
     poke(aw.addr,   value.addr)
@@ -85,11 +101,7 @@ trait AXI4MasterModel extends PeekPokeTester[MultiIOModule] with MemMasterModel 
     poke(aw.qos,    value.qos)
     // poke(aw., value.region)
     require(value.region == BigInt(0), s"region is optional and rocket-chip left it out. overriding the default value here with ${value.region} won't do anything")
-    aw.user.map { u => poke(u,   value.user) } getOrElse(
-      if (value.user != BigInt(0)) {
-        println(s"user is optional and in this instance it was left out. overriding the default value here with ${}value.user} won't do anything")
-      }
-    )
+    pokeUser(aw.user, value.user)
   }
 
 
@@ -103,12 +115,7 @@ trait AXI4MasterModel extends PeekPokeTester[MultiIOModule] with MemMasterModel 
     poke(ar.cache, value.cache)
     poke(ar.prot, value.prot)
     poke(ar.qos,  value.qos)
-    ar.user.map(poke(_, value.user)) getOrElse(
-      if (value.user != BigInt(0)) {
-        println(s"user is optional and in this instance it was left out. overriding the default value here with ${}value.user} won't do anything")
-      }
-    )
-
+    pokeUser(ar.user, value.user)
   }
 
   def pokeW(w: AXI4BundleW, value: WChannel): Unit = {
@@ -123,7 +130,7 @@ trait AXI4MasterModel extends PeekPokeTester[MultiIOModule] with MemMasterModel 
       data = peek(r.data),
       resp = peek(r.resp),
       last = peek(r.last),
-      user = r.user.map { peek(_) } getOrElse 0
+      user = r.user.elements.map { case (n: String, Pokeable(d)) => n -> peek(d) }
     )
   }
 
@@ -131,7 +138,7 @@ trait AXI4MasterModel extends PeekPokeTester[MultiIOModule] with MemMasterModel 
     BChannel(
       id = peek(b.id),
       resp = peek(b.resp),
-      user = b.user.map { peek(_) } getOrElse 0
+      user = b.user.elements.map { case (n: String, Pokeable(d)) => n -> peek(d) }
     )
   }
 
