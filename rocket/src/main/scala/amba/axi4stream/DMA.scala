@@ -272,7 +272,6 @@ class StreamingAXI4DMA
     writeBuffer.io.enq <> in
     axi.w.bits.data := writeBuffer.io.deq.bits.data
     axi.w.bits.strb := writeBuffer.io.deq.bits.makeStrb
-    axi.w.bits.corrupt.foreach(_ := false.B)
     axi.w.bits.last := Mux(axi.aw.fire(), // check if single beat
       axi.aw.bits.len === 0.U, // if single beat, writeBeatCounter and writeDescriptor won't be set
       writeBeatCounter >= writeDescriptor.length

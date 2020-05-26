@@ -46,8 +46,8 @@ case class BundleBridgeToAXI4Node(masterParams: AXI4MasterPortParameters)(implic
   )
 
 object BundleBridgeToAXI4Node {
-  def apply(masterParams: AXI4MasterParameters, beatBytes: Int)(implicit valName: ValName): BundleBridgeToAXI4Node = {
-    BundleBridgeToAXI4Node(AXI4MasterPortParameters(Seq(masterParams), beatBytes))
+  def apply(masterParams: AXI4MasterParameters)(implicit valName: ValName): BundleBridgeToAXI4Node = {
+    BundleBridgeToAXI4Node(AXI4MasterPortParameters(Seq(masterParams)))
   }
 }
 
@@ -65,7 +65,7 @@ object BundleBridgeToAXI4 {
     val converter = LazyModule(new BundleBridgeToAXI4(masterParams))
     converter.node
   }
-  def apply(masterParams: AXI4MasterParameters, beatBytes: Int)(implicit p: Parameters): BundleBridgeToAXI4Node = {
-    apply(AXI4MasterPortParameters(Seq(masterParams), beatBytes))
+  def apply(masterParams: AXI4MasterParameters)(implicit p: Parameters): BundleBridgeToAXI4Node = {
+    apply(AXI4MasterPortParameters(Seq(masterParams)))
   }
 }

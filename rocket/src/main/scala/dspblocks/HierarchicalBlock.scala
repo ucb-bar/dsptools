@@ -22,7 +22,7 @@ trait HierarchicalBlock[D, U, EO, EI, B <: Data] extends DspBlock[D, U, EO, EI, 
 abstract class Chain[D, U, EO, EI, B <: Data](blockConstructors: Seq[Parameters => DspBlock[D, U, EO, EI, B]])
                                     (implicit p: Parameters) extends HierarchicalBlock[D, U, EO, EI, B] {
   override lazy val blocks: Seq[Block] = blockConstructors.map(_(p))
-  override lazy val connections = blocks.sliding(2).map(x => (x(1), x(0))).toList
+  override lazy val connections = for (i <- 1 until blocks.length) yield (blocks(i), blocks(i-1))
   override lazy val streamNode = NodeHandle(blocks.head.streamNode, blocks.last.streamNode)
 }
 
