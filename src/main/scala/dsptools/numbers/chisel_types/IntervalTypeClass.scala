@@ -3,12 +3,12 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.util.{ShiftRegister, Cat}
-import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floor, NoTrim, DspException}
-import chisel3.experimental.{Interval, FixedPoint}
+import chisel3.util.{Cat, ShiftRegister}
+import dsptools.{DspContext, DspException, Floor, Grow, NoTrim, RoundHalfUp, Saturate, Wrap, hasContext}
+import chisel3.experimental.{FixedPoint, Interval}
 import chisel3.internal.firrtl.{IntervalRange, KnownBinaryPoint}
+import firrtl.constraint.IsKnown
 import firrtl.ir.{Bound, Closed}
-import firrtl.passes.IsKnown
 
 import scala.language.implicitConversions
 
@@ -35,7 +35,7 @@ trait IntervalRing extends Any with Ring[Interval] with hasContext {
             throw new Exception("Wrap + requires known input ranges.")
         }
         val bp = fRange.binaryPoint.max(gRange.binaryPoint)
-        (f + g).conditionalReassignInterval(Interval(IntervalRange(min.asInstanceOf[Bound], max.asInstanceOf[Bound], bp)))
+        (f + g).squeeze(Interval(IntervalRange(min.asInstanceOf[Bound], max.asInstanceOf[Bound], bp)))
       case _ => throw DspException("Saturating add hasn't been implemented")
     }
     ShiftRegister(sum, context.numAddPipes)
@@ -54,7 +54,7 @@ trait IntervalRing extends Any with Ring[Interval] with hasContext {
             throw new Exception("Wrap + requires known input ranges.")
         }
         val bp = fRange.binaryPoint.max(gRange.binaryPoint)
-        (f - g).conditionalReassignInterval(Interval(IntervalRange(min.asInstanceOf[Bound], max.asInstanceOf[Bound], bp)))
+        (f - g).squeeze(Interval(IntervalRange(min.asInstanceOf[Bound], max.asInstanceOf[Bound], bp)))
       case _ => throw DspException("Saturating subtractor hasn't been implemented")
     }
     ShiftRegister(diff, context.numAddPipes)
@@ -88,7 +88,7 @@ trait IntervalSigned extends Any with Signed[Interval] with hasContext {
 
 trait IntervalIsReal extends Any with IsReal[Interval] with IntervalOrder with IntervalSigned with hasContext {
   // Chop off fractional bits --> round to negative infinity
-  def floor(a: Interval): Interval = a.setBinaryPoint(0)
+  def floor(a: Interval): Interval = a.setPrecision(0)
   def isWhole(a: Interval): Bool = a === floor(a)
   // Truncate = round towards zero (integer part without fractional bits)
   def truncate(a: Interval): Interval = {
@@ -121,7 +121,7 @@ trait ConvertableToInterval extends ConvertableTo[Interval] with hasContext {
     require(a.widthKnown, "Interval width not known!")
     val sintBits = BigInt(d.toInt).bitLength + 1
     require(sintBits + a.range.binaryPoint.get <= a.getWidth, "Lit can't fit in prototype Interval bitwidth")
-    Interval.fromDouble(value = d, width = a.getWidth, binaryPoint = a.range.binaryPoint.get)
+    Interval.fromDouble(value = d, width = a.getWidth.W, binaryPoint = a.range.binaryPoint)
   }
 }
 
@@ -151,7 +151,7 @@ trait BinaryRepresentationInterval extends BinaryRepresentation[Interval] with h
   // Retains significant digits while dividing
   override def div2(a: Interval, n: Int): Interval = {
     require(a.binaryPoint.known, "div2 Binary point must be known!")
-    val outFull = a.shiftLeftBinaryPoint(n) >> n
+    val outFull = a.increasePrecision(n) >> n
     trimBinary(outFull, Some(a.binaryPoint.get + context.binaryPointGrowth))
   }
   // trimBinary below for access to ring ops
@@ -167,7 +167,7 @@ trait IntervalReal extends IntervalRing with IntervalIsReal with ConvertableToIn
       case None => a
       case Some(b) => context.trimType match {
         case NoTrim => a
-        case Floor => a.setBinaryPoint(b)
+        case Floor => a.setPrecision(b)
         case RoundHalfUp => {
           // Example: (2.3, 2.8, -2.3, -2.8)
           // (2.3, 2.8, -2.3, -2.8) + .5
@@ -175,7 +175,7 @@ trait IntervalReal extends IntervalRing with IntervalIsReal with ConvertableToIn
           // floor -> (2, 3, -2, -3) [bp = 0]
           val roundBp = b + 1
           val addAmt = math.pow(2, -roundBp).I(roundBp.BP)
-          plus(a, addAmt).setBinaryPoint(b)
+          plus(a, addAmt).setPrecision(b)
         }
         case _ => throw DspException("Desired trim type not implemented!")
       }

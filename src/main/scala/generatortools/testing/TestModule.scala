@@ -1,4 +1,7 @@
+// See LICENSE for license details.
+
 package generatortools.testing
+
 import chisel3._
 import chisel3.experimental.{Interval, ChiselRange}
 import chisel3.internal.firrtl.IntervalRange
@@ -9,7 +12,11 @@ import org.scalatest.{Matchers, FlatSpec}
   * dutFactory = DUT module
   * useGlobalClk/useGlobalRst = use implicit clock and reset
   */
-class TestModule[T <: Module](val dutFactory: () => T, useGlobalClk: Boolean = true, useGlobalRst: Boolean = true, name: String = "")
+class TestModule[T <: Module](
+                               val dutFactory: () => T,
+                               useGlobalClk: Boolean = true,
+                               useGlobalRst: Boolean = true,
+                               name: String = "")
     extends Module {
 
   /** Generate standard Chisel top-level IO */

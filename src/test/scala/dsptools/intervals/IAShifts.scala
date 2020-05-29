@@ -1,10 +1,14 @@
+// See LICENSE for license details.
+
 package dsptools.intervals.tests
+
+import java.math.{MathContext, RoundingMode}
 
 import chisel3._
 import chisel3.experimental._
 import generatortools.io.CustomBundle
 import generatortools.testing.TestModule
-import org.scalatest.{Matchers, FlatSpec}
+import org.scalatest.{FlatSpec, Matchers}
 import chisel3.internal.firrtl.IntervalRange
 import dsptools.DspTester
 
@@ -82,18 +86,18 @@ class IAShifts(r: IATestParams) extends Module {
 
     io.dsh.seq(idx) := Mux(io.sel > 0.I, i << io.legal.seq(idx), i >> io.legal.seq(idx))
 
-    io.bpsetMore.seq(idx) := i.setBinaryPoint(i.binaryPoint.get + bpDelta)
-    io.bpsetLess.seq(idx) := i.setBinaryPoint(Seq(i.binaryPoint.get - bpDelta, 0).max)
-    io.bpset0.seq(idx) := i.setBinaryPoint(0)
-    io.bpshl.seq(idx) := i.shiftLeftBinaryPoint(bpDelta)
-    io.bpshrToZero.seq(idx) := i.shiftRightBinaryPoint(i.binaryPoint.get)
-    io.bpshr.seq(idx) := i.shiftRightBinaryPoint(Seq(bpDelta, i.binaryPoint.get).min)
+    io.bpsetMore.seq(idx) := i.setPrecision(i.binaryPoint.get + bpDelta)
+    io.bpsetLess.seq(idx) := i.setPrecision(Seq(i.binaryPoint.get - bpDelta, 0).max)
+    io.bpset0.seq(idx) := i.setPrecision(0)
+    io.bpshl.seq(idx) := i.increasePrecision(bpDelta)
+    io.bpshrToZero.seq(idx) := i.decreasePrecision(i.binaryPoint.get)
+    io.bpshr.seq(idx) := i.decreasePrecision(Seq(bpDelta, i.binaryPoint.get).min)
 
-    io.bpSet0Shl.seq(idx) := Mux(io.sel > 0.I, i.setBinaryPoint(0), i.shiftLeftBinaryPoint(bpDelta))
+    io.bpSet0Shl.seq(idx) := Mux(io.sel > 0.I, i.setPrecision(0), i.increasePrecision(bpDelta))
     io.bpSetMoreShr.seq(idx) :=
       Mux(
         io.sel > 0.I,
-        i.setBinaryPoint(i.binaryPoint.get + bpDelta), i.shiftRightBinaryPoint(Seq(bpDelta, i.binaryPoint.get).min)
+        i.setPrecision(i.binaryPoint.get + bpDelta), i.decreasePrecision(Seq(bpDelta, i.binaryPoint.get).min)
       )
   }
 
@@ -142,14 +146,29 @@ class IAShiftsTester(testMod: TestModule[IAShifts]) extends DspTester(testMod) {
   val maxShiftAmt = (1 << tDut.io.outOfLegal.seq.map(_.getWidth).max) - 1
   val dynShiftAmts = 0 to maxShiftAmt
 
-  def shl(i: Double, amt: Int) = i * math.pow(2, amt)
+  def shl(i: Double, amt: Int): BigDecimal = shl(BigDecimal(i), amt)
+  def shl(i: BigDecimal, amt: Int): BigDecimal = i * math.pow(2, amt)
+
   // Remove LSBs = "floor" behavior to resolution -- does not grow in precision, so lose significant bits
-  def shr(i: Double, bp: Int, amt: Int) = math.floor(i * math.pow(2, bp - amt)) * math.pow(2, -bp)
-  def bpset(i: Double, bp: Int, origbp: Int) =
-    if (origbp < bp) i
-    else shr(i, origbp, origbp - bp) * (1 << (origbp - bp))
-  def bpshr(i: Double, bp: Int, amt: Int) =
+  def shr(i: Double, bp: Int, amt: Int): BigDecimal = shr(BigDecimal(i), bp, amt)
+  def shr(i: BigDecimal, bp: Int, amt: Int): BigDecimal = {
+    i.round(new MathContext(1, RoundingMode.FLOOR));
+//    math.floor(i * math.pow(2, bp - amt)) * math.pow(2, -bp)
+  }
+
+  def bpset(i: Double, bp: Int, origbp: Int): BigDecimal = bpset(BigDecimal(i), bp, origbp)
+  def bpset(i: BigDecimal, bp: Int, origbp: Int): BigDecimal = {
+    if (origbp < bp) {
+      i
+    } else {
+      shr(i, origbp, origbp - bp) * (1 << (origbp - bp))
+    }
+  }
+
+  def bpshr(i: Double, bp: Int, amt: Int): BigDecimal = bpshr(BigDecimal(i), bp, amt)
+  def bpshr(i: BigDecimal, bp: Int, amt: Int): BigDecimal = {
     shr(i, bp, amt) * (1 << amt)
+  }
 
   val maxLen = Seq(as.length, bs.length, cs.length, ds.length).max
   val Seq(asT, bsT, csT, dsT) = Seq(as, bs, cs, ds).map(x => x.padTo(maxLen, x.max))
@@ -162,12 +181,13 @@ class IAShiftsTester(testMod: TestModule[IAShifts]) extends DspTester(testMod) {
       poke(testMod.getIO(name), value)
     }
 
-    def pokeShiftAmt(kind: String, amt: Int) =
-      testMod.getIO(kind).asInstanceOf[CustomBundle[Data]].seq map { case u =>
+    def pokeShiftAmt(kind: String, amt: Int): Seq[Int] = {
+      testMod.getIO(kind).asInstanceOf[CustomBundle[Data]].seq.map { case u =>
         val pokeVal = amt % (1 << u.asInstanceOf[UInt].getWidth)
         poke(u, pokeVal)
         pokeVal
       }
+    }
 
     val legalShiftAmts = pokeShiftAmt("legal", dynShiftAmt)
     val outOfLegalShiftAmts = pokeShiftAmt("outOfLegal", dynShiftAmt)

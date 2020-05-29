@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.core.BundleLitBinding
+import chisel3.experimental.BundleLiterals._
 import chisel3.internal.firrtl.{LitArg, Width}
 import chisel3.util.Mux1H
 
@@ -17,26 +17,28 @@ class DspReal extends Bundle {
 
   val node: UInt = UInt(DspReal.underlyingWidth.W)
 
-  //scalastyle:off method.name
-  def Lit(value: BigInt): DspReal = {
-    val clone = cloneType
-    clone.selfBind(BundleLitBinding(Map(
-      clone.node -> litArgOfBits(value.U)
-    )))
-    clone
-  }
+//TODO: Remove or fix
+//  //scalastyle:off method.name
+//  def Lit(value: BigInt): DspReal = {
+//    val clone = cloneType
+//    clone.selfBind(BundleLitBinding(Map(
+//      clone.node -> litArgOfBits(value.U)
+//    )))
+//    clone
+//  }
 
-  override def litOption: Option[BigInt] = {
-    binding match {
-      case Some(bind: BundleLitBinding) =>
-        bind.litMap.get(node) match {
-          case Some(litArg: LitArg) => Some(litArg.num)
-          case _ => None
-        }
-      case _ => None
-    }
-  }
-
+  //TODO: Remove or fix
+//  override def litOption: Option[BigInt] = {
+//    binding match {
+//      case Some(bind: BundleLitBinding) =>
+//        bind.litMap.get(node) match {
+//          case Some(litArg: LitArg) => Some(litArg.num)
+//          case _ => None
+//        }
+//      case _ => None
+//    }
+//  }
+//
   private def oneOperandOperator(blackbox_gen: => BlackboxOneOperand) : DspReal = {
     val blackbox = blackbox_gen
     blackbox.io.in := node
@@ -379,9 +381,9 @@ object DspReal {
     def longAsUnsignedBigInt(in: Long): BigInt = (BigInt(in >>> 1) << 1) + (in & 1)
     def doubleToBigInt(in: Double): BigInt = longAsUnsignedBigInt(java.lang.Double.doubleToRawLongBits(in))
     if (addZero) {
-      (new DspReal).Lit(doubleToBigInt(value)) + zero
+      (new DspReal).Lit(_.node -> doubleToBigInt(value).U) + zero
     } else {
-      (new DspReal).Lit(doubleToBigInt(value))
+      (new DspReal).Lit(_.node -> doubleToBigInt(value).U)
     }
   }
 

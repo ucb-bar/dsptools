@@ -2,19 +2,18 @@
 
 package dsptools.toys
 
+import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.signal
 import breeze.signal.OptOverhang
 import chisel3._
+import chisel3.experimental._
+import chisel3.internal.firrtl.{KnownBinaryPoint, UnknownWidth}
 import chisel3.util.ShiftRegister
 import dsptools.intervals.tests.IATest
 import dsptools.numbers._
-import breeze.linalg.{DenseMatrix, DenseVector}
-import generatortools.io.CustomBundle
 import dsptools.{DspContext, DspTester, NoTrim}
-import chisel3.experimental._
+import generatortools.io.CustomBundle
 import generatortools.testing.TestModule
-import chisel3.internal.firrtl.{IntervalRange, KnownBinaryPoint, KnownWidth, UnknownWidth}
-import firrtl.transforms.DedupModules
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.util.Random
@@ -22,9 +21,7 @@ import scala.util.Random
 trait NoDedupAnnotator {
   self: Module =>
 
-  def doNotDedup(module: Module): Unit = {
-    annotate(ChiselAnnotation(module, classOf[DedupModules], "nodedup!"))
-  }
+  doNotDedup(this)
 }
 
 // TODO: Doesn't need to be power of 2
@@ -52,8 +49,9 @@ class SystolicMatMul[T <: Data:RealBits](
     if (litSeq.nonEmpty) {
       require(litSeq.length == n * n, "Lit sequence length doesn't match matrix size!")
       Matrix.matrixLit[T](DenseVector(litSeq.toArray), litBP.get)
+    } else {
+      Matrix(io.b)
     }
-    else Matrix(io.b)
 
   val delayedStarts = (1 until n).scanLeft(io.start) { case (regIn, outputIdx) =>
     val out = RegNext(next = regIn, init = false.B)
@@ -155,7 +153,7 @@ class MatMulPE[T <: Data:RealBits](
     val bout = Output(genB)
     val c = Output(genOut)
   })
-  withReset(io.reset) {
+  chisel3.withReset(io.reset) {
     io.aout := RegNext(next = io.ain, init = Ring[T].zero)
     io.bout := RegNext(next = io.bin, init = Ring[T].zero)
     val mul = io.ain context_* io.bin
@@ -217,7 +215,7 @@ class MatMulPE[T <: Data:RealBits](
         }
       case i: Interval =>
         val reg = RegInit(Interval(), 0.0.I(0.BP))
-        reg := (reg + i).reassignInterval(accumRange.get.asInstanceOf[Interval])
+        reg := (reg + i).squeeze(accumRange.get.asInstanceOf[Interval])
         reg
     }
     accum.suggestName("accum")

@@ -5,11 +5,11 @@ package dsptools
 import breeze.math.Complex
 import dsptools.numbers.{DspComplex, DspReal}
 import chisel3._
-import chisel3.experimental.FixedPoint
+import chisel3.experimental.{FixedPoint, Interval}
 import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3.iotesters.PeekPokeTester
-import scala.util.DynamicVariable
 
+import scala.util.DynamicVariable
 import DspTesterUtilities._
 
 // TODO: Get rid of
@@ -69,7 +69,7 @@ class DspTester[T <: Module](
     backend.poke(path, value)(logger, dispDsp, dispBase)
   }
 
-  override def poke(signal: Bits, value: BigInt): Unit = {
+  def poke(signal: Bits, value: BigInt): Unit = {
     // bit-level poke is displayed as unsigned
     validRangeTest(signal, value)
     if (!signal.litOption.isDefined) backend.poke(signal, value, None)(logger, dispDsp, dispBase)
@@ -77,7 +77,7 @@ class DspTester[T <: Module](
   }
 
   // Poke at does not involve external signals -- no VerilogTB print
-  override def pokeAt[TT <: Bits](data: Mem[TT], value: BigInt, off: Int): Unit = {
+  def pokeAt[TT <: Bits](data: Mem[TT], value: BigInt, off: Int): Unit = {
     backend.poke(data, value, Some(off))(logger, dispDsp, dispBase)
   }
 
@@ -86,7 +86,7 @@ class DspTester[T <: Module](
     backend.peek(path)(logger, dispDsp, dispBase)
   }
 
-  override def peek(signal: Bits): BigInt = {
+  def peek(signal: Bits): BigInt = {
     val o = {
       // bit-level peek is displayed as unsigned
       if (!signal.litOption.isDefined) {
@@ -109,7 +109,7 @@ class DspTester[T <: Module](
   }
 
   // Peek at does not involve external signals -- no VerilogTB print
-  override def peekAt[TT <: Bits](data: Mem[TT], off: Int): BigInt = {
+  def peekAt[TT <: Bits](data: Mem[TT], off: Int): BigInt = {
     backend.peek(data, Some(off))(logger, dispDsp, dispBase)
   }
 
@@ -120,7 +120,8 @@ class DspTester[T <: Module](
     good
   }
 
-  override def expect(signal: Bits, expected: BigInt, msg: => String = ""): Boolean = {
+  def expect(signal: Bits, expected: BigInt): Boolean = expect(signal, expected, "")
+  def expect(signal: Bits, expected: BigInt, msg: => String): Boolean = {
     validRangeTest(signal, expected)
     val path = getName(signal)
     val got = updatableDspVerbose.withValue(dispSub) { peek(signal) }
@@ -150,15 +151,29 @@ class DspTester[T <: Module](
   def poke(signal: FixedPoint, value: Int): Unit = poke(signal, value.toDouble)
   def poke(signal: FixedPoint, value: Double): Unit = poke(signal.asInstanceOf[Data], value)
 
+  // Has priority over Bits (FixedPoint extends Bits)
+  def poke(signal: Interval, value: Int): Unit = poke(signal, value.toDouble)
+  def poke(signal: Interval, value: Double): Unit = poke(signal.asInstanceOf[Data], value)
+  def poke(signal: Interval, value: BigDecimal): Unit = {
+    assert(value <= Double.MaxValue, s"poking ${signal} with a value $value bigger than Double.MaxValue")
+    poke(signal.asInstanceOf[Data], value.toDouble)
+  }
+
   // DspReal extends Bundle extends Aggregate extends Data
   // If poking DspReal with Double, can only go here
   // Type classes are all Data:RealBits
+  //scalastyle:off cyclomatic.complexity
   def poke(signal: Data, value: Double): Unit = {
     updatableDspVerbose.withValue(dispSub) {
       signal match {
         case f: FixedPoint =>
           f.binaryPoint match {
             case KnownBinaryPoint(bp) => poke(f.asInstanceOf[Bits], FixedPoint.toBigInt(value, bp))
+            case _ => throw DspException("Must poke FixedPoint with known binary point")
+          }
+        case i: Interval =>
+          i.binaryPoint match {
+            case KnownBinaryPoint(bp) => poke(i.asInstanceOf[Bits], FixedPoint.toBigInt(value, bp))
             case _ => throw DspException("Must poke FixedPoint with known binary point")
           }
         case r: DspReal => poke(r.node.asInstanceOf[Bits], DspTesterUtilities.doubleToBigIntBits(value))
@@ -168,6 +183,10 @@ class DspTester[T <: Module](
       }
     }
     if (dispDsp) logger info s"  POKE ${getName(signal)} <- $value, ${bitInfo(signal)}"
+  }
+  def poke(signal: Data, value: BigDecimal): Unit = {
+    assert(value <= Double.MaxValue, s"poking ${signal} with a value $value bigger than Double.MaxValue")
+    poke(signal, value.toDouble)
   }
 
   // Will only print individual real/imag peek information if dispSub is true!
@@ -226,7 +245,7 @@ class DspTester[T <: Module](
 
   def expect(signal: Bool, expected: Boolean): Boolean = expect(signal, expected, "")
   def expect(signal: Bool, expected: Boolean, msg: String): Boolean = {
-    expect(signal.asInstanceOf[Bits], if (expected) BigInt(1) else BigInt(0))
+    expect(signal.asInstanceOf[Bits], if (expected) BigInt(1) else BigInt(0), msg)
   }
 
   // If expecting directly on UInt or SInt (rather than generic type class),
@@ -245,6 +264,17 @@ class DspTester[T <: Module](
   def expect(signal: FixedPoint, expected: Int, msg: String): Boolean = expect(signal, expected.toDouble, msg)
   def expect(signal: FixedPoint, expected: Double): Boolean = expect(signal, expected, "")
   def expect(signal: FixedPoint, expected: Double, msg: String): Boolean = {
+    expect(signal.asInstanceOf[Data], expected, msg)
+  }
+
+  def expect(signal: Interval, expected: Int): Boolean = expect(signal, expected, "")
+  def expect(signal: Interval, expected: Int, msg: String): Boolean = expect(signal, expected.toDouble, msg)
+  def expect(signal: Interval, expected: Double): Boolean = expect(signal, expected, "")
+  def expect(signal: Interval, expected: Double, msg: String): Boolean = {
+    expect(signal.asInstanceOf[Data], expected, msg)
+  }
+  def expect(signal: Interval, expected: BigDecimal): Boolean = expect(signal, expected, "")
+  def expect(signal: Interval, expected: BigDecimal, msg: String): Boolean = {
     expect(signal.asInstanceOf[Data], expected, msg)
   }
 
@@ -311,6 +341,14 @@ class DspTester[T <: Module](
   }
   def expect(data: Data, expected: Double, msg: String): Boolean = {
     val good = expectWithoutFailure(data, expected, msg)
+    if (!good) fail
+    good
+  }
+
+  def expect(data: Data, expected: BigDecimal): Boolean = expect(data, expected, "")
+  def expect(data: Data, expected: BigDecimal, msg: String): Boolean = {
+    assert(expected <= Double.MaxValue, s"expecting from ${data} a value $expected that is bigger than Double.MaxValue")
+    val good = expectWithoutFailure(data, expected.toDouble, msg)
     if (!good) fail
     good
   }

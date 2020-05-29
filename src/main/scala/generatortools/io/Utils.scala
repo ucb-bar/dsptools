@@ -1,4 +1,5 @@
-//
+// See LICENSE for license details.
+
 package generatortools.io
 
 import chisel3._
@@ -7,7 +8,7 @@ import chisel3.experimental._
 import chisel3.internal.firrtl._
 import chisel3.util.Cat
 import dsptools.numbers._
-import firrtl.passes.IsKnown
+import firrtl.constraint.IsKnown
 
 //scalastyle:off cyclomatic.complexity method.length
 object ConvertType {

@@ -7,7 +7,7 @@ import scala.collection.immutable.ListMap
 
 class CustomBundle[+T <: Data](elts: (String, T)*) extends Record {
   /** ListMap of key (as string), Data pairs */
-  val elements: ListMap[String, T] = ListMap(elts map { case (field, elt) => field -> elt.chiselCloneType }: _*)
+  val elements: ListMap[String, T] = ListMap(elts map { case (field, elt) => field -> chiselTypeOf(elt) }: _*)
   /** Gets elements as sequence */
   def seq: Seq[T] = elements.toSeq.map(_._2)
   /** Tries to get the element called name (String) */

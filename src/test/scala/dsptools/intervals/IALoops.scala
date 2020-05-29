@@ -1,3 +1,5 @@
+// See LICENSE for license details.
+
 package dsptools.intervals.tests
 
 import chisel3._
@@ -38,7 +40,7 @@ class IALoops(r: IATestParams) extends Module {
   io.intervalAsReal := io.interval.asReal
   io.realAsInterval := io.real.toInterval(io.realAsInterval)
 
-  val lit = Interval.fromDouble(value = 3.25, width = 16, binaryPoint = 5)
+  val lit = Interval.fromDouble(value = 3.25, width = 16.W, binaryPoint = 5.BP)
   io.lit := lit
 
   val ins = Seq(io.a, io.b, io.c, io.d)
@@ -47,14 +49,14 @@ class IALoops(r: IATestParams) extends Module {
     // Accumulate 4x
     val range1 = loops.I * i + init.I(bp.BP)
     val reg = RegInit(Interval(), init.I(bp.BP))
-    reg := (reg + i).reassignInterval(range1)
+    reg := (reg + i).squeeze(range1)
 
     // reg time sequence:   0.5, 0.5 + i, 0.5 + 2i, 0.5 + 3i, 0.5 + 4i
     // reg2 time sequence:  0  , 0.5    , 1 + i   , 1.5 + 3i, 2 + 6i     = range1 + 1.5 + 2i
 
     val range2 = range1 + (3 * init).I(bp.BP) + 2.I * i
     val reg2 = RegInit(Interval(), 0.I)
-    reg2 := (reg2 + reg).reassignInterval(range2)
+    reg2 := (reg2 + reg).squeeze(range2)
 
     io.reg.seq(idx) := reg
     io.reg2.seq(idx) := reg2
@@ -133,7 +135,7 @@ class IALoopsTester(testMod: TestModule[IALoops]) extends DspTester(testMod) {
         }
         else {
           reg2.update(idx, reg2(idx) + reg(idx))
-          reg.update(idx, reg(idx) + inVals(idx))
+          reg.update(idx, reg(idx) + inVals(idx).toDouble)
         }
         expect(getO("reg")(idx), reg(idx))
         expect(getO("reg2")(idx), reg2(idx))

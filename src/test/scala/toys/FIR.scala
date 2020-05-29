@@ -1,3 +1,5 @@
+// See LICENSE for license details.
+
 package dsptools.toys
 
 import breeze.math.Complex
@@ -105,7 +107,7 @@ class FIRFilterSpec extends FlatSpec with Matchers {
 class FIRFilterSpec extends FlatSpec with Matchers {
   val inI = Interval(range"[-16, 16).2")
   val outI = Interval(range"[?, ?].4")
-  val coeffs = inI.range.getPossibleValues.take(64)
+  val coeffs = inI.range.getPossibleValues.take(64).map(_.toDouble)
   // TODO: Separate function!
   val randomTVs = MatMulTests.generateRandomInputs(math.sqrt(coeffs.length).toInt, 20, maxNotInclusive = 15).flatten
 

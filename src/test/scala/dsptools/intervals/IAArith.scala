@@ -1,12 +1,13 @@
+// See LICENSE for license details.
+
 package dsptools.intervals.tests
 
 import chisel3._
 import chisel3.experimental._
+import dsptools.DspTester
 import generatortools.io.CustomBundle
 import generatortools.testing.TestModule
-import org.scalatest.{Matchers, FlatSpec}
-import chisel3.internal.firrtl.IntervalRange
-import dsptools.DspTester
+import org.scalatest.{FlatSpec, Matchers}
 
 import scala.io.Source
 
@@ -165,17 +166,17 @@ class IAArithTester(testMod: TestModule[IAArith]) extends DspTester(testMod) {
     val inVals = Seq(a, b, c, d, sel)
 
     inputNames.zip(inVals) foreach { case (name, value) =>
-      poke(testMod.getIO(name), value)
+      poke(testMod.getIO(name).asInstanceOf[Interval], value.toDouble)
     }
 
     step(1)
 
-    expect(testMod.getIO("m1"), if (sel < tDut.c7) t9 else tDut.c1)
-    expect(testMod.getIO("m2"), if (sel <= tDut.c8) t9 else tDut.c2)
-    expect(testMod.getIO("m3"), if (sel == tDut.c9) t9 else tDut.c3)
-    expect(testMod.getIO("m4"), if (sel >= tDut.c9) t9 else tDut.c4)
-    expect(testMod.getIO("m5"), if (sel > tDut.c9) t9 else tDut.c5)
-    expect(testMod.getIO("m6"), if (sel != tDut.c9) t9 else tDut.c6)
+    expect(testMod.getIO("m1").asInstanceOf[Interval], (if (sel < tDut.c7) t9 else tDut.c1).asInstanceOf[BigDecimal])
+    expect(testMod.getIO("m2").asInstanceOf[Interval], (if (sel <= tDut.c8) t9 else tDut.c2).asInstanceOf[BigDecimal])
+    expect(testMod.getIO("m3").asInstanceOf[Interval], (if (sel == tDut.c9) t9 else tDut.c3).asInstanceOf[BigDecimal])
+    expect(testMod.getIO("m4").asInstanceOf[Interval], (if (sel >= tDut.c9) t9 else tDut.c4).asInstanceOf[BigDecimal])
+    expect(testMod.getIO("m5").asInstanceOf[Interval], (if (sel > tDut.c9) t9 else tDut.c5).asInstanceOf[BigDecimal])
+    expect(testMod.getIO("m6").asInstanceOf[Interval], (if (sel != tDut.c9) t9 else tDut.c6).asInstanceOf[BigDecimal])
 
   }
 

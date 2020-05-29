@@ -3,6 +3,8 @@
 package dsptools.numbers.representations
 
 import org.scalatest.{FlatSpec, Matchers}
+import chisel3._
+import generatortools.io.CustomBundle
 
 class MixedRadixSpec extends FlatSpec with Matchers {
   behavior of "MixedRadix"

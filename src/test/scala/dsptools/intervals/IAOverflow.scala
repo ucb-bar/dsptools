@@ -1,3 +1,5 @@
+// See LICENSE for license details.
+
 package dsptools.intervals.tests
 
 import chisel3._
@@ -67,9 +69,9 @@ class IAOverflow(r: IATestParams) extends Module {
 
     val res = 1.toDouble / (1 << i.binaryPoint.get)
     // wrap lower edge
-    val lowerEdge = IAUtility.shiftRightBy(i.range, IAUtility.getRange(i.range) + res)
+    val lowerEdge = IAUtility.shiftRightBy(i.range, IAUtility.getRange(i.range).toDouble + res)
     // wrap upper edge
-    val upperEdge = IAUtility.shiftRightBy(i.range, -(IAUtility.getRange(i.range) + res))
+    val upperEdge = IAUtility.shiftRightBy(i.range, -(IAUtility.getRange(i.range).toDouble + res))
 
     val shrinkInterval = Wire(Interval(shrink))
 
@@ -97,7 +99,7 @@ class IAOverflow(r: IATestParams) extends Module {
       io.clipX.seq(idx) := i.clip(uint)
     }
 
-    io.rangeShiftRight.seq(idx) := Mux(io.sel > 0.I(), i.clip(shiftRight), i.wrap(shiftRight))
+    io.rangeShiftRight.seq(idx) := Mux(io.sel > 0.I, i.clip(shiftRight), i.wrap(shiftRight))
   }
 }
 
@@ -141,7 +143,8 @@ class IAOverflowTester(testMod: TestModule[IAOverflow]) extends DspTester(testMo
     possibleVals
   }
 
-  def clip(i: Double, range: IntervalRange) = {
+  def clip(i: Double, range: IntervalRange): BigDecimal = clip(BigDecimal(i), range)
+  def clip(i: BigDecimal, range: IntervalRange): BigDecimal = {
     val max = IAUtility.getMax(range)
     val min = IAUtility.getMin(range)
     if (i > max) max
@@ -150,7 +153,8 @@ class IAOverflowTester(testMod: TestModule[IAOverflow]) extends DspTester(testMo
   }
 
   // "Simple" mod: Doesn't work if double is outside of range expanded
-  def wrap(i: Double, range: IntervalRange) = {
+  def wrap(i: Double, range: IntervalRange): BigDecimal = wrap(BigDecimal(i), range)
+  def wrap(i: BigDecimal, range: IntervalRange): BigDecimal = {
     val max = IAUtility.getMax(range)
     val min = IAUtility.getMin(range)
     val width = IAUtility.getRange(range)
@@ -188,8 +192,8 @@ class IAOverflowTester(testMod: TestModule[IAOverflow]) extends DspTester(testMo
       val halfWidth = IAUtility.getIntWidth(i.range) - 1
 
       val res = 1.toDouble / (1 << i.binaryPoint.get)
-      val lowerEdge = IAUtility.shiftRightBy(i.range, IAUtility.getRange(i.range) + res)
-      val upperEdge = IAUtility.shiftRightBy(i.range, -(IAUtility.getRange(i.range) + res))
+      val lowerEdge = IAUtility.shiftRightBy(i.range, IAUtility.getRange(i.range).toDouble + res)
+      val upperEdge = IAUtility.shiftRightBy(i.range, -(IAUtility.getRange(i.range).toDouble + res))
 
       val xRange = if (containsNeg) {
         val outside = 1 << (halfWidth - 1)

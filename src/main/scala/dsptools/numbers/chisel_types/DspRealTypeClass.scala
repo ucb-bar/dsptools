@@ -8,7 +8,6 @@ import dsptools.{hasContext, DspContext, Grow, Wrap, Saturate, RoundHalfUp, Floo
 import chisel3.experimental.{Interval, FixedPoint}
 import chisel3.internal.firrtl.{KnownWidth, KnownBinaryPoint}
 import firrtl.ir.IntWidth
-import firrtl.passes.IsKnown
 
 import scala.language.implicitConversions
 
