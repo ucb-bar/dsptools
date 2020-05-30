@@ -3,7 +3,6 @@
 package generatortools.io
 
 import chisel3._
-import chisel3.core.DataMirror
 import chisel3.experimental._
 import chisel3.internal.firrtl._
 import chisel3.util.Cat

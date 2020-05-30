@@ -49,6 +49,7 @@ val commonSettings = Seq(
   crossScalaVersions := Seq("2.12.10", "2.11.12"),
     scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls") ++ scalacOptionsVersion(scalaVersion.value),
   javacOptions ++= javacOptionsVersion(scalaVersion.value),
+  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
   pomExtra := (<url>http://chisel.eecs.berkeley.edu/</url>
   <licenses>
     <license>
