@@ -42,7 +42,7 @@ case class BundleBridgeToAXI4Node(masterParams: AXI4MasterPortParameters)(implic
     dFn = { mp =>
       masterParams
     },
-    uFn = { slaveParams => BundleBridgeNull() }
+    uFn = { slaveParams => BundleBridgeParams(None) }
   )
 
 object BundleBridgeToAXI4Node {

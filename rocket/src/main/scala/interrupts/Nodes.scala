@@ -36,7 +36,7 @@ object IntToBundleBridge {
 case class BundleBridgeToIntNode(sourceParams: IntSourcePortParameters)
 (implicit valName: ValName) extends MixedAdapterNode(IntBundleBridgeImp, IntImp)(
   dFn = {sinkParams => sourceParams},
-  uFn = { slaveParams => BundleBridgeNull() }
+  uFn = { slaveParams => BundleBridgeParams(None) }
 )
 
 class BundleBridgeToInt(sourceParams: IntSourcePortParameters)(implicit p: Parameters)

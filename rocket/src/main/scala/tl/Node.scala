@@ -44,7 +44,7 @@ case class BundleBridgeToTLNode(clientParams: TLClientPortParameters)(implicit v
     dFn = { mp =>
       clientParams
     },
-    uFn = { slaveParams => BundleBridgeNull() }
+    uFn = { slaveParams => BundleBridgeParams(None) }
   )
 
 object BundleBridgeToTLNode {
