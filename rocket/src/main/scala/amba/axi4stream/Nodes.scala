@@ -175,7 +175,7 @@ extends MixedAdapterNode(AXI4StreamBundleBridgeImp, AXI4StreamImp)(
   dFn = { mp =>
     masterParams
   },
-  uFn = { slaveParams => BundleBridgeNull() }// BundleBridgeParams(() => AXI4StreamBundle(AXI4StreamBundleParameters.joinEdge(masterParams, slaveParams)))}
+  uFn = { slaveParams => BundleBridgeParams(None) }// BundleBridgeParams(() => AXI4StreamBundle(AXI4StreamBundleParameters.joinEdge(masterParams, slaveParams)))}
 )
 
 object BundleBridgeToAXI4StreamNode {
