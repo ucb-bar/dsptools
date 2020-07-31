@@ -4,6 +4,7 @@ package dsptools.numbers
 
 import chisel3._
 import chisel3.experimental.{FixedPoint, Interval}
+import chisel3.experimental.BundleLiterals._
 import dsptools.DspException
 import implicits._
 import breeze.math.Complex
@@ -71,9 +72,20 @@ class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Bundle {
   // Uses implicits
   def abssq(dummy: Int = 0): T = (real * real) + (imag * imag)
 
-  override def cloneType: this.type = {
-    new DspComplex(real.cloneType, imag.cloneType).asInstanceOf[this.type]
-  }
+//TODO: Remove this or fix it
+  //  override def cloneType: this.type = {
+//    new DspComplex(real.cloneType, imag.cloneType).asInstanceOf[this.type]
+//  }
+
+//  //scalastyle:off method.name
+//  def Lit[T <: Bits:Ring](real: T, imag: T): DspComplex[T] = {
+//    val clone = cloneType
+//    clone.selfBind(BundleLitBinding(Map(
+//      clone.real -> litArgOfBits(real),
+//      clone.imag -> litArgOfBits(imag)
+//    )))
+//    clone.asInstanceOf[DspComplex[T]]
+//  }
 
   def underlyingType(dummy: Int = 0): String = {
     real match {
