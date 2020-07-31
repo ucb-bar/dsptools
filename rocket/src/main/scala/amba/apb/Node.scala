@@ -42,7 +42,7 @@ case class BundleBridgeToAPBNode(masterParams: APBMasterPortParameters)(implicit
     dFn = { mp =>
       masterParams
     },
-    uFn = { slaveParams => BundleBridgeParams(None) }
+    uFn = { slaveParams => BundleBridgeNull() }
   )
 
 object BundleBridgeToAPBNode {
