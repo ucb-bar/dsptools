@@ -39,16 +39,24 @@ class CustomBundle[+T <: Data](elts: (String, T)*) extends Record {
 
 object CustomBundle {
   /** Creates a custom string-addressed bundle with elements of type gen */
-  def withKeys[T <: Data](gen: T, keys: Seq[String]) = new CustomBundle(keys.map(_ -> gen): _*)
+  def withKeys[T <: Data](gen: T, keys: Seq[String]): CustomBundle[T] = {
+    new CustomBundle(keys.map(_ -> gen): _*)
+  }
+
   /** Creates a custom indexed bundle (indexes up to you) with elements of type gen */
-  def apply[T <: Data](gen: T, idxs: Seq[Int]) = new CustomBundle(idxs.map(_.toString -> gen): _*)
+  def apply[T <: Data](gen: T, idxs: Seq[Int]): CustomBundle[T] = {
+    new CustomBundle(idxs.map(_.toString -> gen): _*)
+  }
+
   /** Creates normally indexed bundle of elements with various types.
     * Allows Vecs of elements of different types/widths.
     */
-  def apply[T <: Data](gen: Seq[T]) =
+  def apply[T <: Data](gen: Seq[T]): CustomBundle[T] = {
     new CustomBundle(gen.zipWithIndex.map{ case (elt, field) => field.toString -> elt }: _*)
+  }
+
   /** Creates a wire and assigns to it */
-  def wire[T <: Data](gen: Seq[T]) = {
+  def wire[T <: Data](gen: Seq[T]): CustomBundle[T] = {
     val result = Wire(CustomBundle(gen))
     result.seq.zip(gen) foreach { case (lhs, rhs) => lhs := rhs }
     result

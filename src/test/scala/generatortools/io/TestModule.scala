@@ -4,6 +4,7 @@ package generatortools.io
 
 import chisel3._
 import chisel3.experimental.{ChiselRange, Interval}
+import chisel3.stage.ChiselStage
 import org.scalatest.{FlatSpec, Matchers}
 
 /** Makes modules with Intervals, custom clocks, etc. compatible with the old testing strategy.
