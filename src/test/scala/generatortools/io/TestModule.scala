@@ -4,24 +4,26 @@ package generatortools.io
 
 import chisel3._
 import chisel3.experimental.{ChiselRange, Interval}
-import chisel3.stage.ChiselStage
+import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
+import firrtl.stage.FirrtlSourceAnnotation
 import org.scalatest.{FlatSpec, Matchers}
 
 /** Makes modules with Intervals, custom clocks, etc. compatible with the old testing strategy.
   * dutFactory = DUT module
   * useGlobalClk/useGlobalRst = use implicit clock and reset
   */
-class TestModule[T <: Module](
-                               val dutFactory: () => T,
-                               useGlobalClk: Boolean = true,
-                               useGlobalRst: Boolean = true,
-                               name: String = "")
-  extends Module {
+class TestModule[T <: Module](val dutFactory: () => T,
+                              useGlobalClk:   Boolean = true,
+                              useGlobalRst:   Boolean = true,
+                              name:           String = "")
+    extends Module {
 
   /** Generate standard Chisel top-level IO */
-  private def createTopIO[R <: Record](intIO: R) =
-  // Internally clones type
-    new CustomBundle(intIO.elements.toList.map { case (field, elt) => field -> ConvertType(elt) }: _*)
+  private def createTopIO[R <: Record](intIO: R) = {
+    // Internally clones type
+    // new CustomBundle(intIO.elements.toList.map { case (field, elt) => field -> ConvertType(elt) }: _*)
+    intIO.cloneType
+  }
 
   // Wrap + connect DUT
   val dut = Module(dutFactory())
@@ -38,7 +40,7 @@ class TestModule[T <: Module](
   Connect(io, dut.io, if (useGlobalClk) Some(clock) else None)
 
   // Easy access to top-level IO + DUT IO (by name)
-  def getIO(str: String) = io.elements(str)
+  def getIO(str:    String) = io.elements(str)
   def getDutIO(str: String) = dut.io.elements(str)
 
 }
@@ -59,47 +61,46 @@ class FakeDUT extends Module {
 }
 
 class TestModuleSpec extends FlatSpec with Matchers {
-  behavior of "TestModule"
+  behavior.of("TestModule")
   it should "generate correct FIRRTL without global clock" in {
-    val firrtl = chisel3.Driver.emit(() => new TestModule(() => new FakeDUT, useGlobalClk = false))
+    val firrtl = (new ChiselStage).emitFirrtl(new TestModule(() => new FakeDUT, useGlobalClk = false))
+
     val expectedFirrtlT =
-      """|  module TestModule :
-         |    input clock : Clock
-         |    input reset : UInt<1>
-         |    output io : {i : {flip a : Fixed<8><<5>>, flip b : UInt<4>, flip c : SInt<5>, flip clk : UInt<1>}, o : {a : Fixed<8><<5>>, b : UInt<4>, c : SInt<5>, clk : UInt<1>}}
-         |
-         |    clock is invalid
-         |    reset is invalid
-         |    io is invalid
-         |    inst dut of FakeDUT @[TestModule.scala 21:19]
-         |    dut.io is invalid
-         |    dut.clock <= clock
-         |    dut.reset <= reset
-         |    node _T_21 = asClock(UInt<1>("h00")) @[TestModule.scala 26:29]
-         |    dut.clock <= _T_21 @[TestModule.scala 26:18]
-         |    dut.reset <= reset @[TestModule.scala 27:31]
-         |    node _T_22 = asUInt(dut.io.o.clk) @[Utils.scala 115:25]
-         |    node _T_23 = bits(_T_22, 0, 0) @[Utils.scala 115:32]
-         |    io.o.clk <= _T_23 @[Utils.scala 115:15]
-         |    node _T_24 = asSInt(dut.io.o.c) @[Utils.scala 102:25]
-         |    io.o.c <= _T_24 @[Utils.scala 102:15]
-         |    node _T_25 = asUInt(dut.io.o.b) @[Utils.scala 98:25]
-         |    io.o.b <= _T_25 @[Utils.scala 98:15]
-         |    node _T_26 = asFixedPoint(dut.io.o.a, 5) @[Utils.scala 108:37]
-         |    io.o.a <= _T_26 @[Utils.scala 108:15]
-         |    node _T_27 = asClock(io.i.clk) @[Utils.scala 111:25]
-         |    dut.io.i.clk <= _T_27 @[Utils.scala 111:16]
-         |    node _T_28 = asInterval(io.i.c, -10, 8, 0) @[Utils.scala 100:35]
-         |    dut.io.i.c <= _T_28 @[Utils.scala 100:16]
-         |    node_T_30 = cat(UInt<1>("h00"), io.i.b) @[Cat.scala 30:58]
-         |    node _T_31 = asInterval(_T_30, 4, 8, 0) @[Utils.scala 96:50]
-         |    dut.io.i.b <= _T_31 @[Utils.scala 96:16]
-         |    node _T_32 = asInterval(io.i.a, -106, 71, 5) @[Utils.scala 104:35]
-         |    dut.io.i.a <= _T_32 @[Utils.scala 104:16]""".stripMargin
+      """circuit TestModule :
+        |  module FakeDUT :
+        |    input clock : Clock
+        |    input reset : UInt<1>
+        |    output io : { flip i : { a : Interval[-3.28125, 2.1875].5, b : Interval[4, 8].0, c : Interval[-10, 8].0, clk : Clock}, o : { a : Interval[-3.28125, 2.1875].5, b : Interval[4, 8].0, c : Interval[-10, 8].0, clk : Clock}}
+        |
+        |    io.o.clk <= io.i.clk @[TestModule.scala 61:8]
+        |    io.o.c <= io.i.c @[TestModule.scala 61:8]
+        |    io.o.b <= io.i.b @[TestModule.scala 61:8]
+        |    io.o.a <= io.i.a @[TestModule.scala 61:8]
+        |
+        |  module TestModule :
+        |    input clock : Clock
+        |    input reset : UInt<1>
+        |    output io : { flip i : { a : Interval[-3.28125, 2.1875].5, b : Interval[4, 8].0, c : Interval[-10, 8].0, clk : Clock}, o : { a : Interval[-3.28125, 2.1875].5, b : Interval[4, 8].0, c : Interval[-10, 8].0, clk : Clock}}
+        |
+        |    inst dut of FakeDUT @[TestModule.scala 30:19]
+        |    dut.clock <= clock
+        |    dut.reset <= reset
+        |    node _T = asClock(UInt<1>("h0")) @[TestModule.scala 37:29]
+        |    dut.clock <= _T @[TestModule.scala 37:18]
+        |    dut.reset <= reset @[TestModule.scala 38:31]
+        |    io.o.clk <= dut.io.o.clk @[Utils.scala 153:14]
+        |    io.o.c <= dut.io.o.c @[Utils.scala 153:14]
+        |    io.o.b <= dut.io.o.b @[Utils.scala 153:14]
+        |    io.o.a <= dut.io.o.a @[Utils.scala 153:14]
+        |    dut.io.i.clk <= io.i.clk @[Utils.scala 153:14]
+        |    dut.io.i.c <= io.i.c @[Utils.scala 153:14]
+        |    dut.io.i.b <= io.i.b @[Utils.scala 153:14]
+        |    dut.io.i.a <= io.i.a @[Utils.scala 153:14]
+        |    """.stripMargin
+
     val expectedFirrtl = expectedFirrtlT.replaceAll(" ", "").split("\n").map(_.split("@").head).mkString("\n")
     val newFirrtl = firrtl.replaceAll(" ", "").split("\n").map(_.split("@").head).mkString("\n")
-    println(newFirrtl)
-    println(expectedFirrtl)
+    println(s"Generated Firrtl\n${"=" * 100}\n$firrtl\nExpected Firrtl\n${"=" * 100}\n$expectedFirrtlT")
     require(newFirrtl.contains(expectedFirrtl))
   }
 }
