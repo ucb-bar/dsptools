@@ -1,11 +1,11 @@
 // See LICENSE for license details.
 
-package dsptools.numbers
+package testing.dsptools.numbers
 
 import chisel3._
 import chisel3.iotesters.ChiselPropSpec
 import chisel3.testers.BasicTester
-import dsptools.numbers.implicits._
+import dsptools.numbers._
 
 //scalastyle:off magic.number
 class DspComplexExamples extends Module {
