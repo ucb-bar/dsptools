@@ -124,6 +124,7 @@ trait ConvertableFromSInt extends ChiselConvertableFrom[SInt] with hasContext {
 }
 
 trait BinaryRepresentationSInt extends BinaryRepresentation[SInt] with hasContext {
+  def clip(a: SInt, b: SInt): SInt = ???
   def shl(a: SInt, n: Int): SInt = a << n
   def shl(a: SInt, n: UInt): SInt = a << n
   // Note: This rounds to negative infinity (smallest abs. value for negative #'s is -1)

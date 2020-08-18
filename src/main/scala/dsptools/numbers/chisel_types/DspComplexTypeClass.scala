@@ -68,7 +68,7 @@ class DspComplexEq[T <: Data:Eq] extends Eq[DspComplex[T]] with hasContext {
   }
 }
 
-class DspComplexBinaryRepresentation[T <: Data:Ring:BinaryRepresentation] extends 
+class DspComplexBinaryRepresentation[T <: Data:Ring:BinaryRepresentation] extends
     BinaryRepresentation[DspComplex[T]] with hasContext {
   override def shl(a: DspComplex[T], n: Int): DspComplex[T] = throw DspException("Can't shl on complex")
   override def shl(a: DspComplex[T], n: UInt): DspComplex[T] = throw DspException("Can't shl on complex")
@@ -76,6 +76,7 @@ class DspComplexBinaryRepresentation[T <: Data:Ring:BinaryRepresentation] extend
   override def shr(a: DspComplex[T], n: UInt): DspComplex[T] = throw DspException("Can't shr on complex")
   override def div2(a: DspComplex[T], n: Int): DspComplex[T] = DspComplex.wire(a.real.div2(n), a.imag.div2(n))
   override def mul2(a: DspComplex[T], n: Int): DspComplex[T] = DspComplex.wire(a.real.mul2(n), a.imag.mul2(n))
+  def clip(a: DspComplex[T], b: DspComplex[T]): DspComplex[T] = throw DspException("Can't clip on complex")
   def signBit(a: DspComplex[T]): Bool = throw DspException("Can't get sign bit on complex")
   def trimBinary(a: DspComplex[T], n: Option[Int]): DspComplex[T] = 
     DspComplex.wire(BinaryRepresentation[T].trimBinary(a.real, n), BinaryRepresentation[T].trimBinary(a.imag, n))

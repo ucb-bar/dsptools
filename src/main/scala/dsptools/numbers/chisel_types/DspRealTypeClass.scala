@@ -112,6 +112,9 @@ trait BinaryRepresentationDspReal extends BinaryRepresentation[DspReal] with has
     val lut = VecInit((0 to max).map(x => DspReal(math.pow(2.0, -x))))
     a * lut(n)
   }
+
+  def clip(a: DspReal, b: DspReal): DspReal = a
+
   // mul2 consistent with shl
   // signBit relies on Signed
   override def div2(a: DspReal, n: Int): DspReal = a / DspReal(math.pow(2, n))

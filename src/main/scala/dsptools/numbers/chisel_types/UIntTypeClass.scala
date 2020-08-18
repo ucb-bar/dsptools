@@ -130,6 +130,7 @@ trait BinaryRepresentationUInt extends BinaryRepresentation[UInt] with hasContex
   def shl(a: UInt, n: UInt): UInt = a << n
   def shr(a: UInt, n: Int): UInt = a >> n
   def shr(a: UInt, n: UInt): UInt = a >> n
+  def clip(a: UInt, n: UInt): UInt = ???
   // Ignores negative trims (n not used for anything except Fixed)
   override def trimBinary(a: UInt, n: Int): UInt = a
   def trimBinary(a: UInt, n: Option[Int]): UInt = a

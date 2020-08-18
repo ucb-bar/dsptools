@@ -6,7 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 case class RadPow(rad: Int, pow: Int) {
   /** `r ^ p` */
-  def get: Int = math.pow(rad, pow).toInt
+  def get: Int = BigInt(rad).pow(pow).toInt
   /** Factorize i.e. rad = 4, pow = 3 -> Seq(4, 4, 4) */
   def factorize: Seq[Int] = Seq.fill(pow)(rad)
 }

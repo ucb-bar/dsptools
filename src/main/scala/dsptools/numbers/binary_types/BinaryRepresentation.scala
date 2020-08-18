@@ -25,5 +25,5 @@ trait BinaryRepresentation[A <: Data] extends Any {
   def trimBinary(a: A, n: Option[Int]): A
 
   // Clip A to B (range)
-  def clip(a: A, b: A): A = ???
+  def clip(a: A, b: A): A
 }

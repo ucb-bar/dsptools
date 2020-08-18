@@ -147,6 +147,8 @@ trait BinaryRepresentationFixedPoint extends BinaryRepresentation[FixedPoint] wi
 trait FixedPointReal extends FixedPointRing with FixedPointIsReal with ConvertableToFixedPoint with
     ConvertableFromFixedPoint with BinaryRepresentationFixedPoint with RealBits[FixedPoint] with hasContext {
 
+  def clip(a: FixedPoint, b: FixedPoint): FixedPoint = ???
+
   def trimBinary(a: FixedPoint, n: Option[Int]): FixedPoint = {
     // TODO: Support other modes?
     n match {
