@@ -153,6 +153,8 @@ trait BinaryRepresentationInterval extends BinaryRepresentation[Interval] with h
 trait IntervalReal extends IntervalRing with IntervalIsReal with ConvertableToInterval with
     ConvertableFromInterval with BinaryRepresentationInterval with RealBits[Interval] with hasContext {
 
+  def clip(a: Interval, b: Interval): Interval = ???
+
   def trimBinary(a: Interval, n: Option[Int]): Interval = {
     // TODO: Support other modes?
     n match {

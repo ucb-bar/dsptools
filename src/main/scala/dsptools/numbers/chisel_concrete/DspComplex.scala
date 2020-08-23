@@ -5,7 +5,6 @@ package dsptools.numbers
 import chisel3._
 import chisel3.experimental.{FixedPoint, Interval}
 import dsptools.DspException
-import implicits._
 import breeze.math.Complex
 
 object DspComplex {
