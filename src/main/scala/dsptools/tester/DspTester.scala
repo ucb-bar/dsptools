@@ -160,10 +160,15 @@ class DspTester[+T <: MultiIOModule](
   // Has priority over Bits (Interval extends Bits)
   def poke(signal: Interval, value: Int): Unit = poke(signal, value.toDouble)
   def poke(signal: Interval, value: Double): Unit = poke(signal.asInstanceOf[Data], value)
+  def poke(signal: Interval, value: BigDecimal): Unit = {
+    assert(value <= Double.MaxValue, s"poking ${signal} with a value $value bigger than Double.MaxValue")
+    poke(signal.asInstanceOf[Data], value.toDouble)
+  }
 
   // DspReal extends Bundle extends Aggregate extends Data
   // If poking DspReal with Double, can only go here
   // Type classes are all Data:RealBits
+  //scalastyle:off cyclomatic.complexity
   def poke(signal: Data, value: Double): Unit = {
     updatableDspVerbose.withValue(dispSub) {
       signal match {
@@ -184,6 +189,10 @@ class DspTester[+T <: MultiIOModule](
       }
     }
     if (dispDsp) logger info s"  POKE ${getName(signal)} <- $value, ${bitInfo(signal)}"
+  }
+  def poke(signal: Data, value: BigDecimal): Unit = {
+    assert(value <= Double.MaxValue, s"poking ${signal} with a value $value bigger than Double.MaxValue")
+    poke(signal, value.toDouble)
   }
 
   // Will only print individual real/imag peek information if dispSub is true!
@@ -333,15 +342,29 @@ class DspTester[+T <: MultiIOModule](
 
   // Expect on DspReal goes straight to here
   def expect(data: Data, expected: Double): Boolean = expect(data, expected, msg = "")
-  def expect(data: Data, expected: Double, msg: String): Boolean = {
+  def expectWithoutFailure(data: Data, expected: Double, msg: String = ""): Boolean = {
     val expectedNew = roundData(data, expected)
     val path = getName(data)
     val (dblVal, bitVal) = updatableDspVerbose.withValue(dispSub) { dspPeek(data) }
     val (good, tolerance) = checkDecimal(data, expectedNew, dblVal, bitVal)
-    if (dispDsp || !good) logger info ( { if (!good) Console.RED else "" } +
+    if (dispDsp) logger info
+      (
         s"$msg  EXPECT $path -> $dblVal == E " +
         s"$expectedNew ${if (good) "PASS" else "FAIL"}, tolerance = $tolerance, ${bitInfo(data)}" +
-        Console.RESET)
+        Console.RESET
+      )
+    good
+  }
+  def expect(data: Data, expected: Double, msg: String): Boolean = {
+    val good = expectWithoutFailure(data, expected, msg)
+    if (!good) fail
+    good
+  }
+
+  def expect(data: Data, expected: BigDecimal): Boolean = expect(data, expected, "")
+  def expect(data: Data, expected: BigDecimal, msg: String): Boolean = {
+    assert(expected <= Double.MaxValue, s"expecting from ${data} a value $expected that is bigger than Double.MaxValue")
+    val good = expectWithoutFailure(data, expected.toDouble, msg)
     if (!good) fail
     good
   }
