@@ -21,7 +21,14 @@ case class DspTesterOptions(
     // Input/output delay after which to peek/poke values (some fraction of clkMul)
     inOutDelay: Double = 0.5,
     // # clk periods for initial reset
-    initClkPeriods: Int = 5) extends ComposableOptions {
+    initClkPeriods: Int = 5,
+    // # bit reduce to within this many sigma of mean, only applicable when using executeWithBitReduction
+    bitReduceBySigma: Double = 0.0,
+    // # max number of bit reduction passes
+    bitReduceMaxPasses: Int = 1,
+    // bitReduce, add this many bits to reduce amount,
+    bitReduceFudgeConstant: Int = 0
+) extends ComposableOptions {
 
     val clkPeriodPs = tbTimeUnitPs * clkMul
     val initTimeUnits = clkMul * initClkPeriods
@@ -85,6 +92,29 @@ trait HasDspTesterOptions {
     .abbr("initt")
     .foreach { x => dspTesterOptions = dspTesterOptions.copy(initClkPeriods = x) }
     .text(s"initial reset time (# of clk periods), default is ${dspTesterOptions.initClkPeriods}")
+
+  parser.opt[Double]("bit-reduce-to-n-sigma")
+    .abbr("brtns")
+    .foreach { x => dspTesterOptions = dspTesterOptions.copy(bitReduceBySigma = x) }
+    .text(
+      s"bit reduce to within mean + (this * sigma), default is ${dspTesterOptions.bitReduceBySigma} which => don't use"
+    )
+
+  parser.opt[Int]("bit-reduce-max-passes")
+    .abbr("brmp")
+    .foreach { x => dspTesterOptions = dspTesterOptions.copy(bitReduceMaxPasses = x) }
+    .text(
+      s"bit reduce repeatedly until no changes or this many passes)," +
+        s"default is ${dspTesterOptions.bitReduceMaxPasses}"
+    )
+
+  parser.opt[Int]("bit-reduce-fudge-constant")
+    .abbr("brgb")
+    .foreach { x => dspTesterOptions = dspTesterOptions.copy(bitReduceFudgeConstant = x) }
+    .text(
+      s"bit-reduce guard bits, limit the reduction amount by adding this," +
+        s"default is ${dspTesterOptions.bitReduceMaxPasses}"
+    )
 
 }
 
