@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 module BBFEquals(
     input  [63:0] in1,
     input  [63:0] in2,

@@ -1,4 +1,5 @@
-// Example VCS Command: $VCS_HOME/bin/vcs -debug_pp -full64 +define+UNIT_DELAY +rad +v2k +vcs+lic+wait +vc+list +vcs+initreg+random +vcs+dumpvars+out.vcd tb.v SimpleIOModule.v ... 
+// SPDX-License-Identifier: Apache-2.0
+// Example VCS Command: $VCS_HOME/bin/vcs -debug_pp -full64 +define+UNIT_DELAY +rad +v2k +vcs+lic+wait +vc+list +vcs+initreg+random +vcs+dumpvars+out.vcd tb.v SimpleIOModule.v ...
 `timescale 100ps / 10ps
 
 `define CLK_PERIOD 1
