@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 package dsptools.numbers
 
 // Make using these ops more like using math.opName

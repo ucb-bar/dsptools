@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 package dsptools.numbers
 
 import chisel3._

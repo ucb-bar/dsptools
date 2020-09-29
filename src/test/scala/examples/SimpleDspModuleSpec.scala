@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 package SimpleDsp
 
 // Allows you to use Chisel Module, Bundle, etc.
