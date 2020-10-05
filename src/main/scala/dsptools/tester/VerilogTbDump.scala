@@ -1,4 +1,4 @@
-// See LICENSE for license details.
+// SPDX-License-Identifier: Apache-2.0
 
 package dsptools
 
@@ -45,8 +45,9 @@ trait VerilogTbDump {
     // Input/output delay after which to peek/poke values
     val clkDelta = dsptestersOpt.clkMul * dsptestersOpt.inOutDelay
 
+    tb write s"// SPDX-License-Identifier: Apache-2.0\n"
     tb write s"// Example VCS Command: $$VCS_HOME/bin/vcs -debug_pp -full64 +define+UNIT_DELAY +rad +v2k +vcs+lic+wait " +
-    s"+vc+list +vcs+initreg+random +vcs+dumpvars+out.vcd tb.v ${dutName}.v ... \n"
+    s"+vc+list +vcs+initreg+random +vcs+dumpvars+out.vcd tb.v ${dutName}.v ...\n"
     
     tb write s"`timescale ${dsptestersOpt.tbTimeUnitPs}ps / ${dsptestersOpt.tbTimePrecisionPs}ps\n"
     tb write s"\n`define CLK_PERIOD ${dsptestersOpt.clkMul}\n"
