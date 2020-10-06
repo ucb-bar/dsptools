@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 package dsptools
 
 package object numbers extends AllSyntax with AllImpl with spire.syntax.RingSyntax
