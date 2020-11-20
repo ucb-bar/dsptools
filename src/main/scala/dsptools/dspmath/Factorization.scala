@@ -2,7 +2,8 @@
 
 package dsptools.dspmath
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 case class RadPow(rad: Int, pow: Int) {
   /** `r ^ p` */
@@ -85,7 +86,7 @@ case class Factorization(supportedRadsUnsorted: Seq[Seq[Int]]) {
 
 }
 
-class FactorizationSpec extends FlatSpec with Matchers {
+class FactorizationSpec extends AnyFlatSpec with Matchers {
 
   val testSupportedRads = Seq(Seq(4, 2), Seq(3), Seq(5), Seq(7))
 
