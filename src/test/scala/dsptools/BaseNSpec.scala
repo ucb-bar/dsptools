@@ -3,7 +3,8 @@
 package dsptools
 
 import chisel3._
-import org.scalatest.{Matchers, FreeSpec}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 //scalastyle:off magic.number
 
@@ -30,7 +31,7 @@ class BaseNCircuitTester(c: BaseNCircuit) extends DspTester(c) {
   }
 }
 
-class BaseNSpec extends FreeSpec with Matchers {
+class BaseNSpec extends AnyFreeSpec with Matchers {
   "baseN tester increments" ignore {
     chisel3.iotesters.Driver(() => new BaseNCircuit) { c =>
       new BaseNCircuitTester(c)

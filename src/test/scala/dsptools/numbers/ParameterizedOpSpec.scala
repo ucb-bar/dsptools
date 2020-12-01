@@ -7,7 +7,8 @@ import chisel3._
 import chisel3.experimental.FixedPoint
 import chisel3.iotesters.TesterOptionsManager
 import dsptools.DspTester
-import org.scalatest.{FreeSpec, Matchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 import dsptools.numbers._
 import dsptools._
 
@@ -62,7 +63,7 @@ class ParameterizedOpTester[T<:Data:Ring](c: ParameterizedNumberOperation[T]) ex
   }
 }
 
-class ParameterizedOpSpecification extends FreeSpec with Matchers {
+class ParameterizedOpSpecification extends AnyFreeSpec with Matchers {
   """
   The ParameterizedNumericOperation demonstrates a Module that can be instantiated to
   handle different numeric types and different numerical operations
@@ -124,7 +125,7 @@ class ComplexOpTester[T<:DspComplex[_]](c: ParameterizedNumberOperation[T]) exte
   }
 }
 
-class ComplexOpSpecification extends FreeSpec with Matchers {
+class ComplexOpSpecification extends AnyFreeSpec with Matchers {
   """
   The ParameterizedNumericOperation demonstrates a Module that can be instantiated to
   handle different numeric types and different numerical operations

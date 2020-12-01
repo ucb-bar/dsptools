@@ -92,9 +92,6 @@ val commonSettings = Seq(
 
 val dsptoolsSettings = Seq(
   name := "dsptools",
-  libraryDependencies ++= Seq("chisel-iotesters").map {
-    dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
-  },
 // sbt 1.2.6 fails with `Symbol 'term org.junit' is missing from the classpath`
 // when compiling tests under 2.11.12
 // An explicit dependency on junit seems to alleviate this.
@@ -123,13 +120,19 @@ publishArtifact in Test := false
 pomIncludeRepository := { x => false }
 
 // Don't add 'scm' elements if we have a git.remoteRepo definition.
-
+// TODO: FIXME: remove once `chisel-testers` 1.6.X is released with bumped `scalatest` deps
+// to enable add -Dsbt.sourcemode=true to SBT cmdline
+lazy val chiselIotestersRef = ProjectRef(uri("git://github.com/abejgonzalez/chisel-testers.git#5b9cc56"), "chisel-testers")
+lazy val chiselIotestersLib = Seq("chisel-iotesters").map {
+  dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
+}.head
 
 val dsptools = (project in file(".")).
   enablePlugins(BuildInfoPlugin).
   enablePlugins(ScalaUnidocPlugin).
   settings(commonSettings: _*).
-  settings(dsptoolsSettings: _*)
+  settings(dsptoolsSettings: _*).
+  sourceDependency(chiselIotestersRef, chiselIotestersLib)
 
 
 val `rocket-dsptools` = (project in file("rocket")).

@@ -2,8 +2,9 @@
 
 package dsptools.numbers
 
-import org.scalatest.{FreeSpec, Matchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
-class OverflowSpec extends FreeSpec with Matchers {
+class OverflowSpec extends AnyFreeSpec with Matchers {
 
 }

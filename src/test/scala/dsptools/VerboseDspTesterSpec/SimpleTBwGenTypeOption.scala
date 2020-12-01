@@ -9,12 +9,13 @@ import chisel3.experimental.FixedPoint
 import breeze.math.Complex
 import dsptools.{DspTester, DspTesterOptionsManager, DspTesterOptions}
 import dsptools.numbers._
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import chisel3.iotesters.TesterOptions
 
 trait EasyPeekPoke {
 
-  self: DspTester[_] => 
+  self: DspTester[_] =>
 
   def feed(d: Data, value: Double) = {
     d match {
@@ -106,21 +107,21 @@ class Interface[R <: Data:Real](genShort: R, genLong: R, includeR: Boolean, p: T
   val long = new DataTypeBundle(genLong, bigW, bigBP)
 
   val vU = Vec(vecLen, UInt(smallW))
-  val vS = Vec(vecLen, SInt(smallW))  
-  val vF = Vec(vecLen, FixedPoint(smallW, smallBP))  
-  
+  val vS = Vec(vecLen, SInt(smallW))
+  val vF = Vec(vecLen, FixedPoint(smallW, smallBP))
+
   override def cloneType: this.type = new Interface(genShort, genLong, includeR, p).asInstanceOf[this.type]
 }
 
-class SimpleIOModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boolean, val p: TestParams) 
+class SimpleIOModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boolean, val p: TestParams)
     extends Module {
 
   val io = IO(new Bundle {
     val i = Input(new Interface(genShort, genLong, includeR, p))
-    val o = Output(new Interface(genShort, genLong, includeR, p)) }) 
+    val o = Output(new Interface(genShort, genLong, includeR, p)) })
 
   // Crossed sizes on purpose (to make sure Fixed point was interpreted correctly)
-  io.o.long <> RegNext(io.i.short) 
+  io.o.long <> RegNext(io.i.short)
   io.o.short <> RegNext(io.i.long)
 
   if (includeR) io.o.r.get := RegNext(io.i.r.get)
@@ -139,7 +140,7 @@ class SimpleIOModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Bool
   }
 }
 
-class SimpleLitModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boolean, val p: TestParams) 
+class SimpleLitModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boolean, val p: TestParams)
     extends Module {
 
   val posLit = p.posLit
@@ -149,7 +150,7 @@ class SimpleLitModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boo
 
   val io = IO(new Bundle {
     val i = Input(new Interface(genShort, genLong, includeR, p))
-    val o = Output(new Interface(genShort, genLong, includeR, p)) }) 
+    val o = Output(new Interface(genShort, genLong, includeR, p)) })
 
   val litRP = if (includeR) Some(DspReal(posLit)) else None
   val litRN = if (includeR) Some(DspReal(negLit)) else None
@@ -169,7 +170,7 @@ class SimpleLitModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boo
   val litB = true.B
   val litU = posLit.round.toInt.U
   val litC = DspComplex(posLit.F(bp.BP), negLit.F(bp.BP))
-      
+
   val lutGenSeq = lutVals map {x => genShort.fromDoubleWithFixedWidth(x)}
   val lutSSeq = lutVals map (_.round.toInt.S(p.smallW.W))
 
@@ -195,7 +196,7 @@ class SimpleLitModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boo
 }
 
 class PassIOTester[R <: Data:Real](c: SimpleIOModule[R]) extends DspTester(c) with EasyPeekPoke {
-  
+
   val lutVals = c.p.lutVals
   val io = c.io
 
@@ -257,7 +258,7 @@ class PassIOTester[R <: Data:Real](c: SimpleIOModule[R]) extends DspTester(c) wi
 }
 
 class PassLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) with EasyPeekPoke {
-  
+
   val posLit = c.posLit
   val negLit = c.negLit
   val lutVals = c.lutVals
@@ -266,7 +267,7 @@ class PassLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) 
     checkP(c.io.o.RP.get, posLit)
     checkP(c.io.o.RN.get, negLit)
   }
-  
+
   // expect properly rounds doubles to ints for SInt
   c.pos.elements foreach { case (s, d) => checkP(d, posLit) }
   c.neg.elements foreach { case (s, d) => checkP(d, negLit) }
@@ -298,7 +299,7 @@ class PassLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) 
 }
 
 class FailLitTester[R <: Data:Real](c: SimpleLitModule[R]) extends DspTester(c) {
-  
+
   val posLit = c.posLit
   val negLit = c.negLit
   val lutVals = c.lutVals
@@ -354,7 +355,7 @@ object TestSetup {
 
 }
 
-class SimpleTBSpec extends FlatSpec with Matchers {
+class SimpleTBSpec extends AnyFlatSpec with Matchers {
 
   val p = TestSetup.p
   val optionsPass = TestSetup.optionsPass
@@ -382,13 +383,13 @@ class SimpleTBSpec extends FlatSpec with Matchers {
       dspTesterOptions = optionsPass.dspTesterOptions
       testerOptions = optionsPass.testerOptions
 //      commonOptions = optionsPass.commonOptions.copy(targetDirName = "test_run_dir/lit_fix")
-    }  
+    }
     dsptools.Driver.execute(() => new SimpleLitModule(p.genShortF, p.genLongF, includeR = true, p), opt) { c =>
       new PassLitTester(c)
     } should be (true)
   }
 
-  it should "*fail* to read all lits with gen = fixed when expect tolerance is set to 0 bits " + 
+  it should "*fail* to read all lits with gen = fixed when expect tolerance is set to 0 bits " +
       "(due to not having enough fractional bits to represent #s)" in {
     val opt = new DspTesterOptionsManager {
       dspTesterOptions = optionsFail.dspTesterOptions

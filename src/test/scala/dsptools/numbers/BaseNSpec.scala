@@ -3,9 +3,10 @@
 package dsptools.numbers
 
 import dsptools.numbers.representations.BaseN
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class BaseNSpec extends FlatSpec with Matchers {
+class BaseNSpec extends AnyFlatSpec with Matchers {
   behavior of "BaseN"
   it should "properly convert a decimal into BaseN" in {
     // n in decimal, rad = radix, res = expected representation in base rad

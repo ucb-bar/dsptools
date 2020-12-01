@@ -7,7 +7,8 @@ import chisel3.experimental.FixedPoint
 import chisel3.iotesters._
 import dsptools._
 import dsptools.numbers._
-import org.scalatest.{FreeSpec, Matchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 /*
  * These tests mostly exist to ensure that expressions of the form
@@ -98,7 +99,7 @@ extends DspTester(dut) with FuncTester[DspReal, Double] {
   def myExpect(port: DspReal, value: Double) = expect(port, value)
 }
 
-class TypeclassSpec extends FreeSpec with Matchers {
+class TypeclassSpec extends AnyFreeSpec with Matchers {
   "Ring[T].func() should work" in {
     dsptools.Driver.execute( () => new RingModule(SInt(10.W)) ) { c =>
       new SIntFuncTester(c, Seq(2, -3), Seq(2, -3))

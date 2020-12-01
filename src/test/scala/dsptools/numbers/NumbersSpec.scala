@@ -6,13 +6,14 @@ import chisel3._
 import dsptools._
 import chisel3.experimental.FixedPoint
 import dsptools.numbers.implicits._
-import org.scalatest.{FreeSpec, Matchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
   * This will attempt to follow the dsptools.numbers.README.md file as close as possible.
   */
 //scalastyle:off magic.number
-class NumbersSpec extends FreeSpec with Matchers {
+class NumbersSpec extends AnyFreeSpec with Matchers {
   def f(w: Int, b: Int): FixedPoint = FixedPoint(w.W, b.BP)
   def u(w: Int): UInt = UInt(w.W)
   def s(w: Int): SInt = SInt(w.W)

@@ -4,7 +4,8 @@ package examples
 
 import chisel3._
 import chisel3.iotesters.PeekPokeTester
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 //scalastyle:off magic.number
 
@@ -38,7 +39,7 @@ class SimpleCaseClassBundleTester(c: SimpleCaseClassModule) extends PeekPokeTest
   expect(c.io.out.underlying, 7)
 }
 
-class SimpleCaseClassBundleSpec extends FlatSpec with Matchers {
+class SimpleCaseClassBundleSpec extends AnyFlatSpec with Matchers {
   behavior of "SimpleCaseClassBundle"
 
   it should "push number through with one step delay" in {

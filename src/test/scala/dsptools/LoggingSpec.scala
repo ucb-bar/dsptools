@@ -4,7 +4,8 @@ package dsptools
 
 import chisel3._
 import logger.{LazyLogging, LogLevel, Logger}
-import org.scalatest.{FreeSpec, Matchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 class DutWithLogging extends Module with LazyLogging {
   val io = IO(new Bundle {})
@@ -18,7 +19,7 @@ class DutWithLogging extends Module with LazyLogging {
 
 class DutWithLoggingTester(c: DutWithLogging) extends DspTester(c)
 
-class LoggingSpec extends FreeSpec with Matchers {
+class LoggingSpec extends AnyFreeSpec with Matchers {
   "logging can be emitted during hardware generation" - {
     "level defaults to warn" in {
       Logger.makeScope() {

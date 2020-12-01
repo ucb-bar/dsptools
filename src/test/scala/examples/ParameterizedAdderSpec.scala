@@ -6,7 +6,8 @@ import chisel3._
 import chisel3.experimental.FixedPoint
 import dsptools.DspTester
 import dsptools.numbers._
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 //scalastyle:off magic.number
 
@@ -41,7 +42,7 @@ class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends D
   }
 }
 
-class ParameterizedAdderSpec extends FlatSpec with Matchers {
+class ParameterizedAdderSpec extends AnyFlatSpec with Matchers {
 
   behavior of "parameterized adder circuit on blackbox real"
 

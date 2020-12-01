@@ -5,7 +5,8 @@ package examples
 import chisel3.core._
 import chisel3.{Bundle, Module}
 import dsptools.DspTester
-import org.scalatest.{Matchers, FlatSpec}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 class SimpleAdder extends Module {
   val io = IO(new Bundle {
@@ -36,7 +37,7 @@ class SimpleAdderTester(c: SimpleAdder) extends DspTester(c) {
     println(s"SimpleAdder: $i + $j should make $expected got ${peek(c.io.c)}")
   }
 }
-class SimpleAdderSpec extends FlatSpec with Matchers {
+class SimpleAdderSpec extends AnyFlatSpec with Matchers {
   behavior of "SimpleAdder"
 
   it should "add to numbers excellently" in {

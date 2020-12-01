@@ -10,7 +10,8 @@ import chisel3.iotesters.ChiselPropSpec
 import chisel3.testers.BasicTester
 import dsptools.DspTester
 import dsptools.numbers.implicits._
-import org.scalatest.{FreeSpec, Matchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 class FixedRing1(val width: Int, val binaryPoint: Int) extends Module {
   val io = IO(new Bundle {
@@ -154,7 +155,7 @@ class BrokenShifterTester(c: BrokenShifter) extends DspTester(c) {
   }
 }
 
-class FixedPointSpec extends FreeSpec with Matchers {
+class FixedPointSpec extends AnyFreeSpec with Matchers {
   "FixedPoint numbers should work properly for the following mathematical type functions" - {
 //    for (backendName <- Seq("verilator")) {
     for (backendName <- Seq("firrtl", "verilator")) {
@@ -219,11 +220,11 @@ class FixedPointChiselSpec extends ChiselPropSpec {
   property("asReal shold work") {
     assertTesterPasses { new BasicTester {
       val x = FixedPoint.fromDouble(13.5, 16.W, 4.BP)
- 
+
       val y = x.asReal
- 
+
       chisel3.assert(y === DspReal(13.5))
- 
+
       stop()
     }}
   }

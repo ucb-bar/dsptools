@@ -3,14 +3,15 @@
 package dsptools
 
 import DspTesterUtilities._
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import scala.math.{pow, abs}
 
 class DspTesterSpec {
 
 }
 
-class DspTesterUtilitiesSpec extends FlatSpec with Matchers {
+class DspTesterUtilitiesSpec extends AnyFlatSpec with Matchers {
 
   behavior of "Tester Converters"
 
