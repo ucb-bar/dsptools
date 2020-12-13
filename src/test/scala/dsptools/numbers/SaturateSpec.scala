@@ -5,7 +5,8 @@ package dsptools.numbers.rounding
 import chisel3._
 import chisel3.experimental.FixedPoint
 import chisel3.iotesters._
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 class SaturateUIntMod(val add: Boolean) extends MultiIOModule {
   val a = IO(Input(UInt(8.W)))
@@ -148,7 +149,7 @@ class SaturateFixedPointTester(dut: SaturateFixedPointMod) extends PeekPokeTeste
   }
 }
 
-class SaturateSpec extends FlatSpec with Matchers {
+class SaturateSpec extends AnyFlatSpec with Matchers {
 
   behavior of "Saturating add"
 

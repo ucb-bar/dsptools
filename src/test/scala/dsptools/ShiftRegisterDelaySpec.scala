@@ -5,7 +5,8 @@ package dsptools
 import chisel3._
 import chisel3.core.FixedPoint
 import dsptools.numbers._
-import org.scalatest.{FreeSpec, Matchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.collection.mutable
 
@@ -112,7 +113,7 @@ class CeilTruncateTester(c: CeilTruncateCircuitWithDelays) extends DspTester(c) 
   }
 }
 
-class ShiftRegisterDelaySpec extends FreeSpec with Matchers {
+class ShiftRegisterDelaySpec extends AnyFreeSpec with Matchers {
   "ceil delay should be consistent between dsp real and fixed point" in {
     dsptools.Driver.execute(
       () => new CeilTruncateCircuitWithDelays(2),

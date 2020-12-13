@@ -4,11 +4,12 @@ package dsptools
 
 import chisel3._
 import dsptools.numbers._
-import org.scalatest.{FreeSpec, Matchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 //scalastyle:off magic.number
 
-class DspContextSpec extends FreeSpec with Matchers {
+class DspContextSpec extends AnyFreeSpec with Matchers {
   "Context handling should be unobtrusive and convenient" - {
     "There should be a default available at all times" in {
       DspContext.current.binaryPoint should be (DspContext.defaultBinaryPoint)

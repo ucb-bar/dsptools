@@ -8,7 +8,8 @@ import chisel3._
 import chisel3.iotesters.{PeekPokeTester, TesterOptions}
 import dsptools.numbers.implicits._
 import dsptools.{DspContext, Grow}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import dsptools.examples.{ConstantTapTransposedStreamingFIR, TransposedStreamingFIR}
 import spire.algebra.{Field, Ring}
 
@@ -57,7 +58,7 @@ class TransposedStreamingTester(c: TransposedStreamingFIR[SInt])
   }
 }
 
-class TransposedStreamFIRSpec extends FlatSpec with Matchers {
+class TransposedStreamFIRSpec extends AnyFlatSpec with Matchers {
   "ConstantTapTransposedStreamingFIR" should "compute a running average like thing" in {
     val taps = 0 until 3
 

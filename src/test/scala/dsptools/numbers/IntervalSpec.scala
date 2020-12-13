@@ -9,7 +9,8 @@ import chisel3.experimental._
 import chisel3.internal.firrtl.IntervalRange
 import dsptools.DspTester
 import dsptools.numbers.implicits._
-import org.scalatest.{FreeSpec, Matchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 class IntervalRing1(val width: Int, val binaryPoint: Int) extends Module {
   val range = IntervalRange(width.W, binaryPoint.BP)
@@ -158,7 +159,7 @@ class IntervalBrokenShifterTester(c: IntervalBrokenShifter) extends DspTester(c)
   }
 }
 
-class IntervalSpec extends FreeSpec with Matchers {
+class IntervalSpec extends AnyFreeSpec with Matchers {
   "Interval numbers should work properly for the following mathematical type functions" - {
 //    for (backendName <- Seq("verilator")) {
 //    for (backendName <- Seq("treadle")) {

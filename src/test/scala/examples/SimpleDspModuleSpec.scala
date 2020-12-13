@@ -15,7 +15,8 @@ import dsptools.{DspTester, DspTesterOptionsManager, DspTesterOptions}
 // Allows you to modify default Chisel tester behavior (note that DspTester is a special version of Chisel tester)
 import iotesters.TesterOptions
 // Scala unit testing style
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 // IO Bundle. Note that when you parameterize the bundle, you MUST override cloneType.
 // This also creates x, y, z inputs/outputs (direction must be specified at some IO hierarchy level)
@@ -33,9 +34,9 @@ class SimpleDspModule[T <: Data:RealBits](gen: T, val addPipes: Int) extends Mod
   val io = IO(new SimpleDspIo(gen))
   // Output will be current x + y addPipes clk cycles later
   // Note that this relies on the fact that type classes have a special + that
-  // add addPipes # of ShiftRegister after the sum. If you don't wrap the sum in 
+  // add addPipes # of ShiftRegister after the sum. If you don't wrap the sum in
   // DspContext.withNumAddPipes(addPipes), the default # of addPipes is used.
-  DspContext.withNumAddPipes(addPipes) { 
+  DspContext.withNumAddPipes(addPipes) {
     io.z := io.x context_+ io.y
   }
 }
@@ -49,7 +50,7 @@ class SimpleDspModuleTester[T <: Data:RealBits](c: SimpleDspModule[T]) extends D
     // Feed in to the x, y inputs
     poke(c.io.x, in)
     // Locally (just for the stuff in {}) change console print properties
-    // so that this second peek isn't displayed on the console 
+    // so that this second peek isn't displayed on the console
     // (since the input value is the same as the first peek)
     updatableDspVerbose.withValue(false) {
       poke(c.io.y, in)
@@ -65,8 +66,8 @@ class SimpleDspModuleTester[T <: Data:RealBits](c: SimpleDspModule[T]) extends D
 }
 
 // Scala style testing
-class SimpleDspModuleSpec extends FlatSpec with Matchers {
-  
+class SimpleDspModuleSpec extends AnyFlatSpec with Matchers {
+
   // If you don't want to use default tester options, you need to create your own DspTesterOptionsManager
   val testOptions = new DspTesterOptionsManager {
     // Customizing Dsp-specific tester features (unspecified options remain @ default values)
@@ -83,7 +84,7 @@ class SimpleDspModuleSpec extends FlatSpec with Matchers {
         // print out BigInt or base n versions of peeks/pokes -- rather than the proper decimal representation)
         isVerbose = false,
         // Default backend uses FirrtlInterpreter. If you want to simulate with the generated Verilog,
-        // you need to switch the backend to Verilator. Note that tests currently need to be dumped in 
+        // you need to switch the backend to Verilator. Note that tests currently need to be dumped in
         // different output directories with Verilator; otherwise you run into weird concurrency issues (bug!)...
         backendName = "verilator")
     // Override default output directory while maintaining other default settings

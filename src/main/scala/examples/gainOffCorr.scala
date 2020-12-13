@@ -5,7 +5,7 @@ package dsptools.examples
 import chisel3.core._
 import chisel3.{Bundle, Module}
 import dsptools.DspTester
-import org.scalatest.{Matchers, FlatSpec}
+
 import spire.algebra.Ring
 import spire.implicits._
 
@@ -22,8 +22,8 @@ class gainOffCorr[T<:Data:Ring](genIn: => T,genGain: => T,genOff: => T,genOut: =
        val offsetCorr = Input(Vec(numLanes, genOff))
        val outputVal = Output(Vec(numLanes, genOut))
     })
-   
-    val inputGainCorr = io.inputVal.zip(io.gainCorr).map{case (in, gain) => in*gain } 
+
+    val inputGainCorr = io.inputVal.zip(io.gainCorr).map{case (in, gain) => in*gain }
     io.outputVal := inputGainCorr.zip(io.offsetCorr).map{case (inGainCorr, offset) => inGainCorr + offset }
 }
 

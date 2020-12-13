@@ -5,7 +5,8 @@ package dsptools.numbers
 import chisel3._
 import chisel3.experimental.FixedPoint
 import dsptools.DspTester
-import org.scalatest.{FreeSpec, Matchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 //scalastyle:off magic.number
 
@@ -43,7 +44,7 @@ class RemoveMantissaTester(c: RemoveMantissa, inValue: Double, outValue: Double)
   expect(c.io.out, outValue, s"got ${peek(c.io.out)} should have $outValue")
 }
 
-class FixedPrecisionChangerSpec extends FreeSpec with Matchers {
+class FixedPrecisionChangerSpec extends AnyFreeSpec with Matchers {
   "assignment of numbers with differing binary points seems to work as I would expect" - {
     "here we assign to a F8.1 from a F8.3" in {
       dsptools.Driver.execute(() => new FixedPrecisionChanger(8, 3, 8, 1)) { c =>

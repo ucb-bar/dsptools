@@ -7,7 +7,8 @@ import chisel3.util._
 import chisel3.testers.BasicTester
 import chisel3.iotesters.{ChiselFlatSpec, PeekPokeTester, TesterOptionsManager}
 import dsptools.{DspTester, ReplOptionsManager}
-import org.scalatest.FreeSpec
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 class LnModule extends Module {
   val io = IO(new Bundle {
@@ -24,7 +25,7 @@ class LnTester(c: LnModule) extends DspTester(c) {
   println(s"poked 1.0 got $x expected ${math.log(11.0)}")
 
 }
-class LnSpec extends FreeSpec {
+class LnSpec extends AnyFreeSpec {
   "ln should work" in {
     dsptools.Driver.execute(() => new LnModule) { c =>
       new LnTester(c)

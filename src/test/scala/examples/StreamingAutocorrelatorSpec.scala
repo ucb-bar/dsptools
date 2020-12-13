@@ -7,7 +7,8 @@ package examples
 import chisel3._
 import chisel3.iotesters.PeekPokeTester
 import dsptools.numbers.implicits._
-import org.scalatest.{Matchers, FlatSpec}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import spire.algebra.{Ring, Field}
 
@@ -22,7 +23,7 @@ class StreamingAutocorrelatorTester(c: StreamingAutocorrelator[SInt])
   }
 }
 
-class StreamingAutocorrelatorSpec extends FlatSpec with Matchers {
+class StreamingAutocorrelatorSpec extends AnyFlatSpec with Matchers {
   "StreamingAutocorrelatorFIR" should "compute a running average like thing" in {
     val taps = Seq.tabulate(3) { x => x.S}
     //implicit val DefaultDspContext = DspContext()

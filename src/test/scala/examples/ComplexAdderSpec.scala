@@ -7,7 +7,8 @@ import chisel3.iotesters.{Backend}
 import chisel3.{Bundle, Module}
 import dsptools.{DspContext, DspTester}
 import dsptools.numbers._
-import org.scalatest.{Matchers, FlatSpec}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import spire.algebra.Ring
 
 //scalastyle:off magic.number
@@ -45,7 +46,7 @@ class SimpleComplexAdderTester(c: SimpleComplexAdder) extends DspTester(c) {
     println(s"SimpleComplexAdder: $i * $j should make $expected got ${peek(c.io.c.real)}")
   }
 }
-class SimpleComplexAdderSpec extends FlatSpec with Matchers {
+class SimpleComplexAdderSpec extends AnyFlatSpec with Matchers {
   behavior of "SimpleComplexAdder"
 
   it should "add complex numbers excellently" in {

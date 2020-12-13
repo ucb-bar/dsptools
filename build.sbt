@@ -34,8 +34,8 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel-iotesters" -> "1.6-SNAPSHOT",
-  "rocketchip" -> "1.2-SNAPSHOT"
+  "chisel-iotesters" -> "1.6.+",
+  "rocketchip" -> "1.2.+"
 )
 
 name := "dsptools"
@@ -92,17 +92,14 @@ val commonSettings = Seq(
 
 val dsptoolsSettings = Seq(
   name := "dsptools",
-  libraryDependencies ++= Seq("chisel-iotesters").map {
-    dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
-  },
 // sbt 1.2.6 fails with `Symbol 'term org.junit' is missing from the classpath`
 // when compiling tests under 2.11.12
 // An explicit dependency on junit seems to alleviate this.
   libraryDependencies ++= Seq(
     "org.typelevel" %% "spire" % "0.16.2",
-    "org.scalanlp" %% "breeze" % "1.0",
+    "org.scalanlp" %% "breeze" % "1.1",
     "junit" % "junit" % "4.13" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.8" % "test",
+    "org.scalatest" %% "scalatest" % "3.2.+" % "test",
     "org.scalacheck" %% "scalacheck" % "1.14.3" % "test"
   ),
 )
@@ -123,13 +120,19 @@ publishArtifact in Test := false
 pomIncludeRepository := { x => false }
 
 // Don't add 'scm' elements if we have a git.remoteRepo definition.
-
+// TODO: FIXME: remove once `chisel-testers` 1.6.X is released with bumped `scalatest` deps
+// to enable add -Dsbt.sourcemode=true to SBT cmdline
+lazy val chiselIotestersRef = ProjectRef(uri("git://github.com/abejgonzalez/chisel-testers.git#5b9cc56"), "chisel-testers")
+lazy val chiselIotestersLib = Seq("chisel-iotesters").map {
+  dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
+}.head
 
 val dsptools = (project in file(".")).
   enablePlugins(BuildInfoPlugin).
   enablePlugins(ScalaUnidocPlugin).
   settings(commonSettings: _*).
-  settings(dsptoolsSettings: _*)
+  settings(dsptoolsSettings: _*).
+  sourceDependency(chiselIotestersRef, chiselIotestersLib)
 
 
 val `rocket-dsptools` = (project in file("rocket")).

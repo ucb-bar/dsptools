@@ -5,7 +5,8 @@ package examples
 import chisel3._
 import dsptools.{ReplOptionsManager, DspTester}
 import dsptools.numbers.DspReal
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 class RealAdder extends Module {
   val io = IO(new Bundle {
@@ -44,7 +45,7 @@ class RealAdderTester(c: RealAdder) extends DspTester(c) {
 }
 
 
-class RealAdderSpec extends FlatSpec with Matchers {
+class RealAdderSpec extends AnyFlatSpec with Matchers {
   behavior of "adder circuit on blackbox real"
 
   it should "allow registers to be declared that infer widths" in {
