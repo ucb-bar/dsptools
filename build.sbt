@@ -57,10 +57,6 @@ val commonSettings = Seq(
       <distribution>repo</distribution>
     </license>
   </licenses>
-    <scm>
-      <url>https://github.com/ucb-bar/dsptools.git</url>
-      <connection>scm:git:github.com/ucb-bar/dsptools.git</connection>
-    </scm>
   <developers>
     <developer>
       <id>grebe</id>
