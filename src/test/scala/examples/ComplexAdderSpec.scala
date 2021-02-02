@@ -2,8 +2,9 @@
 
 package examples
 
-import chisel3.core._
-import chisel3.iotesters.{Backend}
+import chisel3._
+import chisel3.experimental.FixedPoint
+import chisel3.iotesters.Backend
 import chisel3.{Bundle, Module}
 import dsptools.{DspContext, DspTester}
 import dsptools.numbers._
