@@ -257,7 +257,7 @@ class SaturateTransform extends Transform {
           () => new SaturateFixedPointSubModule(aWidth.toInt, aBP.toInt, bWidth.toInt, bBP.toInt, (cWidth - 1).toInt, cBP.toInt, pipe = pipe)
     }
     // get new body from newMod (must be single module!)
-    val newBody = Driver.toFirrtl(Driver.elaborate(newMod)).modules.head match {
+    val newBody = chisel3.stage.ChiselStage.convert(newMod()).modules.head match {
       case FModule(_, _, _, body) => body
       case _ => throw new Exception("Saw blackbox for some reason")
     }

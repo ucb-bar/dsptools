@@ -9,7 +9,7 @@ import chisel3.util.HasBlackBoxResource
  * Uses classname to find verilog implementation of blackbox
  */
 trait BlackBoxWithVerilog extends BlackBox with HasBlackBoxResource {
-  setResource("/" + this.getClass.getSimpleName + ".v")
+  addResource("/" + this.getClass.getSimpleName + ".v")
 }
 
 class BlackboxOneOperand extends BlackBoxWithVerilog {

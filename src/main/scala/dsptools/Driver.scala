@@ -7,7 +7,7 @@ import chisel3.iotesters._
 import firrtl.HasFirrtlOptions
 import numbers.{DspRealFactory, TreadleDspRealFactory}
 import firrtl_interpreter._
-import treadle.HasTreadleOptions
+import chisel3.iotesters.HasTreadleOptions
 
 import scala.util.DynamicVariable
 
@@ -68,7 +68,7 @@ object Driver {
     )
 
     logger.Logger.makeScope(optionsManager) {
-      val chiselResult: ChiselExecutionResult = chisel3.Driver.execute(optionsManager, dutGenerator)
+      val chiselResult: ChiselExecutionResult = chisel3.stage.ChiselStage.execute(optionsManager, dutGenerator)
       chiselResult match {
         case ChiselExecutionSuccess(_, emitted, _) =>
           optionsManager.replConfig = ReplConfig(firrtlSource = emitted)

@@ -2,8 +2,7 @@
 //
 package dsptools.examples
 
-import chisel3.core._
-import chisel3.{Bundle, Module}
+import chisel3._
 import dsptools.DspTester
 
 import spire.algebra.Ring
