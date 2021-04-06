@@ -21,7 +21,7 @@ class SimpleSplitter() extends LazyModule()(Parameters.empty) {
 
         out.valid := in.valid
         out.bits  := in.bits
-        assert(!reset.toBool || in.ready)
+        assert(!reset.asBool || in.ready)
     }
   }
 }
