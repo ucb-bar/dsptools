@@ -105,7 +105,7 @@ class APBInStreamOutFIFOInternalModule(outer: APBInStreamOutFIFOInternal) extend
   val read : Bool = mem.head.psel && !mem.head.penable && !mem.head.pwrite
   val write: Bool = mem.head.psel && !mem.head.penable && mem.head.pwrite
   val mask : List[Boolean]      = bigBits(memAddress.mask >> log2Ceil(beatBytes))
-  val inPaddr                         = Cat((mask zip (mem.head.paddr >> log2Ceil(beatBytes)).toBools).filter(_._1).map(_._2).reverse)
+  val inPaddr                         = Cat((mask zip (mem.head.paddr >> log2Ceil(beatBytes)).asBools).filter(_._1).map(_._2).reverse)
 
   val paddr                           = Mux(read || write, inPaddr, count)
   val legal: Bool = memAddress.contains(mem.head.paddr)
@@ -113,7 +113,7 @@ class APBInStreamOutFIFOInternalModule(outer: APBInStreamOutFIFOInternal) extend
   val sram = SyncReadMem(1 << mask.count(b => b), Vec(beatBytes, Bits(width = 8.W)))
 
   when (write && legal) {
-    sram.write(paddr, VecInit.tabulate(beatBytes) { i => mem.head.pwdata(8 * (i + 1) - 1, 8 * i) }, mem.head.pstrb.toBools)
+    sram.write(paddr, VecInit.tabulate(beatBytes) { i => mem.head.pwdata(8 * (i + 1) - 1, 8 * i) }, mem.head.pstrb.asBools)
   }
 
   mem.head.pready  := true.B

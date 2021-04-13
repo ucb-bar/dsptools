@@ -5,11 +5,9 @@ package dsptools
 import chisel3._
 import chisel3.iotesters.DriverCompatibility.ChiselExecutionResult
 import chisel3.iotesters._
-import chisel3.stage.{ChiselStage, NoRunFirrtlCompilerAnnotation}
 import firrtl.HasFirrtlOptions
 import numbers.{DspRealFactory, TreadleDspRealFactory}
 import firrtl_interpreter._
-import treadle.{BlackBoxFactoriesAnnotation, HasTreadleOptions}
 
 import scala.util.DynamicVariable
 
