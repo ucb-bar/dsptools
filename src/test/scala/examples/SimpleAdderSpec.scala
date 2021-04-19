@@ -2,8 +2,8 @@
 //
 package examples
 
-import chisel3.core._
-import chisel3.{Bundle, Module}
+import chisel3._
+import chisel3.experimental.FixedPoint
 import dsptools.DspTester
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

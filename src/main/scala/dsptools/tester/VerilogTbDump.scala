@@ -7,7 +7,7 @@ import chisel3.experimental._
 import java.io.{BufferedWriter, File, FileWriter}
 
 import DspTesterUtilities._
-import chisel3.core.ActualDirection
+import chisel3.ActualDirection
 
 // TODO: Get rid of
 import chisel3.iotesters.TestersCompatibility
