@@ -34,7 +34,7 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel-iotesters" -> "1.6.+",
+  "chisel-iotesters" -> "2.5-SNAPSHOT",
   "rocketchip" -> "1.2.+"
 )
 
@@ -45,8 +45,8 @@ val commonSettings = Seq(
   version := "1.5-SNAPSHOT",
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
-  scalaVersion := "2.12.10",
-  crossScalaVersions := Seq("2.12.10", "2.11.12"),
+  scalaVersion := "2.12.13",
+  crossScalaVersions := Seq("2.12.13"),
     scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls") ++ scalacOptionsVersion(scalaVersion.value),
   javacOptions ++= javacOptionsVersion(scalaVersion.value),
   pomExtra := (<url>http://chisel.eecs.berkeley.edu/</url>
@@ -96,15 +96,10 @@ val commonSettings = Seq(
 
 val dsptoolsSettings = Seq(
   name := "dsptools",
-// sbt 1.2.6 fails with `Symbol 'term org.junit' is missing from the classpath`
-// when compiling tests under 2.11.12
-// An explicit dependency on junit seems to alleviate this.
   libraryDependencies ++= Seq(
     "org.typelevel" %% "spire" % "0.16.2",
     "org.scalanlp" %% "breeze" % "1.1",
-    "junit" % "junit" % "4.13" % "test",
-    "org.scalatest" %% "scalatest" % "3.2.+" % "test",
-    "org.scalacheck" %% "scalacheck" % "1.14.3" % "test"
+    "org.scalatest" %% "scalatest" % "3.2.+" % "test"
   ),
 )
 
@@ -132,7 +127,7 @@ lazy val chiselIotestersLib = Seq("chisel-iotesters").map {
 }.head
 
 val dsptools = (project in file(".")).
-  enablePlugins(BuildInfoPlugin).
+  //enablePlugins(BuildInfoPlugin).
   enablePlugins(ScalaUnidocPlugin).
   settings(commonSettings: _*).
   settings(dsptoolsSettings: _*).

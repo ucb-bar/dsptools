@@ -9,7 +9,7 @@ import chisel3.util.HasBlackBoxResource
  * Uses classname to find verilog implementation of blackbox
  */
 trait BlackBoxWithVerilog extends BlackBox with HasBlackBoxResource {
-  setResource("/" + this.getClass.getSimpleName + ".v")
+  addResource("/" + this.getClass.getSimpleName + ".v")
 }
 
 class BlackboxOneOperand extends BlackBoxWithVerilog {
@@ -17,6 +17,7 @@ class BlackboxOneOperand extends BlackBoxWithVerilog {
     val in = Input(UInt(DspReal.underlyingWidth.W))
     val out = Output(UInt(DspReal.underlyingWidth.W))
   })
+  io.suggestName("io")
 }
 
 class BlackboxTwoOperand extends BlackBoxWithVerilog {
@@ -25,6 +26,7 @@ class BlackboxTwoOperand extends BlackBoxWithVerilog {
     val in2 = Input(UInt(DspReal.underlyingWidth.W))
     val out = Output(UInt(DspReal.underlyingWidth.W))
   })
+  io.suggestName("io")
 }
 
 class BlackboxTwoOperandBool extends BlackBoxWithVerilog {
@@ -33,6 +35,7 @@ class BlackboxTwoOperandBool extends BlackBoxWithVerilog {
     val in2 = Input(UInt(DspReal.underlyingWidth.W))
     val out = Output(Bool())
   })
+  io.suggestName("io")
 }
 
 class BBFAdd extends BlackboxTwoOperand

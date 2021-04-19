@@ -1,0 +1,49 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - 1.4.x
+      - 1.3.x
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    container:
+      image: ucbbar/chisel3-tools
+      options: --user github --entrypoint /bin/bash
+    env:
+      CONTAINER_HOME: /home/github
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Scala
+        uses: olafurpg/setup-scala@v10
+      - name: Cache
+        uses: coursier/cache-action@v5
+      - name: Documentation
+        id: doc
+        run: sbt doc
+      - name: Test
+        id: test
+        run: sbt +test
+      # Publishing steps
+      # These steps are here to avoid duplicated work and logic
+      - name: Setup GPG (for Publish)
+        id: publish_start
+        # on.push.branches above enforces we only publish from correct branches
+        if: github.event_name == 'push'
+        uses: olafurpg/setup-gpg@v3
+      - name: Publish
+        # publish_start if guards this step
+        if: steps.publish_start.outcome != 'skipped'
+        run: sbt ci-release
+        env:
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}

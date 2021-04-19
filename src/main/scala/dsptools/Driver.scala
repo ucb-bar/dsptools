@@ -3,11 +3,11 @@
 package dsptools
 
 import chisel3._
+import chisel3.iotesters.DriverCompatibility.ChiselExecutionResult
 import chisel3.iotesters._
 import firrtl.HasFirrtlOptions
 import numbers.{DspRealFactory, TreadleDspRealFactory}
 import firrtl_interpreter._
-import treadle.HasTreadleOptions
 
 import scala.util.DynamicVariable
 
@@ -48,8 +48,9 @@ object Driver {
       )
     }
 
-    if (optionsManager.parse(args)) execute(dutGenerator, optionsManager)(testerGen)
-    else {
+    if (optionsManager.parse(args)) {
+      execute(dutGenerator, optionsManager)(testerGen)
+    } else {
       optionsManager.parser.showUsageAsError()
       false
     }
@@ -68,13 +69,13 @@ object Driver {
     )
 
     logger.Logger.makeScope(optionsManager) {
-      val chiselResult: ChiselExecutionResult = chisel3.Driver.execute(optionsManager, dutGenerator)
+      val chiselResult: ChiselExecutionResult = iotesters.DriverCompatibility.execute(optionsManager, dutGenerator)
       chiselResult match {
-        case ChiselExecutionSuccess(_, emitted, _) =>
+        case iotesters.DriverCompatibility.ChiselExecutionSuccess(_, emitted, _) =>
           optionsManager.replConfig = ReplConfig(firrtlSource = emitted)
           FirrtlRepl.execute(optionsManager)
           true
-        case ChiselExecutionFailure(message) =>
+        case iotesters.DriverCompatibility.ChiselExecutionFailure(message) =>
           println("Failed to compile circuit")
           false
       }
