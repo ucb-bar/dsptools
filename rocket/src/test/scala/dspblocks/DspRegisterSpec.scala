@@ -7,8 +7,8 @@ import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
-import org.scalatest.{FlatSpec, Matchers}
-import DoubleToBigIntRand._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 class DspRegisterTestModule(
                   val inP: AXI4StreamBundleParameters,
@@ -74,7 +74,7 @@ class DspRegisterTestModuleTester(c: DspRegisterTestModule,
   println(s"${axiReadWord(0)} is the veclen")
 }
 
-class DspRegisterSpec extends FlatSpec with Matchers {
+class DspRegisterSpec extends AnyFlatSpec with Matchers {
   behavior of "AXI4DspRegister"
 
   it should "be able to read and write" ignore {

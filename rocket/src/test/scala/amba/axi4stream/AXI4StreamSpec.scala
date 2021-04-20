@@ -9,7 +9,8 @@ import freechips.rocketchip.amba.axi4stream
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.tilelink._
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 class TestModule(val inP: AXI4StreamBundleParameters,
                  outP: AXI4StreamSlaveParameters,
@@ -166,7 +167,7 @@ object StreamMuxTester {
   }
 }
 
-class AXI4StreamSpec extends FlatSpec with Matchers {
+class AXI4StreamSpec extends AnyFlatSpec with Matchers {
   behavior of "AXI4 Stream Nodes"
   it should "work with fuzzer and identity" in {
     val inP  = AXI4StreamBundleParameters(n = 2)

@@ -9,7 +9,8 @@ import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.interrupts._
 import freechips.rocketchip.regmapper._
 import freechips.rocketchip.tilelink._
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 trait RegmapExample extends HasRegMap {
   val r0 = RegInit(0.U(64.W))
@@ -97,7 +98,7 @@ class APBRegmapExample extends APBRegisterRouter(0, beatBytes = 8, interrupts = 
   }
 }
 
-class MemMasterSpec extends FlatSpec with Matchers {
+class MemMasterSpec extends AnyFlatSpec with Matchers {
   abstract class RegmapExampleTester[M <: MultiIOModule](c: M) extends PeekPokeTester(c) with MemMasterModel {
     memReadWord(0x00) should be (0)
     memReadWord(0x08) should be (1)
