@@ -5,7 +5,7 @@ package freechips.rocketchip.jtag2mm
 import chisel3._
 import chisel3.util._
 import chisel3.experimental._
-import chisel3.experimental.{withClockAndReset}
+//import chisel3.experimental.{withClockAndReset}
 
 import dsptools._
 import dsptools.numbers._
@@ -173,7 +173,7 @@ class Jtag2AXI4Multiplexer(
   lazy val module = new LazyModuleImp(this)
 }
 
-object JTAGToTLMultiplexerApp extends App {
+/*object JTAGToTLMultiplexerApp extends App {
 
   val irLength = 4
   val initialInstruction = BigInt("0", 2)
@@ -203,4 +203,4 @@ object JTAGToAXI4MultiplexerApp extends App {
   )
 
   chisel3.Driver.execute(args, () => appModule.module)
-}
+}*/

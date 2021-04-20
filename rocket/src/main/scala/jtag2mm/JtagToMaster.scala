@@ -5,7 +5,7 @@ package freechips.rocketchip.jtag2mm
 import chisel3._
 import chisel3.util._
 import chisel3.experimental._
-import chisel3.experimental.{withClockAndReset}
+//import chisel3.experimental.{withClockAndReset}
 
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
@@ -901,7 +901,7 @@ class AXI4JTAGToMasterBlock(
 
 }
 
-object JTAGToMasterDspBlockTL extends App {
+/*object JTAGToMasterDspBlockTL extends App {
   implicit val p: Parameters = Parameters.empty
   val jtagModule = LazyModule(new TLJTAGToMasterBlock(3, BigInt("0", 2), 4, AddressSet(0x00000, 0x3fff), 8))
 
@@ -913,4 +913,4 @@ object JTAGToMasterDspBlockAXI4 extends App {
   val jtagModule = LazyModule(new AXI4JTAGToMasterBlock(3, BigInt("0", 2), 4, AddressSet(0x00000, 0x3fff), 8))
 
   chisel3.Driver.execute(args, () => jtagModule.module)
-}
+}*/
