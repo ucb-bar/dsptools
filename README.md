@@ -188,6 +188,7 @@ Abstractions are built on top of `DspBlock`, for example a chain of blocks is a 
 2) A diplomatic implementation of AXI4-Stream
 3) Some DMA (stream <-> mem) blocks
 4) Simulation models for chisel-testers for memory interfaces (AHB, APB, AXI4, TileLink) and AXI4-Stream.
+5) JTAG-to-memory-mapped bus (AXI4 & TileLink) master bridge
 
 ----------
 
