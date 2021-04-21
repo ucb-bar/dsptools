@@ -8,7 +8,8 @@ import freechips.rocketchip.diplomacy.{AddressSet, LazyModule, LazyModuleImp, La
 import freechips.rocketchip.subsystem.{PeripheryBus, PeripheryBusParams}
 import freechips.rocketchip.system.BaseConfig
 import freechips.rocketchip.tilelink.{TLBundleParameters, TLFragmenter, TLIdentityNode, TLToAXI4}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 class StreamingAXI4DMAWithMemoryTester(dut: StreamingAXI4DMAWithMemory with AXI4StandaloneBlock, silentFail: Boolean = false)
   extends PeekPokeTester(dut.module)
@@ -181,7 +182,7 @@ class DMASimplifierTester(dut: DMASimplifier) extends PeekPokeTester(dut) {
   }
 }
 
-class DmaSpec extends FlatSpec with Matchers {
+class DmaSpec extends AnyFlatSpec with Matchers {
   implicit val p: Parameters = (new BaseConfig).toInstance
 
   behavior of "DMASimplifier"

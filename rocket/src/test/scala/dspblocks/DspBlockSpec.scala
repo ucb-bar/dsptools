@@ -5,9 +5,10 @@ package dspblocks
 import freechips.rocketchip.config.Parameters
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.system.BaseConfig
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class DspBlockSpec extends FlatSpec with Matchers {
+class DspBlockSpec extends AnyFlatSpec with Matchers {
   implicit val p: Parameters = (new BaseConfig).toInstance
 
   behavior of "Passthrough"
