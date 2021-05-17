@@ -9,8 +9,8 @@ on:
       - 1.3.x
 
 jobs:
-  ci:
-    name: ci
+  test:
+    name: test
     runs-on: ubuntu-latest
     container:
       image: ucbbar/chisel3-tools
@@ -47,3 +47,15 @@ jobs:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+
+  # Sentinel job to simplify how we specify which checks need to pass in branch
+  # protection and in Mergify
+  #
+  # When adding new jobs, please add them to `needs` below
+  all_tests_passed:
+    name: "all tests passed"
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo Success!
+
