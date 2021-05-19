@@ -4,7 +4,8 @@ package craft
 
 import chisel3._
 import dsptools.DspTester
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 class SRMemModule( dut: (UInt, Bool) => UInt ) extends Module {
   val io = IO(new Bundle {
@@ -30,7 +31,7 @@ class SRMemTester( dut: SRMemModule, input: Seq[(Int, Boolean)], expected_output
 }
 
 //noinspection RedundantDefaultArgument,RedundantDefaultArgument,RedundantDefaultArgument,RedundantDefaultArgument
-class ShiftRegisterMemSpec extends FlatSpec with Matchers {
+class ShiftRegisterMemSpec extends AnyFlatSpec with Matchers {
   behavior of "ShiftRegisterMem"
 
   val testVector: Seq[(Int, Boolean)] = Seq(
