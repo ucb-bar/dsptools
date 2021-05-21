@@ -36,7 +36,8 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
 val defaultVersions = Map(
   "chisel-iotesters" -> "1.5.3",
   "dsptools" -> "1.4.3",
-  "rocketchip" -> "1.2-SNAPSHOT"
+  "rocketchip" -> "1.2-SNAPSHOT",
+  "api-config-chipsalliance"-> "1.2-SNAPSHOT"
 )
 
 name := "rocket-dsp-utils"
