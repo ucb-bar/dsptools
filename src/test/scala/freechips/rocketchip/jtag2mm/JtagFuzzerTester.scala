@@ -2,15 +2,8 @@
 
 package freechips.rocketchip.jtag2mm
 
-import chisel3._
-import chisel3.util._
-import chisel3.util.random.LFSR
-import chisel3.experimental._
-import chisel3.iotesters.Driver
-import chisel3.iotesters.PeekPokeTester
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import dsptools.DspTester
 
 class JtagFuzzerTester(dut: JtagFuzzer) extends DspTester(dut) {
 

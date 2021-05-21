@@ -22,7 +22,7 @@ Some of the goals of dsptools are to enable:
  2. Enhanced support for designing and testing DSP with generic types (i.e. switching between **DSPReal** for verifying functional correctness with double-precision floating point and **FixedPoint** for evaluating fixed-point design metrics by changing a single parameter).
 
  3. More useful and universal testing platform for numeric types!
- > Numbers are displayed in their correct formats instead of hex for peek, poke, and expect operations. Additionally, if your tester extends **DSPTester**, you can optionally dump your test sequence to a **Verilog testbench** that replays the test for functional verification on all simulation platforms (i.e. Xilinx, Altera, etc. instead of only VCS). The tolerance of comparisons with expected values can also be changed via `DSPTester.setTol(floTol = decimal_tolerance,
+ > Numbers are displayed in their correct formats instead of hex for peek, poke, and expect operations. Additionally, if your dsptools.tester extends **DSPTester**, you can optionally dump your test sequence to a **Verilog testbench** that replays the test for functional verification on all simulation platforms (i.e. Xilinx, Altera, etc. instead of only VCS). The tolerance of comparisons with expected values can also be changed via `DSPTester.setTol(floTol = decimal_tolerance,
                      fixedTol = number_of_bits)`.
 
  4. **Miscellaneous additional features**

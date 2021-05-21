@@ -2,14 +2,11 @@
 
 package freechips.rocketchip.jtag2mm
 
-import dsptools._
-import freechips.rocketchip.config._
-import freechips.rocketchip.diplomacy._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-//class Jtag2AXI4MultiplexerTester(dut: Jtag2AXI4Multiplexer) extends PeekPokeTester(dut.module) {
-class Jtag2AXI4MultiplexerTester(dut: Jtag2AXI4Multiplexer) extends DspTester(dut.module) {
+//class Jtag2TLMultiplexerTester(dut: Jtag2TLMultiplexer) extends PeekPokeTester(dut.module) {
+class Jtag2TLMultiplexerTester(dut: Jtag2TLMultiplexer) extends DspTester(dut.module) {
   def jtagReset(stepSize: Int = 1) {
     var i = 0
     while (i < 5) {
@@ -106,7 +103,7 @@ class Jtag2AXI4MultiplexerTester(dut: Jtag2AXI4Multiplexer) extends DspTester(du
   updatableDspVerbose.withValue(false) {
     jtagReset(stepSize)
     
-    // write value 0x08 to address 0x00
+    // write value 0x08 to address 0x00 
     jtagSend(BigInt("0010", 2), 4, false, true, stepSize)
     jtagSend(BigInt("0" * 32, 2), 32, true, false, stepSize)
     jtagSend(BigInt("0011", 2), 4, false, false, stepSize)
@@ -128,7 +125,7 @@ class Jtag2AXI4MultiplexerTester(dut: Jtag2AXI4Multiplexer) extends DspTester(du
   jtagSend(BigInt("0001", 2), 4, false, false, stepSize)*/
 
   updatableDspVerbose.withValue(false) {
-    
+  
     // set start address for burst write to 0x08 and number of burst transactions to 2
     jtagSend(BigInt("0010", 2), 4, false, false, stepSize)
     jtagSend(BigInt("0" * 24 ++ "00001000", 2), 32, true, false, stepSize)
@@ -187,7 +184,6 @@ class Jtag2AXI4MultiplexerTester(dut: Jtag2AXI4Multiplexer) extends DspTester(du
 
   poke(dut.outStream.ready, 1)
   step(1)
-  step(1)
   peek(dut.outStream.bits.data)
   expect(dut.outStream.bits.data, 24)
 
@@ -201,6 +197,7 @@ class Jtag2AXI4MultiplexerTester(dut: Jtag2AXI4Multiplexer) extends DspTester(du
     
     // initiate burst read transactions
     jtagSend(BigInt("1100", 2), 4, false, false, stepSize)
+    
     var i = 0
     while (i < 32 * 4) {
       poke(dut.ioJTAG.jtag.TCK, 1)
@@ -222,7 +219,7 @@ class Jtag2AXI4MultiplexerTester(dut: Jtag2AXI4Multiplexer) extends DspTester(du
   step(300)
 }
 
-class Jtag2AXI4MultiplexerSpec extends AnyFlatSpec with Matchers {
+class Jtag2TLMultiplexerSpec extends AnyFlatSpec with Matchers {
   implicit val p: Parameters = Parameters.empty
 
   val irLength = 4
@@ -231,13 +228,13 @@ class Jtag2AXI4MultiplexerSpec extends AnyFlatSpec with Matchers {
   val beatBytes = 8
   val maxBurstNum = 8
 
-  it should "Test JTAG To AXI4 Multiplexer" in {
+  it should "Test JTAG To TL Multiplexer" in {
     val lazyDut =
-      LazyModule(new Jtag2AXI4Multiplexer(irLength, initialInstruction, beatBytes, addresses, maxBurstNum) {})
+      LazyModule(new Jtag2TLMultiplexer(irLength, initialInstruction, beatBytes, addresses, maxBurstNum) {})
 
     //chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv"), () => lazyDut.module) { c =>
     chisel3.iotesters.Driver.execute(Array("-tbn", "verilator"), () => lazyDut.module) { c =>
-      new Jtag2AXI4MultiplexerTester(lazyDut)
+      new Jtag2TLMultiplexerTester(lazyDut)
     } should be(true)
   }
 }
