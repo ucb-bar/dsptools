@@ -3,19 +3,13 @@
 package freechips.rocketchip.jtag2mm
 
 import chisel3._
-import chisel3.util._
 import chisel3.experimental._
+import freechips.rocketchip.BundleBridgeToTL
 //import chisel3.experimental.{withClockAndReset}
-
-import dsptools._
-import dsptools.numbers._
 
 import dspblocks._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
-import freechips.rocketchip.config._
-import freechips.rocketchip.diplomacy._
-import freechips.rocketchip.regmapper._
 import freechips.rocketchip.tilelink._
 
 

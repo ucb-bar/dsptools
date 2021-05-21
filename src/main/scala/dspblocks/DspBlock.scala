@@ -3,6 +3,7 @@
 package dspblocks
 
 import chisel3._
+import freechips.rocketchip.BundleBridgeToTL
 import freechips.rocketchip.amba.ahb._
 import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.amba.axi4._

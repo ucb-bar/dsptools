@@ -6,9 +6,9 @@ import chisel3.experimental.FixedPoint
 import chisel3.internal.firrtl.KnownBinaryPoint
 import dsptools._
 import dsptools.numbers._
+import freechips.rocketchip.TLMasterModel
 import freechips.rocketchip.amba.apb.APBMasterModel
 import freechips.rocketchip.amba.axi4.AXI4MasterModel
-import freechips.rocketchip.tilelink.TLMasterModel
 import spire.math.ConvertableFrom
 import spire.implicits._
 

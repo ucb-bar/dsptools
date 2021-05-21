@@ -1,8 +1,6 @@
 package freechips.rocketchip.interrupts
 
 import chisel3._
-import freechips.rocketchip.config.Parameters
-import freechips.rocketchip.diplomacy._
 
 object IntBundleBridgeImp extends BundleBridgeImp[Vec[Bool]]
 

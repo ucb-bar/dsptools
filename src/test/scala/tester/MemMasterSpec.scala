@@ -2,6 +2,7 @@ package dsptools.tester
 
 import chisel3._
 import chisel3.iotesters.PeekPokeTester
+import freechips.rocketchip.{BundleBridgeToTL, TLMasterModel}
 import freechips.rocketchip.amba.apb._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.config.Parameters
