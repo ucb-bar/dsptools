@@ -14,8 +14,9 @@ class DspRegisterTestModule(
                   val inP: AXI4StreamBundleParameters,
                   val outP: AXI4StreamSlaveParameters,
                   val len: Int,
-                  val transactions: Seq[AXI4StreamTransaction] =
-                    AXI4StreamTransaction.defaultSeq(100).map(_.randData(Uniform(0.0, 65535.0)))
+//TODO: CHIPYARD, this should not be empty, I'm not sure what the default distribution should be
+                  val transactions: Seq[AXI4StreamTransaction] = Seq.empty
+//                    AXI4StreamTransaction.defaultSeq(100).map(_.randData(Uniform(0.0, 65535.0)))
                 ) extends Module {
   implicit val p: Parameters = Parameters.empty
 

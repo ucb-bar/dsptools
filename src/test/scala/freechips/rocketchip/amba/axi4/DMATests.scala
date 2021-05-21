@@ -1,6 +1,7 @@
 package freechips.rocketchip.amba.axi4
 
 import chisel3.iotesters.PeekPokeTester
+import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 import dspblocks.{AXI4DspBlock, AXI4StandaloneBlock, TLDspBlock, TLStandaloneBlock}
 import freechips.rocketchip.amba.axi4stream._
 import freechips.rocketchip.config.Parameters
@@ -250,6 +251,8 @@ class DmaSpec extends AnyFlatSpec with Matchers {
     val lazyDut = LazyModule(new WithPBUS with TLStandaloneBlock {
       // override def standaloneParams: TLBundleParameters = super.standaloneParams.copy(dataBits = 128)
     })
-    chisel3.Driver.execute(Array[String](), () => lazyDut.module)
+    (new ChiselStage).execute(Array[String](), Seq(ChiselGeneratorAnnotation(() => lazyDut.module)))
+    //TODO: CHIPYARD, is the above what is wanted
+    // chisel3.Driver.execute(Array[String](), () => lazyDut.module)
   }
 }

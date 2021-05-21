@@ -2,6 +2,9 @@
 
 package freechips.rocketchip.jtag2mm
 
+import chipsalliance.rocketchip.config.Parameters
+import dsptools.DspTester
+import freechips.rocketchip.diplomacy.{AddressSet, LazyModule}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

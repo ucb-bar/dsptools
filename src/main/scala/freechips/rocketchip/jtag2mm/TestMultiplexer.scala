@@ -5,11 +5,12 @@ package freechips.rocketchip.jtag2mm
 import chisel3._
 import chisel3.experimental._
 import freechips.rocketchip.BundleBridgeToTL
-//import chisel3.experimental.{withClockAndReset}
-
+import chipsalliance.rocketchip.config.Parameters
+import freechips.rocketchip.diplomacy._
 import dspblocks._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
+import freechips.rocketchip.regmapper.RegField
 import freechips.rocketchip.tilelink._
 
 
@@ -51,11 +52,16 @@ class Jtag2TLMultiplexer(
       sourceBits = 16,
       sinkBits = 16,
       sizeBits = 3,
-      aUserBits = 0,
-      dUserBits = 0,
+      //TODO: CHIUPYARD: figure this out
+      echoFields = Seq.empty,
+      requestFields = Seq.empty,
+      responseFields = Seq.empty,
+//      aUserBits = 0,
+//      dUserBits = 0,
       hasBCE = false
     )
 
+    //TODO: CHIPYAR
     val clientParams = TLClientParameters(
       name = "BundleBridgeToTL",
       sourceId = IdRange(0, 1),
@@ -68,8 +74,7 @@ class Jtag2TLMultiplexer(
       supportsGet = TransferSizes(1, beatBytes),
       supportsPutFull = TransferSizes(1, beatBytes),
       supportsPutPartial = TransferSizes(1, beatBytes),
-      supportsHint = TransferSizes(1, beatBytes),
-      userBits = Nil
+      supportsHint = TransferSizes(1, beatBytes)
     )
 
     val ioMem = mem.map { m =>

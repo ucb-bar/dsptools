@@ -2,6 +2,10 @@
 
 package freechips.rocketchip
 
+import chipsalliance.rocketchip.config.Parameters
+import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.tilelink._
+
 object TLBundleBridgeImp extends BundleBridgeImp[TLBundle]
 
 case class TLToBundleBridgeNode(managerParams: TLManagerPortParameters)(implicit valName: ValName)

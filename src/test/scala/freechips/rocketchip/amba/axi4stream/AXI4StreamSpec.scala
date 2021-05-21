@@ -125,8 +125,10 @@ MuxInOuts[TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, 
       sourceBits = 1,
       sinkBits = 1,
       sizeBits = 1,
-      aUserBits = 0,
-      dUserBits = 0,
+      //TODO: CHIPYARD: figure this out
+      echoFields = Seq.empty,
+      requestFields = Seq.empty,
+      responseFields = Seq.empty,
       hasBCE = false
     )))
 

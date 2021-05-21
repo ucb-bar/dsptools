@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package sam
 
+
+//TODO: CHIPYARD Cannot find DspBlockTester, hard to fix this without that
+/*
+
 import dsptools.numbers.implicits._
 //import dsptools.Utilities._
 import dsptools.{DspContext, Grow}
@@ -19,7 +23,6 @@ import scala.math._
 import org.scalatest.Tag
 import scala.collection.mutable.ArrayBuffer
 
-/*
 import cde._
 import junctions._
 import uncore.tilelink._

@@ -4,8 +4,6 @@ enablePlugins(SiteScaladocPlugin)
 
 enablePlugins(GhpagesPlugin)
 
-git.remoteRepo := "git@github.com:ucb-bar/dsptools.git"
-
 def scalacOptionsVersion(scalaVersion: String): Seq[String] = {
   Seq() ++ {
     // If we're building with Scala > 2.11, enable the compile option
@@ -58,10 +56,6 @@ val commonSettings = Seq(
       <distribution>repo</distribution>
     </license>
   </licenses>
-    <scm>
-      <url>https://github.com/ucb-bar/dsptools.git</url>
-      <connection>scm:git:github.com/ucb-bar/dsptools.git</connection>
-    </scm>
   <developers>
     <developer>
       <id>grebe</id>
@@ -92,7 +86,13 @@ val commonSettings = Seq(
   resolvers ++= Seq (
     Resolver.sonatypeRepo("snapshots"),
     Resolver.sonatypeRepo("releases")
-  )
+  ),
+  // scala-steward:on
+  libraryDependencies ++= Seq(
+    "org.typelevel" %% "spire" % "0.16.2",
+    "org.scalanlp" %% "breeze" % "1.1",
+    "org.scalatest" %% "scalatest" % "3.2.8" % "test",
+  ),
 )
 
 val rocketSettings = Seq(
