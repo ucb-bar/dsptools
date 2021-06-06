@@ -180,15 +180,12 @@ Some useful typeclasses:
 
 Rocket-chip
 ===============
-This repo contains a set of tools useful for DSP projects involving rocket-chip:
+Integration of dsptools with a rocket-chip based project:
 
-1) `DspBlock`, a generic DSP building block with streaming and memory mapped IO.
-The type of memory interface is generic and can be selected after the block has been designed.
-Abstractions are built on top of `DspBlock`, for example a chain of blocks is a kind of `DspBlock`.
-2) A diplomatic implementation of AXI4-Stream
-3) Some DMA (stream <-> mem) blocks
-4) Simulation models for chisel-testers for memory interfaces (AHB, APB, AXI4, TileLink) and AXI4-Stream.
-5) JTAG-to-memory-mapped bus (AXI4 & TileLink) master bridge
+The github project [Rocket Dsp Utils](https://github.com/chick/rocket-dsp-utils) contains useful tools
+that can be used to integrate components from this project with a rocket-chip based one.
+
+These tools formerly were contained in this repo under the `rocket` sub-directory.
 
 ----------
 
