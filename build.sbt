@@ -35,7 +35,6 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
   "chisel-iotesters" -> "2.5-SNAPSHOT",
-  "chip" -> "1.2.+"
 )
 
 name := "dsptools"
@@ -122,4 +121,3 @@ val dsptools = (project in file(".")).
   settings(commonSettings: _*).
   settings(dsptoolsSettings: _*).
   sourceDependency(chiselIotestersRef, chiselIotestersLib)
-
