@@ -57,8 +57,9 @@ class Jtag2TLMultiplexer(
       sourceBits = 16,
       sinkBits = 16,
       sizeBits = 3,
-      aUserBits = 0,
-      dUserBits = 0,
+      echoFields = Nil,
+      requestFields = Nil,
+      responseFields = Nil,
       hasBCE = false
     )
 
@@ -74,8 +75,7 @@ class Jtag2TLMultiplexer(
       supportsGet = TransferSizes(1, beatBytes),
       supportsPutFull = TransferSizes(1, beatBytes),
       supportsPutPartial = TransferSizes(1, beatBytes),
-      supportsHint = TransferSizes(1, beatBytes),
-      userBits = Nil
+      supportsHint = TransferSizes(1, beatBytes)
     )
 
     val ioMem = mem.map { m =>
