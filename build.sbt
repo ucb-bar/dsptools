@@ -35,7 +35,6 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
   "chisel-iotesters" -> "2.5-SNAPSHOT",
-  "rocketchip" -> "1.2.+"
 )
 
 name := "dsptools"
@@ -103,16 +102,6 @@ val dsptoolsSettings = Seq(
   ),
 )
 
-val rocketSettings = Seq(
-    name := "rocket-dsptools",
-    libraryDependencies ++= defaultVersions.map { case (dep, version) =>
-      "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", version)
-    }.toSeq,
-    Test / parallelExecution := false,
-    // rocket-chip currently (3/7/19) doesn't build under 2.11
-    crossScalaVersions := Seq("2.12.10"),
-)
-
 publishMavenStyle := true
 
 publishArtifact in Test := false
@@ -132,9 +121,3 @@ val dsptools = (project in file(".")).
   settings(commonSettings: _*).
   settings(dsptoolsSettings: _*).
   sourceDependency(chiselIotestersRef, chiselIotestersLib)
-
-
-val `rocket-dsptools` = (project in file("rocket")).
-  settings(commonSettings: _*).
-  settings(rocketSettings: _*).
-  dependsOn(dsptools)
