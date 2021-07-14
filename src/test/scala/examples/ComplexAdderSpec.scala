@@ -33,8 +33,8 @@ class SimpleComplexAdder extends Module {
 }
 class SimpleComplexAdderTester(c: SimpleComplexAdder) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    i <- DoubleRangeTo(0.0, 1.0, 0.25)
+    j <- DoubleRangeTo(0.0, 4.0, 0.5)
   } {
     val expected = i * j
 

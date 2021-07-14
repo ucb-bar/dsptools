@@ -3,8 +3,8 @@
 package examples
 
 import chisel3._
-import dsptools.{ReplOptionsManager, DspTester}
-import dsptools.numbers.DspReal
+import dsptools.{DspTester, ReplOptionsManager}
+import dsptools.numbers.{DoubleRange, DspReal}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -33,8 +33,8 @@ object RealAdder {
 
 class RealAdderTester(c: RealAdder) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    i <- DoubleRange(0.0, 1.0, 0.25)
+    j <- DoubleRange(0.0, 4.0, 0.5)
   } {
     poke(c.io.a1, i)
     poke(c.io.a2, j)

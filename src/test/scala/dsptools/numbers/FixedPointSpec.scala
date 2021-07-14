@@ -33,7 +33,7 @@ class FixedRing1(val width: Int, val binaryPoint: Int) extends Module {
 class FixedRing1Tester(c: FixedRing1) extends DspTester(c) {
   val increment: Double = if(c.binaryPoint == 0) 1.0 else 1.0 / (1 << c.binaryPoint)
   updatableDspVerbose.withValue(false) {
-    for(i <- -2.0 to 3.0 by increment) {
+    for(i <- DoubleRange(-2.0, 3.0, increment)) {
       poke(c.io.in, i)
 
       expect(c.io.floor, breeze.numerics.floor(i), s"floor of $i should be ${breeze.numerics.floor(i)}")
@@ -109,7 +109,7 @@ class FixedPointShiftTester(c: FixedPointShifter) extends DspTester(c) {
     val minValue = minSIntValue.toDouble * increment
     val maxValue = maxSIntValue.toDouble * increment
 
-    for(value <- minValue to maxValue by increment) {
+    for(value <- DoubleRange(minValue, maxValue, increment)) {
       poke(c.io.inValue, value)
       expect(c.io.shiftLeftResult, expectedValue(value, left = true, c.fixedShiftSize),
         s"shift left ${c.fixedShiftSize} of $value should be ${expectedValue(value, left = true, c.fixedShiftSize)}")

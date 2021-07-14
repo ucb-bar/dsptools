@@ -123,7 +123,7 @@ class FloatOpsWithTrig extends FloatOps {
     is(Exp.U) { io.out := io.in1.exp() }
     is(Sqrt.U) { io.out := io.in1.sqrt() }
     is(Pow.U) { io.out := io.in1.pow(io.in2) }
-    is(Floor.U) { io.out := io.in1.floor() }
+    is(FloatOpCodes.Floor.U) { io.out := io.in1.floor() }
     is(Ceil.U) { io.out := io.in1.ceil() }
 
     is(GreaterThan.U) { io.boolOut := io.in1 > io.in2 }
@@ -159,7 +159,7 @@ class FloatOpsWithoutTrig extends FloatOps {
     is(Exp.U) { io.out := io.in1.exp() }
     is(Sqrt.U) { io.out := io.in1.sqrt() }
     is(Pow.U) { io.out := io.in1.pow(io.in2) }
-    is(Floor.U) { io.out := io.in1.floor() }
+    is(FloatOpCodes.Floor.U) { io.out := io.in1.floor() }
     is(Ceil.U) { io.out := io.in1.ceil() }
     is(GreaterThan.U) { io.boolOut := io.in1 > io.in2 }
     is(GreaterThanOrEqual.U) { io.boolOut := io.in1 >= io.in2 }
@@ -194,7 +194,7 @@ class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends 
   expect(c.io.out, math.sqrt(a), "sqrt should work on reals")
   poke(c.io.opsel, Pow)
   expect(c.io.out, math.pow(a, b), "reals should pow")
-  poke(c.io.opsel, Floor)
+  poke(c.io.opsel, FloatOpCodes.Floor)
   expect(c.io.out, math.floor(a), "floor should work on reals")
   poke(c.io.opsel, Ceil)
   expect(c.io.out, math.ceil(a), "ceil should work on reals")
@@ -237,8 +237,8 @@ class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends 
   }
 
   for {
-    x <- -1.0 to 1.0 by 1.0
-    y <- -1.0 to 1.0 by 1.0
+    x <- DoubleRange(-1.0, 1.0)
+    y <- DoubleRange(-1.0, 1.0)
   } {
     poke(c.io.in1, x)
     poke(c.io.in2, y)

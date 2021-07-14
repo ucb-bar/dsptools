@@ -28,8 +28,8 @@ class ParameterizedAdder[T <: Data:Ring](gen:() => T) extends Module {
 class ParameterizedAdderTester[T<:Data:Ring](c: ParameterizedAdder[T]) extends DspTester(c) {
   updatableDspVerbose.withValue(false) {
     for {
-      i <- -2.0 to 1.0 by 0.25
-      j <- -2.0 to 4.0 by 0.5
+      i <- DoubleRange(-2.0, 1.0, 0.25)
+      j <- DoubleRange(-2.0, 4.0, 0.5)
     } {
       poke(c.io.a1, i)
       poke(c.io.a2, j)

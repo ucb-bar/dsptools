@@ -38,8 +38,8 @@ object IAUtility {
     */
   def getIntWidth(range: IntervalRange):Int = {
     require(range.binaryPoint.get == 0, "getIntWidth only works for bp = 0")
-    val min = range.getLowestPossibleValue.get.toBigInt()
-    val max = range.getHighestPossibleValue.get.toBigInt()
+    val min = range.getLowestPossibleValue.get.toBigInt
+    val max = range.getHighestPossibleValue.get.toBigInt
 
     val minWidth = if (min < 0) min.bitLength + 1 else min.bitLength
     val maxWidth = if (max < 0) max.bitLength + 1 else max.bitLength
