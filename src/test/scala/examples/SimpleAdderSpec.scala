@@ -25,8 +25,8 @@ class SimpleAdder extends Module {
 }
 class SimpleAdderTester(c: SimpleAdder) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    i <- BigDecimal(0.0) to 1.0 by 0.25
+    j <- BigDecimal(0.0) to 4.0 by 0.5
   } {
     val expected = i + j
 

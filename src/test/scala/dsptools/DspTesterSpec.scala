@@ -49,15 +49,15 @@ class DspTesterUtilitiesSpec extends AnyFlatSpec with Matchers {
     // total > fractional
     width = 19
     var fract = 8
-    for (i <- -pow(2,width-fract-1) to pow(2,width-fract-1)-1 by 1.0/fract*0.9) {
-      check_conversion(i, width, fract)
+    for (i <- BigDecimal(-pow(2,width-fract-1)) to pow(2,width-fract-1)-1 by 1.0/fract*0.9) {
+      check_conversion(i.toDouble, width, fract)
     }
 
     // total < fractional
     width = 11
     fract = 17
-    for (i <- -pow(2,width-fract-1) to pow(2,width-fract-1)-1 by 1.0/fract*0.9) {
-      check_conversion(i, width, fract)
+    for (i <- BigDecimal(-pow(2,width-fract-1)) to pow(2,width-fract-1)-1 by 1.0/fract*0.9) {
+      check_conversion(i.toDouble, width, fract)
     }
 
   }

@@ -13,7 +13,7 @@ import org.scalatest.matchers.should.Matchers
 import spire.algebra.Ring
 
 //scalastyle:off magic.number
-class SimpleComplexAdder extends Module {
+class SimpleComplexMultiplier extends Module {
   val io = IO(new Bundle {
     val a1 = Input(DspComplex(FixedPoint(6.W, 4.BP), FixedPoint(6.W, 4.BP)))
     val a2 = Input(DspComplex(FixedPoint(8.W, 1.BP), FixedPoint(8.W, 1.BP)))
@@ -31,10 +31,10 @@ class SimpleComplexAdder extends Module {
 
   io.c := register1
 }
-class SimpleComplexAdderTester(c: SimpleComplexAdder) extends DspTester(c) {
+class SimpleComplexMultiplierTester(c: SimpleComplexMultiplier) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    i <- (BigDecimal(0.0) to 1.0 by 0.25).map(_.toDouble)
+    j <- (BigDecimal(0.0) to 4.0 by 0.5).map(_.toDouble)
   } {
     val expected = i * j
 
@@ -44,15 +44,17 @@ class SimpleComplexAdderTester(c: SimpleComplexAdder) extends DspTester(c) {
     poke(c.io.a2.imag, 0.0)
     step(1)
 
-    println(s"SimpleComplexAdder: $i * $j should make $expected got ${peek(c.io.c.real)}")
+    expect(c.io.c.real, i * j)
+
+    println(s"SimpleComplexMultiplier: $i * $j should make $expected got ${peek(c.io.c.real)}")
   }
 }
-class SimpleComplexAdderSpec extends AnyFlatSpec with Matchers {
-  behavior of "SimpleComplexAdder"
+class SimpleComplexMultiplierSpec extends AnyFlatSpec with Matchers {
+  behavior of "SimpleComplexMultiplier"
 
-  it should "add complex numbers excellently" in {
-    chisel3.iotesters.Driver(() => new SimpleComplexAdder) { c =>
-      new SimpleComplexAdderTester(c)
+  it should "multiply complex numbers excellently" in {
+    chisel3.iotesters.Driver(() => new SimpleComplexMultiplier) { c =>
+      new SimpleComplexMultiplierTester(c)
     } should be(true)
 
   }

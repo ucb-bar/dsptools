@@ -3,10 +3,12 @@
 package examples
 
 import chisel3._
-import dsptools.{ReplOptionsManager, DspTester}
+import dsptools.{DspTester, ReplOptionsManager}
 import dsptools.numbers.DspReal
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import scala.math.BigDecimal
 
 class RealAdder extends Module {
   val io = IO(new Bundle {
@@ -33,8 +35,8 @@ object RealAdder {
 
 class RealAdderTester(c: RealAdder) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    i <- (BigDecimal(0.0) to 1.0 by 0.25).map(_.toDouble)
+    j <- (BigDecimal(0.0) to 4.0 by 0.5).map(_.toDouble)
   } {
     poke(c.io.a1, i)
     poke(c.io.a2, j)
