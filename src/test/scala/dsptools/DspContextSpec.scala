@@ -44,21 +44,21 @@ class DspContextSpec extends AnyFreeSpec with Matchers {
     }
 
     "it should work multi-threaded and return values of block" ignore {
-//      DspContext.current.numBits should be (DspContext.defaultNumBits)
-//
-//      val points = (1 to 100).par.map { n =>
-//        DspContext.withNumBits(n) {
-//          DspContext.current.numBits.get should be (n)
-//          n * n
-//        }
-//      }
-//
-//      val zipped = points.zipWithIndex
-//      zipped.foreach {
-//        case (p: Int, i: Int) => p should be (math.pow(i + 1, 2))
-//      }
-//
-//      DspContext.current.numBits should be (DspContext.defaultNumBits)
+      DspContext.current.numBits should be (DspContext.defaultNumBits)
+
+      val points = (1 to 100).par.map { n =>
+        DspContext.withNumBits(n) {
+          DspContext.current.numBits.get should be (n)
+          n * n
+        }
+      }
+
+      val zipped = points.zipWithIndex
+      zipped.foreach {
+        case (p: Int, i: Int) => p should be (math.pow(i + 1, 2))
+      }
+
+      DspContext.current.numBits should be (DspContext.defaultNumBits)
     }
   }
 

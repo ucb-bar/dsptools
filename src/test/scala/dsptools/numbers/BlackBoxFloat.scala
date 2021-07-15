@@ -237,8 +237,8 @@ class FloatOpTester[T <: FloatOps](c: T, testTrigFuncs: Boolean = true) extends 
   }
 
   for {
-    x <- DoubleRange(-1.0, 1.0)
-    y <- DoubleRange(-1.0, 1.0)
+    x <- (BigDecimal(-1.0) to 1.0 by 1.0).map(_.toDouble)
+    y <- (BigDecimal(-1.0) to 1.0 by 1.0).map(_.toDouble)
   } {
     poke(c.io.in1, x)
     poke(c.io.in2, y)

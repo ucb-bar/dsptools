@@ -130,9 +130,9 @@ class SaturateFixedPointTester(dut: SaturateFixedPointMod) extends PeekPokeTeste
 
   val astep = pow(2.0, -aBP)
   val bstep = pow(2.0, -bBP)
-  for (i <- DoubleRangeUntil(-128 * astep, 128 * astep, astep)) {
+  for (i <- (BigDecimal(-128 * astep) until 128 * astep by astep).map(_.toDouble)) {
     pokeFixedPoint(dut.a, i)
-    for (j <- DoubleRangeUntil(-128 * bstep, 128 * bstep, bstep)) {
+    for (j <- (BigDecimal(-128 * bstep) until 128 * bstep by bstep).map(_.toDouble)) {
       pokeFixedPoint(dut.b, j)
       val expRes = if (dut.add) {
         i + j
