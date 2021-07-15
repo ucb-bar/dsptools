@@ -7,12 +7,7 @@ import dsptools.numbers._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
-// The following line is necessary for running the parallel test section but is not compatible
-// with 2.12.
-//import scala.collection.parallel.CollectionConverters.RangeIsParallelizable
-//
-
-//scalastyle:off magic.number
+import scala.collection.parallel.CollectionConverters.RangeIsParallelizable
 
 class DspContextSpec extends AnyFreeSpec with Matchers {
   "Context handling should be unobtrusive and convenient" - {
