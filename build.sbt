@@ -4,38 +4,8 @@ enablePlugins(SiteScaladocPlugin)
 
 enablePlugins(GhpagesPlugin)
 
-git.remoteRepo := "git@github.com:ucb-bar/dsptools.git"
-
-def scalacOptionsVersion(scalaVersion: String): Seq[String] = {
-  Seq() ++ {
-    // If we're building with Scala > 2.11, enable the compile option
-    //  switch to support our anonymous Bundle definitions:
-    //  https://github.com/scala/bug/issues/10047
-    CrossVersion.partialVersion(scalaVersion) match {
-      case Some((2, scalaMajor: Long)) if scalaMajor < 12 => Seq()
-      case _ => Seq("-Xsource:2.11")
-    }
-  }
-}
-
-def javacOptionsVersion(scalaVersion: String): Seq[String] = {
-  Seq() ++ {
-    // Scala 2.12 requires Java 8. We continue to generate
-    //  Java 7 compatible code for Scala 2.11
-    //  for compatibility with old clients.
-    CrossVersion.partialVersion(scalaVersion) match {
-      case Some((2, scalaMajor: Long)) if scalaMajor < 12 =>
-        Seq("-source", "1.7", "-target", "1.7")
-      case _ =>
-        Seq("-source", "1.8", "-target", "1.8")
-    }
-  }
-}
-
-// Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Map(
-  "chisel-iotesters" -> "1.6.+",
-  "rocketchip" -> "1.2.+"
+  "chisel-iotesters" -> "2.5-SNAPSHOT",
 )
 
 name := "dsptools"
@@ -45,10 +15,10 @@ val commonSettings = Seq(
   version := "1.5-SNAPSHOT",
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
-  scalaVersion := "2.12.10",
-  crossScalaVersions := Seq("2.12.10", "2.11.12"),
-    scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls") ++ scalacOptionsVersion(scalaVersion.value),
-  javacOptions ++= javacOptionsVersion(scalaVersion.value),
+  scalaVersion := "2.12.14",
+  crossScalaVersions := Seq("2.13.6", "2.12.14"),
+  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls"),
+  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   pomExtra := (<url>http://chisel.eecs.berkeley.edu/</url>
   <licenses>
     <license>
@@ -91,31 +61,25 @@ val commonSettings = Seq(
   resolvers ++= Seq (
     Resolver.sonatypeRepo("snapshots"),
     Resolver.sonatypeRepo("releases")
-  )
+  ),
+  libraryDependencies ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, major)) if major <= 12 => Seq()
+      case _ => Seq("org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.3")
+    }
+  },
+  libraryDependencies ++= Seq("chisel-iotesters").map { dep: String =>
+    "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
+  },
 )
 
 val dsptoolsSettings = Seq(
   name := "dsptools",
-// sbt 1.2.6 fails with `Symbol 'term org.junit' is missing from the classpath`
-// when compiling tests under 2.11.12
-// An explicit dependency on junit seems to alleviate this.
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "spire" % "0.16.2",
+    "org.typelevel" %% "spire" % "0.17.0",
     "org.scalanlp" %% "breeze" % "1.1",
-    "junit" % "junit" % "4.13" % "test",
-    "org.scalatest" %% "scalatest" % "3.2.+" % "test",
-    "org.scalacheck" %% "scalacheck" % "1.14.3" % "test"
+    "org.scalatest" %% "scalatest" % "3.2.+" % "test"
   ),
-)
-
-val rocketSettings = Seq(
-    name := "rocket-dsptools",
-    libraryDependencies ++= defaultVersions.map { case (dep, version) =>
-      "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", version)
-    }.toSeq,
-    Test / parallelExecution := false,
-    // rocket-chip currently (3/7/19) doesn't build under 2.11
-    crossScalaVersions := Seq("2.12.10"),
 )
 
 publishMavenStyle := true
@@ -123,23 +87,8 @@ publishMavenStyle := true
 publishArtifact in Test := false
 pomIncludeRepository := { x => false }
 
-// Don't add 'scm' elements if we have a git.remoteRepo definition.
-// TODO: FIXME: remove once `chisel-testers` 1.6.X is released with bumped `scalatest` deps
-// to enable add -Dsbt.sourcemode=true to SBT cmdline
-lazy val chiselIotestersRef = ProjectRef(uri("git://github.com/abejgonzalez/chisel-testers.git#5b9cc56"), "chisel-testers")
-lazy val chiselIotestersLib = Seq("chisel-iotesters").map {
-  dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
-}.head
-
-val dsptools = (project in file(".")).
-  enablePlugins(BuildInfoPlugin).
-  enablePlugins(ScalaUnidocPlugin).
-  settings(commonSettings: _*).
-  settings(dsptoolsSettings: _*).
-  sourceDependency(chiselIotestersRef, chiselIotestersLib)
-
-
-val `rocket-dsptools` = (project in file("rocket")).
-  settings(commonSettings: _*).
-  settings(rocketSettings: _*).
-  dependsOn(dsptools)
+val dsptools = (project in file("."))
+  //.enablePlugins(BuildInfoPlugin)
+  .enablePlugins(ScalaUnidocPlugin)
+  .settings(commonSettings: _*)
+  .settings(dsptoolsSettings: _*)

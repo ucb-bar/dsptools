@@ -7,7 +7,7 @@ import dsptools.numbers._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
-//scalastyle:off magic.number
+import scala.collection.parallel.CollectionConverters.RangeIsParallelizable
 
 class DspContextSpec extends AnyFreeSpec with Matchers {
   "Context handling should be unobtrusive and convenient" - {
@@ -38,16 +38,20 @@ class DspContextSpec extends AnyFreeSpec with Matchers {
       DspContext.current.overflowType should be (DspContext.defaultOverflowType)
     }
 
-    "it should work multi-threaded and return values of block" in {
+    "it should work multi-threaded and return values of block" ignore {
       DspContext.current.numBits should be (DspContext.defaultNumBits)
 
-      val points = (1 to 100).toParArray.map { n =>
+      val points = (1 to 100).par.map { n =>
         DspContext.withNumBits(n) {
           DspContext.current.numBits.get should be (n)
           n * n
         }
       }
-      points.zipWithIndex.foreach { case (p: Int, i: Int) => p should be (math.pow(i + 1, 2))}
+
+      val zipped = points.zipWithIndex
+      zipped.foreach {
+        case (p: Int, i: Int) => p should be (math.pow(i + 1, 2))
+      }
 
       DspContext.current.numBits should be (DspContext.defaultNumBits)
     }

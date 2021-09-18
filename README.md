@@ -1,7 +1,7 @@
 DSP Tools Development Environment
 ===================
 
-[![Build Status](https://travis-ci.org/ucb-bar/dsptools.svg?branch=master)](https://travis-ci.org/ucb-bar/dsptools)
+[![Test](https://github.com/ucb-bar/dsptools/actions/workflows/test.yml/badge.svg)](https://github.com/ucb-bar/dsptools/actions/workflows/test.yml)
 
 This repository serves as a good starting point for making and easily testing your various DSP
  generators in Chisel *(1 generator at a time)*. See [UC Berkeley Chisel](https://chisel.eecs.berkeley.edu) homepage for more information about Chisel.
@@ -180,17 +180,15 @@ Some useful typeclasses:
 
 Rocket-chip
 ===============
-This repo contains a set of tools useful for DSP projects involving rocket-chip:
+Integration of dsptools with a rocket-chip based project:
 
-1) `DspBlock`, a generic DSP building block with streaming and memory mapped IO.
-The type of memory interface is generic and can be selected after the block has been designed.
-Abstractions are built on top of `DspBlock`, for example a chain of blocks is a kind of `DspBlock`.
-2) A diplomatic implementation of AXI4-Stream
-3) Some DMA (stream <-> mem) blocks
-4) Simulation models for chisel-testers for memory interfaces (AHB, APB, AXI4, TileLink) and AXI4-Stream.
+The github project [Rocket Dsp Utils](https://github.com/chick/rocket-dsp-utils) contains useful tools
+that can be used to integrate components from this project with a rocket-chip based one.
+
+These tools formerly were contained in this repo under the `rocket` sub-directory.
 
 ----------
 
 This code is maintained by [Chick](https://github.com/chick), [Angie](https://github.com/shunshou) and [Paul](https://github.com/grebe). Let us know if you have any questions/feedback!
 
-Copyright (c) 2015 - 2019 The Regents of the University of California. Released under the Modified (3-clause) BSD license.
+Copyright (c) 2015 - 2021 The Regents of the University of California. Released under the Modified (3-clause) BSD license.

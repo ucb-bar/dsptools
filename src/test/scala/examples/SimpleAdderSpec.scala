@@ -2,8 +2,8 @@
 //
 package examples
 
-import chisel3.core._
-import chisel3.{Bundle, Module}
+import chisel3._
+import chisel3.experimental.FixedPoint
 import dsptools.DspTester
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -25,8 +25,8 @@ class SimpleAdder extends Module {
 }
 class SimpleAdderTester(c: SimpleAdder) extends DspTester(c) {
   for {
-    i <- 0.0 to 1.0 by 0.25
-    j <- 0.0 to 4.0 by 0.5
+    i <- BigDecimal(0.0) to 1.0 by 0.25
+    j <- BigDecimal(0.0) to 4.0 by 0.5
   } {
     val expected = i + j
 

@@ -1,22 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+
 package dsptools.numbers.rounding
 
 import chisel3._
 import chisel3.experimental.{ChiselAnnotation, FixedPoint, RunFirrtlTransform, annotate, requireIsHardware}
+import chisel3.stage.ChiselStage
 import firrtl.{CircuitForm, CircuitState, HighForm, MidForm, Transform}
-import firrtl.annotations.{
-  SingleTargetAnnotation,
-  ModuleName,
-  Target
-}
-import firrtl.ir.{
-  Block,
-  DefModule,
-  FixedType,
-  IntWidth,
-  Module => FModule,
-  UIntType,
-  SIntType
-}
+import firrtl.annotations.{ModuleName, SingleTargetAnnotation, Target}
+import firrtl.ir.{Block, DefModule, FixedType, IntWidth, SIntType, UIntType, Module => FModule}
 
 import scala.collection.immutable.HashMap
 import scala.language.existentials
@@ -257,7 +248,8 @@ class SaturateTransform extends Transform {
           () => new SaturateFixedPointSubModule(aWidth.toInt, aBP.toInt, bWidth.toInt, bBP.toInt, (cWidth - 1).toInt, cBP.toInt, pipe = pipe)
     }
     // get new body from newMod (must be single module!)
-    val newBody = Driver.toFirrtl(Driver.elaborate(newMod)).modules.head match {
+
+    val newBody = ChiselStage.convert(newMod()).modules.head match {
       case FModule(_, _, _, body) => body
       case _ => throw new Exception("Saw blackbox for some reason")
     }

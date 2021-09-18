@@ -3,7 +3,7 @@
 package dsptools
 
 import chisel3._
-import chisel3.core.FixedPoint
+import chisel3.experimental.FixedPoint
 import dsptools.numbers._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -50,7 +50,7 @@ class CircuitWithDelaysTester[T <: Data : Signed](c: AbsCircuitWithDelays[T]) ex
   private val delaySize = c.delays
 
   def oneTest(): Unit = {
-    def values: Seq[Double] = -delaySize.toDouble to delaySize.toDouble by 1.0
+    def values: Seq[Double] = (BigDecimal(-delaySize) to delaySize.toDouble by 1.0).map(_.toDouble)
     val inQueue = new mutable.Queue[Double] ++ values
     val outQueue = new mutable.Queue[Double] ++ Seq.fill(delaySize-1)(0.0) ++ values.map(_.abs)
 
@@ -83,7 +83,7 @@ class CeilTruncateTester(c: CeilTruncateCircuitWithDelays) extends DspTester(c) 
                inFixedIo: FixedPoint, outFixedIo: FixedPoint,
                inRealIo: DspReal, outRealIo: DspReal,
                delaySize: Int): Unit = {
-    def values: Seq[Double] = -delaySize.toDouble to delaySize.toDouble by 1.0
+    def values: Seq[Double] = (BigDecimal(-delaySize) to delaySize.toDouble by 1.0).map(_.toDouble)
     val inQueue = new mutable.Queue[Double] ++ values
     val outQueue = new mutable.Queue[Double] ++ Seq.fill(delaySize)(0.0) ++ values.map(_.ceil)
 

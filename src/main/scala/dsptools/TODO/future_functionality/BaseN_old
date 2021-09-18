@@ -243,7 +243,7 @@ class BaseN(val length: Int, val radix: Int) extends Bundle { //extends Vec(gen,
 //      val intVal = rad2NtoUInt
 //      val temp = intVal.zipWithIndex.map {
 //        case (e,i) => {
-//          val activeDigit = (numPrimeDigits > UInt(i)).toBool
+//          val activeDigit = (numPrimeDigits > UInt(i)).asBool
 //          val mod = Mux(activeDigit,e,Bool(false))
 //          val max = {
 //            if (i == 0 && useM1) Bool(false)
