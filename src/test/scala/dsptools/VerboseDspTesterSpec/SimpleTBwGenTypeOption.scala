@@ -366,7 +366,7 @@ class SimpleTBSpec extends AnyFlatSpec with Matchers {
 
   behavior of "simple module lits"
 
-  it should "properly read lits with gen = sint (reals rounded) and expect tolerance set to 1 bit" in {
+  ignore should "properly read lits with gen = sint (reals rounded) and expect tolerance set to 1 bit" in {
     val opt = new DspTesterOptionsManager {
       dspTesterOptions = optionsPass.dspTesterOptions
       testerOptions = optionsPass.testerOptions
@@ -377,7 +377,7 @@ class SimpleTBSpec extends AnyFlatSpec with Matchers {
     } should be (true)
   }
 
-  it should "properly read lits with gen = fixed and expect tolerance set to 1 bit " +
+  ignore should "properly read lits with gen = fixed and expect tolerance set to 1 bit " +
       "(even with finite fractional bits)" in {
     val opt = new DspTesterOptionsManager {
       dspTesterOptions = optionsPass.dspTesterOptions
@@ -389,7 +389,7 @@ class SimpleTBSpec extends AnyFlatSpec with Matchers {
     } should be (true)
   }
 
-  it should "*fail* to read all lits with gen = fixed when expect tolerance is set to 0 bits " +
+  ignore should "*fail* to read all lits with gen = fixed when expect tolerance is set to 0 bits " +
       "(due to not having enough fractional bits to represent #s)" in {
     val opt = new DspTesterOptionsManager {
       dspTesterOptions = optionsFail.dspTesterOptions
