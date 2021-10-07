@@ -25,7 +25,6 @@ class SimpleDspIo[T <: Data:RealBits](gen: T) extends Bundle {
   val x = Input(gen.cloneType)
   val y = Input(gen.cloneType)
   val z = Output(gen.cloneType)
-  override def cloneType: this.type = new SimpleDspIo(gen).asInstanceOf[this.type]
 }
 
 // Parameterized Chisel Module; takes in type parameters as explained above

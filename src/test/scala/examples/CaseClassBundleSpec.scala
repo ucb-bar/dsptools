@@ -12,11 +12,9 @@ import org.scalatest.matchers.should.Matchers
 //case class CaseClassBundle(a: SInt) extends Bundle
 //case class CaseClassBundle(underlying: SInt) extends Bundle {
   //  val underlying = gen.cloneType
-  //  override def cloneType: this.type = new CaseClassBundle(underlying.cloneType).asInstanceOf[this.type]
 //}
 class CaseClassBundle(gen: SInt) extends Bundle {
     val underlying = gen
-    override def cloneType: this.type = new CaseClassBundle(underlying.cloneType).asInstanceOf[this.type]
 }
 
 class SimpleCaseClassModule(gen: SInt) extends Module {

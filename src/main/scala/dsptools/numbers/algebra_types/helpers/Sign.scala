@@ -39,7 +39,6 @@ sealed class Sign(zeroInit: Option[Boolean] = None, negInit: Option[Boolean] = N
   // it's raised by an odd power
   def **(that: UInt): Sign = Sign(this.zero, this.neg && that(0))
 
-  override def cloneType = new Sign(zeroInit, negInit).asInstanceOf[this.type]
 }
 
 object Sign {
