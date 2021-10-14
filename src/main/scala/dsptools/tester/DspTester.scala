@@ -98,7 +98,7 @@ class DspTester[+T <: Module](
       if (!signal.isLit) {
         backend.peek(signal, None)(logger, dispDsp, dispBase)
       } else {
-        val litVal = signal.litValue()
+        val litVal = signal.litValue
         if (dispDsp) {
           logger info s"  PEEK ${getName(signal)} -> ${TestersCompatibility.bigIntToStr(litVal, dispBase)}"
         }
