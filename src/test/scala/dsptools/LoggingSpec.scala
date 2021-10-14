@@ -22,7 +22,7 @@ class DutWithLoggingTester(c: DutWithLogging) extends DspTester(c)
 class LoggingSpec extends AnyFreeSpec with Matchers {
   "logging can be emitted during hardware generation" - {
     "level defaults to warn" in {
-      Logger.makeScope() {
+      Logger.makeScope(Seq.empty) {
         val captor = new Logger.OutputCaptor
         Logger.setOutput(captor.printStream)
 
@@ -37,7 +37,7 @@ class LoggingSpec extends AnyFreeSpec with Matchers {
       }
     }
     "logging level can be set via command line args" in {
-      Logger.makeScope() {
+      Logger.makeScope(Seq.empty) {
         val captor = new Logger.OutputCaptor
         Logger.setOutput(captor.printStream)
 
@@ -52,7 +52,7 @@ class LoggingSpec extends AnyFreeSpec with Matchers {
       }
     }
     "logging level can be set for a specific package" in {
-      Logger.makeScope() {
+      Logger.makeScope(Seq.empty) {
         val captor = new Logger.OutputCaptor
         Logger.setOutput(captor.printStream)
 
