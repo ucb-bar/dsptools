@@ -68,6 +68,7 @@ object Driver {
       blackBoxFactories = optionsManager.treadleOptions.blackBoxFactories :+ new TreadleDspRealFactory
     )
 
+
     logger.Logger.makeScope(optionsManager) {
       val chiselResult: ChiselExecutionResult = iotesters.DriverCompatibility.execute(optionsManager, dutGenerator)
       chiselResult match {
