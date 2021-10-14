@@ -9,7 +9,7 @@ import dsptools.numbers.rounding.Saturate
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class SaturateUIntMod(val add: Boolean) extends MultiIOModule {
+class SaturateUIntMod(val add: Boolean) extends Module {
   val a = IO(Input(UInt(8.W)))
   val b = IO(Input(UInt(8.W)))
   val c = IO(Output(UInt()))
@@ -53,7 +53,7 @@ class SaturateUIntTester(dut: SaturateUIntMod) extends PeekPokeTester(dut) {
   }
 }
 
-class SaturateSIntMod(val add: Boolean) extends MultiIOModule {
+class SaturateSIntMod(val add: Boolean) extends Module {
   val a = IO(Input(SInt(8.W)))
   val b = IO(Input(SInt(8.W)))
   val c = IO(Output(SInt()))
@@ -96,7 +96,7 @@ class SaturateSIntTester(dut: SaturateSIntMod) extends PeekPokeTester(dut) {
   }
 }
 
-class SaturateFixedPointMod(val add: Boolean, val aBP: Int = 0, val bBP: Int = 0) extends MultiIOModule {
+class SaturateFixedPointMod(val add: Boolean, val aBP: Int = 0, val bBP: Int = 0) extends Module {
   val cBP = aBP max bBP
   val a = IO(Input(FixedPoint(8.W, aBP.BP)))
   val b = IO(Input(FixedPoint(8.W, bBP.BP)))

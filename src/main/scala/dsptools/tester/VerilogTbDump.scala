@@ -15,7 +15,7 @@ import chisel3.iotesters.TestersCompatibility
 // Note: This will dump as long as genVerilogTb is true (even if you're peeking/poking DspReal)
 trait VerilogTbDump {
 
-  def dut: MultiIOModule
+  def dut: Module
 
   // Used for getting target directory only (set in iotesters.Driver)
   val iotestersOM = chisel3.iotesters.Driver.optionsManager

@@ -16,7 +16,7 @@ import scala.util.DynamicVariable
 import chisel3.iotesters.TestersCompatibility
 
 //scalastyle:off number.of.methods cyclomatic.complexity
-class DspTester[+T <: MultiIOModule](
+class DspTester[+T <: Module](
     dut: T,
     base: Int = 16,
     logFile: Option[java.io.File] = None) extends PeekPokeTester(dut, base, logFile) with VerilogTbDump {

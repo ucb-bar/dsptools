@@ -16,7 +16,7 @@ object Driver {
   private val optionsManagerVar = new DynamicVariable[Option[DspTesterOptionsManager]](None)
   def optionsManager = optionsManagerVar.value.getOrElse(new DspTesterOptionsManager)
 
-  def execute[T <: MultiIOModule](dutGenerator: () => T,
+  def execute[T <: Module](dutGenerator: () => T,
       optionsManager: TesterOptionsManager)(testerGen: T => PeekPokeTester[T]): Boolean = {
 
     val om = optionsManager match {
@@ -36,7 +36,7 @@ object Driver {
 
   }
 
-  def execute[T <: MultiIOModule](dutGenerator: () => T,
+  def execute[T <: Module](dutGenerator: () => T,
       args: Array[String] = Array.empty)(testerGen: T => PeekPokeTester[T]): Boolean = {
 
     val optionsManager = new DspTesterOptionsManager {
@@ -56,7 +56,7 @@ object Driver {
     }
   }
 
-  def executeFirrtlRepl[T <: MultiIOModule](dutGenerator: () => T,
+  def executeFirrtlRepl[T <: Module](dutGenerator: () => T,
       optionsManager: ReplOptionsManager = new ReplOptionsManager): Boolean = {
 
     optionsManager.chiselOptions = optionsManager.chiselOptions.copy(runFirrtlCompiler = false)

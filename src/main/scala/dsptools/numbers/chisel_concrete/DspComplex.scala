@@ -19,7 +19,7 @@ object DspComplex {
   // In reality, real and imag should have the same type, so should be using single argument
   // apply if you aren't trying t create a Lit
   def apply[T <: Data:Ring](real: T, imag: T): DspComplex[T] = {
-    if(real.isLit() && imag.isLit()) {
+    if(real.isLit && imag.isLit) {
       new DspComplex(real, imag).Lit(_.real -> real, _.imag -> imag)
     } else {
       val newReal = if (real.isLit()) real else real.cloneType
@@ -38,7 +38,6 @@ object DspComplex {
   }
 
   // Constant j
-  // TODO(Paul): this call to wire() should be removed when chisel has literal bundles
   def j[T <: Data:Ring] : DspComplex[T] = DspComplex(Ring[T].zero, Ring[T].one)
 
   // Creates a DspComplex literal of type DspComplex[T] from a Breeze Complex
