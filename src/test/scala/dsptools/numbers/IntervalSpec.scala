@@ -162,9 +162,9 @@ class IntervalBrokenShifterTester(c: IntervalBrokenShifter) extends DspTester(c)
 class IntervalSpec extends AnyFreeSpec with Matchers {
   "Interval numbers should work properly for the following mathematical type functions" - {
 //    for (backendName <- Seq("verilator")) {
-//    for (backendName <- Seq("treadle")) {
+    for (backendName <- Seq("treadle")) {
 //    for (backendName <- Seq("firrtl")) {
-    for (backendName <- Seq("treadle", "verilator")) {
+//    for (backendName <- Seq("treadle", "verilator")) {
       s"The ring family run with the $backendName simulator" - {
         for (binaryPoint <- 0 to 4 by 2) {
           s"should work, with binaryPoint $binaryPoint" in {
@@ -200,21 +200,6 @@ class IntervalSpec extends AnyFreeSpec with Matchers {
               new IntervalShifterTest(c)
             } should be(true)
           }
-        }
-      }
-
-      //TODO: This error does not seem to be caught at this time.  Firrtl issue #450
-      s"shifting by too big a number causes error with $backendName" ignore {
-        for(shiftSize <- 8 to 10) {
-          dsptools.Driver.execute(
-            () => new IntervalBrokenShifter(n = shiftSize),
-            Array(
-              "--backend-name", backendName,
-              "--target-dir", s"test_run_dir/broken-shifter-$shiftSize"
-            )
-          ) { c =>
-            new IntervalBrokenShifterTester(c)
-          } should be(true)
         }
       }
     }

@@ -158,7 +158,8 @@ class BrokenShifterTester(c: BrokenShifter) extends DspTester(c) {
 class FixedPointSpec extends AnyFreeSpec with Matchers {
   "FixedPoint numbers should work properly for the following mathematical type functions" - {
 //    for (backendName <- Seq("verilator")) {
-    for (backendName <- Seq("firrtl", "verilator")) {
+//    for (backendName <- Seq("treadle")) {
+    for (backendName <- Seq("treadle", "verilator")) {
       s"The ring family run with the $backendName simulator" - {
         for (binaryPoint <- 0 to 4 by 2) {
           s"should work, with binaryPoint $binaryPoint" in {
@@ -196,22 +197,6 @@ class FixedPointSpec extends AnyFreeSpec with Matchers {
           }
         }
       }
-
-      //TODO: This error does not seem to be caught at this time.  Firrtl issue #450
-      s"shifting by too big a number causes error with $backendName" ignore {
-        for(shiftSize <- 8 to 10) {
-          dsptools.Driver.execute(
-            () => new BrokenShifter(n = shiftSize),
-            Array(
-              "--backend-name", backendName,
-              "--target-dir", s"test_run_dir/broken-shifter-$shiftSize"
-            )
-          ) { c =>
-            new BrokenShifterTester(c)
-          } should be(true)
-        }
-      }
-
     }
   }
 }

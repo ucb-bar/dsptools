@@ -5,9 +5,10 @@ package dsptools.numbers.rounding
 import chisel3._
 import chisel3.experimental.{ChiselAnnotation, FixedPoint, RunFirrtlTransform, annotate, requireIsHardware}
 import chisel3.stage.ChiselStage
-import firrtl.{CircuitForm, CircuitState, HighForm, MidForm, Transform}
+import firrtl.{CircuitState, DependencyAPIMigration, Transform}
 import firrtl.annotations.{ModuleName, SingleTargetAnnotation, Target}
-import firrtl.ir.{Block, DefModule, FixedType, IntWidth, SIntType, UIntType, Module => FModule}
+import firrtl.ir.{DefModule, FixedType, IntWidth, SIntType, UIntType, Module => FModule}
+import firrtl.stage.TransformManager.TransformDependency
 
 import scala.collection.immutable.HashMap
 import scala.language.existentials
@@ -200,9 +201,8 @@ object Saturate {
   }
 }
 
-class SaturateTransform extends Transform {
-  def inputForm: CircuitForm = MidForm
-  def outputForm: CircuitForm = HighForm
+class SaturateTransform extends Transform with DependencyAPIMigration{
+  override def prerequisites: Seq[TransformDependency] = firrtl.stage.Forms.MidForm
 
   private def replaceMod(m: FModule, anno: SaturateAnnotation): FModule = {
     val aTpe = m.ports.find(_.name == "a").map(_.tpe).getOrElse(throw new Exception("a not found"))
