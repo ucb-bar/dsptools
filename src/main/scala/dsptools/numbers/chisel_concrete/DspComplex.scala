@@ -19,11 +19,11 @@ object DspComplex {
   // In reality, real and imag should have the same type, so should be using single argument
   // apply if you aren't trying t create a Lit
   def apply[T <: Data:Ring](real: T, imag: T): DspComplex[T] = {
-    if(real.isLit() && imag.isLit()) {
-      new DspComplex(real, imag).Lit(_.real -> real, _.imag -> imag)
+    val newReal = if (real.isLit) real.cloneType else real
+    val newImag = if (imag.isLit) imag.cloneType else imag
+    if(real.isLit && imag.isLit) {
+      new DspComplex(newReal, newImag).Lit(_.real -> real, _.imag -> imag)
     } else {
-      val newReal = if (real.isLit()) real else real.cloneType
-      val newImag = if (imag.isLit()) imag else imag.cloneType
       new DspComplex(newReal, newImag)
     }
   }
