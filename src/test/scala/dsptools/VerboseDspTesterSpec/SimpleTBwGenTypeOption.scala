@@ -84,7 +84,6 @@ class DataTypeBundle[R <: Data:Real](genType: R, dataWidth: Width, binaryPoint: 
   val s = SInt(dataWidth)
   val f = FixedPoint(dataWidth, binaryPoint)
   val u = UInt(dataWidth)
-  override def cloneType: this.type = new DataTypeBundle(genType, dataWidth, binaryPoint).asInstanceOf[this.type]
 }
 
 class Interface[R <: Data:Real](genShort: R, genLong: R, includeR: Boolean, p: TestParams) extends Bundle {
@@ -109,8 +108,6 @@ class Interface[R <: Data:Real](genShort: R, genLong: R, includeR: Boolean, p: T
   val vU = Vec(vecLen, UInt(smallW))
   val vS = Vec(vecLen, SInt(smallW))
   val vF = Vec(vecLen, FixedPoint(smallW, smallBP))
-
-  override def cloneType: this.type = new Interface(genShort, genLong, includeR, p).asInstanceOf[this.type]
 }
 
 class SimpleIOModule[R <: Data:Real](genShort: R, genLong: R, val includeR: Boolean, val p: TestParams)

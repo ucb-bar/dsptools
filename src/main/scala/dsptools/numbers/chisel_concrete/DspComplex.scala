@@ -12,18 +12,18 @@ object DspComplex {
 
   def apply[T <: Data:Ring](gen: T): DspComplex[T] = {
     if (gen.isLit()) throw DspException("Cannot use Lit in single argument DspComplex.apply")
-    apply(gen, gen)
+    apply(gen.cloneType, gen.cloneType)
   }
 
   // If real, imag are literals, the literals are carried through
   // In reality, real and imag should have the same type, so should be using single argument
   // apply if you aren't trying t create a Lit
   def apply[T <: Data:Ring](real: T, imag: T): DspComplex[T] = {
-    if(real.isLit() && imag.isLit()) {
-      new DspComplex(real, imag).Lit(_.real -> real, _.imag -> imag)
+    val newReal = if (real.isLit) real.cloneType else real
+    val newImag = if (imag.isLit) imag.cloneType else imag
+    if(real.isLit && imag.isLit) {
+      new DspComplex(newReal, newImag).Lit(_.real -> real, _.imag -> imag)
     } else {
-      val newReal = if (real.isLit()) real else real.cloneType
-      val newImag = if (imag.isLit()) imag else imag.cloneType
       new DspComplex(newReal, newImag)
     }
   }
@@ -74,10 +74,6 @@ class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Bundle {
   // Absolute square (squared norm) = x^2 + y^2
   // Uses implicits
   def abssq(dummy: Int = 0): T = (real * real) + (imag * imag)
-
-  override def cloneType: this.type = {
-    new DspComplex(real.cloneType, imag.cloneType).asInstanceOf[this.type]
-  }
 
   def underlyingType(dummy: Int = 0): String = {
     real match {
