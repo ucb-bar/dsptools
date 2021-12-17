@@ -75,10 +75,6 @@ class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Bundle {
   // Uses implicits
   def abssq(dummy: Int = 0): T = (real * real) + (imag * imag)
 
-  override def cloneType: this.type = {
-    new DspComplex(real.cloneType, imag.cloneType).asInstanceOf[this.type]
-  }
-
   def underlyingType(dummy: Int = 0): String = {
     real match {
       case _: Interval   => "interval"
