@@ -12,7 +12,7 @@ object DspComplex {
 
   def apply[T <: Data:Ring](gen: T): DspComplex[T] = {
     if (gen.isLit()) throw DspException("Cannot use Lit in single argument DspComplex.apply")
-    apply(gen, gen)
+    apply(gen.cloneType, gen.cloneType)
   }
 
   // If real, imag are literals, the literals are carried through
