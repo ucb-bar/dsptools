@@ -4,14 +4,12 @@ package dsptools.numbers
 
 import chisel3._
 import chisel3.util.Mux1H
+import chisel3.experimental.BundleLiterals.AddBundleLiteralConstructor
 
 //scalastyle:off number.of.methods
-class DspReal(val lit: Option[BigInt] = None) extends Bundle {
-  
-  val node: UInt = lit match {
-    case Some(x) => x.U(DspReal.underlyingWidth.W)
-    case _ => Output(UInt(DspReal.underlyingWidth.W))
-  }
+class DspReal() extends Bundle {
+
+  val node: UInt = Output(UInt(DspReal.underlyingWidth.W))
 
   private def oneOperandOperator(blackbox_gen: => BlackboxOneOperand) : DspReal = {
     val blackbox = blackbox_gen
@@ -346,19 +344,17 @@ class DspReal(val lit: Option[BigInt] = None) extends Bundle {
 
 object DspReal {
   val underlyingWidth = 64
-  private val zero = DspReal(0.0, false)
+
+  @deprecated("addZero doesn't do anything", "dsptools 1.5")
+  def apply(value: Double, addZero: Boolean): DspReal = apply(value)
 
   /** Creates a Real with a constant value.
     */
-  def apply(value: Double, addZero: Boolean = true): DspReal = {
+  def apply(value: Double): DspReal = {
     // See http://stackoverflow.com/questions/21212993/unsigned-variables-in-scala
     def longAsUnsignedBigInt(in: Long): BigInt = (BigInt(in >>> 1) << 1) + (in & 1)
     def doubleToBigInt(in: Double): BigInt = longAsUnsignedBigInt(java.lang.Double.doubleToRawLongBits(in))
-    if (addZero) {
-      new DspReal(Some(doubleToBigInt(value))) + zero
-    } else {
-      new DspReal(Some(doubleToBigInt(value)))
-    }
+    (new DspReal()).Lit(_.node -> doubleToBigInt(value).U)
   }
 
   /**

@@ -6,21 +6,26 @@ import chisel3._
 import chisel3.experimental.{FixedPoint, Interval}
 import dsptools.DspException
 import breeze.math.Complex
+import chisel3.experimental.BundleLiterals.AddBundleLiteralConstructor
 
 object DspComplex {
 
   def apply[T <: Data:Ring](gen: T): DspComplex[T] = {
     if (gen.isLit()) throw DspException("Cannot use Lit in single argument DspComplex.apply")
-    apply(gen, gen)
+    apply(gen.cloneType, gen.cloneType)
   }
 
   // If real, imag are literals, the literals are carried through
   // In reality, real and imag should have the same type, so should be using single argument
   // apply if you aren't trying t create a Lit
   def apply[T <: Data:Ring](real: T, imag: T): DspComplex[T] = {
-    val newReal = if (real.isLit()) real else real.cloneType
-    val newImag = if (imag.isLit()) imag else imag.cloneType
-    new DspComplex(newReal, newImag)
+    val newReal = if (real.isLit) real.cloneType else real
+    val newImag = if (imag.isLit) imag.cloneType else imag
+    if(real.isLit && imag.isLit) {
+      new DspComplex(newReal, newImag).Lit(_.real -> real, _.imag -> imag)
+    } else {
+      new DspComplex(newReal, newImag)
+    }
   }
 
   // Needed for assigning to results of operations; should not use in user code for making wires
@@ -34,7 +39,7 @@ object DspComplex {
 
   // Constant j
   // TODO(Paul): this call to wire() should be removed when chisel has literal bundles
-  def j[T <: Data:Ring] : DspComplex[T] = wire(Ring[T].zero, Ring[T].one)
+  def j[T <: Data:Ring] : DspComplex[T] = DspComplex(Ring[T].zero, Ring[T].one)
 
   // Creates a DspComplex literal of type DspComplex[T] from a Breeze Complex
   // Note: when T is FixedPoint, the # of fractional bits is determined via DspContext
@@ -69,10 +74,6 @@ class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Bundle {
   // Absolute square (squared norm) = x^2 + y^2
   // Uses implicits
   def abssq(dummy: Int = 0): T = (real * real) + (imag * imag)
-
-  override def cloneType: this.type = {
-    new DspComplex(real.cloneType, imag.cloneType).asInstanceOf[this.type]
-  }
 
   def underlyingType(dummy: Int = 0): String = {
     real match {

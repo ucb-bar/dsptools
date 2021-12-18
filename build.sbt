@@ -6,6 +6,7 @@ enablePlugins(GhpagesPlugin)
 
 val defaultVersions = Map(
   "chisel-iotesters" -> "2.5.0-RC2",
+  "chisel3" -> "3.5.0-RC2",
 )
 
 name := "dsptools"
@@ -67,6 +68,7 @@ val commonSettings = Seq(
   libraryDependencies ++= Seq("chisel-iotesters").map { dep: String =>
     "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
   },
+  addCompilerPlugin("edu.berkeley.cs" %% "chisel3-plugin" % defaultVersions("chisel3") cross CrossVersion.full),
 )
 
 val dsptoolsSettings = Seq(

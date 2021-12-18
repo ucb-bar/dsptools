@@ -53,7 +53,7 @@ class SIntTester extends BasicTester {
 
   assert( x === xcopy )
 
-  val y = DspComplex.wire((-4).S, (-1).S)
+  val y = DspComplex((-4).S, (-1).S)
 
   assert ( y.real === (-4).S)
   assert (y.imag === (-1).S)
