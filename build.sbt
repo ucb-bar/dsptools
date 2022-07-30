@@ -5,15 +5,15 @@ enablePlugins(SiteScaladocPlugin)
 enablePlugins(GhpagesPlugin)
 
 val defaultVersions = Map(
-  "chisel-iotesters" -> "2.5.3",
-  "chisel3" -> "3.5.3",
+  "chisel-iotesters" -> "2.5.4",
+  "chisel3" -> "3.5.4",
 )
 
 name := "dsptools"
 
 val commonSettings = Seq(
   organization := "edu.berkeley.cs",
-  version := "1.5.3",
+  version := "1.5.4",
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
   scalaVersion := "2.12.14",
