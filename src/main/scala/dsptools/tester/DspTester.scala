@@ -4,7 +4,7 @@ package dsptools
 
 import breeze.math.Complex
 import chisel3._
-import chisel3.experimental.{FixedPoint, Interval}
+import chisel3.experimental.FixedPoint
 import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3.iotesters.{PeekPokeTester, Pokeable}
 import dsptools.DspTesterUtilities._
@@ -36,7 +36,7 @@ class DspTester[+T <: MultiIOModule](
   val updatableSubVerbose = new DynamicVariable[Boolean](iotestersOM.testerOptions.isVerbose)
   private def dispSub = updatableSubVerbose.value
 
-  // UInt, SInt, FixedPoint, Interval tolerance in LSBs
+  // UInt, SInt, FixedPoint tolerance in LSBs
   val fixTolLSBs = new DynamicVariable[Int](dsptestersOpt.fixTolLSBs)
   private def fixTol = fixTolLSBs.value
 
@@ -157,14 +157,6 @@ class DspTester[+T <: MultiIOModule](
   def poke(signal: FixedPoint, value: Int): Unit = poke(signal, value.toDouble)
   def poke(signal: FixedPoint, value: Double): Unit = poke(signal.asInstanceOf[Data], value)
 
-  // Has priority over Bits (Interval extends Bits)
-  def poke(signal: Interval, value: Int): Unit = poke(signal, value.toDouble)
-  def poke(signal: Interval, value: Double): Unit = poke(signal.asInstanceOf[Data], value)
-  def poke(signal: Interval, value: BigDecimal): Unit = {
-    assert(value <= Double.MaxValue, s"poking ${signal} with a value $value bigger than Double.MaxValue")
-    poke(signal.asInstanceOf[Data], value.toDouble)
-  }
-
   // DspReal extends Bundle extends Aggregate extends Data
   // If poking DspReal with Double, can only go here
   // Type classes are all Data:RealBits
@@ -172,11 +164,6 @@ class DspTester[+T <: MultiIOModule](
   def poke(signal: Data, value: Double): Unit = {
     updatableDspVerbose.withValue(dispSub) {
       signal match {
-        case i: Interval =>
-          i.binaryPoint match {
-            case KnownBinaryPoint(bp) => poke(i.asInstanceOf[Bits], Interval.toBigInt(value, bp))
-            case _ => throw DspException("Must poke Interval with known binary point")
-          }
         case f: FixedPoint =>
           f.binaryPoint match {
             case KnownBinaryPoint(bp) => poke(f.asInstanceOf[Bits], FixedPoint.toBigInt(value, bp))
@@ -216,10 +203,6 @@ class DspTester[+T <: MultiIOModule](
     }
     val (dblOut, bigIntOut) = node match {
       case _: DspReal => (DspTesterUtilities.bigIntBitsToDouble(bi), bi)
-      case i: Interval => i.binaryPoint match {
-        case KnownBinaryPoint(bp) => (Interval.toDouble(bi, bp), bi)
-        case _ => throw DspException("Cannot peek Interval with unknown binary point location")
-      }
       case f: FixedPoint => f.binaryPoint match {
         case KnownBinaryPoint(bp) => (FixedPoint.toDouble(bi, bp), bi)
         case _ => throw DspException("Cannot peek FixedPoint with unknown binary point location")
@@ -239,7 +222,6 @@ class DspTester[+T <: MultiIOModule](
   def peek(node: UInt): Int = dspPeek(node)._1.round.toInt
   def peek(node: SInt): Int = dspPeek(node)._1.round.toInt
   def peek(node: FixedPoint): Double = dspPeek(node)._1
-  def peek(node: Interval): Double = dspPeek(node)._1
   // Takes precedence over Aggregate
   def peek(node: DspReal): Double = dspPeek(node)._1
 
@@ -277,15 +259,6 @@ class DspTester[+T <: MultiIOModule](
   def expect(signal: FixedPoint, expected: Double, msg: String): Boolean = {
     expect(signal.asInstanceOf[Data], expected, msg)
   }
-
-  // Priority over Bits
-  def expect(signal: Interval, expected: Int): Boolean = expect(signal, expected, "")
-  def expect(signal: Interval, expected: Int, msg: String): Boolean = expect(signal, expected.toDouble, msg)
-  def expect(signal: Interval, expected: Double): Boolean = expect(signal, expected, "")
-  def expect(signal: Interval, expected: Double, msg: String): Boolean = {
-    expect(signal.asInstanceOf[Data], expected, msg)
-  }
-
   ///////////////// SPECIALIZED DSP EXPECT /////////////////
 
   //scalastyle:off cyclomatic.complexity
@@ -300,10 +273,6 @@ class DspTester[+T <: MultiIOModule](
     val dblVal0 = if (math.abs(dblVal) < floTolDec/100) 0.0 else dblVal
     val expectedBits = data match {
       case _: DspReal => DspTesterUtilities.doubleToBigIntBits(expected0)     // unsigned BigInt
-      case i: Interval => i.binaryPoint match {
-        case KnownBinaryPoint(bp) => Interval.toBigInt(expected0, bp)
-        case _ => throw DspException("Unknown binary point in Interval on expect")
-      }
       case f: FixedPoint => f.binaryPoint match {
         case KnownBinaryPoint(bp) => FixedPoint.toBigInt(expected0, bp)
         case _ => throw DspException("Unknown binary point in FixedPoint on expect")
@@ -315,10 +284,6 @@ class DspTester[+T <: MultiIOModule](
 
     // Allow for some tolerance in error checking
     val (tolerance, tolDec) = data match {
-      case i: Interval => i.binaryPoint match {
-        case KnownBinaryPoint(bp) => (fixTolInt, Interval.toDouble(fixTolInt, bp))
-        case _ => throw DspException("Unknown binary point!")
-      }
       case f: FixedPoint => f.binaryPoint match {
         case KnownBinaryPoint(bp) => (fixTolInt, FixedPoint.toDouble(fixTolInt, bp))
         case _ => throw DspException("Unknown binary point!")
