@@ -25,7 +25,7 @@ case class SaturateChiselAnnotation(target: SaturateDummyModule[_ <: Data], op: 
   def transformClass: Class[SaturateTransform] = classOf[SaturateTransform]
 }
 
-trait SaturateModule[T <: Data] extends MultiIOModule {
+trait SaturateModule[T <: Data] extends Module {
   val a: T
   val b: T
   val c: T

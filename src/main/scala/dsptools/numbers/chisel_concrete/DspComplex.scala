@@ -11,7 +11,7 @@ import chisel3.experimental.BundleLiterals.AddBundleLiteralConstructor
 object DspComplex {
 
   def apply[T <: Data:Ring](gen: T): DspComplex[T] = {
-    if (gen.isLit()) throw DspException("Cannot use Lit in single argument DspComplex.apply")
+    if (gen.isLit) throw DspException("Cannot use Lit in single argument DspComplex.apply")
     apply(gen.cloneType, gen.cloneType)
   }
 
