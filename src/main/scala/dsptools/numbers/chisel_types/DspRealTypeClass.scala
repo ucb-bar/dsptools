@@ -5,7 +5,7 @@ package dsptools.numbers
 import chisel3._
 import chisel3.util.{Cat, ShiftRegister}
 import dsptools.{DspContext, NoTrim, hasContext}
-import chisel3.experimental.{FixedPoint, Interval}
+import chisel3.experimental.FixedPoint
 import chisel3.internal.firrtl.KnownBinaryPoint
 
 import scala.language.implicitConversions
@@ -137,18 +137,6 @@ trait DspRealReal extends DspRealRing with DspRealIsReal with ConvertableToDspRe
     out := DspContext.withTrimType(NoTrim) {
       // round is round half up
       round(a * DspReal((1 << bp).toDouble)).toSInt().asFixed.div2(bp)
-    }
-    out
-  }
-
-  def asInterval(a: DspReal, proto: Interval): Interval = {
-    require(proto.binaryPoint.known, "Binary point must be known for DspReal -> Interval")
-    val bp = proto.binaryPoint.get
-    // WARNING: Round half up!
-    val out = Wire(proto.cloneType)
-    out := DspContext.withTrimType(NoTrim) {
-      // round is round half up
-      round(a * DspReal((1 << bp).toDouble)).toSInt().asInterval(proto.range).div2(bp)
     }
     out
   }

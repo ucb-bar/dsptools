@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.experimental.{FixedPoint, Interval}
+import chisel3.experimental.FixedPoint
 import dsptools.DspException
 import breeze.math.Complex
 import chisel3.experimental.BundleLiterals.AddBundleLiteralConstructor
@@ -77,7 +77,6 @@ class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Bundle {
 
   def underlyingType(dummy: Int = 0): String = {
     real match {
-      case _: Interval   => "interval"
       case _: FixedPoint => "fixed"
       case _: DspReal    => "real"
       case _: SInt       => "SInt"

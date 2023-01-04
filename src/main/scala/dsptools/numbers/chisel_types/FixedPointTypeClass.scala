@@ -3,8 +3,8 @@
 package dsptools.numbers
 
 import chisel3._
-import chisel3.experimental.{FixedPoint, Interval}
-import chisel3.internal.firrtl.{IntervalRange, KnownBinaryPoint}
+import chisel3.experimental.FixedPoint
+import chisel3.internal.firrtl.KnownBinaryPoint
 import chisel3.util.ShiftRegister
 import dsptools._
 
@@ -108,8 +108,6 @@ trait ConvertableFromFixedPoint extends ChiselConvertableFrom[FixedPoint] with h
   // asReal depends on shifting fractional bits up
   override def asFixed(a: FixedPoint): FixedPoint = a
   def asFixed(a: FixedPoint, proto: FixedPoint): FixedPoint = asFixed(a)
-  override def asInterval(a: FixedPoint): Interval = a.asInterval(IntervalRange(a.binaryPoint))
-  def asInterval(a: FixedPoint, proto: Interval): Interval = a.asInterval(proto.range)
 }
 
 trait BinaryRepresentationFixedPoint extends BinaryRepresentation[FixedPoint] with hasContext {

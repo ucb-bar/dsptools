@@ -3,7 +3,7 @@
 package dsptools
 
 import chisel3._
-import chisel3.experimental.{FixedPoint, Interval}
+import chisel3.experimental.FixedPoint
 import dsptools.numbers.{DspComplex, DspReal}
 import chisel3.internal.InstanceId
 import chisel3.internal.firrtl.KnownBinaryPoint
@@ -65,7 +65,7 @@ object DspTesterUtilities {
   // Checks if a basic number is signed or unsigned
   def isSigned(e: Data): Boolean = {
     e match {
-      case _: SInt | _: FixedPoint | _: Interval => true
+      case _: SInt | _: FixedPoint => true
       case _: DspReal | _: Bool | _: UInt => false
       // Clock isn't a number, but it's still valid IO (should be treated as a Bool)
       case _: Clock => false
@@ -95,11 +95,6 @@ object DspTesterUtilities {
   def bitInfo(signal: Data): String = signal.widthOption match {
     case Some(width) => {
       signal match {
-        case i: Interval => i.binaryPoint match {
-          // Q integer . fractional bits
-          case KnownBinaryPoint(bp) => s"Q${width - 1 - bp}.$bp"
-          case _ => s"${width}-bit F"
-        }
         case f: FixedPoint => f.binaryPoint match {
           // Q integer . fractional bits
           case KnownBinaryPoint(bp) => s"Q${width - 1 - bp}.$bp"
@@ -123,7 +118,7 @@ object DspTesterUtilities {
   def roundData(data: Data, value: Double): Double = {
     data match {
       case _: SInt | _: UInt => value.round
-      case _: DspReal | _: FixedPoint | _: Interval => value
+      case _: DspReal | _: FixedPoint => value
       case _ => throw DspException("Invalid data type for rounding determination")
     }
   }
