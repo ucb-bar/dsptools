@@ -24,7 +24,7 @@ class AbsCircuitWithDelays[T <: Data : Signed](gen: T, val delays: Int) extends 
 
   DspContext.withNumAddPipes(delays) {
     val con = io.in.context_abs()
-    printf("io.in %d con %d\n", io.in.asUInt(), con.asUInt())
+    printf("io.in %d con %d\n", io.in.asUInt, con.asUInt)
     io.outContextAbs := con
   }
 }
