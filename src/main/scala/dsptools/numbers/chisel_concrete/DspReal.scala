@@ -114,9 +114,7 @@ class DspReal() extends Bundle {
   def abs(): DspReal = Mux(this < DspReal(0.0), DspReal(0.0) - this, this)
 
   // Assumes you're using chisel testers
-  private def backendIsVerilator: Boolean = {
-    chisel3.iotesters.Driver.optionsManager.testerOptions.backendName == "verilator"
-  }
+  private def backendIsVerilator: Boolean = true
 
   // The following are currently not supported with Verilator, so they've been implemented through other means
   // with approximately 6 decimal points of precision

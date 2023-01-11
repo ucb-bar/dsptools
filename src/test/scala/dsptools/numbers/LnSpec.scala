@@ -7,8 +7,8 @@ import chisel3.util._
 import chisel3.testers.BasicTester
 import chisel3.iotesters.{ChiselFlatSpec, PeekPokeTester, TesterOptionsManager}
 import dsptools.{DspTester, ReplOptionsManager}
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.should.Matchers
+
+
 
 class LnModule extends Module {
   val io = IO(new Bundle {

@@ -3,8 +3,8 @@
 package dsptools.numbers
 
 import dsptools.numbers.representations.BaseN
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+
+
 
 class BaseNSpec extends AnyFlatSpec with Matchers {
   behavior of "BaseN"

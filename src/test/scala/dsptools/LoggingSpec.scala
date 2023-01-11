@@ -4,8 +4,8 @@ package dsptools
 
 import chisel3._
 import logger.{LazyLogging, LogLevel, Logger}
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.should.Matchers
+
+
 
 class DutWithLogging extends Module with LazyLogging {
   val io = IO(new Bundle {})

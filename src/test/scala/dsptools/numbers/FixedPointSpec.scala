@@ -10,8 +10,8 @@ import chisel3.iotesters.ChiselPropSpec
 import chisel3.testers.BasicTester
 import dsptools.DspTester
 import dsptools.numbers.implicits._
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.should.Matchers
+
+
 
 class FixedRing1(val width: Int, val binaryPoint: Int) extends Module {
   val io = IO(new Bundle {

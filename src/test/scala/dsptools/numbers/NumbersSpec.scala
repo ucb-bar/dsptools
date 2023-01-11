@@ -6,8 +6,8 @@ import chisel3._
 import dsptools._
 import chisel3.experimental.FixedPoint
 import dsptools.numbers.implicits._
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.should.Matchers
+
+
 
 /**
   * This will attempt to follow the dsptools.numbers.README.md file as close as possible.

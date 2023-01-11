@@ -9,8 +9,8 @@ import chisel3.experimental.FixedPoint
 import breeze.math.Complex
 import dsptools.{DspTester, DspTesterOptionsManager, DspTesterOptions}
 import dsptools.numbers._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+
+
 import chisel3.iotesters.TesterOptions
 
 trait EasyPeekPoke {

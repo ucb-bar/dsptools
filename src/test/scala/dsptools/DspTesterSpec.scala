@@ -3,8 +3,8 @@
 package dsptools
 
 import DspTesterUtilities._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+
+
 import scala.math.{pow, abs}
 
 class DspTesterSpec {

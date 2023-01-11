@@ -8,8 +8,8 @@ import chisel3._
 import chisel3.iotesters.{PeekPokeTester, TesterOptions}
 import dsptools.numbers.implicits._
 import dsptools.{DspContext, Grow}
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+
+
 import dsptools.examples.{ConstantTapTransposedStreamingFIR, TransposedStreamingFIR}
 import spire.algebra.{Field, Ring}
 

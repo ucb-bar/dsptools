@@ -5,8 +5,8 @@ package examples
 import chisel3._
 import chisel3.experimental.FixedPoint
 import dsptools.DspTester
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+
+
 
 class SimpleAdder extends Module {
   val io = IO(new Bundle {

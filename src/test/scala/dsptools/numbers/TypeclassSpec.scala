@@ -7,8 +7,8 @@ import chisel3.experimental.FixedPoint
 import chisel3.iotesters._
 import dsptools._
 import dsptools.numbers._
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.should.Matchers
+
+
 
 /*
  * These tests mostly exist to ensure that expressions of the form

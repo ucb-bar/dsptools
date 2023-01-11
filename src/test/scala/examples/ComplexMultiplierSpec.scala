@@ -8,8 +8,8 @@ import chisel3.iotesters.Backend
 import chisel3.{Bundle, Module}
 import dsptools.{DspContext, DspTester}
 import dsptools.numbers._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+
+
 import spire.algebra.Ring
 
 //scalastyle:off magic.number

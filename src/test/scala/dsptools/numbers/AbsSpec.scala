@@ -5,8 +5,8 @@ package dsptools.numbers
 import chisel3._
 import chisel3.experimental._
 import dsptools.{DspContext, DspTester, Grow, Wrap}
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.should.Matchers
+
+
 
 class AbsSpec extends AnyFreeSpec with Matchers {
   "absolute value should work for all types" - {
