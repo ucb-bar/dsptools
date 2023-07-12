@@ -2,9 +2,6 @@
 
 package dsptools.dspmath
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
 case class RadPow(rad: Int, pow: Int) {
   /** `r ^ p` */
   def get: Int = BigInt(rad).pow(pow).toInt
@@ -86,51 +83,3 @@ case class Factorization(supportedRadsUnsorted: Seq[Seq[Int]]) {
 
 }
 
-class FactorizationSpec extends AnyFlatSpec with Matchers {
-
-  val testSupportedRads = Seq(Seq(4, 2), Seq(3), Seq(5), Seq(7))
-
-  behavior of "Factorization"
-  it should "properly factorize" in {
-    case class FactorizationTest(n: Int, pows: Seq[Int], coprimes: Seq[Int])
-    val tests = Seq(
-      FactorizationTest(
-        n = (math.pow(4, 5) * math.pow(2, 1) * math.pow(3, 7)).toInt,
-        pows = Seq(5, 1, 7),
-        coprimes = Seq((math.pow(4, 5) * math.pow(2, 1)).toInt, math.pow(3, 7).toInt)
-      ),
-      FactorizationTest(n = 15, pows = Seq(0, 0, 1, 1), coprimes = Seq(1, 3, 5))
-    )
-
-    tests foreach { case FactorizationTest(n, pows, coprimes) =>
-      val powsFill = Seq.fill(testSupportedRads.flatten.length - pows.length)(0)
-      val coprimesFill = Seq.fill(testSupportedRads.length - coprimes.length)(1)
-      require(
-        Factorization(testSupportedRads).getPowsFlat(n) == pows ++ powsFill,
-        "Should factorize to get the right powers -- includes padding."
-      )
-      require(
-        Factorization(testSupportedRads).getCoprimes(n) == coprimes ++ coprimesFill,
-        "Should factorize into the right coprimes -- includes padding."
-      )
-    }
-  }
-
-  it should "properly factorize coprime" in {
-    case class CoprimeFactorizationTest(n: Int, factorization: Seq[Int], basePrime: Int)
-    val tests = Seq(
-      CoprimeFactorizationTest(n = 8, factorization = Seq(4, 2), basePrime = 2),
-      CoprimeFactorizationTest(n = 16, factorization = Seq(4, 4), basePrime = 2)
-    )
-    tests foreach { case CoprimeFactorizationTest(n, factorization, basePrime) =>
-      require(
-        Factorization(testSupportedRads).factorizeCoprime(n) == factorization,
-        "Should factorize coprime properly."
-      )
-      require(
-        Factorization(testSupportedRads).getBasePrime(n) == basePrime,
-        "Should get the correct base prime."
-      )
-    }
-  }
-}
