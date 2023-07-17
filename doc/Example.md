@@ -6,9 +6,9 @@ A basic DSP Module + Tester might look like this:
 package SimpleDsp
 
 // Allows you to use Chisel Module, Bundle, etc.
-import chisel3._
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
 // Allows you to use FixedPoint
-import chisel3.experimental.FixedPoint
+import fixedpoint._
 // If you want to take advantage of type classes >> Data:RealBits (i.e. pass in FixedPoint or DspReal)
 // Required for you to use operators defined via type classes (+ has special Dsp overflow behavior, etc.)
 import dsptools.numbers._

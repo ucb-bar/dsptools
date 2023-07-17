@@ -5,7 +5,6 @@ enablePlugins(SiteScaladocPlugin)
 enablePlugins(GhpagesPlugin)
 
 val defaultVersions = Map(
-  "chisel-iotesters" -> "2.5-SNAPSHOT",
   "chisel3" -> "3.5-SNAPSHOT",
 )
 
@@ -16,9 +15,8 @@ val commonSettings = Seq(
   version := "1.5-SNAPSHOT",
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
-  scalaVersion := "2.12.14",
-  crossScalaVersions := Seq("2.13.6", "2.12.14"),
-  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls"),
+  scalaVersion := "2.13.10",
+  scalacOptions ++= Seq("-encoding", "UTF-8", "-unchecked", "-deprecation", "-feature", "-language:reflectiveCalls", "-Ymacro-annotations"),
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   pomExtra := (<url>http://chisel.eecs.berkeley.edu/</url>
   <licenses>
@@ -65,7 +63,7 @@ val commonSettings = Seq(
       case _ => Seq("org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.3")
     }
   },
-  libraryDependencies ++= Seq("chisel-iotesters").map { dep: String =>
+  libraryDependencies ++= Seq("chisel3").map { dep: String =>
     "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
   },
   addCompilerPlugin("edu.berkeley.cs" %% "chisel3-plugin" % defaultVersions("chisel3") cross CrossVersion.full),
@@ -80,12 +78,34 @@ val dsptoolsSettings = Seq(
   ),
 )
 
+val fixedpointSettings = Seq(
+  libraryDependencies ++= Seq(
+    "org.scalatest" %% "scalatest" % "3.2.+" % "test",
+    "org.scalatestplus" %% "scalacheck-1-14" % "3.2.2.0" % "test",
+  )
+)
+
 publishMavenStyle := true
 
 publishArtifact in Test := false
 pomIncludeRepository := { x => false }
 
+def freshProject(name: String, dir: File): Project = {
+  Project(id = name, base = dir / "src")
+    .settings(
+      Compile / scalaSource := baseDirectory.value / "main" / "scala",
+      Compile / resourceDirectory := baseDirectory.value / "main" / "resources"
+    )
+}
+
+lazy val fixedpoint = freshProject("fixedpoint", file("fixedpoint"))
+  .settings(
+    commonSettings,
+    fixedpointSettings
+  )
+
 val dsptools = (project in file("."))
+  .dependsOn(fixedpoint)
   //.enablePlugins(BuildInfoPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(commonSettings: _*)

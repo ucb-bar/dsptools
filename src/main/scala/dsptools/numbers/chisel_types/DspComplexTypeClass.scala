@@ -2,8 +2,8 @@
 
 package dsptools.numbers
 
-import chisel3._
-import chisel3.experimental.FixedPoint
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import fixedpoint._
 import dsptools.hasContext
 import implicits._
 import chisel3.util.ShiftRegister

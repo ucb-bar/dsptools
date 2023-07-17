@@ -2,7 +2,7 @@
 
 package dsptools.numbers
 
-import chisel3.experimental.FixedPoint
+import fixedpoint._
 import chisel3.{Data, SInt}
 import dsptools.DspException
 

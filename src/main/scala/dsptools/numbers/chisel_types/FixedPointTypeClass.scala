@@ -2,9 +2,8 @@
 
 package dsptools.numbers
 
-import chisel3._
-import chisel3.experimental.FixedPoint
-import chisel3.internal.firrtl.KnownBinaryPoint
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import fixedpoint._
 import chisel3.util.ShiftRegister
 import dsptools._
 
@@ -70,7 +69,7 @@ trait FixedPointIsReal extends Any with IsReal[FixedPoint] with FixedPointOrder 
   def isWhole(a: FixedPoint): Bool = a === floor(a)
   // Truncate = round towards zero (integer part without fractional bits)
   def truncate(a: FixedPoint): FixedPoint = {
-    Mux(isSignNegative(ShiftRegister(a, context.numAddPipes)),
+    shadow.Mux(isSignNegative(ShiftRegister(a, context.numAddPipes)),
       ceil(a),
       floor(ShiftRegister(a, context.numAddPipes))
     )
@@ -156,22 +155,22 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
         case RoundDown => a.setBinaryPoint(b)
         case RoundUp => {
           val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
-          Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
+          shadow.Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
         }
         case RoundTowardsZero => {
           val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
-          val valueForNegativeNum = Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
-          Mux(isSignNegative(a), valueForNegativeNum, a.setBinaryPoint(b))
+          val valueForNegativeNum = shadow.Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
+          shadow.Mux(isSignNegative(a), valueForNegativeNum, a.setBinaryPoint(b))
         }
         case RoundTowardsInfinity => {
           val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
-          val valueForPositiveNum = Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
-          Mux(isSignNegative(a), a.setBinaryPoint(b), valueForPositiveNum)
+          val valueForPositiveNum = shadow.Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
+          shadow.Mux(isSignNegative(a), a.setBinaryPoint(b), valueForPositiveNum)
         }
         case RoundHalfDown => {
           val addAmt1 = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
           val addAmt2 = math.pow(2, -(b+1)).F((b+1).BP) // shr(1.0.F((b+1).BP),(b+1))
-          Mux((a > plus(a.setBinaryPoint(b), addAmt2)), plus(a.setBinaryPoint(b), addAmt1), a.setBinaryPoint(b))
+          shadow.Mux((a > plus(a.setBinaryPoint(b), addAmt2)), plus(a.setBinaryPoint(b), addAmt1), a.setBinaryPoint(b))
         }
         case RoundHalfUp => {
           val roundBp = b + 1
@@ -181,27 +180,27 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
         case RoundHalfTowardsZero => {
           val addAmt1 = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
           val addAmt2 = math.pow(2, -(b+1)).F((b+1).BP) // shr(1.0.F((b+1).BP),(b+1))
-          val valueForPositiveNum = Mux((a > plus(a.setBinaryPoint(b), addAmt2)), plus(a.setBinaryPoint(b), addAmt1), a.setBinaryPoint(b))
-          Mux(isSignNegative(a), plus(a, addAmt2).setBinaryPoint(b), valueForPositiveNum)
+          val valueForPositiveNum = shadow.Mux((a > plus(a.setBinaryPoint(b), addAmt2)), plus(a.setBinaryPoint(b), addAmt1), a.setBinaryPoint(b))
+          shadow.Mux(isSignNegative(a), plus(a, addAmt2).setBinaryPoint(b), valueForPositiveNum)
         }
         case RoundHalfTowardsInfinity => {
           val roundBp = b + 1
           val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
-          Mux(isSignNegative(a) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
+          shadow.Mux(isSignNegative(a) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
         }
         case RoundHalfToEven => {
           require(b > 0, "Binary point of input fixed point number must be larger than zero when trimming")
           val roundBp = b + 1
           val checkIfEvenBp = b - 1
           val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
-          Mux((a.setBinaryPoint(checkIfEvenBp) === a.setBinaryPoint(b)) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
+          shadow.Mux((a.setBinaryPoint(checkIfEvenBp) === a.setBinaryPoint(b)) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
         }
         case RoundHalfToOdd => {
           require(b > 0, "Binary point of input fixed point number must be larger than zero when trimming")
           val roundBp = b + 1
           val checkIfOddBp = b - 1
           val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
-          Mux((a.setBinaryPoint(checkIfOddBp) =/= a.setBinaryPoint(b)) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
+          shadow.Mux((a.setBinaryPoint(checkIfOddBp) =/= a.setBinaryPoint(b)) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
         }
         case _ => throw DspException("Desired trim type not implemented!")
       }
@@ -230,7 +229,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
 
   // Can potentially overflow
   def ceil(a: FixedPoint): FixedPoint = {
-    Mux(
+    shadow.Mux(
       isWhole(ShiftRegister(a, context.numAddPipes)),
       floor(ShiftRegister(a, context.numAddPipes)),
       plusContext(floor(a), one))
@@ -247,10 +246,10 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
   override def fromBigInt(n: BigInt): FixedPoint = super[ConvertableToFixedPoint].fromBigInt(n)
   // Overflow only on most negative
   def abs(a: FixedPoint): FixedPoint = {
-    Mux(isSignNegative(a), super[FixedPointRing].minus(zero, a), a)
+    shadow.Mux(isSignNegative(a), super[FixedPointRing].minus(zero, a), a)
   }
   def context_abs(a: FixedPoint): FixedPoint = {
-    Mux(
+    shadow.Mux(
       isSignNegative(ShiftRegister(a, context.numAddPipes)),
       super[FixedPointRing].minusContext(zero, a),
       ShiftRegister(a, context.numAddPipes))

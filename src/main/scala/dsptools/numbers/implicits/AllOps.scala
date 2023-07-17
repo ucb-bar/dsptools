@@ -2,12 +2,11 @@
 
 package dsptools.numbers
 
-import chisel3._
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
 import spire.macros.Ops
 
 import scala.language.experimental.macros
-
-import chisel3.experimental.FixedPoint
+import fixedpoint._
 
 /**
   * Much of this is drawn from non/spire, but using Chisel Bools instead of

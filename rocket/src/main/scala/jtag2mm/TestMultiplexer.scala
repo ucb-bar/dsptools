@@ -2,9 +2,10 @@
 
 package freechips.rocketchip.jtag2mm
 
-import chisel3._
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
 import chisel3.util._
-import chisel3.experimental._
+import chisel3.experimental.{FixedPoint => _, _}
+import fixedpoint._
 //import chisel3.experimental.{withClockAndReset}
 
 import dsptools._
