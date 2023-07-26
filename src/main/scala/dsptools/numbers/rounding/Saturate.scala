@@ -2,8 +2,9 @@
 
 package dsptools.numbers.rounding
 
-import chisel3._
-import chisel3.experimental.{ChiselAnnotation, FixedPoint, RunFirrtlTransform, annotate, requireIsHardware}
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import chisel3.experimental.{ChiselAnnotation, RunFirrtlTransform, annotate, requireIsHardware}
+import fixedpoint._
 import chisel3.stage.ChiselStage
 import firrtl.{CircuitForm, CircuitState, HighForm, MidForm, Transform}
 import firrtl.annotations.{ModuleName, SingleTargetAnnotation, Target}

@@ -2,10 +2,10 @@
 
 package dsptools.numbers
 
-import chisel3._
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
 import chisel3.util.{Cat, ShiftRegister}
 import dsptools.{DspContext, DspException, Grow, NoTrim, Saturate, Wrap, hasContext}
-import chisel3.experimental.FixedPoint
+import fixedpoint._
 
 import scala.language.implicitConversions
 

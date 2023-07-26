@@ -2,11 +2,13 @@
 
 package dsptools.numbers
 
-import chisel3._
-import chisel3.experimental.FixedPoint
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import fixedpoint._
 import dsptools.DspException
 import breeze.math.Complex
 import chisel3.experimental.BundleLiterals.AddBundleLiteralConstructor
+
+import scala.reflect.ClassTag
 
 object DspComplex {
 
@@ -60,7 +62,8 @@ object DspComplex {
 
 }
 
-class DspComplex[T <: Data:Ring](val real: T, val imag: T) extends Bundle {
+class DspComplex[T <: Data:Ring](val real: T, val imag: T)(implicit val ct: ClassTag[DspComplex[T]]) extends Bundle
+  with ForceElementwiseConnect[DspComplex[T]] {
   
   // So old DSP code doesn't break
   def imaginary(dummy: Int = 0): T = imag

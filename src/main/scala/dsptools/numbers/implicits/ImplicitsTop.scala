@@ -2,8 +2,6 @@
 
 package dsptools.numbers
 
-import chisel3.experimental.FixedPoint
-
 trait AllSyntax extends EqSyntax with PartialOrderSyntax with OrderSyntax with SignedSyntax with IsRealSyntax with IsIntegerSyntax with
   ConvertableToSyntax with ChiselConvertableFromSyntax with BinaryRepresentationSyntax with ContextualRingSyntax
 
