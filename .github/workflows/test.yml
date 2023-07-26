@@ -13,21 +13,18 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
-    container:
-      image: ucbbar/chisel3-tools
-      options: --user github --entrypoint /bin/bash
-    env:
-      CONTAINER_HOME: /home/github
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           submodules: 'true'
+      - name: Install Verilator
+        run: sudo apt-get update -y && sudo apt-get install -y verilator
       - name: Setup Scala
-        uses: olafurpg/setup-scala@v10
+        uses: coursier/setup-action@v1
       - name: Cache
-        uses: coursier/cache-action@v5
+        uses: coursier/cache-action@v6
       - name: Documentation
         id: doc
         run: sbt doc
