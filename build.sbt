@@ -5,15 +5,15 @@ enablePlugins(SiteScaladocPlugin)
 enablePlugins(GhpagesPlugin)
 
 val defaultVersions = Map(
-  "chisel3" -> "3.5-SNAPSHOT",
-  "chiseltest" -> "0.5-SNAPSHOT"
+  "chisel3" -> "3.6-SNAPSHOT",
+  "chiseltest" -> "0.6-SNAPSHOT"
 )
 
 name := "dsptools"
 
 val commonSettings = Seq(
   organization := "edu.berkeley.cs",
-  version := "1.5-SNAPSHOT",
+  version := "1.6-SNAPSHOT",
   git.remoteRepo := "git@github.com:ucb-bar/dsptools.git",
   autoAPIMappings := true,
   scalaVersion := "2.13.10",
@@ -23,6 +23,7 @@ val commonSettings = Seq(
                         "-deprecation",
                         "-feature",
                         "-language:reflectiveCalls",
+                        "-Xfatal-warnings",
                         "-Ymacro-annotations"),
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   pomExtra := (<url>http://chisel.eecs.berkeley.edu/</url>
@@ -80,13 +81,13 @@ val dsptoolsSettings = Seq(
   libraryDependencies ++= Seq(
     "org.typelevel" %% "spire" % "0.18.0",
     "org.scalanlp" %% "breeze" % "2.1.0",
-    "org.scalatest" %% "scalatest" % "3.2.+" % "test"
+    "org.scalatest" %% "scalatest" % "3.2.15" % "test"
   ),
 )
 
 val fixedpointSettings = Seq(
   libraryDependencies ++= Seq(
-    "org.scalatest" %% "scalatest" % "3.2.+" % "test",
+    "org.scalatest" %% "scalatest" % "3.2.15" % "test",
     "org.scalatestplus" %% "scalacheck-1-14" % "3.2.2.0" % "test",
   )
 )

@@ -79,14 +79,16 @@ object Sign {
     def context_abs(a: Sign): Sign = if (a == Negative) Positive else a
 
     def compare(x: Sign, y: Sign): ComparisonBundle = {
-      val eq = Mux(x.zero,
+      val eq = fixedpoint.shadow.Mux(
+        x.zero,
         // if x is zero, y must also be zero for equality
         y.zero,
         // if x is not zero, y must not be zero and must have the same sign
         !y.zero && (x.neg === y.neg)
       )
       // lt only needs to be correct when eq not true
-      val lt = Mux(x.zero,
+      val lt = fixedpoint.shadow.Mux(
+        x.zero,
         // if x is zero, then true when y positive
         !y.zero && !y.neg,
         // if x is not zero, then true when x is negative and y not negative
@@ -111,9 +113,10 @@ object Sign {
     new MultiplicativeAction[A, Sign] with hasContext {
       // Multiply a # by a sign
       def gtimesl(s: Sign, a: A): A = {
-        Mux(ShiftRegister(s.zero, context.numAddPipes),
+        fixedpoint.shadow.Mux(
+          ShiftRegister(s.zero, context.numAddPipes),
           ShiftRegister(A.zero, context.numAddPipes),
-          Mux(ShiftRegister(s.neg, context.numAddPipes), A.negate(a), ShiftRegister(a, context.numAddPipes))
+          fixedpoint.shadow.Mux(ShiftRegister(s.neg, context.numAddPipes), A.negate(a), ShiftRegister(a, context.numAddPipes))
         )
       }
       def gtimesr(a: A, s: Sign): A = gtimesl(s, a)

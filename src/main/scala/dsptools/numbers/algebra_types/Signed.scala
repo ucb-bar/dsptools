@@ -48,10 +48,9 @@ object Signed {
 private class OrderedRingIsSigned[A <: Data](implicit o: Order[A], r: Ring[A]) extends Signed[A] with hasContext {
   def signum(a: A): ComparisonBundle = o.compare(a, r.zero)
   def abs(a: A): A = {
-    Mux(signum(a).lt, r.negate(a), a)
+    fixedpoint.shadow.Mux(signum(a).lt, r.negate(a), a)
   }
   def context_abs(a: A): A = {
-    Mux(signum(ShiftRegister(a, context.numAddPipes)).lt, r.negateContext(a), ShiftRegister(a, context.numAddPipes))
+    fixedpoint.shadow.Mux(signum(ShiftRegister(a, context.numAddPipes)).lt, r.negateContext(a), ShiftRegister(a, context.numAddPipes))
   }
 }
-

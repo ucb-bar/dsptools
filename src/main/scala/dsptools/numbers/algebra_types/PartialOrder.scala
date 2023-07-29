@@ -54,7 +54,7 @@ trait PartialOrder[A <: Data] extends Any with Eq[A] {
   /** Returns Some(x) if x <= y, Some(y) if x > y, otherwise None. */
   def pmin(x: A, y: A): ValidIO[A] = {
     val c = partialCompare(x, y)
-    val value = Mux(c.bits.lt, x, y)
+    val value = fixedpoint.shadow.Mux(c.bits.lt, x, y)
     val ret = Valid(value)
     ret.valid := c.valid
     ret
@@ -63,7 +63,7 @@ trait PartialOrder[A <: Data] extends Any with Eq[A] {
   /** Returns Some(x) if x >= y, Some(y) if x < y, otherwise None. */
   def pmax(x: A, y: A): ValidIO[A] = {
     val c = partialCompare(x, y)
-    val value = Mux(!c.bits.lt, x, y)
+    val value = fixedpoint.shadow.Mux(!c.bits.lt, x, y)
     val ret = Valid(value)
     ret.valid := c.valid
     ret

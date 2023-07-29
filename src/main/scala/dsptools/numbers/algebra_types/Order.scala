@@ -52,8 +52,8 @@ trait Order[A <: Data] extends Any with PartialOrder[A] {
     c.lt || c.eq
   }
 
-  def min(x: A, y: A): A = Mux(lt(x, y), x, y)
-  def max(x: A, y: A): A = Mux(gt(x, y), x, y)
+  def min(x:     A, y: A): A = fixedpoint.shadow.Mux(lt(x, y), x, y)
+  def max(x:     A, y: A): A = fixedpoint.shadow.Mux(gt(x, y), x, y)
   def compare(x: A, y: A): ComparisonBundle
 
   /**
