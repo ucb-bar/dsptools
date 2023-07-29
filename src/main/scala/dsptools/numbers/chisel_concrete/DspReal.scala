@@ -222,7 +222,7 @@ class DspReal() extends Bundle {
         val terms2 = TrigUtility.atanCoeff2(m).zip(xpow2) map { case (c, x) => DspReal(c) * x }
         (terms1 ++ terms2).reduceRight(_ + _) * in
       }
-      val isNeg = this.signBit()
+      val isNeg = this.signBit
       // arctan(-x) = -arctan(x)
       val inTemp = this.abs()
       // arctan(x) = pi/2 - arctan(1/x) for x > 0
@@ -263,10 +263,10 @@ class DspReal() extends Bundle {
       val atanRes = atanArg.atan()
       val muxIn: Iterable[(Bool, DspReal)] = Iterable(
         (x > zero) -> atanRes, 
-        (x.signBit() && !y.signBit()) -> (atanRes + pi), 
-        (x.signBit() && y.signBit()) -> (atanRes - pi), 
+        (x.signBit && !y.signBit) -> (atanRes + pi),
+        (x.signBit && y.signBit) -> (atanRes - pi),
         (x === zero && y > zero) -> halfPi, 
-        (x === zero && y.signBit()) -> negHalfPi, 
+        (x === zero && y.signBit) -> negHalfPi,
         (x === zero && y === zero) -> atanArg               // undefined
       )
       Mux1H(muxIn)

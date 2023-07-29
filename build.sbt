@@ -78,8 +78,8 @@ val commonSettings = Seq(
 val dsptoolsSettings = Seq(
   name := "dsptools",
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "spire" % "0.17.0",
-    "org.scalanlp" %% "breeze" % "1.1",
+    "org.typelevel" %% "spire" % "0.18.0",
+    "org.scalanlp" %% "breeze" % "2.1.0",
     "org.scalatest" %% "scalatest" % "3.2.+" % "test"
   ),
 )

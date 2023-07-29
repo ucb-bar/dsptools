@@ -23,7 +23,7 @@ sealed class Sign(zeroInit: Option[Boolean] = None, negInit: Option[Boolean] = N
   // ignore neg if zero is true
   val neg  = negInit.map{_.B}.getOrElse(Bool())
 
-  def unary_-(): Sign = Sign(this.zero, !this.neg)
+  def unary_- : Sign = Sign(this.zero, !this.neg)
 
   def *(that: Sign): Sign = Sign(
     this.zero || that.zero,
@@ -94,6 +94,10 @@ object Sign {
       )
 
       ComparisonHelper(eq, lt)
+    }
+
+    override def reverse: SignAlgebra = new SignAlgebra {
+      override def compare(x: Sign, y: Sign): ComparisonBundle = super.compare(y, x)
     }
   }
 
