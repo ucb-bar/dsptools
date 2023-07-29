@@ -2,7 +2,7 @@
 
 package dsptools.numbers
 
-import chisel3.{Data, Bool}
+import chisel3.{Bool, Data}
 
 /**
   * Much of this is drawn from non/spire, but using Chisel Bools instead of
@@ -16,11 +16,12 @@ import chisel3.{Data, Bool}
   * Moreover, `eqv` should form an equivalence relation.
   */
 trait Eq[A <: Data] extends Any {
+
   /** Returns `true` if `x` and `y` are equivalent, `false` otherwise. */
   def eqv(x: A, y: A): Bool
 
   /** Returns `false` if `x` and `y` are equivalent, `true` otherwise. */
-  def neqv(x: A, y:A ): Bool = !eqv(x, y)
+  def neqv(x: A, y: A): Bool = !eqv(x, y)
 
   /**
     * Constructs a new `Eq` instance for type `B` where 2 elements are
@@ -38,8 +39,3 @@ object Eq {
 
   def by[A <: Data, B <: Data](f: A => B)(implicit e: Eq[B]): Eq[A] = new MappedEq(e)(f)
 }
-
-
-
-
-

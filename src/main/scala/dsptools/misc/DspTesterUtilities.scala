@@ -99,7 +99,7 @@ object DspTesterUtilities {
             case _                    => s"${width}-bit F"
           }
         case r: DspReal => "R"
-        case u: UInt => s"${width}-bit U"
+        case u: UInt    => s"${width}-bit U"
         case s: SInt => s"${width}-bit S"
         case c: DspComplex[_] => {
           val realInfo = bitInfo(c.real.asInstanceOf[Data])
@@ -115,7 +115,7 @@ object DspTesterUtilities {
   // Round value if data type is integer
   def roundData(data: Data, value: Double): Double = {
     data match {
-      case _: SInt | _:    UInt       => value.round.toDouble
+      case _: SInt | _: UInt => value.round.toDouble
       case _: DspReal | _: FixedPoint => value
       case _ => throw DspException("Invalid data type for rounding determination")
     }

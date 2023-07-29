@@ -3,6 +3,7 @@
 package dsptools.misc
 
 object BitWidth {
+
   /**
     * Utility function that computes bits required for a number
     *
@@ -10,7 +11,7 @@ object BitWidth {
     * @return
     */
   def computeBits(n: BigInt): Int = {
-    n.bitLength + (if(n < 0) 1 else 0)
+    n.bitLength + (if (n < 0) 1 else 0)
   }
 
   /**
@@ -23,14 +24,12 @@ object BitWidth {
     * @return minimum required bits for an SInt
     */
   def requiredBitsForSInt(num: BigInt): Int = {
-    if(num == BigInt(0) || num == -BigInt(1)) {
+    if (num == BigInt(0) || num == -BigInt(1)) {
       1
-    }
-    else {
+    } else {
       if (num < 0) {
         computeBits(num)
-      }
-      else {
+      } else {
         computeBits(num) + 1
       }
     }
@@ -50,10 +49,9 @@ object BitWidth {
     * @return minimum required bits for an SInt
     */
   def requiredBitsForUInt(num: BigInt): Int = {
-    if(num == BigInt(0)) {
+    if (num == BigInt(0)) {
       1
-    }
-    else {
+    } else {
       computeBits(num)
     }
   }

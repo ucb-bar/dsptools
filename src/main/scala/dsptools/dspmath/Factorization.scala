@@ -3,13 +3,16 @@
 package dsptools.dspmath
 
 case class RadPow(rad: Int, pow: Int) {
+
   /** `r ^ p` */
   def get: Int = BigInt(rad).pow(pow).toInt
+
   /** Factorize i.e. rad = 4, pow = 3 -> Seq(4, 4, 4) */
   def factorize: Seq[Int] = Seq.fill(pow)(rad)
 }
 
 case class Factorization(supportedRadsUnsorted: Seq[Seq[Int]]) {
+
   /** Supported radices, MSD First */
   private val supportedRads = supportedRadsUnsorted.map(_.sorted.reverse)
 
@@ -22,17 +25,19 @@ case class Factorization(supportedRadsUnsorted: Seq[Seq[Int]]) {
     // Test if n can be factored by each of the supported radices (mod = 0)
     // Count # of times it can be factored
     var unfactorized = n
-    val radPows = for (primeGroup <- supportedRads) yield { for (rad <- primeGroup) yield {
-      var (mod, pow) = (0, 0)
-      while (mod == 0) {
-        mod = unfactorized % rad
-        if (mod == 0) {
-          pow = pow + 1
-          unfactorized = unfactorized / rad
+    val radPows = for (primeGroup <- supportedRads) yield {
+      for (rad <- primeGroup) yield {
+        var (mod, pow) = (0, 0)
+        while (mod == 0) {
+          mod = unfactorized % rad
+          if (mod == 0) {
+            pow = pow + 1
+            unfactorized = unfactorized / rad
+          }
         }
+        RadPow(rad, pow)
       }
-      RadPow(rad, pow)
-    }}
+    }
     // If n hasn't completely been factorized, then an unsupported radix is required
     require(unfactorized == 1, s"$n is invalid for supportedRads.")
     radPows
@@ -82,4 +87,3 @@ case class Factorization(supportedRadsUnsorted: Seq[Seq[Int]]) {
   }
 
 }
-

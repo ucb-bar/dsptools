@@ -2,18 +2,18 @@
 
 package dsptools.numbers
 
-import chisel3.{Data, UInt, Bool}
+import chisel3.{Bool, Data, UInt}
 
 object BinaryRepresentation {
   def apply[A <: Data](implicit A: BinaryRepresentation[A]): BinaryRepresentation[A] = A
 }
 
 trait BinaryRepresentation[A <: Data] extends Any {
-  def shl(a: A, n: Int): A
+  def shl(a: A, n: Int):  A
   def shl(a: A, n: UInt): A
   // For negative signed #'s, this is actually round to negative infinity
-  def shr(a: A, n: Int): A
-  def shr(a: A, n: UInt): A
+  def shr(a:     A, n: Int): A
+  def shr(a:     A, n: UInt): A
   def signBit(a: A): Bool
 
   // Rounds to zero (positive, negative consistent!)

@@ -16,14 +16,14 @@ import scala.language.implicitConversions
   */
 trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
   def zero: FixedPoint = 0.0.F(0.BP)
-  def one: FixedPoint= 1.0.F(0.BP)
+  def one:  FixedPoint = 1.0.F(0.BP)
   def plus(f: FixedPoint, g: FixedPoint): FixedPoint = f + g
   def plusContext(f: FixedPoint, g: FixedPoint): FixedPoint = {
     // TODO: Saturating mux should be outside of ShiftRegister
     val sum = context.overflowType match {
       case Grow => f +& g
       case Wrap => f +% g
-      case _ => throw DspException("Saturating add hasn't been implemented")
+      case _    => throw DspException("Saturating add hasn't been implemented")
     }
     ShiftRegister(sum, context.numAddPipes)
   }
@@ -32,11 +32,11 @@ trait FixedPointRing extends Any with Ring[FixedPoint] with hasContext {
     val diff = context.overflowType match {
       case Grow => f -& g
       case Wrap => f -% g
-      case _ => throw DspException("Saturating subtractor hasn't been implemented")
+      case _    => throw DspException("Saturating subtractor hasn't been implemented")
     }
     ShiftRegister(diff, context.numAddPipes)
   }
-  def negate(f: FixedPoint): FixedPoint = -f
+  def negate(f:        FixedPoint): FixedPoint = -f
   def negateContext(f: FixedPoint): FixedPoint = minus(zero, f)
 
   def times(f: FixedPoint, g: FixedPoint): FixedPoint = f * g
@@ -48,11 +48,11 @@ trait FixedPointOrder extends Any with Order[FixedPoint] with hasContext {
   override def compare(x: FixedPoint, y: FixedPoint): ComparisonBundle = {
     ComparisonHelper(x === y, x < y)
   }
-  override def eqv(x: FixedPoint, y: FixedPoint): Bool = x === y
-  override def neqv(x: FixedPoint, y:FixedPoint): Bool = x =/= y
-  override def lt(x: FixedPoint, y: FixedPoint): Bool = x < y
+  override def eqv(x:   FixedPoint, y: FixedPoint): Bool = x === y
+  override def neqv(x:  FixedPoint, y: FixedPoint): Bool = x =/= y
+  override def lt(x:    FixedPoint, y: FixedPoint): Bool = x < y
   override def lteqv(x: FixedPoint, y: FixedPoint): Bool = x <= y
-  override def gt(x: FixedPoint, y: FixedPoint): Bool = x > y
+  override def gt(x:    FixedPoint, y: FixedPoint): Bool = x > y
   override def gteqv(x: FixedPoint, y: FixedPoint): Bool = x >= y
   // min, max depends on lt, gt & mux
 }
@@ -65,11 +65,12 @@ trait FixedPointSigned extends Any with Signed[FixedPoint] with hasContext {
 
 trait FixedPointIsReal extends Any with IsReal[FixedPoint] with FixedPointOrder with FixedPointSigned with hasContext {
   // Chop off fractional bits --> round to negative infinity
-  def floor(a: FixedPoint): FixedPoint = a.setBinaryPoint(0)
+  def floor(a:   FixedPoint): FixedPoint = a.setBinaryPoint(0)
   def isWhole(a: FixedPoint): Bool = a === floor(a)
   // Truncate = round towards zero (integer part without fractional bits)
   def truncate(a: FixedPoint): FixedPoint = {
-    shadow.Mux(isSignNegative(ShiftRegister(a, context.numAddPipes)),
+    shadow.Mux(
+      isSignNegative(ShiftRegister(a, context.numAddPipes)),
       ceil(a),
       floor(ShiftRegister(a, context.numAddPipes))
     )
@@ -78,14 +79,14 @@ trait FixedPointIsReal extends Any with IsReal[FixedPoint] with FixedPointOrder 
 }
 
 trait ConvertableToFixedPoint extends ConvertableTo[FixedPoint] with hasContext {
-  def fromShort(n: Short): FixedPoint = fromInt(n.toInt)
-  def fromByte(n: Byte): FixedPoint = fromInt(n.toInt)
-  def fromInt(n: Int): FixedPoint = fromBigInt(BigInt(n))
-  def fromFloat(n: Float): FixedPoint = fromDouble(n.toDouble)
+  def fromShort(n:      Short):      FixedPoint = fromInt(n.toInt)
+  def fromByte(n:       Byte):       FixedPoint = fromInt(n.toInt)
+  def fromInt(n:        Int):        FixedPoint = fromBigInt(BigInt(n))
+  def fromFloat(n:      Float):      FixedPoint = fromDouble(n.toDouble)
   def fromBigDecimal(n: BigDecimal): FixedPoint = fromDouble(n.doubleValue)
-  def fromLong(n: Long): FixedPoint = fromBigInt(BigInt(n))
-  def fromType[B](n: B)(implicit c: ConvertableFrom[B]): FixedPoint = fromDouble(c.toDouble(n))
-  def fromBigInt(n: BigInt): FixedPoint = n.doubleValue.F(0.BP)
+  def fromLong(n:       Long): FixedPoint = fromBigInt(BigInt(n))
+  def fromType[B](n:    B)(implicit c: ConvertableFrom[B]): FixedPoint = fromDouble(c.toDouble(n))
+  def fromBigInt(n:     BigInt):     FixedPoint = n.doubleValue.F(0.BP)
   // If no binary point is specified, use the default one provided by DspContext
   // TODO: Should you instead be specifying a max width so you can get the most resolution for a given width?
   def fromDouble(n: Double): FixedPoint = n.F(context.binaryPoint.getOrElse(0).BP)
@@ -106,15 +107,15 @@ trait ConvertableFromFixedPoint extends ChiselConvertableFrom[FixedPoint] with h
   // intPart depends on truncate
   // asReal depends on shifting fractional bits up
   override def asFixed(a: FixedPoint): FixedPoint = a
-  def asFixed(a: FixedPoint, proto: FixedPoint): FixedPoint = asFixed(a)
+  def asFixed(a:          FixedPoint, proto: FixedPoint): FixedPoint = asFixed(a)
 }
 
 trait BinaryRepresentationFixedPoint extends BinaryRepresentation[FixedPoint] with hasContext {
-  def shl(a: FixedPoint, n: Int): FixedPoint = a << n
+  def shl(a: FixedPoint, n: Int):  FixedPoint = a << n
   def shl(a: FixedPoint, n: UInt): FixedPoint = a << n
 
   // Note: This rounds to negative infinity (smallest abs. value for negative #'s is -LSB)
-  def shr(a: FixedPoint, n: Int): FixedPoint = a >> n
+  def shr(a: FixedPoint, n: Int):  FixedPoint = a >> n
   def shr(a: FixedPoint, n: UInt): FixedPoint = a >> n
 
   // mul2 consistent with shl
@@ -139,10 +140,16 @@ trait BinaryRepresentationFixedPoint extends BinaryRepresentation[FixedPoint] wi
   }
   // trimBinary below for access to ring ops
 
- }
+}
 
-trait FixedPointReal extends FixedPointRing with FixedPointIsReal with ConvertableToFixedPoint with
-    ConvertableFromFixedPoint with BinaryRepresentationFixedPoint with RealBits[FixedPoint] with hasContext {
+trait FixedPointReal
+    extends FixedPointRing
+    with FixedPointIsReal
+    with ConvertableToFixedPoint
+    with ConvertableFromFixedPoint
+    with BinaryRepresentationFixedPoint
+    with RealBits[FixedPoint]
+    with hasContext {
 
   def clip(a: FixedPoint, b: FixedPoint): FixedPoint = ???
 
@@ -150,60 +157,83 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     // TODO: Support other modes?
     n match {
       case None => a
-      case Some(b) => context.trimType match {
-        case NoTrim => a
-        case RoundDown => a.setBinaryPoint(b)
-        case RoundUp => {
-          val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
-          shadow.Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
+      case Some(b) =>
+        context.trimType match {
+          case NoTrim    => a
+          case RoundDown => a.setBinaryPoint(b)
+          case RoundUp => {
+            val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
+            shadow.Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
+          }
+          case RoundTowardsZero => {
+            val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
+            val valueForNegativeNum =
+              shadow.Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
+            shadow.Mux(isSignNegative(a), valueForNegativeNum, a.setBinaryPoint(b))
+          }
+          case RoundTowardsInfinity => {
+            val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
+            val valueForPositiveNum =
+              shadow.Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
+            shadow.Mux(isSignNegative(a), a.setBinaryPoint(b), valueForPositiveNum)
+          }
+          case RoundHalfDown => {
+            val addAmt1 = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
+            val addAmt2 = math.pow(2, -(b + 1)).F((b + 1).BP) // shr(1.0.F((b+1).BP),(b+1))
+            shadow.Mux(
+              (a > plus(a.setBinaryPoint(b), addAmt2)),
+              plus(a.setBinaryPoint(b), addAmt1),
+              a.setBinaryPoint(b)
+            )
+          }
+          case RoundHalfUp => {
+            val roundBp = b + 1
+            val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
+            plus(a, addAmt).setBinaryPoint(b)
+          }
+          case RoundHalfTowardsZero => {
+            val addAmt1 = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
+            val addAmt2 = math.pow(2, -(b + 1)).F((b + 1).BP) // shr(1.0.F((b+1).BP),(b+1))
+            val valueForPositiveNum = shadow.Mux(
+              (a > plus(a.setBinaryPoint(b), addAmt2)),
+              plus(a.setBinaryPoint(b), addAmt1),
+              a.setBinaryPoint(b)
+            )
+            shadow.Mux(isSignNegative(a), plus(a, addAmt2).setBinaryPoint(b), valueForPositiveNum)
+          }
+          case RoundHalfTowardsInfinity => {
+            val roundBp = b + 1
+            val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
+            shadow.Mux(
+              isSignNegative(a) && (a === a.setBinaryPoint(roundBp)),
+              a.setBinaryPoint(b),
+              plus(a, addAmt).setBinaryPoint(b)
+            )
+          }
+          case RoundHalfToEven => {
+            require(b > 0, "Binary point of input fixed point number must be larger than zero when trimming")
+            val roundBp = b + 1
+            val checkIfEvenBp = b - 1
+            val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
+            shadow.Mux(
+              (a.setBinaryPoint(checkIfEvenBp) === a.setBinaryPoint(b)) && (a === a.setBinaryPoint(roundBp)),
+              a.setBinaryPoint(b),
+              plus(a, addAmt).setBinaryPoint(b)
+            )
+          }
+          case RoundHalfToOdd => {
+            require(b > 0, "Binary point of input fixed point number must be larger than zero when trimming")
+            val roundBp = b + 1
+            val checkIfOddBp = b - 1
+            val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
+            shadow.Mux(
+              (a.setBinaryPoint(checkIfOddBp) =/= a.setBinaryPoint(b)) && (a === a.setBinaryPoint(roundBp)),
+              a.setBinaryPoint(b),
+              plus(a, addAmt).setBinaryPoint(b)
+            )
+          }
+          case _ => throw DspException("Desired trim type not implemented!")
         }
-        case RoundTowardsZero => {
-          val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
-          val valueForNegativeNum = shadow.Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
-          shadow.Mux(isSignNegative(a), valueForNegativeNum, a.setBinaryPoint(b))
-        }
-        case RoundTowardsInfinity => {
-          val addAmt = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
-          val valueForPositiveNum = shadow.Mux((a === a.setBinaryPoint(b)), a.setBinaryPoint(b), plus(a.setBinaryPoint(b), addAmt))
-          shadow.Mux(isSignNegative(a), a.setBinaryPoint(b), valueForPositiveNum)
-        }
-        case RoundHalfDown => {
-          val addAmt1 = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
-          val addAmt2 = math.pow(2, -(b+1)).F((b+1).BP) // shr(1.0.F((b+1).BP),(b+1))
-          shadow.Mux((a > plus(a.setBinaryPoint(b), addAmt2)), plus(a.setBinaryPoint(b), addAmt1), a.setBinaryPoint(b))
-        }
-        case RoundHalfUp => {
-          val roundBp = b + 1
-          val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
-          plus(a, addAmt).setBinaryPoint(b)
-        }
-        case RoundHalfTowardsZero => {
-          val addAmt1 = math.pow(2, -b).F(b.BP) // shr(1.0.F(b.BP),b)
-          val addAmt2 = math.pow(2, -(b+1)).F((b+1).BP) // shr(1.0.F((b+1).BP),(b+1))
-          val valueForPositiveNum = shadow.Mux((a > plus(a.setBinaryPoint(b), addAmt2)), plus(a.setBinaryPoint(b), addAmt1), a.setBinaryPoint(b))
-          shadow.Mux(isSignNegative(a), plus(a, addAmt2).setBinaryPoint(b), valueForPositiveNum)
-        }
-        case RoundHalfTowardsInfinity => {
-          val roundBp = b + 1
-          val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
-          shadow.Mux(isSignNegative(a) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
-        }
-        case RoundHalfToEven => {
-          require(b > 0, "Binary point of input fixed point number must be larger than zero when trimming")
-          val roundBp = b + 1
-          val checkIfEvenBp = b - 1
-          val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
-          shadow.Mux((a.setBinaryPoint(checkIfEvenBp) === a.setBinaryPoint(b)) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
-        }
-        case RoundHalfToOdd => {
-          require(b > 0, "Binary point of input fixed point number must be larger than zero when trimming")
-          val roundBp = b + 1
-          val checkIfOddBp = b - 1
-          val addAmt = math.pow(2, -roundBp).F(roundBp.BP)
-          shadow.Mux((a.setBinaryPoint(checkIfOddBp) =/= a.setBinaryPoint(b)) && (a === a.setBinaryPoint(roundBp)), a.setBinaryPoint(b), plus(a, addAmt).setBinaryPoint(b))
-        }
-        case _ => throw DspException("Desired trim type not implemented!")
-      }
     }
   }
 
@@ -213,7 +243,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     val outTemp = ShiftRegister(f * g, context.numMulPipes)
     val newBP = (f.binaryPoint, g.binaryPoint) match {
       case (KnownBinaryPoint(i), KnownBinaryPoint(j)) => Some(i.max(j) + context.binaryPointGrowth)
-      case (_, _) => None
+      case (_, _)                                     => None
     }
     trimBinary(outTemp, newBP)
   }
@@ -222,8 +252,8 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     ComparisonHelper(a === zero, a < zero)
   }
   override def isSignZero(a: FixedPoint): Bool = a === zero
-  override def isSignNegative(a:FixedPoint): Bool = {
-    if (a.widthKnown) a(a.getWidth-1)
+  override def isSignNegative(a: FixedPoint): Bool = {
+    if (a.widthKnown) a(a.getWidth - 1)
     else a < zero
   }
 
@@ -232,7 +262,8 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     shadow.Mux(
       isWhole(ShiftRegister(a, context.numAddPipes)),
       floor(ShiftRegister(a, context.numAddPipes)),
-      plusContext(floor(a), one))
+      plusContext(floor(a), one)
+    )
   }
   def context_ceil(a: FixedPoint): FixedPoint = ceil(a)
 
@@ -242,7 +273,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
 
   def signBit(a: FixedPoint): Bool = isSignNegative(a)
   // fromFixedPoint also included in Ring
-  override def fromInt(n: Int): FixedPoint = super[ConvertableToFixedPoint].fromInt(n)
+  override def fromInt(n:    Int):    FixedPoint = super[ConvertableToFixedPoint].fromInt(n)
   override def fromBigInt(n: BigInt): FixedPoint = super[ConvertableToFixedPoint].fromBigInt(n)
   // Overflow only on most negative
   def abs(a: FixedPoint): FixedPoint = {
@@ -252,7 +283,8 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     shadow.Mux(
       isSignNegative(ShiftRegister(a, context.numAddPipes)),
       super[FixedPointRing].minusContext(zero, a),
-      ShiftRegister(a, context.numAddPipes))
+      ShiftRegister(a, context.numAddPipes)
+    )
   }
 
   def intPart(a: FixedPoint): SInt = truncate(a).asSInt
@@ -262,7 +294,7 @@ trait FixedPointReal extends FixedPointRing with FixedPointIsReal with Convertab
     require(a.binaryPoint.known, "Binary point must be known for asReal")
     val n = a.binaryPoint.get
     val normalizedInt = a << n
-    DspReal(floor(normalizedInt).asSInt)/DspReal((1 << n).toDouble)
+    DspReal(floor(normalizedInt).asSInt) / DspReal((1 << n).toDouble)
   }
 }
 

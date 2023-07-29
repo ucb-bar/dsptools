@@ -26,6 +26,9 @@ jobs:
         uses: coursier/setup-action@v1
       - name: Cache
         uses: coursier/cache-action@v6
+      - name: Formatting check
+        id: scalafmt
+        run: sbt scalafmtCheckAll
       - name: Documentation
         id: doc
         run: sbt doc

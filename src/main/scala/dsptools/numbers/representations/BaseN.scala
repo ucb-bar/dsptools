@@ -22,6 +22,7 @@ object BaseN {
     // Should return non-empty list
     if (temp.isEmpty) Seq(0) else temp
   }
+
   /** Zero pads Seq[Int] base-r representation */
   def toDigitSeqMSDFirst(n: Int, r: Int, maxn: Int): Seq[Int] = {
     val digitSeq = toDigitSeqMSDFirst(n, r)

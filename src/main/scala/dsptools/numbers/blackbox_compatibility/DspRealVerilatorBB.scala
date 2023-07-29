@@ -58,7 +58,7 @@ class BBFEquals extends BlackboxTwoOperandBool
 
 class BBFNotEquals extends BlackboxTwoOperandBool
 
-/** Math operations from IEEE.1364-2005 **/
+/** Math operations from IEEE.1364-2005 * */
 class BBFLn extends BlackboxOneOperand
 
 class BBFLog10 extends BlackboxOneOperand

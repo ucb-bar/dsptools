@@ -85,4 +85,3 @@ object Order {
     def compare(x: A, y: A): ComparisonBundle = f(x, y)
   }
 }
-
