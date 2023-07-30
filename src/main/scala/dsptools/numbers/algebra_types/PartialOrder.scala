@@ -2,8 +2,8 @@
 
 package dsptools.numbers
 
-import chisel3.{Bool, Data, Mux}
 import chisel3.util.{Valid, ValidIO}
+import chisel3.{Bool, Data}
 
 // Note: For type classing normal Chisel number data types like UInt, SInt, FixedPoint, etc.
 // you should *not* have to rely on PartialOrder (all comparisons to the same type are legal)
@@ -33,16 +33,17 @@ import chisel3.util.{Valid, ValidIO}
   * false     false       = NaN     (x and y cannot be compared)
   * true      false       = -1.0    (corresponds to x < y)
   * false     true        = 1.0     (corresponds to x > y)
-  *
   */
 trait PartialOrder[A <: Data] extends Any with Eq[A] {
   self =>
+
   /** Result of comparing `x` with `y`. Returns ValidIO[ComparisonBundle]
     *  with `valid` false if operands are not comparable. If operands are
     * comparable, `bits.lt` will be true if `x` < `y` and `bits.eq` will
     * be true if `x` = `y``
     */
   def partialCompare(x: A, y: A): ValidIO[ComparisonBundle]
+
   /** Result of comparing `x` with `y`. Returns None if operands
     * are not comparable. If operands are comparable, returns Some[Int]
     * where the Int sign is:
@@ -54,7 +55,7 @@ trait PartialOrder[A <: Data] extends Any with Eq[A] {
   /** Returns Some(x) if x <= y, Some(y) if x > y, otherwise None. */
   def pmin(x: A, y: A): ValidIO[A] = {
     val c = partialCompare(x, y)
-    val value = Mux(c.bits.lt, x, y)
+    val value = fixedpoint.shadow.Mux(c.bits.lt, x, y)
     val ret = Valid(value)
     ret.valid := c.valid
     ret
@@ -63,7 +64,7 @@ trait PartialOrder[A <: Data] extends Any with Eq[A] {
   /** Returns Some(x) if x >= y, Some(y) if x < y, otherwise None. */
   def pmax(x: A, y: A): ValidIO[A] = {
     val c = partialCompare(x, y)
-    val value = Mux(!c.bits.lt, x, y)
+    val value = fixedpoint.shadow.Mux(!c.bits.lt, x, y)
     val ret = Valid(value)
     ret.valid := c.valid
     ret
@@ -84,7 +85,7 @@ trait PartialOrder[A <: Data] extends Any with Eq[A] {
   }
 
   def gteqv(x: A, y: A): Bool = lteqv(y, x)
-  def gt(x: A, y: A): Bool = lt(y, x)
+  def gt(x:    A, y: A): Bool = lt(y, x)
 
   /**
     * Defines a partial order on `B` by mapping `B` to `A` using `f` and using `A`s
@@ -98,7 +99,8 @@ trait PartialOrder[A <: Data] extends Any with Eq[A] {
   def reverse: PartialOrder[A] = new ReversedPartialOrder(this)
 }
 
-private[numbers] class MappedPartialOrder[A <: Data, B <: Data](partialOrder: PartialOrder[B])(f: A => B) extends PartialOrder[A] {
+private[numbers] class MappedPartialOrder[A <: Data, B <: Data](partialOrder: PartialOrder[B])(f: A => B)
+    extends PartialOrder[A] {
   def partialCompare(x: A, y: A): ValidIO[ComparisonBundle] = partialOrder.partialCompare(f(x), f(y))
 }
 

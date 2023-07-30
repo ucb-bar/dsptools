@@ -9,6 +9,6 @@ object ConvertableTo {
 }
 
 trait ConvertableTo[A <: Data] extends Any with spire.math.ConvertableTo[A] {
-  def fromDouble(d: Double, a: A): A
+  def fromDouble(d:               Double, a: A): A
   def fromDoubleWithFixedWidth(d: Double, a: A): A
 }

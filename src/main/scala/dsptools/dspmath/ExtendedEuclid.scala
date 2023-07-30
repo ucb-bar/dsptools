@@ -3,6 +3,7 @@
 package dsptools.dspmath
 
 object ExtendedEuclid {
+
   /** Extended Euclidean Algorithm
     * ax + by = gcd(a, b)
     * Inputs: a, b

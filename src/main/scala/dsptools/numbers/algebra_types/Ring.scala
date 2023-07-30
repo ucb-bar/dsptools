@@ -10,8 +10,8 @@ object Ring {
 }
 
 trait Ring[A] extends Any with spire.algebra.Ring[A] {
-  def plusContext(f: A, g: A): A
-  def minusContext(f: A, g: A): A
-  def timesContext(f: A, g: A): A
+  def plusContext(f:   A, g: A): A
+  def minusContext(f:  A, g: A): A
+  def timesContext(f:  A, g: A): A
   def negateContext(f: A): A
 }

@@ -14,26 +14,26 @@ import spire.math.{ConvertableFrom, ConvertableTo}
 // This style preferred:
 // class CTTSF[T<:Data:Ring,V](i: T, o: T, val taps: Seq[V], conv: V=>T)
 
-class ConstantTapTransposedStreamingFIR[T <: Data:Ring:ConvertableTo, V:ConvertableFrom](
-    inputGenerator: T,
-    outputGenerator: T,
-    val taps: Seq[V])
-  extends Module {
+class ConstantTapTransposedStreamingFIR[T <: Data: Ring: ConvertableTo, V: ConvertableFrom](
+  inputGenerator:  T,
+  outputGenerator: T,
+  val taps:        Seq[V])
+    extends Module {
 
   val io = IO(new Bundle {
-    val input  = Input(Valid(inputGenerator))
+    val input = Input(Valid(inputGenerator))
     val output = Output(Valid(outputGenerator))
   })
 
   val products: Seq[T] = taps.reverse.map { tap =>
-    val t : T = implicitly[ConvertableTo[T]].fromType(tap)
+    val t: T = implicitly[ConvertableTo[T]].fromType(tap)
     io.input.bits * t
   }
 
   val last = Reg[T](outputGenerator)
   val nextLast = products.reduceLeft { (left: T, right: T) =>
     val reg = Reg(left.cloneType)
-    when (io.input.valid) {
+    when(io.input.valid) {
       reg := left
     }
     reg + right
@@ -46,13 +46,16 @@ class ConstantTapTransposedStreamingFIR[T <: Data:Ring:ConvertableTo, V:Converta
   io.output.valid := RegNext(io.input.valid)
 }
 
-class TransposedStreamingFIR[T <: Data:Ring](inputGenerator: => T, outputGenerator: => T,
-                                        tapGenerator: => T, numberOfTaps: Int)
-                                        extends Module {
+class TransposedStreamingFIR[T <: Data: Ring](
+  inputGenerator:  => T,
+  outputGenerator: => T,
+  tapGenerator:    => T,
+  numberOfTaps:    Int)
+    extends Module {
   val io = IO(new Bundle {
-    val input = Input(inputGenerator)                  // note, using as Input here, causes IntelliJ to not like '*'
+    val input = Input(inputGenerator) // note, using as Input here, causes IntelliJ to not like '*'
     val output = Output(outputGenerator)
-    val taps = Input(Vec(numberOfTaps, tapGenerator))  // note, using as Input here, causes IntelliJ to not like '*'
+    val taps = Input(Vec(numberOfTaps, tapGenerator)) // note, using as Input here, causes IntelliJ to not like '*'
   })
 
   val products: Seq[T] = io.taps.reverse.map { tap: T =>

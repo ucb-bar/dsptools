@@ -26,7 +26,7 @@ trait IsReal[A <: Data] extends Any with Order[A] with Signed[A] {
   def floor(a: A): A
 
   /**
-    * Rounds `a` to the nearest integer 
+    * Rounds `a` to the nearest integer
     * (When the fractional part is 0.5, tie breaking rounds to positive infinity i.e. round half up)
     */
   def round(a: A): A
@@ -45,15 +45,15 @@ object IsReal {
 }
 
 trait IsIntegral[A <: Data] extends Any with IsReal[A] {
-  def ceil(a: A): A = a
-  def floor(a: A): A = a
-  def round(a: A): A = a
+  def ceil(a:    A): A = a
+  def floor(a:   A): A = a
+  def round(a:   A): A = a
   def isWhole(a: A): Bool = true.B
-  
+
   def mod(a: A, b: A): A
 
-  def isOdd(a: A): Bool
-  def isEven(a: A): Bool = !isOdd(a)
+  def isOdd(a:    A): Bool
+  def isEven(a:   A): Bool = !isOdd(a)
   def truncate(a: A): A = a
 }
 
@@ -64,9 +64,9 @@ object IsIntegral {
 /////////////////////////////////////////////////////////////////////////////////////
 
 trait Real[A <: Data] extends Any with Ring[A] with ConvertableTo[A] with IsReal[A] {
-  def fromRational(a: spire.math.Rational): A = fromDouble(a.toDouble)
+  def fromRational(a:  spire.math.Rational):  A = fromDouble(a.toDouble)
   def fromAlgebraic(a: spire.math.Algebraic): A = fromDouble(a.toDouble)
-  def fromReal(a: spire.math.Real): A = fromDouble(a.toDouble)
+  def fromReal(a:      spire.math.Real):      A = fromDouble(a.toDouble)
 }
 
 object Real {

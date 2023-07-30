@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3.util.ShiftRegister
-import chisel3.{Bool, Data, Mux}
+import chisel3.{Bool, Data}
 import dsptools.hasContext
 
 /**
@@ -17,6 +17,7 @@ import dsptools.hasContext
   * something has a positive sign.
   */
 trait Signed[A] extends Any {
+
   /** Returns Zero if `a` is 0, Positive if `a` is positive, and Negative is `a` is negative. */
   def sign(a: A): Sign = Sign(signum(a))
 
@@ -28,11 +29,11 @@ trait Signed[A] extends Any {
   //noinspection ScalaStyle
   def context_abs(a: A): A
 
-  def isSignZero(a: A): Bool = signum(a).eq
+  def isSignZero(a:     A): Bool = signum(a).eq
   def isSignPositive(a: A): Bool = !isSignZero(a) && !isSignNegative(a)
   def isSignNegative(a: A): Bool = signum(a).lt
 
-  def isSignNonZero(a: A): Bool = !isSignZero(a)
+  def isSignNonZero(a:     A): Bool = !isSignZero(a)
   def isSignNonPositive(a: A): Bool = !isSignPositive(a)
   def isSignNonNegative(a: A): Bool = !isSignNegative(a)
 
@@ -48,10 +49,13 @@ object Signed {
 private class OrderedRingIsSigned[A <: Data](implicit o: Order[A], r: Ring[A]) extends Signed[A] with hasContext {
   def signum(a: A): ComparisonBundle = o.compare(a, r.zero)
   def abs(a: A): A = {
-    Mux(signum(a).lt, r.negate(a), a)
+    fixedpoint.shadow.Mux(signum(a).lt, r.negate(a), a)
   }
   def context_abs(a: A): A = {
-    Mux(signum(ShiftRegister(a, context.numAddPipes)).lt, r.negateContext(a), ShiftRegister(a, context.numAddPipes))
+    fixedpoint.shadow.Mux(
+      signum(ShiftRegister(a, context.numAddPipes)).lt,
+      r.negateContext(a),
+      ShiftRegister(a, context.numAddPipes)
+    )
   }
 }
-

@@ -101,21 +101,21 @@ trait hasContext extends Any {
 }
 
 case class DspContext(
-    val overflowType: OverflowType = DspContext.defaultOverflowType,
-    val trimType: TrimType = DspContext.defaultTrimType,
-    val binaryPoint: Option[Int]  = DspContext.defaultBinaryPoint,
-    val numBits: Option[Int]  = DspContext.defaultNumBits,
-    val complexUse4Muls: Boolean = DspContext.defaultComplexUse4Muls,
-    val numMulPipes: Int = DspContext.defaultNumMulPipes,
-    val numAddPipes: Int = DspContext.defaultNumAddPipes,
-    val binaryPointGrowth: Int = DspContext.defaultBinaryPointGrowth) {
+  val overflowType:      OverflowType = DspContext.defaultOverflowType,
+  val trimType:          TrimType = DspContext.defaultTrimType,
+  val binaryPoint:       Option[Int] = DspContext.defaultBinaryPoint,
+  val numBits:           Option[Int] = DspContext.defaultNumBits,
+  val complexUse4Muls:   Boolean = DspContext.defaultComplexUse4Muls,
+  val numMulPipes:       Int = DspContext.defaultNumMulPipes,
+  val numAddPipes:       Int = DspContext.defaultNumAddPipes,
+  val binaryPointGrowth: Int = DspContext.defaultBinaryPointGrowth) {
 
   require(numMulPipes >= 0, "# of pipeline registers for multiplication must be >= 0 ")
   require(numAddPipes >= 0, "# of pipeline registers for addition must be >= 0 ")
   require(binaryPointGrowth >= 0, "Binary point growth must be non-negative")
   numBits match {
     case Some(i) => require(i > 0, "# of bits must be > 0")
-    case _ =>
+    case _       =>
   }
 
   def complexMulPipe: Int = {
