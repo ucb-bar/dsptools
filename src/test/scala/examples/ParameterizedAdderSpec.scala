@@ -44,10 +44,12 @@ class ParameterizedAdderSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   behavior.of("parameterized adder circuit on blackbox real")
 
-  ignore should "allow registers to be declared that infer widths" in {
+  it should "allow registers to be declared that infer widths" in {
     def getReal: DspReal = new DspReal
 
-    test(new ParameterizedAdder(() => getReal)).runPeekPoke(new ParameterizedAdderTester(_))
+    test(new ParameterizedAdder(() => getReal))
+      .withAnnotations(Seq(VerilatorBackendAnnotation))
+      .runPeekPoke(new ParameterizedAdderTester(_))
   }
 
   behavior.of("parameterized adder circuit on fixed point")

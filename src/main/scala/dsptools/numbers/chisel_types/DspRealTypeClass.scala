@@ -45,7 +45,7 @@ trait DspRealSigned extends Any with Signed[DspReal] with DspRealRing with hasCo
   def signum(a: DspReal): ComparisonBundle = {
     ComparisonHelper(a === DspReal(0.0), a < DspReal(0.0))
   }
-  def abs(a: DspReal): DspReal = a.abs()
+  def abs(a: DspReal): DspReal = a.abs
   def context_abs(a: DspReal): DspReal = {
     Mux(
       isSignNonNegative(ShiftRegister(a, context.numAddPipes)),
@@ -61,16 +61,16 @@ trait DspRealSigned extends Any with Signed[DspReal] with DspRealRing with hasCo
 
 trait DspRealIsReal extends Any with IsReal[DspReal] with DspRealOrder with DspRealSigned with hasContext {
   def ceil(a: DspReal): DspReal = {
-    a.ceil()
+    a.ceil
   }
   def context_ceil(a: DspReal): DspReal = {
-    ShiftRegister(a, context.numAddPipes).ceil()
+    ShiftRegister(a, context.numAddPipes).ceil
   }
-  def floor(a:   DspReal): DspReal = a.floor()
+  def floor(a:   DspReal): DspReal = a.floor
   def isWhole(a: DspReal): Bool = a === round(a)
   // Round *half up* -- Different from System Verilog definition! (where half is rounded away from zero)
   // according to 5.7.2 (http://www.ece.uah.edu/~gaede/cpe526/2012%20System%20Verilog%20Language%20Reference%20Manual.pdf)
-  def round(a: DspReal): DspReal = a.round()
+  def round(a: DspReal): DspReal = a.round
   def truncate(a: DspReal): DspReal = {
     Mux(
       ShiftRegister(a, context.numAddPipes) < DspReal(0.0),
@@ -136,7 +136,7 @@ trait DspRealReal
   def signBit(a:             DspReal): Bool = isSignNegative(a)
   override def fromInt(n:    Int):     DspReal = super[ConvertableToDspReal].fromInt(n)
   override def fromBigInt(n: BigInt):  DspReal = super[ConvertableToDspReal].fromBigInt(n)
-  def intPart(a:             DspReal): SInt = truncate(a).toSInt()
+  def intPart(a:             DspReal): SInt = truncate(a).toSInt
   // WARNING: Beware of overflow(!)
   def asFixed(a: DspReal, proto: FixedPoint): FixedPoint = {
     require(proto.binaryPoint.known, "Binary point must be known for DspReal -> FixedPoint")
@@ -145,7 +145,7 @@ trait DspRealReal
     val out = Wire(proto.cloneType)
     out := DspContext.withTrimType(NoTrim) {
       // round is round half up
-      round(a * DspReal((1 << bp).toDouble)).toSInt().asFixed.div2(bp)
+      round(a * DspReal((1 << bp).toDouble)).toSInt.asFixed.div2(bp)
     }
     out
   }
