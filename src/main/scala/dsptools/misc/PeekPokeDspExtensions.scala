@@ -13,15 +13,12 @@ import dsptools.numbers._
 trait PeekPokeDspExtensions {
   this: PeekPokeTester[_] =>
 
-  private def fixedName(node: FixedPoint): String =
-    node.instanceName.replace('.', '_')
-
   private def dspPeek(node: Data): (Double, BigInt) = {
     val bi: BigInt = node match {
       // Unsigned bigint
       case r: DspReal    => peek(r.node.asInstanceOf[Bits])
       case b: Bits       => peek(b.asInstanceOf[Bits])
-      case f: FixedPoint => peek(fixedName(f))
+      case f: FixedPoint => peek(f.asSInt.asInstanceOf[Bits])
     }
     val (dblOut, bigIntOut) = node match {
       case _: DspReal => (DspTesterUtilities.bigIntBitsToDouble(bi), bi)
@@ -62,7 +59,7 @@ trait PeekPokeDspExtensions {
       case f: FixedPoint =>
         f.binaryPoint match {
           case KnownBinaryPoint(bp) =>
-            poke(fixedName(f) /*f.asSInt.asInstanceOf[Bits]*/, FixedPoint.toBigInt(value, bp))
+            poke(f.asSInt.asInstanceOf[Bits], FixedPoint.toBigInt(value, bp))
           case _ => throw DspException("Must poke FixedPoint with known binary point")
         }
       case r: DspReal => poke(r.node.asInstanceOf[Bits], DspTesterUtilities.doubleToBigIntBits(value))

@@ -344,3 +344,6 @@ hs_err_pid*
 
 # ignore lib from rocket build
 lib
+
+# bsp
+.bsp/
