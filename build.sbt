@@ -5,8 +5,8 @@ enablePlugins(SiteScaladocPlugin)
 enablePlugins(GhpagesPlugin)
 
 val defaultVersions = Map(
-  "chisel3" -> "3.6.0",
-  "chiseltest" -> "0.6.2"
+  "chisel" -> "5.1.0",
+  "chiseltest" -> "5.0.2"
 )
 
 name := "dsptools"
@@ -29,10 +29,10 @@ val commonSettings = Seq(
       case _                               => Seq("org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4")
     }
   },
-  libraryDependencies ++= Seq("chisel3").map { dep: String =>
-    "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
+  libraryDependencies ++= Seq("chisel").map { dep: String =>
+    "org.chipsalliance" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
   },
-  addCompilerPlugin(("edu.berkeley.cs" %% "chisel3-plugin" % defaultVersions("chisel3")).cross(CrossVersion.full)),
+  addCompilerPlugin(("org.chipsalliance" %% "chisel-plugin" % defaultVersions("chisel")).cross(CrossVersion.full)),
 )
 
 val dsptoolsSettings = Seq(

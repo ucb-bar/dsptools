@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import breeze.math.Complex
-import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import chisel3._
 import fixedpoint._
 import chiseltest._
 import chiseltest.iotesters._
