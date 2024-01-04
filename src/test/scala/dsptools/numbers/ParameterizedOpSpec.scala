@@ -13,10 +13,16 @@ import dsptools.misc.PeekPokeDspExtensions
 
 //scalastyle:off magic.number
 
+object Operation extends Enumeration {
+  type Operation = Value
+  val Add, Sub, Mul = Value
+}
+import Operation.{Add, Mul, Sub}
+
 class ParameterizedNumberOperation[T <: Data: Ring](
   inputGenerator:  () => T,
   outputGenerator: () => T,
-  val op:          String = "+")
+  val op:          Operation.Value = Add)
     extends Module {
   val io = IO(new Bundle {
     val a1: T = Input(inputGenerator().cloneType)
@@ -28,9 +34,9 @@ class ParameterizedNumberOperation[T <: Data: Ring](
 
   register1 := {
     op match {
-      case "+" => io.a1 + io.a2
-      case "-" => io.a1 - io.a2
-      case "*" => DspContext.withTrimType(NoTrim) { io.a1 * io.a2 }
+      case Add => io.a1 + io.a2
+      case Sub => io.a1 - io.a2
+      case Mul => DspContext.withTrimType(NoTrim) { io.a1 * io.a2 }
       //      case "/" => io.a1 / io.a2
       case _ => throw new Exception(s"Bad operator $op passed to ParameterizedNumberOperation")
     }
@@ -47,9 +53,9 @@ class ParameterizedOpTester[T <: Data: Ring](c: ParameterizedNumberOperation[T])
     j <- BigDecimal(0.0) to 4.0 by 0.5
   } {
     val expected = c.op match {
-      case "+" => i + j
-      case "-" => i - j
-      case "*" => i * j
+      case Add => i + j
+      case Sub => i - j
+      case Mul => i * j
       case _   => i + j
     }
 
@@ -72,7 +78,7 @@ class ParameterizedOpSpec extends AnyFreeSpec with ChiselScalatestTester {
     def fixedOutGenerator(): FixedPoint = FixedPoint(48.W, 8.BP)
 
     "process Real numbers with the basic mathematical operations" - {
-      Seq("+", "-", "*").foreach { operation =>
+      Seq(Add, Sub, Mul).foreach { operation =>
         s"operation $operation should work for all inputs" in {
           test(new ParameterizedNumberOperation(realGenerator, realGenerator, operation))
             .withAnnotations(Seq(VerilatorBackendAnnotation))
@@ -81,7 +87,7 @@ class ParameterizedOpSpec extends AnyFreeSpec with ChiselScalatestTester {
       }
     }
     "process Fixed point numbers with the basic mathematical operations" - {
-      Seq("+", "-", "*").foreach { operation =>
+      Seq(Add, Sub, Mul).foreach { operation =>
         s"operation $operation should work for all inputs" in {
           test(new ParameterizedNumberOperation(fixedInGenerator, fixedOutGenerator, operation))
             .runPeekPoke(new ParameterizedOpTester(_))
@@ -102,9 +108,9 @@ class ComplexOpTester[T <: DspComplex[_]](c: ParameterizedNumberOperation[T])
     val c2 = Complex(j, i)
 
     val expected = c.op match {
-      case "+" => c1 + c2
-      case "-" => c1 - c2
-      case "*" => c1 * c2
+      case Add => c1 + c2
+      case Sub => c1 - c2
+      case Mul => c1 * c2
       case _   => c1 + c2
     }
 
@@ -135,7 +141,7 @@ class ComplexOpSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
 
     "process DspComplex[Real] numbers with the basic mathematical operations" - {
-      Seq("+", "-", "*").foreach { operation =>
+      Seq(Add, Sub, Mul).foreach { operation =>
         s"operation $operation should work for all inputs" in {
           test(new ParameterizedNumberOperation(complexRealGenerator, complexRealGenerator, operation))
             .withAnnotations(Seq(VerilatorBackendAnnotation))
@@ -145,7 +151,7 @@ class ComplexOpSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
 
     "process DspComplex[FixedPoint] numbers with the basic mathematical operations" - {
-      Seq("+", "-", "*").foreach { operation =>
+      Seq(Add, Sub, Mul).foreach { operation =>
         s"operation $operation should work for all inputs" in {
           test(new ParameterizedNumberOperation(complexFixedGenerator, complexFixedOutputGenerator, operation))
             .runPeekPoke(new ComplexOpTester(_))
