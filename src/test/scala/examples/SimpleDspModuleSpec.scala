@@ -3,7 +3,7 @@
 package examples
 
 // Allows you to use Chisel Module, Bundle, etc.
-import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import chisel3._
 import dsptools.misc.PeekPokeDspExtensions
 // Allows you to use FixedPoint
 import fixedpoint._
