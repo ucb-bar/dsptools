@@ -5,14 +5,13 @@ enablePlugins(SiteScaladocPlugin)
 enablePlugins(GhpagesPlugin)
 
 val defaultVersions = Map(
-  "chisel3" -> "3.6.0",
-  "chiseltest" -> "0.6.2"
+  "chisel" -> "6.0.0"
 )
 
 name := "dsptools"
 
 val commonSettings = Seq(
-  scalaVersion := "2.13.10",
+  scalaVersion := "2.13.12",
   scalacOptions ++= Seq("-encoding",
                         "UTF-8",
                         "-unchecked",
@@ -29,10 +28,10 @@ val commonSettings = Seq(
       case _                               => Seq("org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4")
     }
   },
-  libraryDependencies ++= Seq("chisel3").map { dep: String =>
-    "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
+  libraryDependencies ++= Seq("chisel").map { dep: String =>
+    "org.chipsalliance" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
   },
-  addCompilerPlugin(("edu.berkeley.cs" %% "chisel3-plugin" % defaultVersions("chisel3")).cross(CrossVersion.full)),
+  addCompilerPlugin(("org.chipsalliance" %% "chisel-plugin" % defaultVersions("chisel")).cross(CrossVersion.full)),
 )
 
 val dsptoolsSettings = Seq(
@@ -46,9 +45,9 @@ val dsptoolsSettings = Seq(
     "org.scalanlp" %% "breeze" % "2.1.0",
     "org.scalatest" %% "scalatest" % "3.2.15" % "test"
   ),
-  libraryDependencies ++= Seq("chiseltest").map { dep: String =>
-    "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
-  },
+  // libraryDependencies ++= Seq("chiseltest").map { dep: String =>
+  //   "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep))
+  // },
   pomExtra := <url>http://chisel.eecs.berkeley.edu/</url>
     <licenses>
       <license>
