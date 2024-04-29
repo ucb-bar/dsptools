@@ -3,7 +3,7 @@
 package dsptools.numbers
 
 import chisel3.util.ShiftRegister
-import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import chisel3._
 import dsptools.{hasContext, DspContext, NoTrim}
 import fixedpoint._
 
